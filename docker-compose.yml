@@ -1,0 +1,109 @@
+version: "3.9"
+
+services:
+
+  # -------------------------
+  # API GATEWAY
+  # -------------------------
+  gateway:
+    build:
+      context: .
+      dockerfile: infra/docker/gateway.Dockerfile
+    container_name: gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - CONTENT_SERVICE_URL=http://content-service:3001
+      - PROGRESS_SERVICE_URL=http://progress-service:3002
+    depends_on:
+      - content-service
+      - progress-service
+    networks:
+      - story-network
+
+
+  # -------------------------
+  # CONTENT SERVICE
+  # -------------------------
+  content-service:
+    build:
+      context: .
+      dockerfile: infra/docker/content.Dockerfile
+    container_name: content-service
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - DATABASE_URL=postgresql://content_user:content_pass@content-db:5432/content_db
+    depends_on:
+      - content-db
+    networks:
+      - story-network
+
+
+  content-db:
+    image: postgres:15
+    container_name: content-db
+    restart: always
+    environment:
+      POSTGRES_DB: content_db
+      POSTGRES_USER: content_user
+      POSTGRES_PASSWORD: content_pass
+    volumes:
+      - content_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - story-network
+
+
+  # -------------------------
+  # PROGRESS SERVICE
+  # -------------------------
+  progress-service:
+    build:
+      context: .
+      dockerfile: infra/docker/progress.Dockerfile
+    container_name: progress-service
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - DATABASE_URL=postgresql://progress_user:progress_pass@progress-db:5432/progress_db
+    depends_on:
+      - progress-db
+    networks:
+      - story-network
+
+
+  progress-db:
+    image: postgres:15
+    container_name: progress-db
+    restart: always
+    environment:
+      POSTGRES_DB: progress_db
+      POSTGRES_USER: progress_user
+      POSTGRES_PASSWORD: progress_pass
+    volumes:
+      - progress_data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    networks:
+      - story-network
+
+
+# -------------------------
+# NETWORK
+# -------------------------
+networks:
+  story-network:
+    driver: bridge
+
+
+# -------------------------
+# VOLUMES
+# -------------------------
+volumes:
+  content_data:
+  progress_data:
