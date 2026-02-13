@@ -1,0 +1,696 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{fancyhdr}
+
+\geometry{margin=1in}
+
+% Improve readability: larger base font, increased line and paragraph spacing
+\onehalfspacing
+\setlength{\parskip}{0.7em}
+\setlength{\parindent}{0pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{Specifications Document}
+\lhead{Interactive Riddle Game Application}
+\cfoot{\thepage}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue,
+    citecolor=blue
+}
+
+\title{\textbf{SPECIFICATIONS DOCUMENT} \\[0.5cm] \large Interactive Riddle Game Application Based on Stories for Young Readers}
+\author{}
+
+\begin{document}
+
+\maketitle
+
+\textbf{Project Duration:} 4 months
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+
+\newpage
+
+\section*{GENERAL INTRODUCTION}
+
+The proposed application is an interactive web platform that enables children to strengthen their \textbf{reading} and \textbf{reasoning} skills through \textbf{illustrated stories containing riddles}. The system adapts support mechanisms (textual, visual, and optionally audio hints) based on the child's profile and performance. An administration interface allows teachers and educational managers to create, manage, and analyze stories and riddles.
+
+This specifications document describes in detail the context, functional and non-functional requirements, constraints, target architecture, and acceptance criteria for the project.
+
+\newpage
+
+\section{GENERAL PROJECT PRESENTATION}
+
+\subsection{Context and Justification}
+
+\begin{itemize}
+    \item Many children struggle to sustainably develop their reading comprehension and understanding skills, particularly when faced with unengaging content.
+    \item Teachers lack simple tools to \textbf{adapt difficulty levels} and \textbf{analyze individual student difficulties}.
+\end{itemize}
+
+In this context, the project aims to propose a modern digital solution, combining \textbf{interactive narratives}, \textbf{riddle-based challenges}, and \textbf{artificial intelligence}, to provide a personalized and motivating learning experience.
+
+\subsection{Project Objectives}
+
+\begin{itemize}
+    \item Strengthen \textbf{reading, comprehension, and logical reasoning} skills in children.
+    \item Provide an engaging environment based on \textbf{scripted stories} and \textbf{progressive challenges}.
+    \item Provide \textbf{adaptive hints} to reduce frustration and support perseverance.
+    \item Allow \textbf{teachers/parents} to track children's progress (time spent, success rates, types of errors, hint dependency).
+    \item Provide a \textbf{secure back-office} for creating, managing, and analyzing content.
+\end{itemize}
+
+\subsection{Project Scope}
+
+The scope covers:
+\begin{itemize}
+    \item A web application (front-end) accessible from a modern browser.
+    \item A back-end managing stories, riddles, profiles, game sessions, and statistics.
+    \item An \textbf{AI module} for: hint generation, difficulty adaptation, and flexible response validation.
+    \item An \textbf{administration dashboard} (content creation/editing, statistics consultation).
+    \item A \textbf{consultation dashboard} for parents/teachers (reading indicators, without content modification).
+\end{itemize}
+\newpage
+
+\section{EXISTING SOLUTIONS ANALYSIS}
+
+\subsection{Similar Solutions}
+
+\begin{itemize}
+    \item Generic online riddle games (websites or mobile applications).
+    \item Simple reading applications offering standard stories.
+    \item EdTech platforms integrating quizzes or multiple-choice questions for evaluation.
+\end{itemize}
+
+\subsection{Limitations of Existing Solutions}
+
+\begin{itemize}
+    \item Few solutions combine \textbf{rich narration + riddles + intelligent adaptation} to the child.
+    \item Hints are often static, not personalized based on errors made.
+    \item Response validation is generally \textbf{exact} (strict text matching), poorly adapted to children's natural language.
+    \item Pedagogical dashboards are sometimes limited or too complex for teachers to use.
+\end{itemize}
+
+\subsection{Added Value of the Proposed Solution}
+
+\begin{itemize}
+    \item Riddle engine \textbf{integrated within a story}, reinforcing text comprehension.
+    \item \textbf{Difficulty adaptation} based on performance (time, errors, hint usage).
+    \item \textbf{AI} for: contextual hints, flexible response validation (NLP), recurring difficulty analysis.
+    \item Complete administrator dashboard (creation, testing, monitoring, improvement suggestions).
+    \item Experience designed specifically for young readers (6--11 years) with simple and accessible interface.
+\end{itemize}
+
+\newpage
+
+\section{EXPRESSION OF NEEDS}
+
+\subsection{Functional Requirements}
+
+\subsubsection{Child/Learner Side}
+
+\begin{itemize}
+    \item Create a simple profile (avatar, age group, optional reading level).
+    \item Browse a story library or follow a suggested learning path.
+    \item Read/listen to a story and answer riddles throughout the narrative.
+    \item Receive progressive hints when facing difficulty.
+    \item Get clear feedback: correct answer, almost correct, incorrect.
+    \item Earn stars/badges and visualize progress.
+\end{itemize}
+
+\subsubsection{Parent/Teacher Side}
+
+\begin{itemize}
+    \item Create an account and link one or multiple children's profiles.
+    \item Check time spent, number of riddles solved, frequent error types.
+    \item Access \textbf{AI insights} (e.g., ``difficulty with inference riddles'').
+    \item Export progress reports.
+\end{itemize}
+
+\subsubsection{Administrator/Content Manager Side}
+
+\begin{itemize}
+    \item Manage stories (create, modify, archive).
+    \item Manage associated riddles: statement, accepted responses, difficulty level.
+    \item Define hint strategy (levels, textual/visual/audio types).
+    \item Manage media (images, sounds) and preview narrative flow.
+    \item Test stories as a child (test mode) and simulate different profiles.
+    \item Consult dashboards (most frequently failed riddles, average time, disengagement points).
+\end{itemize}
+
+\subsection{Non-Functional Requirements}
+
+\subsubsection{Performance}
+
+The system must guarantee a response time under 2 seconds for main interactions.
+
+The system must support multiple simultaneous users.
+
+The system must ensure rapid hint generation.
+
+\subsubsection{Security}
+
+The system must guarantee the confidentiality of children's data.
+
+The system must implement a secure authentication mechanism.
+
+The system must protect data against unauthorized access.
+
+\subsubsection{Ergonomics and Accessibility}
+
+The system must provide a simple and intuitive interface.
+
+The system must be adapted for children (readability, colors, navigation).
+
+The system must be accessible on different devices (PC, tablet).
+
+\subsubsection{Reliability and Availability}
+
+The system must ensure regular data backup.
+
+The system must guarantee data consistency.
+
+\subsubsection{Scalability}
+
+The system must be able to evolve to accommodate growing user numbers.
+
+The system must allow future functionality additions.
+
+\subsubsection{Maintainability}
+
+The system must be modular and well-structured.
+
+Code must be documented and versioned.
+
+The system must allow easy and evolving maintenance.
+
+
+\section{USER IDENTIFICATION}
+
+\subsection{User Types}
+
+\begin{itemize}
+    \item \textbf{Child / Learner} (6--11 years old)
+    \item \textbf{Parent / Teacher} (observer profile)
+    \item \textbf{Administrator / Content Manager}
+\end{itemize}
+
+\subsection{Roles and Responsibilities}
+
+\begin{itemize}
+    \item \textbf{Child}: plays, reads, answers riddles, uses hints, progresses through stories.
+    \item \textbf{Parent / Teacher}: consults progress reports, interprets indicators, adjusts pedagogical application usage.
+    \item \textbf{Administrator}: creates/edits stories and riddles, validates AI proposals, monitors global statistics, manages media.
+\end{itemize}
+
+\subsection{Access Rights}
+
+\begin{itemize}
+    \item \textbf{Child}: access to game interface only (no access to system parameters or other users' data).
+    \item \textbf{Parent / Teacher}: read access to reports and associated children's profiles, no modification rights on narrative content.
+    \item \textbf{Administrator}: complete back-office access (content creation, modification, deletion, advanced statistics consultation).
+\end{itemize}
+
+\newpage
+
+\section{PRINCIPAL USE CASES}
+
+\subsection{USE CASE 5.1: Child Plays a Story}
+
+\textbf{Actor:} Child / Learner
+
+\textbf{Preconditions:} Child authenticated, profile created
+
+\textbf{Main Flow:}
+\begin{enumerate}
+    \item Child selects a story from the library
+    \item Story loads with illustrations and text
+    \item At each key point, a riddle appears
+    \item Child submits an answer (text or choice)
+    \item System validates response and provides feedback
+    \item If error, child can request a hint
+    \item Story progresses until the end
+    \item Progress and rewards are recorded
+\end{enumerate}
+
+\textbf{Postconditions:} Session ended, statistics updated
+
+\subsection{USE CASE 5.2: Parent Checks Child's Progress}
+
+\textbf{Actor:} Parent / Teacher
+
+\textbf{Preconditions:} Parent authenticated, child linked to account
+
+\textbf{Main Flow:}
+\begin{enumerate}
+    \item Parent accesses the dashboard
+    \item Selects the child in question
+    \item Consults statistics (time, success, error types)
+    \item Reads AI insights on difficulty areas
+    \item Exports a report if necessary
+\end{enumerate}
+
+\textbf{Postconditions:} Report generated and consulted
+
+\subsection{USE CASE 5.3: Administrator Creates a New Story}
+
+\textbf{Actor:} Administrator
+
+\textbf{Preconditions:} Administrator authenticated
+
+\textbf{Main Flow:}
+\begin{enumerate}
+    \item Administrator accesses back-office
+    \item Creates new story (title, description, level)
+    \item Writes narrative content
+    \item Adds illustrations and multimedia content
+    \item Creates associated riddles (statement, accepted responses, difficulty)
+    \item Defines progressive hints for each riddle
+    \item Tests story in learner mode (profile simulation)
+    \item Validates and publishes story
+\end{enumerate}
+
+\textbf{Postconditions:} Story available for children
+
+
+\newpage
+
+\section{DETAILED FUNCTIONAL REQUIREMENTS}
+
+\subsection{User Management}
+
+The system must allow user registration and authentication according to their role.
+
+The system must manage multiple user types:
+\begin{itemize}
+    \item Learner (child)
+    \item Parent / educator
+    \item Administrator
+\end{itemize}
+
+The system must allow profile management (age, level, preferences).
+
+The system must ensure secure session management.
+
+\subsection{Learner -- Educational Game Interaction}
+
+The system must offer interactive stories adapted to the learner's age.
+
+The system must display riddles integrated into the scenario.
+
+The system must allow the learner to submit an answer (text or choice).
+
+The system must evaluate learner-provided responses.
+
+The system must provide immediate feedback (correct, partially correct, incorrect).
+
+The system must offer rewards (points, badges, progression).
+
+\subsection{Hints Management}
+
+The system must provide progressive hints in case of failure.
+
+The system must offer different hint types:
+\begin{itemize}
+    \item Text
+    \item Image
+    \item Audio (optional)
+\end{itemize}
+
+The system must adapt hints according to learner performance.
+
+The system must avoid directly revealing the answer.
+
+\subsection{Intelligent Level Adaptation}
+
+The system must analyze learner performance:
+\begin{itemize}
+    \item Response time
+    \item Number of attempts
+    \item Hint usage
+\end{itemize}
+
+The system must automatically adjust difficulty level.
+
+The system must guarantee smooth and motivating progression.
+
+\subsection{Intelligent Response Validation (NLP)}
+
+The system must accept equivalent or close responses to the correct answer.
+
+The system must detect partially correct responses.
+
+The system must provide personalized encouragement.
+
+\subsection{Parent / Educator Dashboard}
+
+The system must allow learner progress consultation.
+
+The system must display performance statistics.
+
+The system must provide automatically generated observations (AI insights).
+
+The system must allow PDF report export.
+
+\subsection{Content Administration}
+
+The system must allow administrators to create, modify, and delete:
+\begin{itemize}
+    \item Stories
+    \item Riddles
+    \item Hints
+\end{itemize}
+
+The system must allow multimedia content addition.
+
+The system must offer content testing mode.
+
+The system must provide global usage statistics.
+
+\newpage
+
+\section{SYSTEM MODELING}
+
+\subsection{Global Architecture}
+
+The system architecture is organized according to a distributed layered structure, designed to guarantee scalability, performance, and maintainability:
+
+\textbf{Presentation Layer (Front-end)}
+
+The front-end application is built with Next.js 14+, TailwindCSS, and TypeScript. It provides three distinct interfaces:
+\begin{itemize}
+    \item Child/learner interface: dedicated to interactive games, with stories, riddles, and hint management
+    \item Parent/teacher interface: dashboard for progress consultation and performance statistics
+    \item Administrator interface: back-office for story, riddle, and multimedia content creation/management
+\end{itemize}
+
+\textbf{Communication Layer}
+
+Communication between front-end and back-end occurs via:
+\begin{itemize}
+    \item REST API (Node.js): for synchronous requests (authentication, content loading, response submission)
+    \item WebSocket: for real-time updates (notifications, progress updates, multi-tab synchronization)
+\end{itemize}
+
+\textbf{Business Logic and Services Layer}
+
+The Node.js back-end integrates:
+\begin{itemize}
+    \item Game engine: story management, riddle progression, session states
+    \item Authentication service: user management by role (Auth.js)
+    \item AI Services: three specialized modules (hint generation, NLP validation, difficulty adaptation)
+    \item Data access layer: via Prisma ORM
+\end{itemize}
+
+\textbf{Persistence Layer}
+
+Data is stored and managed by:
+\begin{itemize}
+    \item PostgreSQL (relational database): users, child profiles, stories, riddles, hints, sessions, attempt logs, and analytics
+\end{itemize}
+
+This modular and decoupled architecture enables progressive system evolution, addition of new functionalities without impact on existing modules, and future replacement of AI providers.
+
+\subsection{Principal Components}
+
+\begin{enumerate}
+    \item \textbf{Front-end (Next.js)}: Responsive user interface for children, parents, and administrators
+    \item \textbf{REST API (Node.js)}: Endpoints for authentication, game, statistics, admin
+    \item \textbf{Game Engine}: Story management, riddle flow, riddle states, progression
+    \item \textbf{AI Services}: Hint generation, NLP validation, difficulty adaptation
+    \item \textbf{Database (PostgreSQL)}: Users, profiles, stories, riddles, statistics
+\end{enumerate}
+
+
+\newpage
+
+\section{TECHNICAL SPECIFICATIONS}
+
+\subsection{Technology Choices}
+
+\textbf{Front-end:}
+\begin{itemize}
+    \item Framework: Next.js 14+
+    \item Styling: TailwindCSS
+    \item Language: TypeScript
+    \item State: React Query / Zustand
+    \item Internationalization: i18n for multilingual support
+\end{itemize}
+
+\textbf{Back-end:}
+\begin{itemize}
+    \item Runtime: Node.js 18+ LTS
+    \item Framework: Next.js API Routes
+    \item Language: TypeScript
+    \item Authentication: Auth.js (NextAuth.js)
+    \item Validation: Zod
+\end{itemize}
+
+\textbf{Database:}
+\begin{itemize}
+    \item RDBMS: PostgreSQL
+    \item ORM: Prisma
+\end{itemize}
+
+\textbf{Artificial Intelligence:}
+\begin{itemize}
+    \item Langchain for AI agent orchestration and prompt management
+    \begin{itemize}
+        \item Processing Chains: coordination of multiple AI calls
+        \item Reactive Agents: autonomous decision-making based on performance
+        \item Memory management: historical context management (session, child profile)
+    \end{itemize}
+    \item Provider options:
+    \begin{itemize}
+        \item \textbf{OpenAI/Gemini} for contextual hint generation
+        \item \textbf{HuggingFace} for open-source NLP and embeddings
+        \item \textbf{Sentence Transformers} for local embeddings
+    \end{itemize}
+\end{itemize}
+
+\textbf{Authentication:}
+\begin{itemize}
+    \item Auth.js with OAuth Google for parents
+    \item Simple authentication (email/password) for children
+    \item Secure session (JWT)
+\end{itemize}
+
+\textbf{Deployment:}
+\begin{itemize}
+    \item Hosting: Vercel (front-end + serverless API)
+    \item Database: Supabase or Neon (managed PostgreSQL)
+    \item Monitoring: Vercel Analytics
+\end{itemize}
+
+\subsection{Software Architecture}
+
+Clear layer separation:
+\begin{itemize}
+    \item \textbf{Presentation}: React components, Next.js pages
+    \item \textbf{Business Logic}: Game engine, adaptation rules
+    \item \textbf{Data Access}: Prisma ORM, queries
+    \item \textbf{AI Integration}: Service wrapper, API clients
+\end{itemize}
+
+Use of dedicated services or modules for AI to enable future provider or model changes.
+
+\subsection{Development Environment}
+
+\begin{itemize}
+    \item Source code management via Git/GitHub
+    \item Recent Node.js environment (LTS)
+    \item npm for dependency management
+    \item ESLint + Prettier for code formatting
+\end{itemize}
+
+\subsection{Version Management}
+
+\begin{itemize}
+    \item Git branches: main, develop, feature/*, release/*
+    \item Semantic Versioning for releases
+\end{itemize}
+
+\subsection{Deployment}
+
+\begin{itemize}
+    \item Continuous deployment on Vercel
+    \item Staging environment for pre-production testing
+\end{itemize}
+
+\newpage
+
+\newpage
+
+\section{PROJECT PLANNING}
+
+\subsection{Adopted Methodology}
+
+The project adopts an \textbf{iterative and incremental methodology}, inspired by \textbf{Agile} approaches, to enable progressive system evolution and continuous functionality validation.
+
+Development is organized in \textbf{short cycles (sprints)}, each cycle resulting in a partial functional version of the system. This approach allows:
+\begin{itemize}
+    \item Better risk management
+    \item Progressive integration of complex features (notably AI)
+    \item Continuous adaptation based on project feedback and constraints
+\end{itemize}
+
+\subsection{Tentative Planning (total duration: 4 months)}
+
+\subsubsection{Month 1 (2 weeks): Analysis and Design}
+
+\begin{itemize}
+    \item Context and need study
+    \item Requirements document writing and validation
+    \item User and use case analysis
+    \item Global architecture design
+    \item UML modeling (main diagrams)
+    \item Database design (ERD/logical model)
+    \item Initial mockups
+\end{itemize}
+
+\textbf{Deliverable:} Validated specifications, mockups, documented architecture
+
+\subsubsection{Months 1--2 (5 weeks): Core Application Development (MVP)}
+
+\begin{itemize}
+    \item Development environment setup
+    \item Initial UI implementation (React components)
+    \item Authentication and role implementation (Auth.js)
+    \item Basic game engine development
+    \item Learner flow implementation (reading, riddles, simple responses)
+    \item Minimal back-office creation (story and riddle management)
+    \item MVP functional testing
+\end{itemize}
+
+\textbf{Deliverable:} Functional MVP version (child + basic admin)
+
+\subsubsection{Months 2--3 (5 weeks): Intelligent Features Integration}
+
+\begin{itemize}
+    \item User performance data collection and structuring
+    \item Intelligent hint integration (AI)
+    \item Response validation implementation via NLP
+    \item Automatic level adaptation setup
+    \item Basic analytics module development
+    \item User experience optimization
+    \item Functional and technical testing
+\end{itemize}
+
+\textbf{Deliverable:} AI-enriched version, basic parent dashboard
+
+\subsubsection{Month 4 (4 weeks): Finalization, Testing, and Deployment}
+
+\begin{itemize}
+    \item Complete parent/teacher dashboard development
+    \item Administrator dashboard improvement
+    \item Global testing (functional, performance, security, accessibility)
+    \item Bug fixes and optimization
+    \item Vercel deployment (demonstration environment)
+    \item Technical documentation writing
+    \item Final demonstration and report preparation
+\end{itemize}
+
+\textbf{Deliverable:} Stable final version deployed
+
+\subsection{Project Milestones}
+
+\begin{itemize}
+    \item \textbf{M1}: Specifications validation
+    \item \textbf{M2}: Architecture and design models validation
+    \item \textbf{M3}: Functional prototype delivery (simple learner flow)
+    \item \textbf{M4}: MVP version delivery with back-office
+    \item \textbf{M5}: First AI feature integration
+    \item \textbf{M6}: Final version delivery candidate for presentation
+\end{itemize}
+
+\subsection{Expected Deliverables}
+
+\begin{itemize}
+    \item Validated specifications
+    \item Design diagrams (UML, architecture)
+    \item Documented and versioned source code (GitHub)
+    \item Functional and deployed web application
+    \item Technical documentation (API, database, AI, deployment)
+    \item Test data set (sample stories and riddles)
+    \item Project final report
+    \item Demo video and presentation slides
+\end{itemize}
+
+
+\newpage
+
+\section{ACCEPTANCE CRITERIA AND VALIDATION}
+
+\subsection{Functional Criteria}
+
+\begin{itemize}
+    \item A child can play at least one complete story with multiple riddles
+    \item System provides progressive hints in case of error
+    \item Close responses are recognized as ``almost correct'' with adapted feedback
+    \item An administrator can create/modify a story and associate riddles
+    \item A parent/teacher can consult a child's statistics
+    \item System adapts difficulty over time
+\end{itemize}
+
+\subsection{Technical Criteria}
+
+\begin{itemize}
+    \item Application is deployed and accessible via a modern browser
+    \item Main flows are usable with response times < 2 seconds
+    \item Roles and permissions are correctly applied (child/parent/admin)
+    \item Data is correctly persisted in database
+    \item AI calls respect budget and SLAs
+\end{itemize}
+
+\section{LIMITATIONS AND PERSPECTIVES}
+
+\subsection{Current Limitations}
+
+\begin{itemize}
+    \item Initial dependency on external AI services (cost, latency, availability)
+    \item No native mobile application
+\end{itemize}
+
+\subsection{Future Evolutions}
+
+\begin{itemize}
+    \item Enrichment of story catalog and riddle types (visual, audio, multimodal)
+    \item Integration of local or hybrid AI models to reduce costs
+    \item Advanced gamification (challenge systems, competitions)
+\end{itemize}
+
+\newpage
+
+\section{GENERAL CONCLUSION}
+
+This specifications document describes a complete and modern EdTech solution that combines \textbf{interactive stories}, \textbf{riddle-based challenges}, and \textbf{artificial intelligence} to provide personalized learning experience to young readers. The project stands out through:
+
+\begin{itemize}
+    \item \textbf{Child-centered approach}: intuitive interface, encouraging feedback, intelligent adaptation
+    \item \textbf{Complete educator back-office}: content creation, advanced analytics, AI insights
+    \item \textbf{Evolution potential}: modular architecture, AI service wrapper for future flexibility
+    \item \textbf{Pragmatic methodology}: iterative approach, rapid MVP, progressive AI integration
+\end{itemize}
+
+Progressive implementation (MVP $\rightarrow$ enrichments) enables risk mitigation while guaranteeing solid demonstration for jury, investors, or educational partners.
+
+The project is ambitious but realistic over a \textbf{4-month} period with dedicated team, and provides solid foundation for future commercialization or academic publication.
+
+
+
+\end{document}

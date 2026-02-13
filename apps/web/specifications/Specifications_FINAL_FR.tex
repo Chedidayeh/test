@@ -1,0 +1,696 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{fancyhdr}
+
+\geometry{margin=1in}
+
+% Improve readability: larger base font, increased line and paragraph spacing
+\onehalfspacing
+\setlength{\parskip}{0.7em}
+\setlength{\parindent}{0pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{Document de Spécifications}
+\lhead{Application de Jeu de Devinettes Interactif}
+\cfoot{\thepage}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue,
+    citecolor=blue
+}
+
+\title{\textbf{DOCUMENT DE SPÉCIFICATIONS} \\[0.5cm] \large Application de Jeu de Devinettes Interactif Basée sur des Histoires pour Jeunes Lecteurs}
+\author{}
+
+\begin{document}
+
+\maketitle
+
+\textbf{Durée du Projet :} 4 mois
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+
+\newpage
+
+\section*{INTRODUCTION GÉNÉRALE}
+
+L'application proposée est une plateforme web interactive qui permet aux enfants de renforcer leurs compétences en \textbf{lecture} et \textbf{raisonnement} grâce à des \textbf{histoires illustrées contenant des devinettes}. Le système adapte les mécanismes de soutien (indices textuels, visuels et optionnellement audio) en fonction du profil et de la performance de l'enfant. Une interface d'administration permet aux enseignants et responsables pédagogiques de créer, gérer et analyser les histoires et les devinettes.
+
+Ce document de spécifications décrit en détail le contexte, les exigences fonctionnelles et non-fonctionnelles, les contraintes, l'architecture cible et les critères d'acceptation du projet.
+
+\newpage
+
+\section{PRÉSENTATION GÉNÉRALE DU PROJET}
+
+\subsection{Contexte et Justification}
+
+\begin{itemize}
+    \item De nombreux enfants ont du mal à développer durablement leurs compétences de compréhension de lecture et de compréhension, notamment lorsqu'ils sont confrontés à des contenus peu attrayants.
+    \item Les enseignants manquent d'outils simples pour \textbf{adapter les niveaux de difficulté} et \textbf{analyser les difficultés individuelles des élèves}.
+\end{itemize}
+
+Dans ce contexte, le projet vise à proposer une solution numérique moderne, combinant des \textbf{narratives interactives}, des \textbf{défis basés sur des devinettes} et de l'\textbf{intelligence artificielle}, pour offrir une expérience d'apprentissage personnalisée et motivante.
+
+\subsection{Objectifs du Projet}
+
+\begin{itemize}
+    \item Renforcer les compétences en \textbf{lecture, compréhension et raisonnement logique} chez les enfants.
+    \item Fournir un environnement attrayant basé sur des \textbf{histoires scénarisées} et des \textbf{défis progressifs}.
+    \item Fournir des \textbf{indices adaptatifs} pour réduire la frustration et soutenir la persévérance.
+    \item Permettre aux \textbf{enseignants/parents} de suivre la progression des enfants (temps passé, taux de réussite, types d'erreurs, dépendance aux indices).
+    \item Fournir un \textbf{arrière-plan sécurisé} pour créer, gérer et analyser le contenu.
+\end{itemize}
+
+\subsection{Périmètre du Projet}
+
+Le périmètre couvre :
+\begin{itemize}
+    \item Une application web (front-end) accessible depuis un navigateur moderne.
+    \item Un back-end gérant les histoires, les devinettes, les profils, les sessions de jeu et les statistiques.
+    \item Un \textbf{module d'IA} pour : la génération d'indices, l'adaptation de la difficulté et la validation flexible des réponses.
+    \item Un \textbf{tableau de bord d'administration} (création/édition de contenu, consultation des statistiques).
+    \item Un \textbf{tableau de bord de consultation} pour les parents/enseignants (indicateurs de lecture, sans modification de contenu).
+\end{itemize}
+\newpage
+
+\section{ANALYSE DES SOLUTIONS EXISTANTES}
+
+\subsection{Solutions Similaires}
+
+\begin{itemize}
+    \item Jeux de devinettes génériques en ligne (sites web ou applications mobiles).
+    \item Applications de lecture simples offrant des histoires standard.
+    \item Plateformes EdTech intégrant des quiz ou des questions à choix multiples pour l'évaluation.
+\end{itemize}
+
+\subsection{Limitations des Solutions Existantes}
+
+\begin{itemize}
+    \item Peu de solutions combinent \textbf{narration riche + devinettes + adaptation intelligente} à l'enfant.
+    \item Les indices sont souvent statiques, non personnalisés en fonction des erreurs commises.
+    \item La validation des réponses est généralement \textbf{exacte} (correspondance de texte stricte), mal adaptée au langage naturel des enfants.
+    \item Les tableaux de bord pédagogiques sont parfois limités ou trop complexes pour que les enseignants les utilisent.
+\end{itemize}
+
+\subsection{Valeur Ajoutée de la Solution Proposée}
+
+\begin{itemize}
+    \item Moteur de devinettes \textbf{intégré dans une histoire}, renforçant la compréhension du texte.
+    \item \textbf{Adaptation de la difficulté} en fonction de la performance (temps, erreurs, utilisation d'indices).
+    \item \textbf{IA} pour : indices contextuels, validation flexible des réponses (PNL), analyse récurrente des difficultés.
+    \item Tableau de bord administrateur complet (création, test, surveillance, suggestions d'amélioration).
+    \item Expérience conçue spécifiquement pour les jeunes lecteurs (6--11 ans) avec une interface simple et accessible.
+\end{itemize}
+
+\newpage
+
+\section{EXPRESSION DES BESOINS}
+
+\subsection{Exigences Fonctionnelles}
+
+\subsubsection{Côté Enfant/Apprenant}
+
+\begin{itemize}
+    \item Créer un profil simple (avatar, groupe d'âge, niveau de lecture optionnel).
+    \item Parcourir une bibliothèque d'histoires ou suivre un parcours d'apprentissage suggéré.
+    \item Lire/écouter une histoire et répondre à des devinettes tout au long de la narration.
+    \item Recevoir des indices progressifs en cas de difficulté.
+    \item Obtenir un retour clair : réponse correcte, presque correcte, incorrecte.
+    \item Gagner des étoiles/badges et visualiser la progression.
+\end{itemize}
+
+\subsubsection{Côté Parent/Enseignant}
+
+\begin{itemize}
+    \item Créer un compte et lier un ou plusieurs profils d'enfants.
+    \item Vérifier le temps passé, le nombre de devinettes résolues, les types d'erreurs fréquentes.
+    \item Accéder à des \textbf{informations basées sur l'IA} (par exemple, « difficulté avec les devinettes d'inférence »).
+    \item Exporter des rapports de progression.
+\end{itemize}
+
+\subsubsection{Côté Administrateur/Gestionnaire de Contenu}
+
+\begin{itemize}
+    \item Gérer les histoires (créer, modifier, archiver).
+    \item Gérer les devinettes associées : énoncé, réponses acceptées, niveau de difficulté.
+    \item Définir la stratégie des indices (niveaux, types textuels/visuels/audio).
+    \item Gérer les médias (images, sons) et prévisualiser le flux narratif.
+    \item Tester les histoires en tant qu'enfant (mode test) et simuler différents profils.
+    \item Consulter les tableaux de bord (devinettes les plus fréquemment échouées, temps moyen, points de désengagement).
+\end{itemize}
+
+\subsection{Exigences Non-Fonctionnelles}
+
+\subsubsection{Performance}
+
+Le système doit garantir un temps de réponse inférieur à 2 secondes pour les interactions principales.
+
+Le système doit supporter plusieurs utilisateurs simultanés.
+
+Le système doit assurer une génération rapide des indices.
+
+\subsubsection{Sécurité}
+
+Le système doit garantir la confidentialité des données des enfants.
+
+Le système doit mettre en place un mécanisme d'authentification sécurisé.
+
+Le système doit protéger les données contre l'accès non autorisé.
+
+\subsubsection{Ergonomie et Accessibilité}
+
+Le système doit fournir une interface simple et intuitive.
+
+Le système doit être adapté aux enfants (lisibilité, couleurs, navigation).
+
+Le système doit être accessible sur différents appareils (PC, tablette).
+
+\subsubsection{Fiabilité et Disponibilité}
+
+Le système doit assurer une sauvegarde régulière des données.
+
+Le système doit garantir la cohérence des données.
+
+\subsubsection{Scalabilité}
+
+Le système doit être capable d'évoluer pour accueillir un nombre croissant d'utilisateurs.
+
+Le système doit permettre l'ajout de futures fonctionnalités.
+
+\subsubsection{Maintenabilité}
+
+Le système doit être modulaire et bien structuré.
+
+Le code doit être documenté et versionné.
+
+Le système doit permettre une maintenance facile et évolutive.
+
+
+\section{IDENTIFICATION DES UTILISATEURS}
+
+\subsection{Types d'Utilisateurs}
+
+\begin{itemize}
+    \item \textbf{Enfant / Apprenant} (6--11 ans)
+    \item \textbf{Parent / Enseignant} (profil d'observateur)
+    \item \textbf{Administrateur / Gestionnaire de Contenu}
+\end{itemize}
+
+\subsection{Rôles et Responsabilités}
+
+\begin{itemize}
+    \item \textbf{Enfant} : joue, lit, répond aux devinettes, utilise les indices, progresse à travers les histoires.
+    \item \textbf{Parent / Enseignant} : consulte les rapports de progression, interprète les indicateurs, ajuste l'utilisation pédagogique.
+    \item \textbf{Administrateur} : crée/édite les histoires et les devinettes, valide les propositions de l'IA, surveille les statistiques globales, gère les médias.
+\end{itemize}
+
+\subsection{Droits d'Accès}
+
+\begin{itemize}
+    \item \textbf{Enfant} : accès à l'interface de jeu uniquement (pas d'accès aux paramètres système ou aux données d'autres utilisateurs).
+    \item \textbf{Parent / Enseignant} : accès en lecture aux rapports et aux profils d'enfants associés, pas de droits de modification sur le contenu narratif.
+    \item \textbf{Administrateur} : accès complet au back-office (création, modification, suppression de contenu, consultation des statistiques avancées).
+\end{itemize}
+
+\newpage
+
+\section{CAS D'UTILISATION PRINCIPAUX}
+
+\subsection{CAS D'UTILISATION 5.1 : L'Enfant Joue une Histoire}
+
+\textbf{Acteur :} Enfant / Apprenant
+
+\textbf{Préconditions :} Enfant authentifié, profil créé
+
+\textbf{Flux Principal :}
+\begin{enumerate}
+    \item L'enfant sélectionne une histoire dans la bibliothèque
+    \item L'histoire se charge avec des illustrations et du texte
+    \item À chaque point clé, une devinette apparaît
+    \item L'enfant soumet une réponse (texte ou choix)
+    \item Le système valide la réponse et fournit un retour
+    \item En cas d'erreur, l'enfant peut demander un indice
+    \item L'histoire progresse jusqu'à la fin
+    \item La progression et les récompenses sont enregistrées
+\end{enumerate}
+
+\textbf{Postconditions :} Session terminée, statistiques mises à jour
+
+\subsection{CAS D'UTILISATION 5.2 : Le Parent Vérifie la Progression de l'Enfant}
+
+\textbf{Acteur :} Parent / Enseignant
+
+\textbf{Préconditions :} Parent authentifié, enfant lié au compte
+
+\textbf{Flux Principal :}
+\begin{enumerate}
+    \item Le parent accède au tableau de bord
+    \item Sélectionne l'enfant en question
+    \item Consulte les statistiques (temps, réussite, types d'erreurs)
+    \item Lit les informations basées sur l'IA sur les domaines de difficulté
+    \item Exporte un rapport si nécessaire
+\end{enumerate}
+
+\textbf{Postconditions :} Rapport généré et consulté
+
+\subsection{CAS D'UTILISATION 5.3 : L'Administrateur Crée une Nouvelle Histoire}
+
+\textbf{Acteur :} Administrateur
+
+\textbf{Préconditions :} Administrateur authentifié
+
+\textbf{Flux Principal :}
+\begin{enumerate}
+    \item L'administrateur accède au back-office
+    \item Crée une nouvelle histoire (titre, description, niveau)
+    \item Rédige le contenu narratif
+    \item Ajoute les illustrations et le contenu multimédia
+    \item Crée les devinettes associées (énoncé, réponses acceptées, difficulté)
+    \item Définit les indices progressifs pour chaque devinette
+    \item Teste l'histoire en mode apprenant (simulation de profil)
+    \item Valide et publie l'histoire
+\end{enumerate}
+
+\textbf{Postconditions :} Histoire disponible pour les enfants
+
+
+\newpage
+
+\section{EXIGENCES FONCTIONNELLES DÉTAILLÉES}
+
+\subsection{Gestion des Utilisateurs}
+
+Le système doit permettre l'enregistrement et l'authentification des utilisateurs selon leur rôle.
+
+Le système doit gérer plusieurs types d'utilisateurs :
+\begin{itemize}
+    \item Apprenant (enfant)
+    \item Parent / éducateur
+    \item Administrateur
+\end{itemize}
+
+Le système doit permettre la gestion des profils (âge, niveau, préférences).
+
+Le système doit assurer une gestion sécurisée des sessions.
+
+\subsection{Interaction Apprenant -- Jeu Éducatif}
+
+Le système doit offrir des histoires interactives adaptées à l'âge de l'apprenant.
+
+Le système doit afficher les devinettes intégrées au scénario.
+
+Le système doit permettre à l'apprenant de soumettre une réponse (texte ou choix).
+
+Le système doit évaluer les réponses fournies par l'apprenant.
+
+Le système doit fournir un retour immédiat (correct, partiellement correct, incorrect).
+
+Le système doit offrir des récompenses (points, badges, progression).
+
+\subsection{Gestion des Indices}
+
+Le système doit fournir des indices progressifs en cas d'échec.
+
+Le système doit offrir différents types d'indices :
+\begin{itemize}
+    \item Texte
+    \item Image
+    \item Audio (optionnel)
+\end{itemize}
+
+Le système doit adapter les indices selon la performance de l'apprenant.
+
+Le système doit éviter de révéler directement la réponse.
+
+\subsection{Adaptation Intelligente du Niveau}
+
+Le système doit analyser la performance de l'apprenant :
+\begin{itemize}
+    \item Temps de réponse
+    \item Nombre de tentatives
+    \item Utilisation d'indices
+\end{itemize}
+
+Le système doit ajuster automatiquement le niveau de difficulté.
+
+Le système doit garantir une progression fluide et motivante.
+
+\subsection{Validation Intelligente des Réponses (PNL)}
+
+Le système doit accepter les réponses équivalentes ou proches de la bonne réponse.
+
+Le système doit détecter les réponses partiellement correctes.
+
+Le système doit fournir des encouragements personnalisés.
+
+\subsection{Tableau de Bord Parent / Éducateur}
+
+Le système doit permettre la consultation de la progression de l'apprenant.
+
+Le système doit afficher les statistiques de performance.
+
+Le système doit fournir des observations générées automatiquement (informations basées sur l'IA).
+
+Le système doit permettre l'export de rapports PDF.
+
+\subsection{Administration du Contenu}
+
+Le système doit permettre aux administrateurs de créer, modifier et supprimer :
+\begin{itemize}
+    \item Les histoires
+    \item Les devinettes
+    \item Les indices
+\end{itemize}
+
+Le système doit permettre l'ajout de contenu multimédia.
+
+Le système doit offrir un mode de test du contenu.
+
+Le système doit fournir des statistiques d'utilisation globales.
+
+\newpage
+
+\section{MODÉLISATION SYSTÈME}
+
+\subsection{Architecture Globale}
+
+L'architecture du système est organisée selon une structure en couches distribuées, conçue pour garantir la scalabilité, la performance et la maintenabilité :
+
+\textbf{Couche de Présentation (Front-end)}
+
+L'application front-end est construite avec Next.js 14+, TailwindCSS et TypeScript. Elle fournit trois interfaces distinctes :
+\begin{itemize}
+    \item Interface enfant/apprenant : dédiée aux jeux interactifs, avec des histoires, des devinettes et la gestion des indices
+    \item Interface parent/enseignant : tableau de bord pour la consultation de la progression et des statistiques de performance
+    \item Interface administrateur : back-office pour la création/gestion du contenu des histoires, des devinettes et des médias
+\end{itemize}
+
+\textbf{Couche de Communication}
+
+La communication entre front-end et back-end se fait via :
+\begin{itemize}
+    \item API REST (Node.js) : pour les requêtes synchrones (authentification, chargement du contenu, soumission de réponses)
+    \item WebSocket : pour les mises à jour en temps réel (notifications, mises à jour de progression, synchronisation multi-onglets)
+\end{itemize}
+
+\textbf{Couche Logique Métier et Services}
+
+Le back-end Node.js intègre :
+\begin{itemize}
+    \item Moteur de jeu : gestion des histoires, progression des devinettes, états des sessions
+    \item Service d'authentification : gestion des utilisateurs par rôle (Auth.js)
+    \item Services d'IA : trois modules spécialisés (génération d'indices, validation PNL, adaptation de difficulté)
+    \item Couche d'accès aux données : via Prisma ORM
+\end{itemize}
+
+\textbf{Couche de Persistance}
+
+Les données sont stockées et gérées par :
+\begin{itemize}
+    \item PostgreSQL (base de données relationnelle) : utilisateurs, profils d'enfants, histoires, devinettes, indices, sessions, journaux de tentatives et analyses
+\end{itemize}
+
+Cette architecture modulaire et découplée permet l'évolution progressive du système, l'ajout de nouvelles fonctionnalités sans impact sur les modules existants, et le remplacement futur des fournisseurs d'IA.
+
+\subsection{Composants Principaux}
+
+\begin{enumerate}
+    \item \textbf{Front-end (Next.js)} : Interface utilisateur réactive pour les enfants, les parents et les administrateurs
+    \item \textbf{API REST (Node.js)} : Points d'accès pour l'authentification, le jeu, les statistiques, l'administration
+    \item \textbf{Moteur de Jeu} : Gestion des histoires, flux de devinettes, états des devinettes, progression
+    \item \textbf{Services d'IA} : Génération d'indices, validation PNL, adaptation de difficulté
+    \item \textbf{Base de Données (PostgreSQL)} : Utilisateurs, profils, histoires, devinettes, statistiques
+\end{enumerate}
+
+
+\newpage
+
+\section{SPÉCIFICATIONS TECHNIQUES}
+
+\subsection{Choix Technologiques}
+
+\textbf{Front-end :}
+\begin{itemize}
+    \item Framework : Next.js 14+
+    \item Style : TailwindCSS
+    \item Langage : TypeScript
+    \item État : React Query / Zustand
+    \item Internationalisation : i18n pour support multilingue
+\end{itemize}
+
+\textbf{Back-end :}
+\begin{itemize}
+    \item Runtime : Node.js 18+ LTS
+    \item Framework : Routes API Next.js
+    \item Langage : TypeScript
+    \item Authentification : Auth.js (NextAuth.js)
+    \item Validation : Zod
+\end{itemize}
+
+\textbf{Base de Données :}
+\begin{itemize}
+    \item SGBDR : PostgreSQL
+    \item ORM : Prisma
+\end{itemize}
+
+\textbf{Intelligence Artificielle :}
+\begin{itemize}
+    \item Langchain pour l'orchestration des agents IA et la gestion des invites
+    \begin{itemize}
+        \item Chaînes de Traitement : coordination de plusieurs appels IA
+        \item Agents Réactifs : prise de décision autonome basée sur la performance
+        \item Gestion de la Mémoire : gestion du contexte historique (session, profil d'enfant)
+    \end{itemize}
+    \item Options de Fournisseur :
+    \begin{itemize}
+        \item \textbf{OpenAI/Gemini} pour la génération d'indices contextuels
+        \item \textbf{HuggingFace} pour la PNL et les embeddings open-source
+        \item \textbf{Sentence Transformers} pour les embeddings locaux
+    \end{itemize}
+\end{itemize}
+
+\textbf{Authentification :}
+\begin{itemize}
+    \item Auth.js avec OAuth Google pour les parents
+    \item Authentification simple (email/mot de passe) pour les enfants
+    \item Session sécurisée (JWT)
+\end{itemize}
+
+\textbf{Déploiement :}
+\begin{itemize}
+    \item Hébergement : Vercel (front-end + API sans serveur)
+    \item Base de Données : Supabase ou Neon (PostgreSQL géré)
+    \item Surveillance : Vercel Analytics
+\end{itemize}
+
+\subsection{Architecture Logicielle}
+
+Séparation claire des couches :
+\begin{itemize}
+    \item \textbf{Présentation} : composants React, pages Next.js
+    \item \textbf{Logique Métier} : moteur de jeu, règles d'adaptation
+    \item \textbf{Accès aux Données} : ORM Prisma, requêtes
+    \item \textbf{Intégration IA} : wrapper de service, clients API
+\end{itemize}
+
+Utilisation de services ou modules dédiés pour l'IA pour permettre les changements futurs de fournisseur ou de modèle.
+
+\subsection{Environnement de Développement}
+
+\begin{itemize}
+    \item Gestion du code source via Git/GitHub
+    \item Environnement Node.js récent (LTS)
+    \item npm pour la gestion des dépendances
+    \item ESLint + Prettier pour la mise en forme du code
+\end{itemize}
+
+\subsection{Gestion des Versions}
+
+\begin{itemize}
+    \item Branches Git : main, develop, feature/*, release/*
+    \item Versioning Sémantique pour les versions
+\end{itemize}
+
+\subsection{Déploiement}
+
+\begin{itemize}
+    \item Déploiement continu sur Vercel
+    \item Environnement de mise en scène pour les tests avant production
+\end{itemize}
+
+\newpage
+
+\newpage
+
+\section{PLANIFICATION DU PROJET}
+
+\subsection{Méthodologie Adoptée}
+
+Le projet adopte une \textbf{méthodologie itérative et incrémentale}, inspirée des approches \textbf{Agile}, pour permettre l'évolution progressive du système et la validation continue des fonctionnalités.
+
+Le développement est organisé en \textbf{cycles courts (sprints)}, chaque cycle aboutissant à une version partiellement fonctionnelle du système. Cette approche permet :
+\begin{itemize}
+    \item Une meilleure gestion des risques
+    \item L'intégration progressive de fonctionnalités complexes (notamment l'IA)
+    \item L'adaptation continue en fonction des retours du projet et des contraintes
+\end{itemize}
+
+\subsection{Planification Provisoire (durée totale : 4 mois)}
+
+\subsubsection{Mois 1 (2 semaines) : Analyse et Conception}
+
+\begin{itemize}
+    \item Étude du contexte et des besoins
+    \item Rédaction et validation du document des exigences
+    \item Analyse des utilisateurs et des cas d'utilisation
+    \item Conception de l'architecture globale
+    \item Modélisation UML (diagrammes principaux)
+    \item Conception de la base de données (ERD/modèle logique)
+    \item Maquettes initiales
+\end{itemize}
+
+\textbf{Livrable :} Spécifications validées, maquettes, architecture documentée
+
+\subsubsection{Mois 1--2 (5 semaines) : Développement de l'Application Noyau (MVP)}
+
+\begin{itemize}
+    \item Configuration de l'environnement de développement
+    \item Implémentation initiale de l'interface utilisateur (composants React)
+    \item Authentification et implémentation des rôles (Auth.js)
+    \item Développement du moteur de jeu basique
+    \item Implémentation du flux apprenant (lecture, devinettes, réponses simples)
+    \item Création du back-office minimal (gestion des histoires et des devinettes)
+    \item Tests de fonctionnalité du MVP
+\end{itemize}
+
+\textbf{Livrable :} Version MVP fonctionnelle (enfant + administration basique)
+
+\subsubsection{Mois 2--3 (5 semaines) : Intégration des Fonctionnalités Intelligentes}
+
+\begin{itemize}
+    \item Collecte et structuration des données de performance des utilisateurs
+    \item Intégration des indices intelligents (IA)
+    \item Implémentation de la validation des réponses via PNL
+    \item Configuration de l'adaptation automatique du niveau
+    \item Développement du module d'analyse basique
+    \item Optimisation de l'expérience utilisateur
+    \item Tests fonctionnels et techniques
+\end{itemize}
+
+\textbf{Livrable :} Version enrichie d'IA, tableau de bord parent basique
+
+\subsubsection{Mois 4 (4 semaines) : Finalisation, Tests et Déploiement}
+
+\begin{itemize}
+    \item Développement complet du tableau de bord parent/enseignant
+    \item Amélioration du tableau de bord administrateur
+    \item Tests globaux (fonctionnels, performance, sécurité, accessibilité)
+    \item Corrections des bugs et optimisation
+    \item Déploiement sur Vercel (environnement de démonstration)
+    \item Rédaction de la documentation technique
+    \item Préparation de la démonstration finale et du rapport
+\end{itemize}
+
+\textbf{Livrable :} Version finale stable déployée
+
+\subsection{Jalons du Projet}
+
+\begin{itemize}
+    \item \textbf{M1} : Validation des spécifications
+    \item \textbf{M2} : Validation de l'architecture et des modèles de conception
+    \item \textbf{M3} : Livraison du prototype fonctionnel (flux apprenant simple)
+    \item \textbf{M4} : Livraison du MVP avec back-office
+    \item \textbf{M5} : Intégration de la première fonctionnalité d'IA
+    \item \textbf{M6} : Livraison de la version finale candidate pour la présentation
+\end{itemize}
+
+\subsection{Livrables Attendus}
+
+\begin{itemize}
+    \item Spécifications validées
+    \item Diagrammes de conception (UML, architecture)
+    \item Code source documenté et versionné (GitHub)
+    \item Application web fonctionnelle et déployée
+    \item Documentation technique (API, base de données, IA, déploiement)
+    \item Ensemble de données de test (exemples d'histoires et de devinettes)
+    \item Rapport final du projet
+    \item Vidéo de démonstration et diapositives de présentation
+\end{itemize}
+
+
+\newpage
+
+\section{CRITÈRES D'ACCEPTATION ET VALIDATION}
+
+\subsection{Critères Fonctionnels}
+
+\begin{itemize}
+    \item Un enfant peut jouer au moins une histoire complète avec plusieurs devinettes
+    \item Le système fournit des indices progressifs en cas d'erreur
+    \item Les réponses proches sont reconnues comme « presque correctes » avec un retour adapté
+    \item Un administrateur peut créer/modifier une histoire et associer des devinettes
+    \item Un parent/enseignant peut consulter les statistiques d'un enfant
+    \item Le système adapte la difficulté au fil du temps
+\end{itemize}
+
+\subsection{Critères Techniques}
+
+\begin{itemize}
+    \item L'application est déployée et accessible via un navigateur moderne
+    \item Les flux principaux sont utilisables avec des temps de réponse < 2 secondes
+    \item Les rôles et les permissions sont correctement appliqués (enfant/parent/admin)
+    \item Les données sont correctement persistées dans la base de données
+    \item Les appels IA respectent le budget et les SLA
+\end{itemize}
+
+\section{LIMITATIONS ET PERSPECTIVES}
+
+\subsection{Limitations Actuelles}
+
+\begin{itemize}
+    \item Dépendance initiale aux services d'IA externes (coût, latence, disponibilité)
+    \item Pas d'application mobile native
+\end{itemize}
+
+\subsection{Évolutions Futures}
+
+\begin{itemize}
+    \item Enrichissement du catalogue d'histoires et des types de devinettes (visuelles, audio, multimodales)
+    \item Intégration de modèles d'IA locaux ou hybrides pour réduire les coûts
+    \item Gamification avancée (systèmes de défis, compétitions)
+\end{itemize}
+
+\newpage
+
+\section{CONCLUSION GÉNÉRALE}
+
+Ce document de spécifications décrit une solution EdTech complète et moderne qui combine des \textbf{histoires interactives}, des \textbf{défis basés sur des devinettes} et de l'\textbf{intelligence artificielle} pour offrir une expérience d'apprentissage personnalisée aux jeunes lecteurs. Le projet se distingue par :
+
+\begin{itemize}
+    \item \textbf{Approche centrée sur l'enfant} : interface intuitive, retours encourageants, adaptation intelligente
+    \item \textbf{Back-office complet pour l'éducateur} : création de contenu, analyses avancées, informations basées sur l'IA
+    \item \textbf{Potentiel d'évolution} : architecture modulaire, wrapper de service IA pour la flexibilité future
+    \item \textbf{Méthodologie pragmatique} : approche itérative, MVP rapide, intégration progressive de l'IA
+\end{itemize}
+
+La mise en œuvre progressive (MVP $\rightarrow$ enrichissements) permet d'atténuer les risques tout en garantissant une démonstration solide pour le jury, les investisseurs ou les partenaires éducatifs.
+
+Le projet est ambitieux mais réaliste sur une période de \textbf{4 mois} avec une équipe dédiée, et fournit une base solide pour la commercialisation future ou la publication académique.
+
+
+
+\end{document}
