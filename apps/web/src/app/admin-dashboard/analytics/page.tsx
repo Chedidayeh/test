@@ -65,7 +65,7 @@ export default function AnalyticsPage() {
       key: "riddleQuestion",
       label: "Riddle",
       render: (value) => (
-        <p className="text-sm font-medium text-slate-900 line-clamp-2">{value}</p>
+        <p className="text-sm font-medium  line-clamp-2">{value}</p>
       ),
       width: "40%",
     },
@@ -80,7 +80,7 @@ export default function AnalyticsPage() {
               style={{ width: `${value}%` }}
             />
           </div>
-          <span className="font-medium text-slate-900">{value}%</span>
+          <span className="font-medium ">{value}%</span>
         </div>
       ),
       width: "20%",
@@ -89,14 +89,14 @@ export default function AnalyticsPage() {
       key: "avgTimeToSolve",
       label: "Avg Time",
       render: (value) => (
-        <span className="text-slate-900">{value.toFixed(1)}s</span>
+        <span className="">{value.toFixed(1)}s</span>
       ),
       width: "15%",
     },
     {
       key: "totalAttempts",
       label: "Attempts",
-      render: (value) => <span className="text-slate-900">{value}</span>,
+      render: (value) => <span className="">{value}</span>,
       width: "12%",
     },
     {
@@ -124,8 +124,8 @@ export default function AnalyticsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Analytics</h1>
-          <p className="text-slate-600 mt-1">Platform performance and insights</p>
+          <h1 className="text-2xl font-bold ">Analytics</h1>
+          <p className="text-slate-500 mt-1">Platform performance and insights</p>
         </div>
         <div className="flex gap-2">
           {["7days", "30days", "90days"].map((range) => (
@@ -281,7 +281,7 @@ export default function AnalyticsPage() {
 
       {/* Riddle Performance Table */}
       <div>
-        <h2 className="text-lg font-semibold text-slate-900 mb-4">
+        <h2 className="text-lg font-semibold  mb-4">
           Riddle Performance
         </h2>
         <DataTable<RiddleAnalytics>

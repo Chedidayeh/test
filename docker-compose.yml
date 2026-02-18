@@ -1,7 +1,6 @@
 version: "3.9"
 
 services:
-
   # -------------------------
   # API GATEWAY
   # -------------------------
@@ -11,17 +10,59 @@ services:
       dockerfile: infra/docker/gateway.Dockerfile
     container_name: gateway
     ports:
-      - "3000:3000"
+      - "3001:3001"
     environment:
-      - PORT=3000
-      - CONTENT_SERVICE_URL=http://content-service:3001
-      - PROGRESS_SERVICE_URL=http://progress-service:3002
+      - PORT=3001
+      - NODE_ENV=development
+      - LOG_LEVEL=info
+      - AUTH_SERVICE_URL=http://auth-service:3002
+      - CONTENT_SERVICE_URL=http://content-service:3003
+      - PROGRESS_SERVICE_URL=http://progress-service:3004
+      - AI_SERVICE_URL=http://ai-service:3005
+      - JWT_SECRET=supersecretkey
+      - JWT_EXPIRATION=86400
     depends_on:
+      - auth-service
       - content-service
       - progress-service
     networks:
       - story-network
 
+  # -------------------------
+  # AUTH SERVICE
+  # -------------------------
+  auth-service:
+    build:
+      context: .
+      dockerfile: infra/docker/auth.Dockerfile
+    container_name: auth-service
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://auth_user:auth_pass@auth-db:5432/auth_db
+      - JWT_SECRET=supersecretkey
+      - JWT_EXPIRATION=86400
+    depends_on:
+      - auth-db
+    networks:
+      - story-network
+
+  auth-db:
+    image: postgres:15
+    container_name: auth-db
+    restart: always
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: auth_user
+      POSTGRES_PASSWORD: auth_pass
+    volumes:
+      - auth_data:/var/lib/postgresql/data
+    ports:
+      - "5435:5432"
+    networks:
+      - story-network
 
   # -------------------------
   # CONTENT SERVICE
@@ -32,15 +73,14 @@ services:
       dockerfile: infra/docker/content.Dockerfile
     container_name: content-service
     ports:
-      - "3001:3001"
+      - "3003:3003"
     environment:
-      - PORT=3001
+      - PORT=3003
       - DATABASE_URL=postgresql://content_user:content_pass@content-db:5432/content_db
     depends_on:
       - content-db
     networks:
       - story-network
-
 
   content-db:
     image: postgres:15
@@ -57,7 +97,6 @@ services:
     networks:
       - story-network
 
-
   # -------------------------
   # PROGRESS SERVICE
   # -------------------------
@@ -67,15 +106,14 @@ services:
       dockerfile: infra/docker/progress.Dockerfile
     container_name: progress-service
     ports:
-      - "3002:3002"
+      - "3004:3004"
     environment:
-      - PORT=3002
+      - PORT=3004
       - DATABASE_URL=postgresql://progress_user:progress_pass@progress-db:5432/progress_db
     depends_on:
       - progress-db
     networks:
       - story-network
-
 
   progress-db:
     image: postgres:15
@@ -92,7 +130,6 @@ services:
     networks:
       - story-network
 
-
 # -------------------------
 # NETWORK
 # -------------------------
@@ -100,10 +137,10 @@ networks:
   story-network:
     driver: bridge
 
-
 # -------------------------
 # VOLUMES
 # -------------------------
 volumes:
+  auth_data:
   content_data:
   progress_data:

@@ -1,29 +1,95 @@
+import dotenv from "dotenv";
+
+// Load environment variables from .env file
+dotenv.config();
+
 import express from "express";
-import { createProxyMiddleware } from "http-proxy-middleware";
+import cors from "cors";
+import { jwtMiddleware } from "./middleware/jwt.middleware";
+import { logger } from "./utils/logger";
+import { authServiceClient } from "./utils/auth-service";
+import { authRoutes, contentRoutes, progressRoutes } from "./routes";
 
 const app = express();
 
-app.use(
-  "/content",
-  createProxyMiddleware({
-    target: process.env.CONTENT_SERVICE_URL,
-    changeOrigin: true,
-  })
-);
+// Middleware: CORS and JSON parsing
+app.use(cors());
+app.use(express.json());
 
-app.use(
-  "/progress",
-  createProxyMiddleware({
-    target: process.env.PROGRESS_SERVICE_URL,
-    changeOrigin: true,
-  })
-);
+// app.use((req, res, next) => {
+//   logger.info(`${req.method} ${req.path}`, {
+//     ip: req.ip,
+//     userAgent: req.headers["user-agent"],
+//   });
+//   next();
+// });
 
+// Health check endpoints (public - no auth needed)
 app.get("/health", (req, res) => {
-  console.log("Health check endpoint accessed");
-  res.status(200).json({ status: "ok" });
+  logger.debug("Health check endpoint accessed");
+  res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-app.listen(process.env.PORT, () => {
-  console.log(`Gateway running on port ${process.env.PORT}`);
+// Selective JWT Middleware - validates tokens for protected routes, allows public auth endpoints
+const selectiveJwtMiddleware = (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+) => {
+  // Public auth endpoints that don't require JWT
+  const publicAuthEndpoints = [
+    "/register",
+    "/login",
+    "/logout",
+    "/create-child-profile",
+    "/login-child",
+    "/verify-token",
+  ];
+  const isPublicAuth = publicAuthEndpoints.some(
+    (ep) => req.path === `/api/auth${ep}` || req.path === ep,
+  );
+
+  if (isPublicAuth) {
+    logger.debug("Skipping JWT validation for public auth endpoint", {
+      path: req.path,
+    });
+    return next(); // Skip JWT validation for public endpoints
+  }
+
+  logger.debug("Applying JWT validation", { path: req.path });
+  // Apply JWT validation for protected routes
+  jwtMiddleware(req, res, next);
+};
+
+app.use(selectiveJwtMiddleware);
+
+// Auth routes (public endpoints are open, protected endpoints require JWT)
+app.use("/api/auth", authRoutes);
+
+/**
+ * Progress service Routes (Protected)
+ */
+app.use("/api", progressRoutes);
+
+
+/**
+ * Content Service Routes (Protected)
+ * Forwards requests to content service for stories, roadmaps, worlds, challenges, age-groups, themes
+ */
+app.use("/api", contentRoutes);
+
+// 404 handler
+app.use((req, res) => {
+  logger.warn("Route not found", {
+    path: req.path,
+    method: req.method,
+  });
+  res.status(404).json({ error: "Route not found" });
+});
+
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  logger.info(`Gateway running on port ${PORT}`, {
+    nodeEnv: process.env.NODE_ENV,
+  });
 });

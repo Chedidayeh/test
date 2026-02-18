@@ -42,7 +42,9 @@ export function FilterBar({
   className,
 }: FilterBarProps) {
   return (
-    <div className={cn("flex flex-col sm:flex-row gap-3 items-center", className)}>
+    <div
+      className={cn("flex flex-col sm:flex-row gap-3 items-center", className)}
+    >
       {/* Search */}
       <div className="relative flex-1">
         <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
@@ -50,14 +52,23 @@ export function FilterBar({
           placeholder={searchPlaceholder}
           value={searchValue}
           onChange={(e) => onSearchChange?.(e.target.value)}
-          className="pl-10 bg-white border-slate-200"
+          className="pl-10  w-96 bg-white"
         />
       </div>
+
+      {/* Clear Button */}
+      {isFiltered && onClear && (
+        <Button variant="outline" size="sm" onClick={onClear} className="gap-1">
+          <X className="w-4 h-4" />
+          Clear
+        </Button>
+      )}
+
 
       {/* Filters */}
       {filters.map((filter, idx) => (
         <Select key={idx} value={filter.value} onValueChange={filter.onChange}>
-          <SelectTrigger className="w-full sm:w-40 bg-white border-slate-200">
+          <SelectTrigger className="w-full sm:w-52 bg-white">
             <SelectValue placeholder={filter.label} />
           </SelectTrigger>
           <SelectContent>
@@ -69,19 +80,6 @@ export function FilterBar({
           </SelectContent>
         </Select>
       ))}
-
-      {/* Clear Button */}
-      {isFiltered && onClear && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onClear}
-          className="gap-1"
-        >
-          <X className="w-4 h-4" />
-          Clear
-        </Button>
-      )}
     </div>
   );
 }

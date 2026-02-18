@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -26,14 +27,23 @@ export interface Column<T> {
   width?: string;
 }
 
+export interface PaginationData {
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+}
+
 interface DataTableProps<T> {
   columns: Column<T>[];
   data: T[];
   title?: string;
   description?: string;
-  itemsPerPage?: number;
+  pagination?: PaginationData;
   actions?: (row: T) => React.ReactNode;
   onRowClick?: (row: T) => void;
+  onPageChange?: (newPage: number) => void;
+  isLoading?: boolean;
   emptyMessage?: string;
   className?: string;
 }
@@ -43,20 +53,21 @@ export function DataTable<T extends { id?: string | number }>({
   data,
   title,
   description,
-  itemsPerPage = 10,
+  pagination,
   actions,
   onRowClick,
+  onPageChange,
+  isLoading = false,
   emptyMessage = "No data found",
   className,
 }: DataTableProps<T>) {
-  const [currentPage, setCurrentPage] = useState(0);
   const [sortConfig, setSortConfig] = useState<{
     key: keyof T;
     direction: "asc" | "desc";
   } | null>(null);
 
   // Sort data
-  let sortedData = [...data];
+  const sortedData = [...data];
   if (sortConfig) {
     sortedData.sort((a, b) => {
       const aValue = a[sortConfig.key];
@@ -68,12 +79,8 @@ export function DataTable<T extends { id?: string | number }>({
     });
   }
 
-  // Paginate
-  const totalPages = Math.ceil(sortedData.length / itemsPerPage);
-  const paginatedData = sortedData.slice(
-    currentPage * itemsPerPage,
-    (currentPage + 1) * itemsPerPage
-  );
+  // Use server-side pagination if provided, otherwise use data as-is
+  const paginatedData = sortedData;
 
   const handleSort = (key: keyof T) => {
     setSortConfig((prev) => {
@@ -87,30 +94,39 @@ export function DataTable<T extends { id?: string | number }>({
     });
   };
 
+  const totalPages = pagination ? Math.ceil(pagination.total / pagination.pageSize) : 1;
+  const currentPage = pagination?.page ?? 1;
+
+  const handlePageChange = (newPage: number) => {
+    if (onPageChange) {
+      onPageChange(newPage);
+    }
+  };
+
   return (
     <div className={cn("space-y-4", className)}>
       {/* Header */}
       {(title || description) && (
         <div>
-          {title && <h2 className="text-lg font-semibold text-slate-900">{title}</h2>}
+          {title && <h2 className="text-lg font-semibold ">{title}</h2>}
           {description && (
-            <p className="text-sm text-slate-600 mt-1">{description}</p>
+            <p className="text-sm text-slate-500 mt-1">{description}</p>
           )}
         </div>
       )}
 
       {/* Table */}
-      <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
+      <div className="border  rounded-lg overflow-hidden bg-card">
         <Table>
           <TableHeader>
-            <TableRow className="bg-slate-50 border-b border-slate-200 hover:bg-slate-50">
+            <TableRow className=" border-b ">
               {columns.map((column) => (
                 <TableHead
                   key={String(column.key)}
                   style={{ width: column.width }}
                   className={cn(
-                    "font-semibold text-slate-900 text-xs uppercase tracking-wide",
-                    column.sortable && "cursor-pointer hover:bg-slate-100"
+                    "font-semibold  text-xs uppercase tracking-wide",
+                    column.sortable && "cursor-pointer"
                   )}
                   onClick={() =>
                     column.sortable && handleSort(column.key)
@@ -126,7 +142,7 @@ export function DataTable<T extends { id?: string | number }>({
                   </div>
                 </TableHead>
               ))}
-              {actions && <TableHead className="w-20 text-xs uppercase tracking-wide text-slate-900 font-semibold">Actions</TableHead>}
+              {actions && <TableHead className="w-20 text-xs uppercase tracking-wide  font-semibold">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -143,13 +159,13 @@ export function DataTable<T extends { id?: string | number }>({
               paginatedData.map((row, idx) => (
                 <TableRow
                   key={`${row.id || idx}`}
-                  className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer"
+                  className="border-b hover:bg-primary/20 cursor-pointer"
                   onClick={() => onRowClick?.(row)}
                 >
                   {columns.map((column) => (
                     <TableCell
                       key={String(column.key)}
-                      className="text-sm text-slate-700"
+                      className="text-sm"
                     >
                       {column.render
                         ? column.render(row[column.key], row)
@@ -172,44 +188,44 @@ export function DataTable<T extends { id?: string | number }>({
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {pagination && totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <div className="text-sm text-slate-600">
-            Page {currentPage + 1} of {totalPages} ({sortedData.length} total)
+          <div className="text-sm text-slate-500">
+            Page {currentPage} of {totalPages} ({pagination.total} total)
           </div>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setCurrentPage(0)}
-              disabled={currentPage === 0}
+              onClick={() => handlePageChange(1)}
+              disabled={currentPage === 1 || isLoading}
             >
               <ChevronsLeft className="w-4 h-4" />
             </Button>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
-              disabled={currentPage === 0}
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1 || isLoading}
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <span className="text-sm font-medium text-slate-900 w-8 text-center">
-              {currentPage + 1}
+            <span className="text-sm font-medium  w-8 text-center">
+              {currentPage}
             </span>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
-              disabled={currentPage === totalPages - 1}
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages || !pagination.hasMore || isLoading}
             >
               <ChevronRight className="w-4 h-4" />
             </Button>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setCurrentPage(totalPages - 1)}
-              disabled={currentPage === totalPages - 1}
+              onClick={() => handlePageChange(totalPages)}
+              disabled={currentPage === totalPages || isLoading}
             >
               <ChevronsRight className="w-4 h-4" />
             </Button>

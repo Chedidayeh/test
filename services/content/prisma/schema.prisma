@@ -1,0 +1,200 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Age Group: Defines target audience for content
+model AgeGroup {
+  id     String @id @default(cuid())
+  name   String @unique // e.g., "6-7 years", "8-9 years"
+  minAge Int
+  maxAge Int
+
+  roadmaps Roadmap[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Theme {
+  id   String @id @default(cuid())
+  name String @unique // e.g., "Adventure", "Mystery", "Fantasy"
+
+  roadmap Roadmap?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Roadmap: Fixed progression graph for an age group
+model Roadmap {
+  id         String   @id @default(cuid())
+  ageGroupId String
+  ageGroup   AgeGroup @relation(fields: [ageGroupId], references: [id], onDelete: Cascade)
+
+  themeId    String @unique
+  theme      Theme    @relation(fields: [themeId], references: [id])
+
+  worlds World[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ageGroupId])
+}
+
+// World: Collection of related stories within a roadmap
+model World {
+  id        String  @id @default(cuid())
+  roadmapId String
+  roadmap   Roadmap @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+
+  name              String
+  description       String?
+  imageUrl          String?
+  order             Int // Order in roadmap
+  locked            Boolean @default(true) // Locked until previous world completed
+  requiredStarCount Int     @default(0) // Stars needed to unlock
+
+  stories Story[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([roadmapId])
+}
+
+// Story: Individual story within a world
+model Story {
+  id      String @id @default(cuid())
+  worldId String
+  world   World  @relation(fields: [worldId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String?
+  difficulty  Int // 1-5 difficulty scale
+  isMandatory Boolean @default(true) // Required to complete world
+  order       Int // Order in world
+
+  chapters Chapter[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([worldId])
+}
+
+// Chapter: Sections of a story with reading content and challenges
+model Chapter {
+  id      String @id @default(cuid())
+  storyId String
+  story   Story  @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  title    String
+  content  String // Reading content (text)
+  imageUrl String?
+  audioUrl String?
+  order    Int // Order in story
+
+  challenge Challenge?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([storyId])
+}
+
+// Challenge Types enumeration
+enum ChallengeType {
+  MULTIPLE_CHOICE // Pick one from options
+  TRUE_FALSE // True or False
+  RIDDLE // Meaning-based riddle
+  CHOOSE_ENDING // Select the right story ending
+  MORAL_DECISION // Character choice question
+}
+
+// Challenge: Questions/riddles within chapters
+model Challenge {
+  id        String  @id @default(cuid())
+  chapterId String  @unique
+  chapter   Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  type        ChallengeType
+  question    String
+  description String?
+  maxAttempts Int           @default(4) // Max attempts before auto-reveal
+  baseStars   Int           @default(20) // Base stars for solving
+  order       Int // Order in chapter
+  hints       String[] // Array of hints for the challenge
+
+  answers Answer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([chapterId])
+}
+
+// Answer: Possible answers for challenges
+model Answer {
+  id          String    @id @default(cuid())
+  challengeId String
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  text      String // Answer text
+  isCorrect Boolean // Is this the correct answer?
+  order     Int? // For multiple choice option ordering
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([challengeId])
+}
+
+// Level: XP thresholds for leveling system
+model Level {
+  id            String @id @default(cuid())
+  levelNumber   Int    @unique
+  requiredStars Int // Total stars needed to reach this level
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Milestone: Achievements tracked in the game
+model Milestone {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String?
+  type        String // e.g., "first_story", "first_world", "chapters_count", etc.
+
+  badges Badge[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Badge: Reward for achieving milestones
+model Badge {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  iconUrl     String?
+  milestoneId String
+  milestone   Milestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([milestoneId])
+}

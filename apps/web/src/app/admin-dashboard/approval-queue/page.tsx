@@ -36,13 +36,13 @@ export default function ApprovalQueuePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Approval Queue</h1>
-        <p className="text-slate-600 mt-1">Review and approve pending content</p>
+        <h1 className="text-2xl font-bold ">Approval Queue</h1>
+        <p className="text-slate-500 mt-1">Review and approve pending content</p>
       </div>
 
       {pendingApprovals.length === 0 ? (
         <Card className="p-12 text-center">
-          <p className="text-slate-600">No pending approvals</p>
+          <p className="text-slate-500">No pending approvals</p>
         </Card>
       ) : (
         <div className="space-y-4">
@@ -50,14 +50,14 @@ export default function ApprovalQueuePage() {
             <Card key={item.id} className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-900">
+                  <h3 className="text-lg font-semibold ">
                     {item.itemTitle}
                   </h3>
                   <div className="flex items-center gap-3 mt-2">
                     <Badge variant="secondary" className="capitalize">
                       {item.itemType}
                     </Badge>
-                    <span className="text-sm text-slate-600">
+                    <span className="text-sm text-slate-500">
                       Submitted by {item.submittedBy}
                     </span>
                     <span className="text-sm text-slate-500">
@@ -71,20 +71,20 @@ export default function ApprovalQueuePage() {
               <div className="bg-slate-50 rounded-lg p-4 mb-4 max-h-40 overflow-y-auto">
                 {item.itemType === "story" && (
                   <div>
-                    <p className="text-sm font-medium text-slate-900 mb-2">
+                    <p className="text-sm font-medium  mb-2">
                       {item.preview.title}
                     </p>
-                    <p className="text-sm text-slate-600 line-clamp-3">
+                    <p className="text-sm text-slate-500 line-clamp-3">
                       {item.preview.description}
                     </p>
                   </div>
                 )}
                 {item.itemType === "riddle" && (
                   <div>
-                    <p className="text-sm text-slate-900 mb-2">
+                    <p className="text-sm  mb-2">
                       {item.preview.question}
                     </p>
-                    <p className="text-sm text-slate-600">
+                    <p className="text-sm text-slate-500">
                       Answer: {item.preview.correctAnswer}
                     </p>
                   </div>

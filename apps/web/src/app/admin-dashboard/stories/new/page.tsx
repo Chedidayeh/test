@@ -29,7 +29,7 @@ export default function NewStoryPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col  gap-4">
         <Link href="/admin-dashboard/stories">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -37,8 +37,8 @@ export default function NewStoryPage() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Create New Story</h1>
-          <p className="text-slate-600 mt-1">
+          <h1 className="text-2xl font-bold ">Create New Story</h1>
+          <p className="text-slate-500 mt-1">
             Add a new story to the platform
           </p>
         </div>

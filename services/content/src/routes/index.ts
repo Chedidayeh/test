@@ -1,0 +1,19 @@
+import { Router } from "express";
+import storyRoutes from "./story.routes";
+import roadmapRoutes from "./roadmap.routes";
+import worldRoutes from "./world.routes";
+import ageGroupRoutes from "./age-group.routes";
+import themeRoutes from "./theme.routes";
+import challengeRoutes from "./challenge.routes";
+
+const router = Router();
+
+// Mount all routes under /api prefix
+router.use("/stories", storyRoutes);
+router.use("/roadmaps", roadmapRoutes);
+router.use("/worlds", worldRoutes);
+router.use("/age-groups", ageGroupRoutes);
+router.use("/themes", themeRoutes);
+router.use("/challenges", challengeRoutes);
+
+export default router;

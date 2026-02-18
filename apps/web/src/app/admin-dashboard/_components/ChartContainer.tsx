@@ -19,10 +19,10 @@ export function ChartContainer({
   return (
     <Card className={cn("p-6", className)}>
       {(title || description) && (
-        <div className="mb-6">
-          {title && <h3 className="font-semibold text-slate-900">{title}</h3>}
+        <div className="mb-2">
+          {title && <h3 className="font-medium">{title}</h3>}
           {description && (
-            <p className="text-sm text-slate-600 mt-1">{description}</p>
+            <p className="text-sm text-slate-500 mt-1">{description}</p>
           )}
         </div>
       )}

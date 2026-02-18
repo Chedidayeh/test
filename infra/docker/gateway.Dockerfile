@@ -16,7 +16,7 @@ COPY services/gateway/tsconfig.json ./
 RUN npm run build
 
 # Expose port
-EXPOSE 3000
+EXPOSE 3001
 
 
 # Start service

@@ -1,0 +1,166 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Child Profile: Game state for each child
+model ChildProfile {
+  id         String @id @default(cuid())
+  childId    String @unique // Reference to auth service Child.id
+  ageGroupId String // Reference to content service AgeGroup.id
+
+  currentLevel Int @default(1)
+  totalStars   Int @default(0)
+
+  progress Progress[]
+  sessions Session[]
+  starEvents StarEvent[]
+  challengeAttempts ChallengeAttempt[]
+  badges   ChildBadge[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([childId])
+}
+
+// Progress: Tracks child's progression through story content
+model Progress {
+  id             String       @id @default(cuid())
+  childProfileId String
+  childProfile   ChildProfile @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
+
+  // References to content service (string IDs only - no direct FK)
+  roadmapId String
+  worldId   String
+  storyId   String
+  chapterId String
+
+  status String @default("not_started") // "not_started", "in_progress", "completed"
+
+  // Attempt tracking
+  timesCompleted Int @default(0)
+  timesReplayed  Int @default(0)
+
+  // Performance
+  correctAnswers Int @default(0)
+  totalAnswers   Int @default(0)
+
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Each child tracks progress on each chapter once
+  @@unique([childProfileId, chapterId])
+  @@index([childProfileId])
+  @@index([storyId])
+  @@index([chapterId])
+}
+
+// Session: Individual game session
+model Session {
+  id             String       @id @default(cuid())
+  childProfileId String
+  childProfile   ChildProfile @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
+
+  // References to content service
+  storyId   String
+  chapterId String
+
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+
+  // Rewards earned in this session
+  starsEarned Int @default(0) // 1-3 stars based on performance
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([childProfileId])
+  @@index([chapterId])
+}
+
+// Star Events: Detailed tracking of star gains
+model StarEvent {
+  id             String       @id @default(cuid())
+  childProfileId String
+  childProfile   ChildProfile @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
+
+  // Reference to content service
+  challengeId String
+
+  // Stars breakdown
+  baseStars     Int @default(0)
+  noHintBonus   Int @default(0) // +stars if solved without hints
+  firstTryBonus Int @default(0) // +stars if solved on first attempt
+  totalStars    Int // baseStars + bonuses
+
+  // Challenge attempt info
+  attemptNumber Int
+  usedHints     Boolean @default(false)
+  wasCorrect    Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([childProfileId])
+  @@index([challengeId])
+}
+
+// Challenge Attempt: Detailed tracking of each challenge attempt with answer and time
+model ChallengeAttempt {
+  id             String       @id @default(cuid())
+  childProfileId String
+  childProfile   ChildProfile @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
+
+  // References to content service
+  challengeId String
+  answerId    String? // For multiple choice / riddle - reference to Answer.id
+
+  // Answer data
+  textAnswer String? // For short answer challenges - user's free text input
+  isCorrect  Boolean @default(false)
+
+  // Attempt tracking
+  attemptNumber Int
+  usedHints     Boolean @default(false)
+
+  // Time tracking (in seconds)
+  timeSpentSeconds Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([childProfileId])
+  @@index([challengeId])
+  @@index([answerId])
+}
+
+// Child Badge: Track earned badges for each child
+model ChildBadge {
+  id             String       @id @default(cuid())
+  childProfileId String
+  childProfile   ChildProfile @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
+
+  // Reference to content service Badge.id
+  badgeId String
+
+  earnedAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([childProfileId, badgeId])
+  @@index([childProfileId])
+}

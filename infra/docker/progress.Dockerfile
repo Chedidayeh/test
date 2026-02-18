@@ -16,7 +16,7 @@ COPY services/progress/tsconfig.json ./
 RUN npm run build
 
 # Expose port
-EXPOSE 3002
+EXPOSE 3004
 
 
 # Start service

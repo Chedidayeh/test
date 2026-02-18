@@ -4,11 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BookOpen, Home, Users, Library, LogIn } from "lucide-react";
 import { useState } from "react";
-import Login from "@/src/components/shared/login";
-import { ModeToggle } from "@/src/components/ModeToggle";
+import { ModeToggle } from "@/src/components/shared/ModeToggle";
+import { Session } from "next-auth";
+import Profile from "@/src/components/shared/Profile";
+import { LoginForm } from "@/src/components/shared/login-form";
 
-const ChildDashboardHeader = () => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+const Header = ({ session  }: { session: Session | null }) => {
   const pathname = usePathname();
 
   const navItems = [
@@ -32,6 +33,8 @@ const ChildDashboardHeader = () => {
   const isActive = (href: string) => {
     return pathname === href || pathname.startsWith(href + "/");
   };
+
+  const user = session?.user;
 
   return (
     <>
@@ -67,7 +70,10 @@ const ChildDashboardHeader = () => {
                           const el = document.getElementById(id);
                           const headerOffset = 80; // approximate sticky header height
                           if (el) {
-                            const y = el.getBoundingClientRect().top + window.scrollY - headerOffset;
+                            const y =
+                              el.getBoundingClientRect().top +
+                              window.scrollY -
+                              headerOffset;
                             window.scrollTo({ top: y, behavior: "smooth" });
                           } else {
                             // fallback: set hash
@@ -96,7 +102,7 @@ const ChildDashboardHeader = () => {
 
             {/* Right - Login component (fixed to the far right) */}
             <div className="flex-shrink-0 flex items-center gap-2">
-              <Login />
+              {user ? <Profile session={session} /> : <LoginForm />}{" "}
               <ModeToggle />
             </div>
           </div>
@@ -106,4 +112,4 @@ const ChildDashboardHeader = () => {
   );
 };
 
-export default ChildDashboardHeader;
+export default Header;

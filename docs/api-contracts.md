@@ -13,25 +13,40 @@
 {
   "email": "parent@example.com",
   "password": "SecurePassword123!",
-  "role": "parent"
+  "name": "Parent Name"
 }
 ```
 
-**Response (201 Created) :**
+**Response (201 Created):**
 ```json
 {
-  "userId": "user-123-uuid",
-  "email": "parent@example.com",
-  "role": "parent",
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  "user": {
+    "id": "user-123-uuid",
+    "email": "parent@example.com",
+    "name": "Parent Name",
+    "role": "PARENT"
+  }
 }
 ```
 
-**Error (400 Bad Request) :**
+Notes:
+- The registration endpoint creates the user but does NOT issue a JWT. Authentication (JWT issuance) is handled by the login endpoint.
+
+**Errors:**
+- `400 Bad Request`: Missing/invalid fields (e.g. missing `email`, `password`, or `name`, or password too short).
+- `409 Conflict`: User already exists with the provided email.
+
+Example 400 response:
 ```json
 {
-  "error": "Email already exists",
-  "code": "EMAIL_EXISTS"
+  "error": "Missing required fields: email, password, name"
+}
+```
+
+Example 409 response:
+```json
+{
+  "error": "User already exists with this email"
 }
 ```
 
@@ -52,45 +67,40 @@
 **Response (200 OK) :**
 ```json
 {
-  "userId": "user-123-uuid",
-  "email": "parent@example.com",
-  "role": "parent",
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "user-123-uuid",
+    "email": "parent@example.com",
+    "name": "Parent Name",
+    "role": "PARENT"
+  },
   "expiresIn": 86400
 }
 ```
 
-**Error (401 Unauthorized) :**
+Notes:
+- Successful login issues a JWT (`token`) and also creates a server-side session record. The token expiry is 24 hours by default (`expiresIn: 86400`).
+
+**Error (401 Unauthorized):**
 ```json
 {
-  "error": "Invalid email or password",
-  "code": "AUTH_FAILED"
+  "error": "No account found with this email"
+}
+```
+
+or
+
+```json
+{
+  "error": "Password is incorrect, please try again"
 }
 ```
 
 ---
 
-### 1.3 Verify Google OAuth Token
+### 1.3 Google OAuth (temporarily disabled)
 
-**Endpoint :** `POST /api/auth/verify-google`
-
-**Request Body :**
-```json
-{
-  "idToken": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjEifQ..."
-}
-```
-
-**Response (200 OK) :**
-```json
-{
-  "userId": "user-456-uuid",
-  "email": "parent@gmail.com",
-  "role": "parent",
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "isNewUser": false
-}
-```
+The Google OAuth token verification endpoint has been removed from the public API surface for now. If/when OAuth is reintroduced, the contract will be updated with request/response examples and migration notes.
 
 ---
 

@@ -1,27 +1,28 @@
 import express, { Request, Response, Application } from "express";
+import cors from "cors";
 import dotenv from "dotenv";
+import contentRoutes from "./routes";
+import { logger } from "./utils/logger";
 
 // Load environment variables defined in .env file
 dotenv.config();
 
 const app: Application = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3003;
 const NODE_ENV = process.env.NODE_ENV || "development";
 
 // Middleware
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Request logging middleware (console logs)
+// Request logging middleware
 app.use((req: Request, res: Response, next) => {
-  console.log(
-    JSON.stringify({
-      timestamp: new Date().toISOString(),
-      service: "content-service",
-      message: `${req.method} ${req.path}`,
-      metadata: { method: req.method, path: req.path, ip: req.ip },
-    }),
-  );
+  logger.debug(`${req.method} ${req.path}`, {
+    method: req.method,
+    path: req.path,
+    ip: req.ip,
+  });
   next();
 });
 
@@ -31,50 +32,70 @@ app.use((req: Request, res: Response, next) => {
  */
 app.get("/health", (req: Request, res: Response) => {
   const healthStatus = {
-    status: "healthy",
+    status: "ok",
     service: "content-service",
     timestamp: new Date().toISOString(),
     environment: NODE_ENV,
+    uptime: process.uptime(),
   };
-  console.log(
-    JSON.stringify({
-      timestamp: new Date().toISOString(),
-      service: "content-service",
-      message: "Health check",
-      metadata: healthStatus,
-    }),
-  );
+  logger.debug("Health check", healthStatus);
   res.status(200).json(healthStatus);
 });
 
 /**
- * TODO: Implement story endpoints
+ * API Routes (mounted at /api)
+ * Routes:
+ * - GET /api/stories
+ * - GET /api/stories/:id
+ * - GET /api/stories/world/:worldId
+ * - GET /api/stories/count
+ * - GET /api/roadmaps
+ * - GET /api/roadmaps/:id
+ * - GET /api/roadmaps/age-group/:ageGroupId
+ * - GET /api/worlds
+ * - GET /api/worlds/:id
+ * - GET /api/worlds/roadmap/:roadmapId
+ * - GET /api/age-groups
+ * - GET /api/age-groups/:id
+ * - GET /api/challenges
+ * - GET /api/challenges/:id
+ * - GET /api/challenges/chapter/:chapterId
  */
+app.use("/api", contentRoutes);
+
+// 404 handler
+app.use((req: Request, res: Response) => {
+  logger.warn("Route not found", { path: req.path, method: req.method });
+  res.status(404).json({
+    success: false,
+    error: "Endpoint not found",
+    path: req.path,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// Global error handler
+app.use((err: any, req: Request, res: Response, next: express.NextFunction) => {
+  logger.error("Unhandled error", {
+    error: String(err),
+    path: req.path,
+    stack: err.stack,
+  });
+  res.status(err.status || 500).json({
+    success: false,
+    error: "Internal server error",
+    timestamp: new Date().toISOString(),
+  });
+});
 
 /**
  * Start server
  */
 app.listen(PORT, () => {
-  console.log(
-    JSON.stringify({
-      timestamp: new Date().toISOString(),
-      service: "content-service",
-      message: "Content Service started successfully",
-      metadata: { port: PORT, environment: NODE_ENV },
-    }),
-  );
-
-  console.log(
-    JSON.stringify({
-      timestamp: new Date().toISOString(),
-      service: "content-service",
-      message: "Available endpoints:",
-      metadata: {
-        health: `GET http://localhost:${PORT}/health`,
-        root: `GET http://localhost:${PORT}/`,
-      },
-    }),
-  );
+  logger.info("Content Service started successfully", {
+    port: PORT,
+    environment: NODE_ENV,
+  });
 });
 
 export default app;

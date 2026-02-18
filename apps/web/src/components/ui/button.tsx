@@ -13,7 +13,7 @@ const buttonVariants = cva(
         default:
           "bg-gradient-to-r text-white bg-primary hover:bg-primary/90 rounded-2xl  transform hover:-translate-y-0.5",
         destructive:
-          "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+          "bg-destructive rounded-2xl text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
         accent:
           "bg-accent rounded-2xl text-white hover:bg-accent/90 focus-visible:ring-accent/20 dark:focus-visible:ring-accent/40",
           outline:
@@ -21,7 +21,7 @@ const buttonVariants = cva(
         secondary:
           "bg-secondary text-white hover:bg-secondary/90 rounded-2xl shadow-sm",
         ghost:
-          "bg-transparent hover:bg-white/10 hover:text-white dark:hover:bg-accent/20 rounded-lg",
+          "bg-transparent hover:bg-primary/60 hover:text-white rounded-2xl",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

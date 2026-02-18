@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,48 +28,77 @@ import {
   FieldLabel,
 } from "@/src/components/ui/field";
 import { Checkbox } from "@/src/components/ui/checkbox";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/src/components/ui/select";
+import {
+  AGE_GROUPS,
+  STORY_GENRES,
+} from "../../../../../packages/shared/data";
+import { Session } from "next-auth";
 
-export default function ParentOnboarding() {
+export default function ParentOnboarding({ session }: { session: Session | null }) {
+  const user = session!.user;
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    parent: {},
+  const [formData, setFormData] = useState<{
+    parent: { parentName?: string; parentEmail?: string };
+    childBasic: { childName?: string; childAge?: string };
+    childPreferences: { favoriteGenres?: string[] };
+  }>({
+    parent: { parentName: user?.name ?? "", parentEmail: user?.email ?? "" },
     childBasic: {},
     childPreferences: {},
   });
 
   // Step 1: Parent Info Form
   const parentForm = useForm({
-    defaultValues: { parentName: "", parentEmail: "" },
+    defaultValues: { parentName: user.name, parentEmail: user.email },
   });
 
   // Step 2: Child Basic Info
+  const childBasicSchema = z.object({
+    childName: z.string().min(1, "Child name is required"),
+    childAge: z
+      .string()
+      .min(1, "Please select an age group for your child")
+      .refine((v) => (AGE_GROUPS as readonly string[]).includes(v), {
+        message: "Selected age group is invalid",
+      }),
+  });
+
   const childBasicForm = useForm({
+    resolver: zodResolver(childBasicSchema),
     defaultValues: { childName: "", childAge: "" },
   });
 
   // Step 3: Child Preferences
-  const childPreferencesForm = useForm({
-    defaultValues: { favoriteGenres: [], readingLevel: "" },
+  const childPreferencesSchema = z.object({
+    favoriteGenres: z
+      .array(z.enum(STORY_GENRES as unknown as [string, ...string[]]))
+      .min(1, "Select at least one genre"),
   });
 
-  const genres = [
-    "Adventure",
-    "Fantasy",
-    "Mystery",
-    "Science Fiction",
-    "Fairy Tales",
-    "Educational",
-  ];
-  const ageGroups = [
-    "3-5 years",
-    "6-8 years",
-    "9-11 years",
-    "12-14 years",
-    "15+ years",
-  ];
-  const readingLevels = ["Beginner", "Intermediate", "Advanced", "Proficient"];
+  const childPreferencesForm = useForm({
+    resolver: zodResolver(childPreferencesSchema),
+    defaultValues: { favoriteGenres: [] },
+  });
+
+  const genreOptions = STORY_GENRES.map((g) => ({
+    value: g,
+    label: g
+      .split("-")
+      .map((s) => s[0].toUpperCase() + s.slice(1))
+      .join(" "),
+  }));
+
+  // Use shared runtime data arrays
+  const ageGroups = AGE_GROUPS;
 
   const onParentSubmit = async (data: any) => {
     setFormData({ ...formData, parent: data });
@@ -88,13 +118,46 @@ export default function ParentOnboarding() {
   const handleFinalSubmit = async () => {
     setIsLoading(true);
     try {
-      // TODO: Send formData to API endpoint
-      console.log("Final onboarding data:", formData);
-      toast.success("Onboarding completed successfully!");
-      // Redirect to dashboard or home
-      setTimeout(() => router.push("/dashboard"), 1000);
-    } catch {
-      toast.error("An error occurred during onboarding");
+      // Validate required data
+      if (!formData.parent.parentEmail || !formData.childBasic.childName || !formData.childBasic.childAge) {
+        toast.error("Missing required information");
+        setIsLoading(false);
+        return;
+      }
+
+      // Prepare request payload
+      const payload = {
+        parentEmail: formData.parent.parentEmail,
+        name: formData.childBasic.childName,
+        ageGroup: formData.childBasic.childAge,
+        favoriteGenres: formData.childPreferences.favoriteGenres,
+      };
+
+      // Send to auth service
+      const response = await fetch("/api/auth/create-child-profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create child profile");
+      }
+
+      const result = await response.json();
+      console.log("Child profile created successfully:", result);
+      
+      toast.success("Child profile created successfully!");
+      
+      // Redirect to parent dashboard after a short delay
+      setTimeout(() => router.push("/parent-dashboard"));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "An error occurred during onboarding";
+      toast.error(message);
+      console.error("Onboarding error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -201,6 +264,8 @@ export default function ParentOnboarding() {
                     <Input
                       id="parentName"
                       placeholder="John Doe"
+                      disabled
+                      className=""
                       {...parentForm.register("parentName")}
                     />
                     {parentForm.formState.errors.parentName && (
@@ -215,6 +280,7 @@ export default function ParentOnboarding() {
                     <Input
                       id="parentEmail"
                       type="email"
+                      disabled
                       placeholder="you@example.com"
                       {...parentForm.register("parentEmail")}
                     />
@@ -272,18 +338,24 @@ export default function ParentOnboarding() {
 
                   <Field>
                     <FieldLabel htmlFor="childAge">Age Group</FieldLabel>
-                    <select
-                      id="childAge"
-                      className="w-full px-3 py-2 border rounded-md bg-background"
-                      {...childBasicForm.register("childAge")}
-                    >
-                      <option value="">Select an age group</option>
-                      {ageGroups.map((age) => (
-                        <option key={age} value={age}>
-                          {age}
-                        </option>
-                      ))}
-                    </select>
+                    <Controller
+                      control={childBasicForm.control}
+                      name="childAge"
+                      render={({ field }) => (
+                        <Select value={field.value ?? undefined} onValueChange={field.onChange}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select an age group" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ageGroups.map((age) => (
+                              <SelectItem key={age} value={age}>
+                                {age}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                     {childBasicForm.formState.errors.childAge && (
                       <FieldDescription className="text-destructive">
                         {childBasicForm.formState.errors.childAge.message}
@@ -327,20 +399,34 @@ export default function ParentOnboarding() {
                     <FieldDescription className="mb-3">
                       Select all that apply
                     </FieldDescription>
-                    <div className="space-y-2 grid grid-cols-3">
-                      {genres.map((genre) => (
-                        <div key={genre} className="flex items-center gap-2">
-                          <Checkbox
-                            id={genre}
-                            {...childPreferencesForm.register("favoriteGenres")}
-                            value={genre}
-                          />
-                          <label htmlFor={genre} className="cursor-pointer">
-                            {genre}
-                          </label>
+                    <Controller
+                      control={childPreferencesForm.control}
+                      name="favoriteGenres"
+                      render={({ field }) => (
+                        <div className="space-y-2 grid grid-cols-3">
+                          {genreOptions.map((g) => {
+                            const checked = Array.isArray(field.value) && field.value.includes(g.value);
+                            return (
+                              <div key={g.value} className="flex items-center gap-2">
+                                <Checkbox
+                                  id={g.value}
+                                  checked={checked}
+                                  onCheckedChange={(val) => {
+                                    const next = new Set(field.value || []);
+                                    if (val) next.add(g.value);
+                                    else next.delete(g.value);
+                                    field.onChange(Array.from(next));
+                                  }}
+                                />
+                                <label htmlFor={g.value} className="cursor-pointer">
+                                  {g.label}
+                                </label>
+                              </div>
+                            );
+                          })}
                         </div>
-                      ))}
-                    </div>
+                      )}
+                    />
                     {childPreferencesForm.formState.errors.favoriteGenres && (
                       <FieldDescription className="text-destructive">
                         {
@@ -351,31 +437,7 @@ export default function ParentOnboarding() {
                     )}
                   </Field>
 
-                  <Field>
-                    <FieldLabel htmlFor="readingLevel">
-                      Reading Level
-                    </FieldLabel>
-                    <select
-                      id="readingLevel"
-                      className="w-full px-3 py-2 border rounded-md bg-background"
-                      {...childPreferencesForm.register("readingLevel")}
-                    >
-                      <option value="">Select a reading level</option>
-                      {readingLevels.map((level) => (
-                        <option key={level} value={level}>
-                          {level}
-                        </option>
-                      ))}
-                    </select>
-                    {childPreferencesForm.formState.errors.readingLevel && (
-                      <FieldDescription className="text-destructive">
-                        {
-                          childPreferencesForm.formState.errors.readingLevel
-                            .message
-                        }
-                      </FieldDescription>
-                    )}
-                  </Field>
+                  {/* Reading level removed — handled later or by defaults */}
                 </FieldGroup>
 
                 <div className="flex gap-3 mt-8">
@@ -405,28 +467,18 @@ export default function ParentOnboarding() {
                 transition={{ duration: 0.3 }}
                 className="text-center"
               >
-                <h2 className="text-2xl font-bold mb-2">
+                <h2 className="text-2xl font-medium mb-2">
                   Welcome to Readly, {formData.parent.parentName}!
                 </h2>
                 <p className="text-muted-foreground mb-4">
                   We&apos;ve set up a personalized experience for{" "}
-                  <span className="font-semibold text-foreground">
+                  <span className="font-medium text-foreground">
                     {formData.childBasic.childName}
                   </span>
                   . Let&apos;s explore amazing stories together!
                 </p>
 
-                <Card className="bg-primary/5 border-primary/20 mb-6">
-                  <CardContent className="pt-6">
-                    <p className="text-sm">
-                      <strong>Age Group:</strong> {formData.childBasic.childAge}
-                    </p>
-                    <p className="text-sm mt-2">
-                      <strong>Reading Level:</strong>{" "}
-                      {formData.childPreferences.readingLevel}
-                    </p>
-                  </CardContent>
-                </Card>
+
 
                 <div className="flex gap-3 mt-8">
                   <Button
@@ -441,7 +493,7 @@ export default function ParentOnboarding() {
 
                   <Button
                     type="submit"
-                    onClick={() => router.push("/parent-dashboard")}
+                    onClick={handleFinalSubmit}
                     className="flex-1"
                   >
                     {isLoading ? "Setting up..." : "Start Exploring"}

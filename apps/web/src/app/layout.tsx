@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Fredoka } from "next/font/google";
 import "./globals.css";
+import { LoginProvider } from "@/src/providers/login-provider";
 import NextTopLoader from "nextjs-toploader";
-import { ThemeProvider } from "../components/theme-provider";
+import { ThemeProvider } from "../providers/theme-provider";
+import { SessionProvider } from "next-auth/react";
+import { Toaster } from "../components/ui/sonner";
 
 const fredoka = Fredoka({
   subsets: ["latin"],
@@ -34,14 +37,17 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${fredoka.className} antialiased bg-background  `}>
         <NextTopLoader color="#F59E0B" showSpinner={false} />
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
+        <SessionProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="light"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <LoginProvider>{children}</LoginProvider>
+            <Toaster />
+          </ThemeProvider>
+        </SessionProvider>
       </body>
     </html>
   );

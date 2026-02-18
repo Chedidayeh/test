@@ -46,8 +46,8 @@ export default function AdminUsersPage() {
       label: "Name",
       render: (value, row) => (
         <div>
-          <p className="font-medium text-slate-900">{value}</p>
-          <p className="text-sm text-slate-600">{row.email}</p>
+          <p className="font-medium ">{value}</p>
+          <p className="text-sm text-slate-500">{row.email}</p>
         </div>
       ),
       width: "35%",
@@ -85,14 +85,14 @@ export default function AdminUsersPage() {
     {
       key: "createdAt",
       label: "Created",
-      render: (value) => <span className="text-slate-600">{new Date(value).toLocaleDateString()}</span>,
+      render: (value) => <span className="text-slate-500">{new Date(value).toLocaleDateString()}</span>,
       width: "15%",
       sortable: true,
     },
     {
       key: "lastActive",
       label: "Last Active",
-      render: (value) => <span className="text-slate-600">{new Date(value).toLocaleDateString()}</span>,
+      render: (value) => <span className="text-slate-500">{new Date(value).toLocaleDateString()}</span>,
       width: "15%",
     },
   ];
@@ -101,8 +101,8 @@ export default function AdminUsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Admin Users</h1>
-          <p className="text-slate-600 mt-1">Manage administrator accounts and permissions</p>
+          <h1 className="text-2xl font-bold ">Admin Users</h1>
+          <p className="text-slate-500 mt-1">Manage administrator accounts and permissions</p>
         </div>
         <Button className="gap-2">
           <Plus className="w-4 h-4" />

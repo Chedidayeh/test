@@ -187,27 +187,27 @@ const Footer = () => {
                 {" "}
                 <ShieldCheck size={20} />
               </p>
-              <p className="text-xs text-slate-600">Child Safety First</p>
+              <p className="text-xs text-slate-500">Child Safety First</p>
             </div>
             <div className="flex flex-col items-center">
               <p className="text-xs text-slate-500 mb-1">
                 {" "}
                 <Lock size={20} />
               </p>
-              <p className="text-xs text-slate-600">Data Secured</p>
+              <p className="text-xs text-slate-500">Data Secured</p>
             </div>
             <div className="flex flex-col items-center">
               <p className="text-xs text-slate-500 mb-1">
                 <ShieldCheck size={20} />
               </p>
-              <p className="text-xs text-slate-600">Privacy Protected</p>
+              <p className="text-xs text-slate-500">Privacy Protected</p>
             </div>
             <div className="flex flex-col items-center">
               <p className="text-xs text-slate-500 mb-1">
                 {" "}
                 <Ban size={20} />
               </p>
-              <p className="text-xs text-slate-600">Ad-Free</p>
+              <p className="text-xs text-slate-500">Ad-Free</p>
             </div>
           </div>
         </div>

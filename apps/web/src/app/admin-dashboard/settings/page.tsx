@@ -40,13 +40,13 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
-        <p className="text-slate-600 mt-1">Manage system configuration and preferences</p>
+        <h1 className="text-2xl font-bold ">Settings</h1>
+        <p className="text-slate-500 mt-1">Manage system configuration and preferences</p>
       </div>
 
       {/* General Settings */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">General</h3>
+        <h3 className="text-lg font-semibold  mb-4">General</h3>
         <div className="space-y-4">
           <div>
             <Label htmlFor="version">App Version</Label>
@@ -62,12 +62,12 @@ export default function SettingsPage() {
 
       {/* Feature Flags */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">Features</h3>
+        <h3 className="text-lg font-semibold  mb-4">Features</h3>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <Label className="text-slate-900">AI-Generated Hints</Label>
-              <p className="text-sm text-slate-600 mt-1">
+              <Label className="">AI-Generated Hints</Label>
+              <p className="text-sm text-slate-500 mt-1">
                 Enable AI to generate contextual hints for riddles
               </p>
             </div>
@@ -81,8 +81,8 @@ export default function SettingsPage() {
 
           <div className="border-t border-slate-200 pt-4 flex items-center justify-between">
             <div>
-              <Label className="text-slate-900">Difficulty Adaptation</Label>
-              <p className="text-sm text-slate-600 mt-1">
+              <Label className="">Difficulty Adaptation</Label>
+              <p className="text-sm text-slate-500 mt-1">
                 Automatically adjust difficulty based on child performance
               </p>
             </div>
@@ -96,8 +96,8 @@ export default function SettingsPage() {
 
           <div className="border-t border-slate-200 pt-4 flex items-center justify-between">
             <div>
-              <Label className="text-slate-900">Analytics Tracking</Label>
-              <p className="text-sm text-slate-600 mt-1">
+              <Label className="">Analytics Tracking</Label>
+              <p className="text-sm text-slate-500 mt-1">
                 Track user behavior and generate insights
               </p>
             </div>
@@ -113,7 +113,7 @@ export default function SettingsPage() {
 
       {/* Game Configuration */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">Game Configuration</h3>
+        <h3 className="text-lg font-semibold  mb-4">Game Configuration</h3>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="hints">Max Hint Levels</Label>
@@ -154,12 +154,12 @@ export default function SettingsPage() {
 
       {/* Notification Settings */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">Notifications</h3>
+        <h3 className="text-lg font-semibold  mb-4">Notifications</h3>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <Label className="text-slate-900">Email Notifications</Label>
-              <p className="text-sm text-slate-600 mt-1">
+              <Label className="">Email Notifications</Label>
+              <p className="text-sm text-slate-500 mt-1">
                 Send email updates to parents about child progress
               </p>
             </div>
@@ -176,8 +176,8 @@ export default function SettingsPage() {
 
           <div className="border-t border-slate-200 pt-4 flex items-center justify-between">
             <div>
-              <Label className="text-slate-900">Weekly Reports</Label>
-              <p className="text-sm text-slate-600 mt-1">
+              <Label className="">Weekly Reports</Label>
+              <p className="text-sm text-slate-500 mt-1">
                 Generate and send weekly progress reports
               </p>
             </div>
@@ -193,7 +193,7 @@ export default function SettingsPage() {
 
       {/* API Settings */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">API Configuration</h3>
+        <h3 className="text-lg font-semibold  mb-4">API Configuration</h3>
         <div>
           <Label htmlFor="rateLimit">Rate Limit (requests/minute)</Label>
           <Input
@@ -209,7 +209,7 @@ export default function SettingsPage() {
             }
             className="mt-1"
           />
-          <p className="text-sm text-slate-600 mt-2">
+          <p className="text-sm text-slate-500 mt-2">
             Maximum API requests allowed per minute to prevent abuse
           </p>
         </div>

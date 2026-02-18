@@ -1,58 +1,169 @@
-"use client"
+"use client";
 
-import React, { useState } from "react"
-import { cn } from "@/src/lib/utils"
-import { Eye, EyeOff } from "lucide-react"
-import { Button } from "@/src/components/ui/button"
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { cn } from "@/src/lib/utils";
+import { Eye, EyeOff } from "lucide-react";
+import { Button } from "@/src/components/ui/button";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/src/components/ui/dialog";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/src/components/ui/card"
+} from "@/src/components/ui/card";
 import {
   Field,
   FieldDescription,
   FieldGroup,
   FieldLabel,
-  FieldSeparator,
-} from "@/src/components/ui/field"
-import { Input } from "@/src/components/ui/input"
+} from "@/src/components/ui/field";
+import { Input } from "@/src/components/ui/input";
+import { signIn } from "next-auth/react";
+import { toast } from "sonner";
 
-export function LoginForm({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
-  const [isSignUp, setIsSignUp] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+interface LoginFormProps extends React.ComponentProps<"div"> {
+  /** If true, don't render the built-in Dialog trigger button (use when controlling via provider) */
+  hideTrigger?: boolean;
+  /** Controlled open state for the dialog (optional) */
+  open?: boolean;
+  /** Controlled open change handler (optional) */
+  onOpenChange?: (open: boolean) => void;
+}
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    // TODO: wire up submit logic (auth API)
-    if (isSignUp) {
-      console.log("submit sign up")
-    } else {
-      console.log("submit login")
+export function LoginForm({ className, hideTrigger = false, open, onOpenChange }: LoginFormProps) {
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [name, setName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      if (isSignUp) {
+        // Signup validation
+        if (!name.trim()) {
+          throw new Error("Full name is required");
+        }
+        if (password.length < 8) {
+          throw new Error("Password must be at least 8 characters");
+        }
+        if (password !== confirmPassword) {
+          throw new Error("Passwords do not match");
+        }
+
+        // Call internal register API route (server-side forwards to gateway)
+        const registerResponse = await fetch(`/api/auth/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            password,
+            name,
+          }),
+        });
+
+        if (!registerResponse.ok) {
+          const errorData = await registerResponse
+            .json()
+            .catch(() => ({ message: "Registration failed" }));
+          setError(errorData.error || "Registration failed");
+          return;
+        }
+
+        await signIn("credentials", {
+          redirect: true,
+          email,
+          password,
+          callbackUrl: "/",
+        });
+
+        toast.success("Account created and logged in successfully!");
+      } else {
+        // Login flow: validate credentials first via server-side route
+        const validateResp = await fetch(`/api/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+
+        if (!validateResp.ok) {
+          const errData = await validateResp
+            .json()
+            .catch(() => ({ message: "Invalidd credentialss" }));
+          setError(errData.error || "Login failed");
+          return;
+        }
+
+        await signIn("credentials", {
+          redirect: true,
+          email,
+          password,
+          callbackUrl: "/",
+        });
+
+        toast.success("Logged in successfully!");
+      }
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Authentication failed";
+      setError(message);
+      console.error("[LoginForm] Auth error:", message);
+    } finally {
+      setIsLoading(false);
     }
   }
 
   return (
-    <div className={cn("flex flex-col space-y-1", className)} {...props}>
-      <Card>
-        <CardHeader className="text-center">
-          <CardTitle className="text-xl">
-            {isSignUp ? "Create an account" : "Welcome back"}
-          </CardTitle>
-          <CardDescription>
-            {isSignUp ? "Sign up with your Google account" : "Login with your Google account"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit}>
-            <FieldGroup>
-              <Field>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button id="about">Login</Button>
+        </DialogTrigger>
+      )}
+      <DialogTitle></DialogTitle>
+      <DialogContent showCloseButton={false}>
+        <div className={cn("flex flex-col space-y-1", className)}>
+          <Card>
+            <CardHeader className="text-center">
+              <CardTitle className="text-xl">
+                {isSignUp ? "Create an account" : "Welcome back"}
+              </CardTitle>
+              <CardDescription>
+                {isSignUp
+                  ? "Sign up to get started"
+                  : "Login with your email and password"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit}>
+                <FieldGroup>
+                  {error && (
+                    <div className="mb-4 p-3 bg-red-100 border text-red-700 rounded text-sm">
+                      {error}
+                    </div>
+                  )}
+
+                  {/* Google OAuth - temporarily disabled */}
+                  {/* <Field>
                 <Button variant="outline" type="button">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                     <path
@@ -66,124 +177,175 @@ export function LoginForm({
 
               <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
                 Or continue with
-              </FieldSeparator>
+              </FieldSeparator> */}
 
-              {isSignUp && (
-                <Field>
-                  <FieldLabel htmlFor="name">Full name</FieldLabel>
-                  <Input id="name" type="text" placeholder="Your name" className="bg-background" />
-                </Field>
-              )}
-
-              <Field>
-                <FieldLabel htmlFor="email">Email</FieldLabel>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  className="bg-background"
-                  required
-                />
-              </Field>
-
-              <Field>
-                <div className="flex items-center">
-                  <FieldLabel htmlFor="password">Password</FieldLabel>
-                  {!isSignUp && (
-                    <a
-                      href="#"
-                      className="ml-auto text-sm underline-offset-4 hover:underline"
-                    >
-                      Forgot your password?
-                    </a>
+                  {isSignUp && (
+                    <Field>
+                      <FieldLabel htmlFor="name">Full name</FieldLabel>
+                      <Input
+                        id="name"
+                        type="text"
+                        placeholder="Your name"
+                        className="bg-background"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        required
+                      />
+                    </Field>
                   )}
-                </div>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    required
-                    placeholder="********"
-                    className="pr-10 bg-background "
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((s) => !s)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-muted-foreground hover:bg-muted/10"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
-              </Field>
 
-              {isSignUp && (
-                <Field>
-                  <FieldLabel htmlFor="confirmPassword">Confirm password</FieldLabel>
-                  <div className="relative">
+                  <Field>
+                    <FieldLabel htmlFor="email">Email</FieldLabel>
                     <Input
-                      id="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
+                      id="email"
+                      type="email"
+                      placeholder="m@example.com"
+                      className="bg-background"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       required
-                      placeholder="********"
-                      className="pr-10 bg-background"
+                      disabled={isLoading}
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword((s) => !s)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-muted-foreground hover:bg-muted/10"
-                      aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </Field>
-              )}
+                  </Field>
 
-              <Field>
-                <Button type="submit">{isSignUp ? "Create account" : "Login"}</Button>
-                <FieldDescription className="text-center">
-                  {isSignUp ? (
-                    <>
-                      Already have an account?{' '}
+                  <Field>
+                    <div className="flex items-center">
+                      <FieldLabel htmlFor="password">Password</FieldLabel>
+                      {!isSignUp && (
+                        <a
+                          href="#"
+                          className="ml-auto text-sm underline-offset-4 hover:underline"
+                        >
+                          Forgot your password?
+                        </a>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        required
+                        placeholder="********"
+                        className="pr-10 bg-background"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        disabled={isLoading}
+                      />
                       <button
                         type="button"
-                        className="underline-offset-4 hover:underline"
-                        onClick={() => setIsSignUp(false)}
+                        onClick={() => setShowPassword((s) => !s)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-muted-foreground hover:bg-muted/10"
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
+                        disabled={isLoading}
                       >
-                        Log in
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </button>
-                    </>
-                  ) : (
-                    <>
-                      Don&apos;t have an account?{' '}
-                      <button
-                        type="button"
-                        className="underline-offset-4 hover:underline"
-                        onClick={() => setIsSignUp(true)}
-                      >
-                        Sign up
-                      </button>
-                    </>
+                    </div>
+                  </Field>
+
+                  {isSignUp && (
+                    <Field>
+                      <FieldLabel htmlFor="confirmPassword">
+                        Confirm password
+                      </FieldLabel>
+                      <div className="relative">
+                        <Input
+                          id="confirmPassword"
+                          type={showConfirmPassword ? "text" : "password"}
+                          required
+                          placeholder="********"
+                          className="pr-10 bg-background"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          disabled={isLoading}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword((s) => !s)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-muted-foreground hover:bg-muted/10"
+                          aria-label={
+                            showConfirmPassword
+                              ? "Hide confirm password"
+                              : "Show confirm password"
+                          }
+                          disabled={isLoading}
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
+                      {confirmPassword && password !== confirmPassword && (
+                        <p className="text-sm text-red-600 mt-1">
+                          Passwords do not match
+                        </p>
+                      )}
+                      {password && password.length < 8 && (
+                        <p className="text-sm text-yellow-600 mt-1">
+                          Password must be at least 8 characters
+                        </p>
+                      )}
+                    </Field>
                   )}
-                </FieldDescription>
-              </Field>
-            </FieldGroup>
-          </form>
-        </CardContent>
-      </Card>
-      <FieldDescription className="px-6 text-center">
-        By clicking continue, you agree to our <a href="#">Terms of Service</a>{' '}
-        and <a href="#">Privacy Policy</a>.
-      </FieldDescription>
-    </div>
-  )
+
+                  <Field>
+                    <Button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full"
+                    >
+                      {isLoading
+                        ? "Loading..."
+                        : isSignUp
+                          ? "Create account"
+                          : "Login"}
+                    </Button>
+                    <FieldDescription className="text-center">
+                      {isSignUp ? (
+                        <>
+                          Already have an account?{" "}
+                          <button
+                            type="button"
+                            className="underline-offset-4 hover:underline"
+                            onClick={() => setIsSignUp(false)}
+                            disabled={isLoading}
+                          >
+                            Log in
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          Don&apos;t have an account?{" "}
+                          <button
+                            type="button"
+                            className="underline-offset-4 hover:underline"
+                            onClick={() => setIsSignUp(true)}
+                            disabled={isLoading}
+                          >
+                            Sign up
+                          </button>
+                        </>
+                      )}
+                    </FieldDescription>
+                  </Field>
+                </FieldGroup>
+              </form>
+            </CardContent>
+          </Card>
+          <FieldDescription className="px-6 text-center">
+            By clicking continue, you agree to our{" "}
+            <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+          </FieldDescription>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }

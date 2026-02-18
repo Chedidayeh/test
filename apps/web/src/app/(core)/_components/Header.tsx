@@ -4,8 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BookOpen, Home, Users, Library, LogIn } from "lucide-react";
 import { useState } from "react";
-import Login from "@/src/components/shared/login";
-import { ModeToggle } from "@/src/components/ModeToggle";
+import { ModeToggle } from "@/src/components/shared/ModeToggle";
+import { useSession } from "next-auth/react";
+import Profile from "@/src/components/shared/Profile";
+import { LoginForm } from "@/src/components/shared/login-form";
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -33,6 +35,8 @@ const Header = () => {
   const isActive = (href: string) => {
     return pathname === href || pathname.startsWith(href + "/");
   };
+
+  const session = useSession();
 
   return (
     <>
@@ -72,7 +76,7 @@ const Header = () => {
 
             {/* Right - Login component (fixed to the far right) */}
             <div className="flex-shrink-0 flex items-center gap-2">
-              <Login />
+              <Profile session={session.data!} />
               <ModeToggle />
             </div>
           </div>

@@ -1,0 +1,182 @@
+"use client";
+
+import React, { useState } from "react";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
+
+import { Button } from "../ui/button";
+import { signOut } from "next-auth/react";
+import { LogOut, User, Settings } from "lucide-react";
+import { Checkbox } from "../ui/checkbox";
+import { toast } from "sonner";
+import { Session } from "next-auth";
+
+export default function Profile({ session }: { session: Session }) {
+  const user = session?.user;
+  const [closeDialog, setCloseDialog] = React.useState(false);
+  const [activeTab, setActiveTab] = useState<"profile" | "settings">("profile");
+
+  const handleLogout = async () => {
+    await signOut({ redirect: true, callbackUrl: "/" });
+    toast.success("Logged out successfully!");
+  };
+
+  return (
+    <Dialog open={closeDialog} onOpenChange={setCloseDialog}>
+      <DialogTrigger asChild>
+        <div className="w-9 h-9 cursor-pointer rounded-full border border-black/30 flex items-center justify-center bg-primary text-white text-lg">
+          {user?.name?.charAt(0).toUpperCase()}
+        </div>
+      </DialogTrigger>
+      <DialogTitle></DialogTitle>
+
+      <DialogContent showCloseButton={false}>
+        <div className="flex h-full gap-4">
+          {/* Sidebar */}
+          <div className="w-48 bg-card rounded-lg p-4 border border-primary/20">
+            <div className="mb-6 flex flex-col items-center">
+              <div className="flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full border flex items-center justify-center text-white bg-primary text-lg">
+                  {user?.name?.charAt(0).toUpperCase()}
+                </div>
+              </div>
+            </div>
+
+            <nav className="space-y-2">
+              <button
+                onClick={() => setActiveTab("profile")}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${
+                  activeTab === "profile"
+                    ? "bg-primary text-white shadow-sm"
+                    : "text-gray-700 bg-background/30 hover:bg-primary hover:text-white dark:text-white"
+                }`}
+              >
+                <User className="w-4 h-4" />
+                <span>Profile</span>
+              </button>
+              <button
+                onClick={() => setActiveTab("settings")}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${
+                  activeTab === "settings"
+                    ? "bg-primary text-white shadow-sm"
+                    : "text-gray-700 bg-background/30 hover:bg-primary hover:text-white dark:text-white"
+                }`}
+              >
+                <Settings className="w-4 h-4" />
+                <span>Settings</span>
+              </button>
+            </nav>
+
+            <div className="mt-6 pt-6 border-t">
+              <Button onClick={handleLogout} variant="destructive">
+                <LogOut className="w-4 h-4" />
+                Logout
+              </Button>
+            </div>
+          </div>
+
+          {/* Content Area */}
+          <div className="flex-1">
+            {activeTab === "profile" && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-xl font-bold mb-4">
+                    Profile Information
+                  </h2>
+                  <div className="bg-card rounded-lg border border-primary/20 p-4 space-y-5">
+                    {/* Name */}
+                    <div className="flex items-center justify-between pb-4 border-b border-gray-200">
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">
+                          Full Name
+                        </label>
+                        <p className="text-base ">{user?.name}</p>
+                      </div>
+                    </div>
+
+                    {/* Email */}
+                    <div className="flex items-center justify-between pb-4 border-b border-gray-200">
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">
+                          Email Address
+                        </label>
+                        <p className="text-base ">{user?.email}</p>
+                      </div>
+                    </div>
+
+                    {/* Role */}
+                    <div className="flex items-center justify-between  border-gray-200">
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">
+                          Account Type
+                        </label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="inline-block px-3 py-1 rounded-full text-xs bg-primary text-white">
+                            {user?.role || "Parent"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Edit Profile Button */}
+                <div className="flex gap-2">
+                  <Button size={"sm"}>Edit Profile</Button>
+                  <Button size={"sm"} variant="outline">
+                    Change Password
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "settings" && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-xl font-bold mb-4">Settings</h2>
+
+                  {/* Notification Settings */}
+                  <div className="bg-card rounded-lg border border-primary/20 p-6 space-y-4 mb-6">
+                    <h3 className="">Notification Preferences</h3>
+                    <div className="space-y-3">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <Checkbox defaultChecked className="w-4 h-4" />
+                        <span className="text-sm text-gray-500">
+                          Email notifications
+                        </span>
+                      </label>
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <Checkbox defaultChecked className="w-4 h-4" />
+
+                        <span className="text-sm text-gray-500">
+                          Learning progress updates
+                        </span>
+                      </label>
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <Checkbox defaultChecked className="w-4 h-4" />
+
+                        <span className="text-sm text-gray-500">
+                          Weekly summary
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Danger Zone */}
+                  <div className="bg-red-50 rounded-lg border border-red-200 p-4">
+                    <h3 className="text-red-900 mb-4">Danger Zone</h3>
+                    <Button variant="destructive">Delete Account</Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

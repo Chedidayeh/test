@@ -9,8 +9,8 @@ export default function InsightsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">AI Insights</h1>
-          <p className="text-slate-600 mt-1">
+          <h1 className="text-2xl font-bold ">AI Insights</h1>
+          <p className="text-slate-500 mt-1">
             Automated analysis and recommendations
           </p>
         </div>
@@ -23,11 +23,11 @@ export default function InsightsPage() {
       {/* Insights Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="p-6 border-l-4 border-l-blue-500">
-          <h3 className="font-semibold text-slate-900 mb-2 flex items-center gap-2">
+          <h3 className="font-semibold  mb-2 flex items-center gap-2">
             <span className="text-2xl">📊</span>
             Reading Level Progression
           </h3>
-          <p className="text-sm text-slate-600 mb-4">
+          <p className="text-sm text-slate-500 mb-4">
             Based on performance analysis of 42 children, we found:
           </p>
           <ul className="space-y-2 text-sm text-slate-700">
@@ -46,11 +46,11 @@ export default function InsightsPage() {
         </Card>
 
         <Card className="p-6 border-l-4 border-l-green-500">
-          <h3 className="font-semibold text-slate-900 mb-2 flex items-center gap-2">
+          <h3 className="font-semibold  mb-2 flex items-center gap-2">
             <span className="text-2xl">🎯</span>
             Engagement Patterns
           </h3>
-          <p className="text-sm text-slate-600 mb-4">
+          <p className="text-sm text-slate-500 mb-4">
             User engagement trends discovered:
           </p>
           <ul className="space-y-2 text-sm text-slate-700">
@@ -67,11 +67,11 @@ export default function InsightsPage() {
         </Card>
 
         <Card className="p-6 border-l-4 border-l-amber-500">
-          <h3 className="font-semibold text-slate-900 mb-2 flex items-center gap-2">
+          <h3 className="font-semibold  mb-2 flex items-center gap-2">
             <span className="text-2xl">⚠️</span>
             Struggling Learners
           </h3>
-          <p className="text-sm text-slate-600 mb-4">
+          <p className="text-sm text-slate-500 mb-4">
             Identified 8 children showing learning challenges:
           </p>
           <ul className="space-y-2 text-sm text-slate-700">
@@ -84,11 +84,11 @@ export default function InsightsPage() {
         </Card>
 
         <Card className="p-6 border-l-4 border-l-purple-500">
-          <h3 className="font-semibold text-slate-900 mb-2 flex items-center gap-2">
+          <h3 className="font-semibold  mb-2 flex items-center gap-2">
             <span className="text-2xl">🚀</span>
             High Performers
           </h3>
-          <p className="text-sm text-slate-600 mb-4">
+          <p className="text-sm text-slate-500 mb-4">
             Top performing users to recognize:
           </p>
           <ul className="space-y-2 text-sm text-slate-700">
@@ -103,17 +103,17 @@ export default function InsightsPage() {
 
       {/* Recommendations */}
       <Card className="p-6 bg-slate-50 border border-slate-200">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">
+        <h3 className="text-lg font-semibold  mb-4">
           Content Recommendations
         </h3>
         <div className="space-y-3">
           <div className="flex items-start gap-3">
             <span className="text-2xl">1️⃣</span>
             <div>
-              <p className="font-medium text-slate-900">
+              <p className="font-medium ">
                 Create more fantasy stories targeting 8-9 age group
               </p>
-              <p className="text-sm text-slate-600 mt-1">
+              <p className="text-sm text-slate-500 mt-1">
                 Current performance data shows 34% higher engagement with fantasy
                 genre in this age range
               </p>
@@ -122,10 +122,10 @@ export default function InsightsPage() {
           <div className="flex items-start gap-3">
             <span className="text-2xl">2️⃣</span>
             <div>
-              <p className="font-medium text-slate-900">
+              <p className="font-medium ">
                 Increase visual hint frequency in hard-difficulty riddles
               </p>
-              <p className="text-sm text-slate-600 mt-1">
+              <p className="text-sm text-slate-500 mt-1">
                 Hard riddles with visual hints show 40% improvement in completion
                 rates
               </p>
@@ -134,10 +134,10 @@ export default function InsightsPage() {
           <div className="flex items-start gap-3">
             <span className="text-2xl">3️⃣</span>
             <div>
-              <p className="font-medium text-slate-900">
+              <p className="font-medium ">
                 Archive 3 stories with below 60% completion rates
               </p>
-              <p className="text-sm text-slate-600 mt-1">
+              <p className="text-sm text-slate-500 mt-1">
                 Stories: &quot;Hidden Treasure in Mountains", "The Crypto Quest",
                 "Ancient Prophecy"
               </p>
@@ -152,8 +152,8 @@ export default function InsightsPage() {
           <div className="flex items-center gap-4">
             <FileText className="w-10 h-10 text-blue-600" />
             <div>
-              <h3 className="font-semibold text-slate-900">Generate Report</h3>
-              <p className="text-sm text-slate-600 mt-1">
+              <h3 className="font-semibold ">Generate Report</h3>
+              <p className="text-sm text-slate-500 mt-1">
                 Create a comprehensive PDF report of all insights and recommendations
               </p>
             </div>

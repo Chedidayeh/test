@@ -1,11 +1,17 @@
 import Header from "./_components/Header";
 import Footer from "./_components/Footer";
+import { auth } from "@/src/auth";
+import { redirect } from "next/navigation";
 
-export default function Layout({
+export default async function Layout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+  if (!session) {
+    redirect("/");
+  }
   return (
     <div>
       <Header />

@@ -1,10 +1,12 @@
 import React from "react";
-import CompanyOnboarding from "./on-boarding";
+import ParentOnboarding from "./on-boarding";
+import { auth } from "@/src/auth";
 
 export default async function page() {
+  const session = await auth();
   return (
     <div className="">
-      <CompanyOnboarding />
+      <ParentOnboarding session={session} />
     </div>
   );
 }
