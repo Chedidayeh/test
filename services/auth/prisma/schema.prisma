@@ -43,10 +43,10 @@ model Child {
     name      String
     loginCode String? @unique
     avatar    String?
-    ageGroup  String
+    ageGroup  String  // reference to content service age group
 
     // Preferences
-    favoriteGenres String[] @default([])
+    favoriteThemes String[] // reference to content service themes
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt

@@ -4,3 +4,4 @@
  */
 
 export { ChildProfileMatcher } from "./child-profile.matcher";
+export { ParentProfileMatcher } from "./parent-profile.matcher";

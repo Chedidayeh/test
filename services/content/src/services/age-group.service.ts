@@ -19,6 +19,7 @@ export class AgeGroupService {
           roadmaps: {
             include: {
               worlds: true,
+              theme: true
             },
           },
         },

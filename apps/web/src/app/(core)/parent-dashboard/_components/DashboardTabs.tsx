@@ -19,12 +19,9 @@ export default function DashboardTabs({
       onValueChange={onTabChange}
       className="w-full"
     >
-      <TabsList className="grid w-full grid-cols-4 mb-6">
+      <TabsList className="grid w-full grid-cols-3 mb-6">
         <TabsTrigger value="overview" className="font-medium">
           Overview
-        </TabsTrigger>
-        <TabsTrigger value="progress" className="font-medium">
-          Progress
         </TabsTrigger>
         <TabsTrigger value="achievements" className="font-medium">
           Achievements

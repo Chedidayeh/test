@@ -24,7 +24,6 @@ async function main() {
       prisma.story.deleteMany(),
       prisma.world.deleteMany(),
       prisma.roadmap.deleteMany(),
-      prisma.milestone.deleteMany(),
       prisma.level.deleteMany(),
       prisma.theme.deleteMany(),
       prisma.ageGroup.deleteMany(),
@@ -229,13 +228,14 @@ async function main() {
     // ============================================
     console.log("📖 Creating chapters and challenges...");
 
-    // Story 1: The Lost Treasure - Chapter 1
+    // ===== STORY 1: The Lost Treasure (Difficulty 2) - Easy to Medium =====
+    // Total stars: 75 (contributes to Level 1-2)
     const chapter1_1 = await prisma.chapter.create({
       data: {
         storyId: story1.id,
         title: "The Map Discovery",
         content:
-          "You find an old, mysterious map in your grandfather's attic. The map shows a path through the enchanted forest leading to a hidden treasure. Are you brave enough to follow it?",
+          "You find an old, mysterious map in your grandfather's attic. The map shows a path through the enchanted forest leading to a hidden treasure. The parchment is yellowed with age, and an X marks the spot. Are you brave enough to follow it?",
         order: 1,
       },
     });
@@ -249,11 +249,12 @@ async function main() {
         description:
           "Think about what preparations are necessary for a dangerous journey.",
         maxAttempts: 3,
-        baseStars: 20,
+        baseStars: 15,
         order: 1,
         hints: [
           "Think about what you might need to survive in the forest",
           "Consider safety precautions",
+          "Tell someone where you're going",
         ],
         answers: {
           create: [
@@ -266,13 +267,12 @@ async function main() {
       },
     });
 
-    // Story 1: The Lost Treasure - Chapter 2
     const chapter1_2 = await prisma.chapter.create({
       data: {
         storyId: story1.id,
         title: "The Dark Forest",
         content:
-          "You enter the dark forest with your supplies. The trees are so tall they block out the sun. You hear strange sounds all around you. The map points deeper into the forest.",
+          "You enter the dark forest with your supplies. The trees are so tall they block out the sun. You hear strange sounds all around you. The map points deeper into the forest. Suddenly, you see glowing eyes watching from the shadows.",
         order: 2,
       },
     });
@@ -284,7 +284,7 @@ async function main() {
         question: "I have cities but no houses, forests but no trees. What am I?",
         description: "Solve this ancient riddle to safely pass through the forest",
         maxAttempts: 4,
-        baseStars: 25,
+        baseStars: 20,
         order: 1,
         hints: ["It's something you hold in your hand", "Look at it from above", "It shows you places"],
         answers: {
@@ -298,13 +298,12 @@ async function main() {
       },
     });
 
-    // Story 1: The Lost Treasure - Chapter 3
     const chapter1_3 = await prisma.chapter.create({
       data: {
         storyId: story1.id,
-        title: "The Treasure Chest",
+        title: "Guardians of the Forest",
         content:
-          "After hours of walking, you finally reach the spot marked on the map. There, half-buried in the ground, is an old treasure chest. Your heart races with excitement as you approach it.",
+          "As you go deeper, you meet the Forest Guardians - mystical creatures that protect the woods. They question your intentions. They seem to decide whether to help or stop you based on your answers.",
         order: 3,
       },
     });
@@ -312,13 +311,60 @@ async function main() {
     await prisma.challenge.create({
       data: {
         chapterId: chapter1_3.id,
+        type: "MORAL_DECISION" as ChallengeType,
+        question: "A Forest Guardian blocks your path. What do you do?",
+        description: "Show respect for the forest and its inhabitants",
+        maxAttempts: 3,
+        baseStars: 20,
+        order: 1,
+        hints: ["The forest spirits like those who respect nature", "Be humble and honest"],
+        answers: {
+          create: [
+            {
+              text: "Bow respectfully and explain why you seek the treasure",
+              isCorrect: true,
+              order: 1,
+            },
+            {
+              text: "Try to sneak past them without being seen",
+              isCorrect: false,
+              order: 2,
+            },
+            {
+              text: "Attack them to clear the path",
+              isCorrect: false,
+              order: 3,
+            },
+            {
+              text: "Ignore them and continue walking",
+              isCorrect: false,
+              order: 4,
+            },
+          ],
+        },
+      },
+    });
+
+    const chapter1_4 = await prisma.chapter.create({
+      data: {
+        storyId: story1.id,
+        title: "The Treasure Chest",
+        content:
+          "After hours of walking, you finally reach the spot marked on the map. There, half-buried in the ground, is an old treasure chest. Your heart races with excitement as you approach it. The chest is locked with a puzzle lock.",
+        order: 4,
+      },
+    });
+
+    await prisma.challenge.create({
+      data: {
+        chapterId: chapter1_4.id,
         type: "CHOOSE_ENDING" as ChallengeType,
         question: "What do you do when you find the treasure chest?",
-        description: "Choose the best action to take with the treasure",
+        description: "Make a wise decision about the treasure",
         maxAttempts: 3,
-        baseStars: 30,
+        baseStars: 20,
         order: 1,
-        hints: ["Think about what you promised yourself"],
+        hints: ["Think about what you promised yourself", "True wealth is shared wealth"],
         answers: {
           create: [
             {
@@ -346,13 +392,14 @@ async function main() {
       },
     });
 
-    // Story 2: The Secret of the Whispering Trees - Chapter 1
+    // ===== STORY 2: The Secret of the Whispering Trees (Difficulty 3) - Medium =====
+    // Total stars: 85 (contributes to Level 2-3)
     const chapter2_1 = await prisma.chapter.create({
       data: {
         storyId: story2.id,
         title: "Whispers in the Wind",
         content:
-          "One evening, as you walk through the forest, you hear soft whispers coming from the ancient trees. They seem to be calling to you. The sound is mysterious and magical.",
+          "One evening, as you walk through the forest, you hear soft whispers coming from the ancient trees. They seem to be calling to you. The sound is mysterious and magical. The trees glow with a faint blue light.",
         order: 1,
       },
     });
@@ -362,11 +409,11 @@ async function main() {
         chapterId: chapter2_1.id,
         type: "TRUE_FALSE" as ChallengeType,
         question: "Trees can communicate with humans through sound.",
-        description: "Decide if this magical possibility is true or false",
+        description: "Decide if this magical possibility is true or false in this magical forest",
         maxAttempts: 2,
         baseStars: 15,
         order: 1,
-        hints: ["In this magical forest, anything is possible"],
+        hints: ["In this magical forest, anything is possible", "Magic is real here"],
         answers: {
           create: [
             { text: "True", isCorrect: true, order: 1 },
@@ -376,13 +423,107 @@ async function main() {
       },
     });
 
-    // Story 3: Castle of Riddles - Chapter 1
+    const chapter2_2 = await prisma.chapter.create({
+      data: {
+        storyId: story2.id,
+        title: "The Ancient Language",
+        content:
+          "You realize the whispers are actually an ancient language. The trees are telling a story of their history. You must understand what they're trying to tell you about a great danger that once threatened the forest.",
+        order: 2,
+      },
+    });
+
+    await prisma.challenge.create({
+      data: {
+        chapterId: chapter2_2.id,
+        type: "MULTIPLE_CHOICE" as ChallengeType,
+        question: "What danger do you think the trees are warning you about?",
+        description: "Listen carefully to the forest's ancient warnings",
+        maxAttempts: 3,
+        baseStars: 20,
+        order: 1,
+        hints: ["The trees whisper of a great fire", "Think about what harms forests", "Nature's biggest threats"],
+        answers: {
+          create: [
+            { text: "A terrible forest fire that destroyed everything", isCorrect: true, order: 1 },
+            { text: "A boring drought", isCorrect: false, order: 2 },
+            { text: "A single fallen tree", isCorrect: false, order: 3 },
+            { text: "Animals eating the leaves", isCorrect: false, order: 4 },
+          ],
+        },
+      },
+    });
+
+    const chapter2_3 = await prisma.chapter.create({
+      data: {
+        storyId: story2.id,
+        title: "The Guardian's Task",
+        content:
+          "The oldest tree in the forest reveals that you have been chosen as its Guardian. You must protect the forest and share its secrets with others who will respect it.",
+        order: 3,
+      },
+    });
+
+    await prisma.challenge.create({
+      data: {
+        chapterId: chapter2_3.id,
+        type: "MORAL_DECISION" as ChallengeType,
+        question: "As the Forest Guardian, what's your most important responsibility?",
+        description: "Consider what truly protects the forest",
+        maxAttempts: 3,
+        baseStars: 25,
+        order: 1,
+        hints: ["A guardian educates and protects", "Share knowledge to create more guardians"],
+        answers: {
+          create: [
+            { text: "Teach others to love and protect the forest", isCorrect: true, order: 1 },
+            { text: "Keep the forest secret from everyone", isCorrect: false, order: 2 },
+            { text: "Take resources from the forest for yourself", isCorrect: false, order: 3 },
+            { text: "Do nothing and let nature take its course", isCorrect: false, order: 4 },
+          ],
+        },
+      },
+    });
+
+    const chapter2_4 = await prisma.chapter.create({
+      data: {
+        storyId: story2.id,
+        title: "The Oath of the Guardian",
+        content:
+          "You place your hand on the ancient tree and feel a warm energy flowing through you. You have become a Guardian of the Forest, with the power to protect it and those who enter it.",
+        order: 4,
+      },
+    });
+
+    await prisma.challenge.create({
+      data: {
+        chapterId: chapter2_4.id,
+        type: "RIDDLE" as ChallengeType,
+        question: "What grows taller the more it eats, but dies if it drinks?",
+        description: "A final test of wisdom from the ancient trees",
+        maxAttempts: 4,
+        baseStars: 25,
+        order: 1,
+        hints: ["Think of something that consumes things", "Fire destroys when water touches it"],
+        answers: {
+          create: [
+            { text: "Fire", isCorrect: true, order: 1 },
+            { text: "A tree", isCorrect: false, order: 2 },
+            { text: "A person", isCorrect: false, order: 3 },
+            { text: "The wind", isCorrect: false, order: 4 },
+          ],
+        },
+      },
+    });
+
+    // ===== STORY 3: Castle of Riddles (Difficulty 4) - Medium to Hard =====
+    // Total stars: 120 (contributes to Level 3-4)
     const chapter3_1 = await prisma.chapter.create({
       data: {
         storyId: story3.id,
         title: "The Castle Gates",
         content:
-          "You stand before the massive gates of the ancient castle. The gates are sealed with magical locks that require riddles to be solved. A ghostly voice echoes from within.",
+          "You stand before the massive gates of the ancient castle. The gates are sealed with magical locks that require riddles to be solved. A ghostly voice echoes from within, challenging you to prove your wisdom.",
         order: 1,
       },
     });
@@ -394,7 +535,7 @@ async function main() {
         question: "The more you take, the more you leave behind. What am I?",
         description: "Solve the riddle to open the castle gates",
         maxAttempts: 4,
-        baseStars: 35,
+        baseStars: 25,
         order: 1,
         hints: [
           "Think about travel",
@@ -412,56 +553,428 @@ async function main() {
       },
     });
 
+    const chapter3_2 = await prisma.chapter.create({
+      data: {
+        storyId: story3.id,
+        title: "The Riddle Hall",
+        content:
+          "The gates open to reveal a grand hall filled with doors. Each door has a riddle lock. You must solve three riddles to reach the chamber at the end. The castle walls seem to watch your every move.",
+        order: 2,
+      },
+    });
+
+    await prisma.challenge.create({
+      data: {
+        chapterId: chapter3_2.id,
+        type: "RIDDLE" as ChallengeType,
+        question: "I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?",
+        description: "Second riddle of the castle - open the middle door",
+        maxAttempts: 4,
+        baseStars: 30,
+        order: 1,
+        hints: ["Think of something that makes sound", "It bounces off walls", "You hear it in canyons"],
+        answers: {
+          create: [
+            { text: "An echo", isCorrect: true, order: 1 },
+            { text: "A ghost", isCorrect: false, order: 2 },
+            { text: "The wind", isCorrect: false, order: 3 },
+            { text: "A song", isCorrect: false, order: 4 },
+          ],
+        },
+      },
+    });
+
+    const chapter3_3 = await prisma.chapter.create({
+      data: {
+        storyId: story3.id,
+        title: "The Chamber of Choices",
+        content:
+          "Finally, you reach the inner chamber. Here you find three ancient books, each containing the knowledge to either destroy or save the castle. You must choose wisely - this decision will determine the castle's fate.",
+        order: 3,
+      },
+    });
+
+    await prisma.challenge.create({
+      data: {
+        chapterId: chapter3_3.id,
+        type: "MORAL_DECISION" as ChallengeType,
+        question: "What should you do with the castle's ancient knowledge?",
+        description: "This is the most important decision in the castle",
+        maxAttempts: 3,
+        baseStars: 35,
+        order: 1,
+        hints: ["True power is in sharing knowledge responsibly", "Who should benefit from this wisdom?"],
+        answers: {
+          create: [
+            { text: "Share it with scholars who will preserve and teach it", isCorrect: true, order: 1 },
+            { text: "Destroy it so no one can ever use it", isCorrect: false, order: 2 },
+            { text: "Keep it hidden for yourself alone", isCorrect: false, order: 3 },
+            { text: "Let it be and leave without touching anything", isCorrect: false, order: 4 },
+          ],
+        },
+      },
+    });
+
+    const chapter3_4 = await prisma.chapter.create({
+      data: {
+        storyId: story3.id,
+        title: "The Castle's Blessing",
+        content:
+          "The castle's ancient spirit is pleased with your wisdom. The castle's curse is lifted, and it transforms into a center of learning. You are honored as the one who freed it from its lonely imprisonment.",
+        order: 4,
+      },
+    });
+
+    await prisma.challenge.create({
+      data: {
+        chapterId: chapter3_4.id,
+        type: "RIDDLE" as ChallengeType,
+        question: "I have keys but no locks. I have space but no room. You can enter, but you cannot go inside. What am I?",
+        description: "Final riddle - the castle's ultimate test",
+        maxAttempts: 4,
+        baseStars: 30,
+        order: 1,
+        hints: ["Think about musical instruments", "Or objects with a layout", "A keyboard perhaps?"],
+        answers: {
+          create: [
+            { text: "A piano", isCorrect: true, order: 1 },
+            { text: "A house", isCorrect: false, order: 2 },
+            { text: "A book", isCorrect: false, order: 3 },
+            { text: "A map", isCorrect: false, order: 4 },
+          ],
+        },
+      },
+    });
+
+    // ===== STORY 4: Brave Knight vs Dragon (Difficulty 5) - Hard =====
+    // Total stars: 140 (contributes to Level 4-5)
+    const chapter4_1 = await prisma.chapter.create({
+      data: {
+        storyId: story4.id,
+        title: "Call to Adventure",
+        content:
+          "The kingdom is in danger. A terrible dragon has awakened from its thousand-year slumber in the mountains. The beast destroys crops and threatens villages. The king calls for the bravest knight to face the dragon and save the realm.",
+        order: 1,
+      },
+    });
+
+    await prisma.challenge.create({
+      data: {
+        chapterId: chapter4_1.id,
+        type: "MORAL_DECISION" as ChallengeType,
+        question: "Why do you choose to face the dragon?",
+        description: "Your motivation determines how the dragon will see you",
+        maxAttempts: 3,
+        baseStars: 25,
+        order: 1,
+        hints: ["True heroism comes from protecting others", "The dragon might respect noble intentions"],
+        answers: {
+          create: [
+            { text: "To protect the innocent people of the kingdom", isCorrect: true, order: 1 },
+            { text: "To become famous and gain glory", isCorrect: false, order: 2 },
+            { text: "To get the reward the king promised", isCorrect: false, order: 3 },
+            { text: "To prove you're stronger than everyone", isCorrect: false, order: 4 },
+          ],
+        },
+      },
+    });
+
+    const chapter4_2 = await prisma.chapter.create({
+      data: {
+        storyId: story4.id,
+        title: "The Mountain Ascent",
+        content:
+          "You climb the treacherous mountain paths toward the dragon's lair. The air grows hotter as you approach. You see the remains of previous adventurers' failed attempts. Your courage is tested with every step.",
+        order: 2,
+      },
+    });
+
+    await prisma.challenge.create({
+      data: {
+        chapterId: chapter4_2.id,
+        type: "RIDDLE" as ChallengeType,
+        question: "I am always coming but never arrive. What am I?",
+        description: "Solve this to find strength for the journey ahead",
+        maxAttempts: 4,
+        baseStars: 30,
+        order: 1,
+        hints: ["Something that's always approaching", "In the future", "But never in the present"],
+        answers: {
+          create: [
+            { text: "Tomorrow", isCorrect: true, order: 1 },
+            { text: "Night", isCorrect: false, order: 2 },
+            { text: "The rain", isCorrect: false, order: 3 },
+            { text: "A storm", isCorrect: false, order: 4 },
+          ],
+        },
+      },
+    });
+
+    const chapter4_3 = await prisma.chapter.create({
+      data: {
+        storyId: story4.id,
+        title: "Face to Face with the Dragon",
+        content:
+          "You finally reach the dragon's lair. The magnificent creature is larger than three houses. Its eyes open, golden and intelligent. It speaks in a voice like thunder, asking why you dare enter its domain.",
+        order: 3,
+      },
+    });
+
+    await prisma.challenge.create({
+      data: {
+        chapterId: chapter4_3.id,
+        type: "MORAL_DECISION" as ChallengeType,
+        question: "The dragon asks what you truly seek. How do you respond?",
+        description: "Your honesty and wisdom matter here",
+        maxAttempts: 3,
+        baseStars: 35,
+        order: 1,
+        hints: ["Dragons respect honesty and wisdom", "Say what you truly believe"],
+        answers: {
+          create: [
+            { text: "I've come to protect innocent lives from being hurt", isCorrect: true, order: 1 },
+            { text: "I've come to kill you and save the kingdom", isCorrect: false, order: 2 },
+            { text: "I've come for the treasure in your lair", isCorrect: false, order: 3 },
+            { text: "I've come to prove myself worthy of glory", isCorrect: false, order: 4 },
+          ],
+        },
+      },
+    });
+
+    const chapter4_4 = await prisma.chapter.create({
+      data: {
+        storyId: story4.id,
+        title: "The Unexpected Truth",
+        content:
+          "The dragon is surprised by your honesty. It reveals that it never wanted to hurt anyone - it was simply lonely and scared. A curse had been placed on it, forcing it to act destructively. Together, you realize there's a better solution than battle.",
+        order: 4,
+      },
+    });
+
+    await prisma.challenge.create({
+      data: {
+        chapterId: chapter4_4.id,
+        type: "CHOOSE_ENDING" as ChallengeType,
+        question: "What is the best ending for both the dragon and the kingdom?",
+        description: "Find a solution that shows true heroism",
+        maxAttempts: 3,
+        baseStars: 50,
+        order: 1,
+        hints: ["True heroism is finding peace, not violence", "Both can benefit from understanding"],
+        answers: {
+          create: [
+            { text: "Help the dragon break the curse and live peacefully in the mountains", isCorrect: true, order: 1 },
+            { text: "Lead an army to destroy the dragon despite the curse", isCorrect: false, order: 2 },
+            { text: "Trap the dragon in a magical prison forever", isCorrect: false, order: 3 },
+            { text: "Leave the dragon and return empty-handed to the king", isCorrect: false, order: 4 },
+          ],
+        },
+      },
+    });
+
+    // ===== STORY 5: Alien Contact (Difficulty 3) - Medium =====
+    // Total stars: 95 (contributes to Level 3-4)
+    const chapter5_1 = await prisma.chapter.create({
+      data: {
+        storyId: story5.id,
+        title: "Signal from the Void",
+        content:
+          "As a space explorer on the distant Space Station Alpha, you detect a strange signal coming from deep space. It's unlike anything in your database. The signal appears to be intentional - a message from an intelligent source.",
+        order: 1,
+      },
+    });
+
+    await prisma.challenge.create({
+      data: {
+        chapterId: chapter5_1.id,
+        type: "MULTIPLE_CHOICE" as ChallengeType,
+        question: "What should be your first action upon detecting the signal?",
+        description: "Choose the wisest scientific response",
+        maxAttempts: 3,
+        baseStars: 20,
+        order: 1,
+        hints: ["Follow scientific protocol", "Safety and verification are important"],
+        answers: {
+          create: [
+            { text: "Analyze the signal carefully and verify its source", isCorrect: true, order: 1 },
+            { text: "Immediately broadcast a response to all galaxies", isCorrect: false, order: 2 },
+            { text: "Ignore the signal and report nothing", isCorrect: false, order: 3 },
+            { text: "Activate weapons systems just in case", isCorrect: false, order: 4 },
+          ],
+        },
+      },
+    });
+
+    const chapter5_2 = await prisma.chapter.create({
+      data: {
+        storyId: story5.id,
+        title: "Decoding the Message",
+        content:
+          "After weeks of analysis, you crack the signal's code. It's a message from an alien civilization 200 light-years away. They claim to be peaceful and curious about other life in the universe. They're asking if anyone is listening.",
+        order: 2,
+      },
+    });
+
+    await prisma.challenge.create({
+      data: {
+        chapterId: chapter5_2.id,
+        type: "RIDDLE" as ChallengeType,
+        question: "The aliens ask: 'What do all intelligent species share?' What is the answer?",
+        description: "Think about what unites all who think and learn",
+        maxAttempts: 4,
+        baseStars: 25,
+        order: 1,
+        hints: ["All intelligence comes from this", "It's the desire to understand"],
+        answers: {
+          create: [
+            { text: "The desire to understand the universe", isCorrect: true, order: 1 },
+            { text: "The need to build weapons", isCorrect: false, order: 2 },
+            { text: "The quest for power", isCorrect: false, order: 3 },
+            { text: "The wish for money", isCorrect: false, order: 4 },
+          ],
+        },
+      },
+    });
+
+    const chapter5_3 = await prisma.chapter.create({
+      data: {
+        storyId: story5.id,
+        title: "First Contact Decision",
+        content:
+          "Now comes the greatest question. Should you respond to the aliens? The message could reach them in 200 years. This decision will shape the future of both civilizations. You must decide carefully.",
+        order: 3,
+      },
+    });
+
+    await prisma.challenge.create({
+      data: {
+        chapterId: chapter5_3.id,
+        type: "MORAL_DECISION" as ChallengeType,
+        question: "How should humanity respond to the alien civilization?",
+        description: "Make the wisest choice for humanity's future",
+        maxAttempts: 3,
+        baseStars: 30,
+        order: 1,
+        hints: ["Consider both opportunity and risk", "Open communication leads to understanding"],
+        answers: {
+          create: [
+            { text: "Send a peaceful reply sharing knowledge to build friendship", isCorrect: true, order: 1 },
+            { text: "Expose our location and military technology", isCorrect: false, order: 2 },
+            { text: "Never respond and hide from alien contact", isCorrect: false, order: 3 },
+            { text: "Send false information to confuse them", isCorrect: false, order: 4 },
+          ],
+        },
+      },
+    });
+
+    const chapter5_4 = await prisma.chapter.create({
+      data: {
+        storyId: story5.id,
+        title: "Bridge Between Worlds",
+        content:
+          "Your message is sent. Though it will take 200 years to arrive, you have opened a door to the stars. Humanity now looks upward with hope for peaceful contact. You are the bridge between two worlds.",
+        order: 4,
+      },
+    });
+
+    await prisma.challenge.create({
+      data: {
+        chapterId: chapter5_4.id,
+        type: "TRUE_FALSE" as ChallengeType,
+        question: "Communication between species requires mutual understanding and respect.",
+        description: "Reflect on the meaning of first contact",
+        maxAttempts: 2,
+        baseStars: 20,
+        order: 1,
+        hints: ["Think about what makes peaceful contact possible"],
+        answers: {
+          create: [
+            { text: "True", isCorrect: true, order: 1 },
+            { text: "False", isCorrect: false, order: 2 },
+          ],
+        },
+      },
+    });
+
     // ============================================
-    // Create Levels
+    // Create Levels based on Level System
     // ============================================
     console.log("⭐ Creating levels...");
-    for (let i = 1; i <= 10; i++) {
-      await prisma.level.create({
-        data: {
-          levelNumber: i,
-          requiredStars: i * 100,
-        },
-      });
-    }
+    const levelData = [
+      { levelNumber: 1, requiredStars: 0, title: "Beginner", emoji: "🟢" },
+      { levelNumber: 2, requiredStars: 100, title: "Young Reader", emoji: "🔵" },
+      { levelNumber: 3, requiredStars: 250, title: "Story Explorer", emoji: "🟣" },
+      { levelNumber: 4, requiredStars: 500, title: "Riddle Solver", emoji: "🟠" },
+      { levelNumber: 5, requiredStars: 900, title: "Logic Master", emoji: "🔴" },
+      { levelNumber: 6, requiredStars: 1500, title: "Story Champion", emoji: "🟡" },
+    ];
+
+    const levels = await Promise.all(
+      levelData.map((l) =>
+        prisma.level.create({
+          data: {
+            levelNumber: l.levelNumber,
+            requiredStars: l.requiredStars,
+          },
+        })
+      )
+    );
 
     // ============================================
-    // Create Milestones and Badges
+    // Create Badges linked to Levels
     // ============================================
-    console.log("🏆 Creating milestones and badges...");
-    const milestonFirstStory = await prisma.milestone.create({
-      data: {
-        name: "First Story",
-        description: "Complete your first story",
-        type: "first_story",
+    console.log("🏆 Creating badges...");
+    const badgeData = [
+      {
+        levelId: levels[0].id,
+        name: "Beginner",
+        description: "Welcome to your journey! You took your first step into a world of stories and challenges.",
+        iconUrl: "/badges/beginner.png",
       },
-    });
+      {
+        levelId: levels[1].id,
+        name: "Young Reader",
+        description: "You completed your first big adventure! You're learning to read, think, and explore bravely.",
+        iconUrl: "/badges/young-reader.png",
+      },
+      {
+        levelId: levels[2].id,
+        name: "Story Explorer",
+        description: "You explored new worlds and uncovered hidden paths. Curiosity is your superpower!",
+        iconUrl: "/badges/story-explorer.png",
+      },
+      {
+        levelId: levels[3].id,
+        name: "Riddle Solver",
+        description: "You solved clever riddles and tricky puzzles. Your brain is getting stronger every day!",
+        iconUrl: "/badges/riddle-solver.png",
+      },
+      {
+        levelId: levels[4].id,
+        name: "Logic Master",
+        description: "You make smart choices and think before acting. You understand not just stories — but lessons inside them.",
+        iconUrl: "/badges/logic-master.png",
+      },
+      {
+        levelId: levels[5].id,
+        name: "Story Champion",
+        description: "You've conquered worlds, solved mysteries, and grown wiser with every challenge. You are a true Story Champion!",
+        iconUrl: "/badges/story-champion.png",
+      },
+    ];
 
-    await prisma.badge.create({
-      data: {
-        name: "Story Starter",
-        description: "You have started your reading journey!",
-        iconUrl: "/badges/story-starter.png",
-        milestoneId: milestonFirstStory.id,
-      },
-    });
-
-    const milestoneChampion = await prisma.milestone.create({
-      data: {
-        name: "Reading Champion",
-        description: "Complete 5 stories",
-        type: "stories_count",
-      },
-    });
-
-    await prisma.badge.create({
-      data: {
-        name: "Reading Champion",
-        description: "You've completed 5 stories!",
-        iconUrl: "/badges/reading-champion.png",
-        milestoneId: milestoneChampion.id,
-      },
-    });
+    await Promise.all(
+      badgeData.map((b) =>
+        prisma.badge.create({
+          data: {
+            levelId: b.levelId,
+            name: b.name,
+            description: b.description,
+            iconUrl: b.iconUrl,
+          },
+        })
+      )
+    );
 
     console.log("✅ Database seeding completed successfully!");
     console.log("\n📊 Summary:");
@@ -470,11 +983,23 @@ async function main() {
     console.log(`   - Roadmaps: 3`);
     console.log(`   - Worlds: 4`);
     console.log(`   - Stories: 5`);
-    console.log(`   - Chapters: 4`);
-    console.log(`   - Challenges: 4`);
-    console.log(`   - Levels: 10`);
-    console.log(`   - Milestones: 2`);
-    console.log(`   - Badges: 2`);
+    console.log(`   - Chapters: 18`);
+    console.log(`   - Challenges: 18`);
+    console.log(`   - Levels: 6`);
+    console.log(`   - Badges: 6`);
+    console.log("\n⭐ Total Stars Available:");
+    console.log(`   - Story 1 (The Lost Treasure): 75 stars`);
+    console.log(`   - Story 2 (Whispering Trees): 85 stars`);
+    console.log(`   - Story 3 (Castle of Riddles): 120 stars`);
+    console.log(`   - Story 4 (Brave Knight): 140 stars`);
+    console.log(`   - Story 5 (Alien Contact): 95 stars`);
+    console.log(`   - TOTAL: 515 stars (plenty for progression to Story Champion)`);
+    console.log("\n🎖️ Level Progression:");
+    levelData.forEach((l) => {
+      console.log(
+        `   ${l.emoji} Level ${l.levelNumber} - ${l.title}: ${l.requiredStars} stars`
+      );
+    });
   } catch (error) {
     console.error("❌ Error seeding database:", error);
     throw error;

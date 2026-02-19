@@ -18,8 +18,7 @@ export class JWTService {
 
   constructor() {
     this.secret = process.env.JWT_SECRET!;
-    // 24 hours = 86400 seconds
-    this.expiration = parseInt(process.env.JWT_EXPIRATION || "86400", 10);
+    this.expiration = parseInt(process.env.JWT_EXPIRATION!, 10);
 
     if (!process.env.JWT_SECRET && process.env.NODE_ENV === "production") {
       logger.error("JWT_SECRET is not set in production!");

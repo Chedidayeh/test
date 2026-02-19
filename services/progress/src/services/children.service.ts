@@ -5,6 +5,42 @@ const prisma = new PrismaClient();
 
 export class ChildrenService {
   /**
+   * Create a new child profile
+   */
+  static async createChild(payload: {
+    parentEmail: string;
+    parentId: string;
+    name: string;
+    childId: string;
+    ageGroupId: string;
+    themeIds: string[];
+    badgeId: string;
+  }): Promise<ChildProfile> {
+    const childProfile = await prisma.childProfile.create({
+      data: {
+        parentId: payload.parentId,
+        name: payload.name,
+        ageGroupId: payload.ageGroupId,
+        favoriteThemes: payload.themeIds,
+        childId: payload.childId,
+        badges: {
+          create: { badgeId: payload.badgeId },
+        },
+      },
+      include: {
+        progress: true,
+        sessions: true,
+        starEvents: true,
+        challengeAttempts: true,
+        badges: true,
+      },
+    });
+
+    // Cast to ChildProfile - Prisma handles enum conversion
+    return childProfile as unknown as ChildProfile;
+  }
+
+  /**
    * Fetch all children with their progress stats
    * Returns paginated results with optional filtering
    */
@@ -75,11 +111,32 @@ export class ChildrenService {
     return childProfiles as unknown as ChildProfile[];
   }  
   /**
+   * Fetch children for a specific parent ID
+   */
+  static async getChildrenByParentId(parentId: string): Promise<ChildProfile[]> {
+    const childProfiles = await prisma.childProfile.findMany({
+      where: {
+        parentId,
+      },
+      include: {
+        progress: true,
+        sessions: true,
+        starEvents: true,
+        challengeAttempts: true,
+        badges: true,
+      },
+    });
+
+    // Cast to ChildProfile[] - Prisma handles enum conversion
+    return childProfiles as unknown as ChildProfile[];
+  }
+
+  /**
    * Get a single child profile by ID
    */
   static async getChildById(childProfileId: string): Promise<ChildProfile | null> {
     const childProfile = await prisma.childProfile.findUnique({
-      where: { id: childProfileId },
+      where: { childId: childProfileId },
       include: {
         progress: true,
         sessions: true,

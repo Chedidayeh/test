@@ -14,7 +14,7 @@
  */
 
 import { auth } from "@/src/auth";
-import type { ApiResponse, ChildProfile } from "@shared/types";
+import type { ApiResponse, ChildProfile, ParentUser } from "@shared/types";
 
 export interface PaginationParams {
   limit?: number;
@@ -177,6 +177,31 @@ export async function getChildById(childId: string) {
 
   if (!response.success) {
     const errorMsg = response.error?.message || "Failed to fetch child";
+    throw new Error(errorMsg);
+  }
+
+  return response.data;
+}
+
+/**
+ * Fetch parent with matched child profiles
+ * Orchestrates Auth Service (parent + children) and Progress Service (profiles)
+ *
+ * @param parentId - The parent ID to fetch
+ * @returns Parent data with matched child profiles
+ *
+ * @example
+ * const parentData = await getParentWithProfiles("parent-123");
+ */
+export async function getParentWithProfiles(parentId: string) {
+  console.log("[Progress Service API] Fetching parent with profiles:", parentId);
+
+  const response = await apiRequest<ApiResponse<ParentUser>>(
+    `/api/parent-data/${parentId}`,
+  );
+
+  if (!response.success) {
+    const errorMsg = response.error?.message || "Failed to fetch parent with profiles";
     throw new Error(errorMsg);
   }
 

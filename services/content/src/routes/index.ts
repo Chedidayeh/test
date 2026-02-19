@@ -5,6 +5,8 @@ import worldRoutes from "./world.routes";
 import ageGroupRoutes from "./age-group.routes";
 import themeRoutes from "./theme.routes";
 import challengeRoutes from "./challenge.routes";
+import levelRoutes from "./level.routes";
+import badgeRoutes from "./badge.routes";
 
 const router = Router();
 
@@ -15,5 +17,7 @@ router.use("/worlds", worldRoutes);
 router.use("/age-groups", ageGroupRoutes);
 router.use("/themes", themeRoutes);
 router.use("/challenges", challengeRoutes);
+router.use("/levels", levelRoutes);
+router.use("/badges", badgeRoutes);
 
 export default router;

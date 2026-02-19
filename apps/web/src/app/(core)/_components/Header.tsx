@@ -19,10 +19,6 @@ const Header = () => {
       href: "/parent-dashboard",
     },
     {
-      label: "Child Dashboard",
-      href: "/child-dashboard",
-    },
-    {
       label: "Library",
       href: "/story-library",
     },

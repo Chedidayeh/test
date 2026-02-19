@@ -15,6 +15,8 @@ import type {
   AgeGroup,
   Challenge,
   Theme,
+  Level,
+  Badge,
 } from "@shared/types";
 
 interface PaginationParams {
@@ -387,3 +389,90 @@ export async function getChallengesByChapter(chapterId: string) {
   return response.data || [];
 }
 
+
+/**
+ * ============================================
+ * Level ENDPOINTS
+ * ============================================
+ */
+
+export async function getLevels() {
+  const response = await apiRequest<ApiResponse<Level[]>>("/api/levels");
+
+  if (!response.success) {
+    const errorMsg = response.error?.message || "Failed to fetch levels";
+    throw new Error(errorMsg);
+  }
+
+  return response.data || [];
+}
+
+export async function getLevelById(levelId: string) {
+  const response = await apiRequest<ApiResponse<Level>>(
+    `/api/levels/${levelId}`
+  );
+
+  if (!response.success) {
+    const errorMsg = response.error?.message || "Failed to fetch level";
+    throw new Error(errorMsg);
+  }
+
+  return response.data;
+}
+
+export async function getLevelByNumber(levelNumber: number) {
+  const response = await apiRequest<ApiResponse<Level>>(
+    `/api/levels/number/${levelNumber}`
+  );
+
+  if (!response.success) {
+    const errorMsg = response.error?.message || "Failed to fetch level";
+    throw new Error(errorMsg);
+  }
+
+  return response.data;
+}
+
+
+/**
+ * ============================================
+ * Badge ENDPOINTS
+ * ============================================
+ */
+
+export async function getBadges() {
+  const response = await apiRequest<ApiResponse<Badge[]>>("/api/badges");
+
+  if (!response.success) {
+    const errorMsg = response.error?.message || "Failed to fetch badges";
+    throw new Error(errorMsg);
+  }
+
+  return response.data || [];
+}
+
+export async function getBadgeById(badgeId: string) {
+  const response = await apiRequest<ApiResponse<Badge>>(
+    `/api/badges/${badgeId}`
+  );
+
+  if (!response.success) {
+    const errorMsg = response.error?.message || "Failed to fetch badge";
+    throw new Error(errorMsg);
+  }
+
+  return response.data;
+}
+
+export async function getBadgeByLevel(levelNumber: number) {
+  const response = await apiRequest<ApiResponse<Badge>>(
+    `/api/badges/level/${levelNumber}`
+  );
+
+  if (!response.success) {
+    const errorMsg = response.error?.message || "Failed to fetch badge";
+    throw new Error(errorMsg);
+  }
+
+  return response.data;
+}

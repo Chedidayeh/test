@@ -4,6 +4,59 @@ import { ApiResponse, ChildProfile } from "@shared/types";
 
 export class ChildrenController {
   /**
+   * POST /api/children
+   * Create a new child profile
+   */
+  static async createChild(
+    req: Request,
+    res: Response<ApiResponse<ChildProfile>>,
+  ): Promise<void> {
+    try {
+      const { parentEmail, parentId, name, childId, ageGroupId, themeIds , badgeId } = req.body;
+
+      // Validation
+      if (!parentEmail || !parentId || !name || !childId || !ageGroupId || !badgeId) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required fields: parentEmail, parentId, name, childId, ageGroupId, badgeId",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      const child = await ChildrenService.createChild({
+        parentEmail,
+        parentId,
+        name,
+        childId,
+        ageGroupId,
+        themeIds: themeIds || [],
+        badgeId,
+      });
+
+      res.status(201).json({
+        success: true,
+        data: child,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error creating child:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "CREATE_ERROR",
+          message:
+            error instanceof Error ? error.message : "Failed to create child",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  /**
    * GET /api/children
    * Fetch all children with stats
    * Query params: limit, offset, childIds (filter by specific child IDs)
@@ -103,6 +156,56 @@ export class ChildrenController {
           code: "FETCH_ERROR",
           message:
             error instanceof Error ? error.message : "Failed to fetch child",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  /**
+   * GET /api/progress/children/parent/:parentId
+   * Fetch all children for a specific parent
+   */
+  static async getChildrenByParentId(
+    req: Request,
+    res: Response<ApiResponse<ChildProfile[]>>,
+  ): Promise<void> {
+    try {
+      const { parentId } = req.params;
+
+      if (!parentId) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required parameter: parentId",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      const children = await ChildrenService.getChildrenByParentId(parentId);
+
+      res.json({
+        success: true,
+        data: children,
+        pagination: {
+          total: children.length,
+          page: 1,
+          pageSize: children.length,
+          hasMore: false,
+        },
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error fetching children by parent ID:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "FETCH_ERROR",
+          message:
+            error instanceof Error ? error.message : "Failed to fetch children",
         },
         timestamp: new Date(),
       });

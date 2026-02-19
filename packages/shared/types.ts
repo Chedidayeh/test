@@ -48,7 +48,7 @@ export interface User {
   emailVerified?: Date;
   createdAt: Date;
   updatedAt: Date;
-  children?: Child[];
+  children: Child[];
   sessions?: Session[];
   accounts?: Account[];
 }
@@ -60,7 +60,7 @@ export interface Child {
   loginCode?: string;
   avatar?: string;
   ageGroup: string; // References ContentService.AgeGroup.id
-  favoriteGenres: string[];
+  favoriteThemes: string[]; // References ContentService.Theme.id
   createdAt: Date;
   updatedAt: Date;
   parent: User;
@@ -202,18 +202,9 @@ export interface Level {
   id: string;
   levelNumber: number;
   requiredStars: number;
+  badge?: Badge;
   createdAt: Date;
   updatedAt: Date;
-}
-
-export interface Milestone {
-  id: string;
-  name: string;
-  description?: string;
-  type: string; // e.g., "first_story", "first_world", "chapters_count"
-  createdAt: Date;
-  updatedAt: Date;
-  badges: Badge[];
 }
 
 export interface Badge {
@@ -221,21 +212,38 @@ export interface Badge {
   name: string;
   description?: string;
   iconUrl?: string;
-  milestoneId: string;
+  levelId: string;
   createdAt: Date;
   updatedAt: Date;
-  milestone?: Milestone;
+  level: Level;
 }
 
 // ============================================================================
 // PROGRESS SERVICE TYPES
 // ============================================================================
 
+export interface ParentUser {
+  id: string;
+  email: string;
+  name?: string;
+  image?: string;
+  role: RoleType;
+  newUser: boolean;
+  emailVerified?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  children: ChildProfile[];
+}
+
 export interface ChildProfile {
   id: string;
+  name: string;
+  parentId: string; // References Auth.Parent.id
+  parent: User; // Parent user details
   childId: string; // References Auth.Child.id
   child: Child;
   ageGroupId: string; // References Content.AgeGroup.id
+  favoriteThemes: string[]; // References Content.Theme.id
   currentLevel: number;
   totalStars: number;
   createdAt: Date;
@@ -270,6 +278,7 @@ export interface GameSession {
   storyId: string; // References Content.Story.id
   chapterId: string; // References Content.Chapter.id
   startedAt: Date;
+  checkpointAt?: Date; // Optional checkpoint time for mid-session saves
   endedAt?: Date;
   starsEarned: number;
   createdAt: Date;
@@ -329,7 +338,7 @@ export interface ApiResponse<T> {
     message: string;
   };
   pagination?: PaginationMeta;
-  timestamp: Date;
+  timestamp?: Date;
 }
 
 /**

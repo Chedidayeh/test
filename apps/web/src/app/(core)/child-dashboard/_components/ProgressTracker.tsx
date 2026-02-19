@@ -1,38 +1,60 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
-import { CheckIcon, StarIcon, Zap, Flame } from "lucide-react";
+import { Badge, Level } from "@shared/types";
+import { CheckIcon, Star, StarIcon, Zap } from "lucide-react";
 import { useState } from "react";
-
-interface Milestone {
-  id: number;
-  title: string;
-  starsRequired: number;
-  isCompleted: boolean;
-  isCurrent: boolean;
-  reward: string;
-}
 
 interface ProgressTrackerProps {
   currentStars: number;
-  milestones: Milestone[];
+  levels: Level[];
+  currentLevel: number;
 }
 
 const ProgressTracker = ({
   currentStars,
-  milestones,
+  levels,
+  currentLevel,
 }: ProgressTrackerProps) => {
-  const [hoveredMilestone, setHoveredMilestone] = useState<number | null>(null);
+  const [hoveredLevel, setHoveredLevel] = useState<string | null>(null);
 
-  const nextMilestone = milestones.find((m) => !m.isCompleted);
-  const progressPercentage = nextMilestone
-    ? Math.min((currentStars / nextMilestone.starsRequired) * 100, 100)
+  // Level motivation messages
+  const getLevelMessage = (levelNumber: number): string => {
+    const messages: Record<number, string> = {
+      1: "Welcome to your reading adventure",
+      2: "You're building momentum! Keep going 🚀",
+      3: "Wow, you're doing amazing 🌟",
+      4: "You're on fire! You're unstoppable 🔥",
+      5: "You're a reading champion 👑",
+    };
+    return messages[levelNumber] || "Keep reading and you'll reach new heights! ⭐";
+  };
+
+  // Sort levels by requiredStars
+  const sortedLevels = [...levels].sort((a, b) => a.requiredStars - b.requiredStars);
+
+  // Find current level based on levelNumber
+  const currentLevelData = sortedLevels.find(
+    (level) => level.levelNumber === currentLevel
+  );
+
+  // Determine which levels are completed and find next level
+  const completedLevels = sortedLevels.filter(
+    (level) => currentStars >= level.requiredStars
+  );
+  const nextLevel = sortedLevels.find(
+    (level) => currentStars < level.requiredStars
+  );
+
+  const progressPercentage = nextLevel
+    ? Math.min((currentStars / nextLevel.requiredStars) * 100, 100)
     : 100;
-  const starsNeeded = nextMilestone
-    ? nextMilestone.starsRequired - currentStars
+  const starsNeeded = nextLevel
+    ? nextLevel.requiredStars - currentStars
     : 0;
 
-  const completedCount = milestones.filter((m) => m.isCompleted).length;
+  const completedCount = completedLevels.length;
+  const totalLevels = sortedLevels.length;
 
   return (
     <div className="h-full rounded-2xl bg-gradient-to-b from-card via-card to-card/95 p-6 shadow-warm-lg border border-black/30 flex flex-col gap-6">
@@ -43,19 +65,19 @@ const ProgressTracker = ({
             Your Journey
           </h2>
           <p className="text-sm text-muted-foreground font-body">
-            {completedCount}/{milestones.length} milestones unlocked
+            {completedCount}/{totalLevels} levels unlocked
           </p>
         </div>
-        {nextMilestone && (
+        {nextLevel && (
           <div className="bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl p-3 border border-primary/20 text-center">
-            <p className="text-xs text-muted-foreground font-body">
-              <span className="block text-sm font-semibold text-primary mb-1">
-                You&apos;re on fire! 🌟
+            <p className=" text-sm text-muted-foreground font-medium">
+              <span className="block text-base text-primary mb-1">
+                {getLevelMessage(currentLevel)}
               </span>
-              Keep reading to unlock{" "}
-              <span className="font-bold text-primary">
-                {nextMilestone.reward}
-              </span>
+              {currentLevel === 1
+                ? "Start reading to unlock your first badge!"
+                : "Great work! Keep it up to reach the next level."}
+              <br />
             </p>
           </div>
         )}
@@ -73,17 +95,17 @@ const ProgressTracker = ({
         </div>
 
         {/* Current Progress */}
-        {nextMilestone && (
+        {nextLevel && (
           <div className="mt-6 text-center w-full">
             <div className="bg-primary/10 rounded-xl px-4 py-3 border border-primary/20">
               <p className="text-sm text-muted-foreground font-body mb-1">
                 Progress to{" "}
                 <span className="font-bold text-primary">
-                  {nextMilestone.title}
+                  Level {nextLevel.levelNumber}
                 </span>
               </p>
               <div className="flex items-center justify-center gap-1">
-                <Zap size={16} className="text-accent animate-pulse" />
+                <Star size={16} className="text-primary animate-pulse" />
                 <span className="font-bold text-lg text-foreground">
                   {starsNeeded}
                 </span>
@@ -94,80 +116,99 @@ const ProgressTracker = ({
         )}
       </div>
 
-      {/* Milestones List */}
+      {/* Levels List */}
       <div className="space-y-3 flex-1">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          Milestones
+          Levels
         </p>
-        {milestones.map((milestone, index) => (
-          <button
-            key={milestone.id}
-            onClick={() =>
-              setHoveredMilestone(
-                hoveredMilestone === milestone.id ? null : milestone.id,
-              )
-            }
-            onMouseEnter={() => setHoveredMilestone(milestone.id)}
-            onMouseLeave={() => setHoveredMilestone(null)}
-            className={`w-full text-left transition-all duration-300 group`}
-          >
-            <div
-              className={`rounded-xl p-4 border border-black/30 transition-transform duration-300 transform will-change-transform ${
-                milestone.isCompleted
-                  ? "bg-gradient-to-r from-primary/20 to-primary/10 border-primary/50 shadow-warm"
-                  : milestone.isCurrent
-                    ? `bg-gradient-to-r bg-primary/40 `
-                    : "bg-muted/40 border-muted/50 opacity-60 hover:opacity-80"
-              } group-hover:-translate-y-1 group-hover:scale-102 group-hover:shadow-lg`}
-            >
-              <div className="flex items-start gap-3">
-                <div
-                  className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-transform duration-300 ${
-                    milestone.isCompleted
-                      ? "bg-primary text-white scale-110"
-                      : milestone.isCurrent
-                        ? "bg-primary text-white"
-                        : "bg-muted text-muted-foreground"
-                  } group-hover:scale-105`}
-                >
-                  {milestone.isCompleted ? <CheckIcon size={15} /> : index + 1}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p
-                    className={`font-bold text-sm ${
-                      milestone.isCompleted
-                        ? "text-foreground"
-                        : milestone.isCurrent
-                          ? "text-foreground"
-                          : "text-muted-foreground"
-                    }`}
-                  >
-                    {milestone.title}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                    <StarIcon size={12} />
-                    {milestone.starsRequired}
-                  </p>
-                </div>
-              </div>
+        {sortedLevels.map((level, index) => {
+          const isCompleted = currentStars >= level.requiredStars;
+          const isCurrent = currentLevelData?.id === level.id;
+          const badge = level.badge;
 
-              {/* Expanded Reward Info */}
-              {hoveredMilestone === milestone.id && (
-                <div className="mt-3 pt-3 border-t border-primary/20">
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="text-2xl">🎁</span>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Reward</p>
-                      <p className="font-semibold text-foreground">
-                        {milestone.reward}
-                      </p>
-                    </div>
+          return (
+            <button
+              key={level.id}
+              onClick={() =>
+                setHoveredLevel(
+                  hoveredLevel === level.id ? null : level.id,
+                )
+              }
+              onMouseEnter={() => setHoveredLevel(level.id)}
+              onMouseLeave={() => setHoveredLevel(null)}
+              className={`w-full text-left transition-all duration-300 group`}
+            >
+              <div
+                className={`rounded-xl p-4 border border-black/30 transition-transform duration-300 transform will-change-transform ${
+                  isCompleted
+                    ? "bg-gradient-to-r from-primary/20 to-primary/10 border-primary/50 shadow-warm"
+                    : isCurrent
+                      ? `bg-gradient-to-r bg-primary/40 `
+                      : "bg-muted/40 border-muted/50 opacity-60 hover:opacity-80"
+                } group-hover:-translate-y-1 group-hover:scale-102 group-hover:shadow-lg`}
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-transform duration-300 ${
+                      isCompleted
+                        ? "bg-primary text-white scale-110"
+                        : isCurrent
+                          ? "bg-primary text-white"
+                          : "bg-muted text-muted-foreground"
+                    } group-hover:scale-105`}
+                  >
+                    {isCompleted ? <CheckIcon size={15} /> : level.levelNumber}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className={`font-bold text-sm ${
+                        isCompleted
+                          ? "text-foreground"
+                          : isCurrent
+                            ? "text-foreground"
+                            : "text-muted-foreground"
+                      }`}
+                    >
+                      Level {level.levelNumber}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                      <StarIcon size={12} />
+                      {level.requiredStars} stars
+                    </p>
                   </div>
                 </div>
-              )}
-            </div>
-          </button>
-        ))}
+
+                {/* Expanded Badge Info */}
+                {hoveredLevel === level.id && badge && (
+                  <div className="mt-3 pt-3 border-t border-primary/20">
+                    <div className="flex items-center gap-2 text-sm">
+                      {badge.iconUrl ? (
+                        <img
+                          src={badge.iconUrl}
+                          alt={badge.name}
+                          className="w-8 h-8 rounded-full"
+                        />
+                      ) : (
+                        <span className="text-2xl">🏆</span>
+                      )}
+                      <div>
+                        <p className="text-xs text-muted-foreground">Badge</p>
+                        <p className="font-semibold text-foreground">
+                          {badge.name}
+                        </p>
+                        {badge.description && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {badge.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

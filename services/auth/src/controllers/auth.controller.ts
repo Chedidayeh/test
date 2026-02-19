@@ -4,7 +4,7 @@ import { jwtService } from "../services/jwt.service";
 import { generateChildLoginCode } from "../utils/generator";
 import { logger } from "../utils/logger";
 import { PrismaClient, RoleType } from "@prisma/client";
-import { ApiResponse, PaginationMeta, Child } from "@shared/types";
+import { ApiResponse, Child, User } from "@shared/types";
 
 const prisma = new PrismaClient();
 const userService = new UserService(prisma);
@@ -156,15 +156,20 @@ export class AuthController {
   /**
    * Create a child profile for a parent
    */
-  async createChildProfile(req: Request, res: Response): Promise<void> {
+  async createChildProfile(req: Request, res: Response<ApiResponse<Child>>): Promise<void> {
     try {
-      const { parentEmail, name, ageGroup, favoriteGenres } = req.body;
+      const { parentEmail, name, ageGroupId, themeIds } = req.body;
 
       // Validation
-      if (!parentEmail || !name || !ageGroup) {
+      if (!parentEmail || !name || !ageGroupId) {
         res.status(400).json({
-          error: "Missing required fields: parentEmail, name, ageGroup",
-        });
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required fields: parentEmail, name, ageGroupId",
+          },
+          timestamp: new Date(),
+        } as ApiResponse<Child>);
         return;
       }
 
@@ -172,8 +177,13 @@ export class AuthController {
       const parent = await userService.findUserByEmail(parentEmail);
       if (!parent) {
         res.status(404).json({
-          error: "Parent not found",
-        });
+          success: false,
+          error: {
+            code: "NOT_FOUND",
+            message: "Parent not found",
+          },
+          timestamp: new Date(),
+        } as ApiResponse<Child>);
         return;
       }
 
@@ -184,30 +194,40 @@ export class AuthController {
       const child = await userService.createChildProfile(
         parent.id,
         name,
-        ageGroup,
+        ageGroupId,
         childLoginCode,
-        undefined,
-        favoriteGenres
+        themeIds
       );
 
       if (!child) {
         res.status(500).json({
-          error: "Failed to create child profile",
-        });
+          success: false,
+          error: {
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create child profile",
+          },
+          timestamp: new Date(),
+        } as ApiResponse<Child>);
         return;
       }
 
       logger.info("Child profile created", { childId: child.id, parentId: parent.id });
 
       res.status(201).json({
-        childId: child.id,
-        name: child.name,
-        loginCode: childLoginCode,
-        avatar: child.avatar,
-      });
+        success: true,
+        data: child,
+        timestamp: new Date(),
+      } as ApiResponse<Child>);
     } catch (error) {
       logger.error("Create child profile error", { error: String(error) });
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Internal server error",
+        },
+        timestamp: new Date(),
+      } as ApiResponse<Child>);
     }
   }
 
@@ -283,6 +303,66 @@ export class AuthController {
     } catch (error) {
       logger.error("Logout error", { error: String(error) });
       res.status(500).json({ error: "Internal server error" });
+    }
+  }
+
+  /**
+   * Get parent by ID
+   */
+  async getParentById(req: Request, res: Response<ApiResponse<User>>): Promise<void> {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required parameter: id",
+          },
+          timestamp: new Date(),
+        } as ApiResponse<User>);
+        return;
+      }
+
+      logger.info("Get parent by ID request", { parentId: id });
+
+      // Fetch parent from service
+      const parent = await userService.findUserById(id);
+
+      if (!parent) {
+        logger.warn("Parent not found", { parentId: id });
+        res.status(404).json({
+          success: false,
+          error: {
+            code: "NOT_FOUND",
+            message: "Parent not found",
+          },
+          timestamp: new Date(),
+        } as ApiResponse<User>);
+        return;
+      }
+
+      logger.info("Parent fetched successfully", { parentId: id });
+
+      res.status(200).json({
+        success: true,
+        data: parent,
+        timestamp: new Date(),
+      } as ApiResponse<User>);
+    } catch (error) {
+      logger.error("Get parent by ID error", {
+        error: String(error),
+        stack: error instanceof Error ? error.stack : "N/A",
+      });
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch parent",
+        },
+        timestamp: new Date(),
+      } as ApiResponse<User>);
     }
   }
 
@@ -433,6 +513,65 @@ export class AuthController {
         },
         timestamp: new Date(),
       } as ApiResponse<Child[]>);
+    }
+  }
+  /**
+   * Get child by ID
+   */
+  async getChildById(req: Request, res: Response<ApiResponse<Child>>): Promise<void> {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required parameter: id",
+          },
+          timestamp: new Date(),
+        } as ApiResponse<Child>);
+        return;
+      }
+
+      logger.info("Get child by ID request", { childId: id });
+
+      // Fetch child from service
+      const child = await userService.findChildById(id);
+
+      if (!child) {
+        logger.warn("Child not found", { childId: id });
+        res.status(404).json({
+          success: false,
+          error: {
+            code: "NOT_FOUND",
+            message: "Child not found",
+          },
+          timestamp: new Date(),
+        } as ApiResponse<Child>);
+        return;
+      }
+
+      logger.info("Child fetched successfully", { childId: id });
+
+      res.status(200).json({
+        success: true,
+        data: child,
+        timestamp: new Date(),
+      } as ApiResponse<Child>);
+    } catch (error) {
+      logger.error("Get child by ID error", {
+        error: String(error),
+        stack: error instanceof Error ? error.stack : "N/A",
+      });
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch child",
+        },
+        timestamp: new Date(),
+      } as ApiResponse<Child>);
     }
   }
 }

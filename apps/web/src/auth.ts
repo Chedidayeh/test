@@ -6,7 +6,7 @@ declare module "next-auth" {
     id: string;
     email: string;
     name: string;
-    role: "PARENT" | "ADMIN" | "CHILD";
+    role: "PARENT" | "ADMIN";
     newUser: boolean;
     childId?: string;
     parentId?: string;
@@ -18,7 +18,7 @@ declare module "next-auth" {
       id: string;
       email: string;
       name: string;
-      role: "PARENT" | "ADMIN" | "CHILD";
+      role: "PARENT" | "ADMIN";
       newUser?: boolean;
       childId?: string;
       parentId?: string;
@@ -28,9 +28,15 @@ declare module "next-auth" {
 }
 
 export const { auth, handlers, signIn, signOut, unstable_update } = NextAuth({
-  session: { strategy: "jwt" },
+  session: {
+    strategy: "jwt",
+    maxAge: parseInt(process.env.JWT_EXPIRATION!, 10),
+  },
   callbacks: {
-    jwt({ token, user }) {
+    jwt({ token, user, trigger, session }) {
+      if (trigger === "update") {
+        token.newUser = session.user.newUser;
+      }
       // Called when user signs in or token is refreshed
       if (user) {
         // User is available during sign-in
@@ -51,7 +57,7 @@ export const { auth, handlers, signIn, signOut, unstable_update } = NextAuth({
       session.user.id = token.id as string;
       session.user.email = token.email as string;
       session.user.name = token.name as string;
-      session.user.role = token.role as "PARENT" | "ADMIN" | "CHILD";
+      session.user.role = token.role as "PARENT" | "ADMIN";
       session.user.childId = token.childId as string | undefined;
       session.user.parentId = token.parentId as string | undefined;
       session.user.token = token.accessToken as string | undefined; // Include Auth Service JWT in session

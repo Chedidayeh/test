@@ -1,7 +1,7 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar";
-import { Child } from "../_data/mockData";
+import type { ParentUser } from "@shared/types";
 import type { ClassValue } from "clsx";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -11,16 +11,18 @@ function cn(...inputs: ClassValue[]) {
 }
 
 interface ChildSidebarProps {
-  childrenData: Child[];
-  selectedChildId: number;
-  onChildSelect: (childId: number) => void;
+  parentData: ParentUser | null | undefined;
+  selectedChildId: string;
+  onChildSelect: (childId: string) => void;
 }
 
 export default function ChildSidebar({
-  childrenData,
+  parentData,
   selectedChildId,
   onChildSelect,
 }: ChildSidebarProps) {
+  const children = parentData?.children || [];
+
   return (
     <div className="hidden md:flex md:flex-col md:w-64 bg-card rounded-xl p-4 shadow-warm-lg border border-black/30 h-fit md:sticky md:top-8 gap-4">
       <div>
@@ -30,31 +32,31 @@ export default function ChildSidebar({
       </div>
 
       <div className="space-y-2">
-        {childrenData.map((child) => (
+        {children.map((profile) => (
           <button
-            key={child.id}
-            onClick={() => onChildSelect(child.id)}
+            key={profile.childId}
+            onClick={() => onChildSelect(profile.childId)}
             className={cn(
               "w-full flex items-center gap-3 p-3 rounded-lg transition-all",
               "hover:bg- active:scale-95",
-              selectedChildId === child.id
+              selectedChildId === profile.childId
                 ? "bg-primary/15 border border-primary/30"
                 : "hover:bg-muted"
             )}
           >
             <Avatar className="h-10 w-10">
-              <AvatarImage src={child.avatarUrl} alt={child.avatarAlt} />
-              <AvatarFallback>{child.name[0]}</AvatarFallback>
+              <AvatarImage src={profile.child?.avatar || ""} alt={profile.child?.name} />
+              <AvatarFallback>{profile.child?.name?.[0]?.toUpperCase() || "?"}</AvatarFallback>
             </Avatar>
             <div className="flex-1 text-left">
               <p className="font-semibold text-sm text-foreground">
-                {child.name}
+                {profile.child?.name || "Unknown"}
               </p>
               <p className="text-xs text-muted-foreground">
-                {child.totalStars} stars
+                {profile.totalStars || 0} stars
               </p>
             </div>
-            {selectedChildId === child.id && (
+            {selectedChildId === profile.childId && (
               <div className="w-2 h-2 rounded-full bg-primary" />
             )}
           </button>

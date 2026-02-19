@@ -44,22 +44,6 @@ export default function SettingsPage() {
         <p className="text-slate-500 mt-1">Manage system configuration and preferences</p>
       </div>
 
-      {/* General Settings */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold  mb-4">General</h3>
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="version">App Version</Label>
-            <Input
-              id="version"
-              value={settings.appVersion}
-              disabled
-              className="mt-1 bg-slate-50"
-            />
-          </div>
-        </div>
-      </Card>
-
       {/* Feature Flags */}
       <Card className="p-6">
         <h3 className="text-lg font-semibold  mb-4">Features</h3>
@@ -188,30 +172,6 @@ export default function SettingsPage() {
               }
             />
           </div>
-        </div>
-      </Card>
-
-      {/* API Settings */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold  mb-4">API Configuration</h3>
-        <div>
-          <Label htmlFor="rateLimit">Rate Limit (requests/minute)</Label>
-          <Input
-            id="rateLimit"
-            type="number"
-            min="100"
-            value={settings.apiRateLimit}
-            onChange={(e) =>
-              setSettings({
-                ...settings,
-                apiRateLimit: parseInt(e.target.value),
-              })
-            }
-            className="mt-1"
-          />
-          <p className="text-sm text-slate-500 mt-2">
-            Maximum API requests allowed per minute to prevent abuse
-          </p>
         </div>
       </Card>
 

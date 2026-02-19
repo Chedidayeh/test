@@ -99,4 +99,24 @@ router.use("/challenges", (req: Request, res: Response) => {
   forwardToContentService(req, res, `/api/challenges${req.path}`);
 });
 
+/**
+ * Levels Routes
+ * GET /api/levels - fetch all levels
+ * GET /api/levels/:id - fetch single level
+ * GET /api/levels/number/:levelNumber - fetch level by number
+ */
+router.use("/levels", (req: Request, res: Response) => {
+  forwardToContentService(req, res, `/api/levels${req.path}`);
+});
+
+/**
+ * Badges Routes
+ * GET /api/badges - fetch all badges
+ * GET /api/badges/:id - fetch single badge
+ * GET /api/badges/level/:levelId - fetch badge by level
+ */
+router.use("/badges", (req: Request, res: Response) => {
+  forwardToContentService(req, res, `/api/badges${req.path}`);
+});
+
 export default router;

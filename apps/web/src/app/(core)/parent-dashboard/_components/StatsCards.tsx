@@ -8,11 +8,24 @@ interface StatCardProps {
   label: string;
   value: number;
   color: string;
+  borderColor: string;
   textColor: string;
   suffix?: string;
+  suffixColor?: string;
+  subtitle?: string;
 }
 
-const StatCard = ({ icon, label, value, color, textColor, suffix }: StatCardProps) => {
+const StatCard = ({
+  icon,
+  label,
+  value,
+  color,
+  borderColor,
+  textColor,
+  suffix,
+  suffixColor,
+  subtitle,
+}: StatCardProps) => {
   const [displayValue, setDisplayValue] = useState(0);
 
   useEffect(() => {
@@ -41,18 +54,29 @@ const StatCard = ({ icon, label, value, color, textColor, suffix }: StatCardProp
       initial={{ scale: 0.9, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className={`rounded-xl p-2 px-4 shadow-warm-lg border border-black/30 ${color} flex flex-col gap-2`}
+      className={`rounded-xl p-4 px-4 h-28 shadow-warm-lg border ${borderColor} ${color} flex flex-col gap-2`}
     >
-      <div className="flex items-center justify-between">
-        <span className="text-4xl">{icon}</span>
-      </div>
+      {icon && (
+        <div className="flex items-center justify-between">
+          <span className="text-4xl">{icon}</span>
+        </div>
+      )}
       <p className="text-sm font-medium text-muted-foreground">{label}</p>
       <div className="flex items-baseline gap-1">
         <p className={`text-3xl font-data font-bold ${textColor}`}>
           {displayValue}
         </p>
-        {suffix && <span className="text-sm text-muted-foreground">{suffix}</span>}
+        {suffix && (
+          <span className={`text-sm ${suffixColor || "text-muted-foreground"}`}>
+            {suffix}
+          </span>
+        )}
       </div>
+      {subtitle && (
+        <p className={`text-sm ${textColor.replace("600", "500")}`}>
+          {subtitle}
+        </p>
+      )}
     </motion.div>
   );
 };
@@ -62,6 +86,8 @@ interface StatsCardsProps {
   storiesCompleted: number;
   totalReadingTime: number;
   riddlesSolved: number;
+  averagePerDay?: number;
+  currentStreak?: number;
 }
 
 export default function StatsCards({
@@ -69,38 +95,72 @@ export default function StatsCards({
   storiesCompleted,
   totalReadingTime,
   riddlesSolved,
+  averagePerDay = 0,
+  currentStreak = 0,
 }: StatsCardsProps) {
+  // Format total reading time to hours
+  const hours = Math.floor(totalReadingTime / 60);
+  const minutes = totalReadingTime % 60;
+  const readingTimeSubtitle =
+    minutes > 0 ? `(${hours}h ${minutes}m)` : `(${hours}h)`;
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <StatCard
-        icon=""
-        label="Total Stars"
-        value={totalStars}
-        color="bg-gradient-to-br from-yellow-50 to-amber-50"
-        textColor="text-yellow-600"
-      />
-      <StatCard
-        icon=""
-        label="Stories Completed"
-        value={storiesCompleted}
-        color="bg-gradient-to-br from-blue-50 to-cyan-50"
-        textColor="text-blue-600"
-      />
-      <StatCard
-        icon=""
-        label="Reading Time"
-        value={Math.round(totalReadingTime / 60)}
-        suffix="min"
-        color="bg-gradient-to-br from-purple-50 to-pink-50"
-        textColor="text-purple-600"
-      />
-      <StatCard
-        icon=""
-        label="Riddles Solved"
-        value={riddlesSolved}
-        color="bg-gradient-to-br from-green-50 to-emerald-50"
-        textColor="text-green-600"
-      />
-    </div>
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <StatCard
+          icon=""
+          label="Total Stars"
+          value={totalStars}
+          borderColor="border-yellow-200 dark:border-yellow-200/50"
+          color="bg-gradient-to-br from-yellow-200/20 to-amber-200/20"
+          textColor="text-yellow-600"
+        />
+        <StatCard
+          icon=""
+          label="Stories Completed"
+          value={storiesCompleted}
+          borderColor="border-blue-200 dark:border-blue-200/50"
+          color="bg-gradient-to-br from-blue-200/20 to-cyan-200/20"
+          textColor="text-blue-600"
+        />
+        <StatCard
+          icon=""
+          label="Riddles Solved"
+          value={riddlesSolved}
+          borderColor="border-green-200 dark:border-green-200/50"
+          color="bg-gradient-to-br from-green-200/20 to-emerald-200/20"
+          textColor="text-green-600"
+        />
+
+        <StatCard
+          icon=""
+          label="Total Reading Time"
+          value={totalReadingTime}
+          borderColor="border-pink-200 dark:border-pink-200/50"
+          color="bg-linear-to-br from-pink-200/20 to-rose-200/20"
+          textColor="text-pink-600"
+        />
+        <StatCard
+          icon=""
+          label="Average Per Day"
+          value={averagePerDay}
+          suffix="minutes"
+          suffixColor="text-violet-500"
+          borderColor="border-violet-200 dark:border-violet-200/50"
+          color="bg-linear-to-br from-violet-200/20 to-purple-200/20"
+          textColor="text-violet-600"
+        />
+        <StatCard
+          icon=""
+          label="Current Streak"
+          value={currentStreak}
+          suffix="days"
+          suffixColor="text-cyan-500"
+          borderColor="border-cyan-200 dark:border-cyan-200/50"
+          color="bg-linear-to-br from-cyan-200/20 to-cyan-200/20"
+          textColor="text-cyan-600"
+        />
+      </div>
+    </>
   );
 }

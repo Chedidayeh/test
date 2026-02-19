@@ -1,6 +1,7 @@
-import { PrismaClient, User, RoleType, Child } from "@prisma/client";
+import { Child, PrismaClient, RoleType, User } from "@prisma/client";
 import { hashPassword, comparePassword } from "../utils/hashing";
 import { logger } from "../utils/logger";
+import { User as U } from "@shared/types";
 
 export class UserService {
   private prisma: PrismaClient;
@@ -68,11 +69,13 @@ export class UserService {
   /**
    * Find user by ID
    */
-  async findUserById(id: string): Promise<User | null> {
+  async findUserById(id: string): Promise<U | null> {
     try {
-      return await this.prisma.user.findUnique({
+      const user = await this.prisma.user.findUnique({
         where: { id },
+        include: { children: true },
       });
+      return user as U | null;
     } catch (error) {
       logger.error("Error finding user by ID", { id, error: String(error) });
       return null;
@@ -105,8 +108,8 @@ export class UserService {
     name: string,
     ageGroup: string,
     childLoginCode: string,
+    favoriteThemes: string[],
     avatar?: string,
-    favoriteGenres?: string[],
   ): Promise<Child | null> {
     try {
       // Verify parent exists
@@ -123,7 +126,7 @@ export class UserService {
           loginCode: childLoginCode,
           avatar,
           ageGroup,
-          favoriteGenres: favoriteGenres || [],
+          favoriteThemes: favoriteThemes,
         },
       });
 
@@ -159,6 +162,24 @@ export class UserService {
     } catch (error) {
       logger.error("Error finding child by login code", {
         error: String(error),
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Find child by ID
+   */
+  async findChildById(id: string): Promise<Child | null> {
+    try {
+      return await this.prisma.child.findUnique({
+        where: { id },
+        include: { parent: true },
+      });
+    } catch (error) {
+      logger.error("Error finding child by ID", {
+        error: String(error),
+        childId: id,
       });
       return null;
     }
@@ -264,7 +285,7 @@ export class UserService {
    * Get all children with pagination and role-based filtering
    * ADMIN: sees all children
    * PARENT: sees only their own children
-   * 
+   *
    * @param limit - pagination limit (default: 10, max: 100)
    * @param offset - pagination offset (default: 0)
    * @param childIds - optional array of child IDs to filter by

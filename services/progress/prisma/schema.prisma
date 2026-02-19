@@ -15,18 +15,21 @@ datasource db {
 
 // Child Profile: Game state for each child
 model ChildProfile {
-  id         String @id @default(cuid())
-  childId    String @unique // Reference to auth service Child.id
-  ageGroupId String // Reference to content service AgeGroup.id
+  id             String   @id @default(cuid())
+  name           String
+  parentId       String // Reference to auth service Parent.id
+  childId        String   @unique // Reference to auth service Child.id
+  ageGroupId     String // Reference to content service AgeGroup.id
+  favoriteThemes String[] // Reference to content service Theme.id
 
   currentLevel Int @default(1)
   totalStars   Int @default(0)
 
-  progress Progress[]
-  sessions Session[]
-  starEvents StarEvent[]
+  progress          Progress[]
+  sessions          Session[]
+  starEvents        StarEvent[]
   challengeAttempts ChallengeAttempt[]
-  badges   ChildBadge[]
+  badges            ChildBadge[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -78,8 +81,9 @@ model Session {
   storyId   String
   chapterId String
 
-  startedAt DateTime  @default(now())
-  endedAt   DateTime?
+  startedAt    DateTime  @default(now())
+  checkpointAt DateTime? // For mid-session saves
+  endedAt      DateTime?
 
   // Rewards earned in this session
   starsEarned Int @default(0) // 1-3 stars based on performance

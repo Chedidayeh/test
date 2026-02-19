@@ -20,7 +20,7 @@ services:
       - PROGRESS_SERVICE_URL=http://progress-service:3004
       - AI_SERVICE_URL=http://ai-service:3005
       - JWT_SECRET=supersecretkey
-      - JWT_EXPIRATION=86400
+      - JWT_EXPIRATION=604800
     depends_on:
       - auth-service
       - content-service
@@ -43,7 +43,7 @@ services:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://auth_user:auth_pass@auth-db:5432/auth_db
       - JWT_SECRET=supersecretkey
-      - JWT_EXPIRATION=86400
+      - JWT_EXPIRATION=604800
     depends_on:
       - auth-db
     networks:

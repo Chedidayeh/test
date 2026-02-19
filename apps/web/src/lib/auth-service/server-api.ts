@@ -11,8 +11,10 @@
 import { auth } from "@/src/auth";
 import type {
   ApiResponse,
+  Child,
   User,
 } from "@shared/types";
+import { getBadgeByLevel } from "../content-service/server-api";
 
 interface PaginationParams {
   limit?: number;
@@ -150,11 +152,45 @@ export async function getParentById(parentId: string) {
   console.log("[Auth Service API] Fetching parent by ID:", parentId);
 
   const response = await apiRequest<ApiResponse<User>>(
-    `/api/auth/parents/${parentId}`
+    `/api/auth/parent/${parentId}`
   );
 
   if (!response.success) {
     const errorMsg = response.error?.message || "Failed to fetch parent";
+    throw new Error(errorMsg);
+  }
+
+  return response.data;
+}
+
+/**
+ * ============================================
+ * CHILD ENDPOINTS
+ * ============================================
+ */
+
+export async function createChildProfile(payload: {
+  parentEmail: string;
+  parentId: string;
+  name: string;
+  ageGroupId: string;
+  themeIds: string[];
+}) {
+  console.log("[Auth Service API] Creating child profile:", payload);
+
+  const badge = await getBadgeByLevel(1); // Get badge ID for level 1 (new child)
+  console.log("[Auth Service API] Retrieved badge ID for new child:", badge);
+
+  const response = await apiRequest<ApiResponse<Child>>(
+    `/api/auth/children`,
+    {
+      method: "POST",
+      body: JSON.stringify({ ...payload, badgeId: badge?.id }),
+    }
+  );
+
+  if (!response.success) {
+    const errorMsg = response.error?.message || "Failed to create child profile";
     throw new Error(errorMsg);
   }
 
