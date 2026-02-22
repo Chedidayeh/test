@@ -19,12 +19,8 @@ const Header = () => {
       href: "/parent-dashboard",
     },
     {
-      label: "Library",
+      label: "Roadmaps Library",
       href: "/story-library",
-    },
-    {
-      label: "World Progress",
-      href: "/world-progress",
     },
   ];
 

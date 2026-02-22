@@ -4,9 +4,7 @@ import { Button } from "@/src/components/ui/button";
 import { CheckCircle, Lightbulb, SparklesIcon, X } from "lucide-react";
 
 interface Hint {
-  level: number;
   text: string;
-  difficulty: "easy" | "medium" | "hard";
 }
 
 interface HintPanelProps {
@@ -28,14 +26,8 @@ const HintPanel = ({
 }: HintPanelProps) => {
   if (!isVisible) return null;
 
-  const currentHint = hints.find((h) => h.level === currentHintLevel);
+  const currentHint = hints[currentHintLevel - 1];
   const hasMoreHints = currentHintLevel < hints.length;
-
-  const difficultyColors = {
-    easy: "bg-success/20 text-success border-success",
-    medium: "bg-warning/20 text-warning border-warning",
-    hard: "bg-error/20 text-error border-error",
-  };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-fade-in">
@@ -77,14 +69,10 @@ const HintPanel = ({
         {/* Current Hint */}
         {currentHint && (
           <div className="px-6 pb-2">
-            <div
-              className={`p-6 rounded-xl border-2 ${
-                difficultyColors[currentHint.difficulty]
-              }`}
-            >
+            <div className="p-6 rounded-xl border-2 border-secondary bg-secondary/10">
               <div className="flex items-center gap-2 mb-3">
-                <span className="font-caption text-xs uppercase tracking-wider font-semibold">
-                  Hint Level {currentHint.level}
+                <span className="font-caption text-xs uppercase tracking-wider font-semibold text-secondary">
+                  Hint {currentHintLevel} of {hints.length}
                 </span>
               </div>
               <p className="font-body text-lg text-foreground leading-relaxed">
@@ -102,16 +90,16 @@ const HintPanel = ({
             </h3>
             <div className="space-y-3">
               {hints
-                .filter((h) => h.level < currentHintLevel)
-                .map((hint) => (
+                .slice(0, currentHintLevel - 1)
+                .map((hint, index) => (
                   <div
-                    key={hint.level}
+                    key={index}
                     className="p-4 rounded-lg bg-muted border border-border"
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <CheckCircle size={16} className="text-success" />
                       <span className="font-caption text-xs text-muted-foreground">
-                        Hint {hint.level}
+                        Hint {index + 1}
                       </span>
                     </div>
                     <p className="font-body text-sm text-foreground opacity-70">

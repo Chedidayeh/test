@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { ChildrenService } from "../services/children.service";
-import { ApiResponse, ChildProfile } from "@shared/types";
+import { ApiResponse, ChildProfile, GameSession, Progress, ChallengeAttempt, StarEvent, ChallengeStatus, ChallengeType } from "@shared/types";
 
 export class ChildrenController {
   /**
@@ -12,15 +12,31 @@ export class ChildrenController {
     res: Response<ApiResponse<ChildProfile>>,
   ): Promise<void> {
     try {
-      const { parentEmail, parentId, name, childId, ageGroupId, themeIds , badgeId } = req.body;
+      const {
+        parentEmail,
+        parentId,
+        name,
+        childId,
+        ageGroupId,
+        themeIds,
+        badgeId,
+      } = req.body;
 
       // Validation
-      if (!parentEmail || !parentId || !name || !childId || !ageGroupId || !badgeId) {
+      if (
+        !parentEmail ||
+        !parentId ||
+        !name ||
+        !childId ||
+        !ageGroupId ||
+        !badgeId
+      ) {
         res.status(400).json({
           success: false,
           error: {
             code: "BAD_REQUEST",
-            message: "Missing required fields: parentEmail, parentId, name, childId, ageGroupId, badgeId",
+            message:
+              "Missing required fields: parentEmail, parentId, name, childId, ageGroupId, badgeId",
           },
           timestamp: new Date(),
         });
@@ -211,4 +227,264 @@ export class ChildrenController {
       });
     }
   }
+
+  /**
+   * POST /api/progress/:childId/stories/:storyId/start
+   * Create a new story progress record for a child
+   */
+  static async startStoryProgress(
+    req: Request,
+    res: Response<ApiResponse<Progress | null>>,
+  ): Promise<void> {
+    try {
+      const { childId, storyId } = req.params;
+      const { firstChapterId, worldId, roadmapId , challengeIds } = req.body;
+
+      // Validation
+      if (!childId || !storyId) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required parameters: childId and storyId",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      if (!worldId || !roadmapId) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message:
+              "Missing required fields: worldId, roadmapId",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      const progressRecord = await ChildrenService.startStoryProgress({
+        childId,
+        storyId,
+        worldId,
+        roadmapId,
+        firstChapterId,
+        challengeIds,
+      });
+
+      res.status(201).json({
+        success: true,
+        data: progressRecord,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error starting story:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "CREATE_ERROR",
+          message:
+            error instanceof Error ? error.message : "Failed to start story",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+
+  /**
+   * POST /api/progress/checkpoint
+   * Save checkpoint for a game session
+   * Body: { gameSessionId, chapterId }
+   */
+  static async saveCheckpoint(
+    req: Request,
+    res: Response<ApiResponse<GameSession | null>>,
+  ): Promise<void> {
+    try {
+      const { gameSessionId, chapterId } = req.body;
+
+      // Validation
+      if (!gameSessionId || !chapterId) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required fields: gameSessionId and chapterId",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      const updatedSession = await ChildrenService.saveCheckpoint(
+        gameSessionId,
+        chapterId,
+      );
+
+      res.status(200).json({
+        success: true,
+        data: updatedSession,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error saving checkpoint:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "SAVE_ERROR",
+          message:
+            error instanceof Error ? error.message : "Failed to save checkpoint",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  /**
+   * POST /api/progress/challenge/submit
+   * Submit a challenge answer and record the attempt with star rewards
+   * Body: { gameSessionId, challengeId, challengeType, answerId, textAnswer, isCorrect, elapsedTime, attemptNumber, usedHints, baseStars, skipped, status }
+   */
+  static async submitChallengeAnswer(
+    req: Request,
+    res: Response<
+      ApiResponse<{
+        attempt: ChallengeAttempt;
+        starEvent: StarEvent;
+        totalStars: number;
+      }>
+    >,
+  ): Promise<void> {
+    try {
+      const {
+        gameSessionId,
+        challengeId,
+        challengeType,
+        answerId,
+        textAnswer,
+        isCorrect,
+        elapsedTime,
+        attemptNumber,
+        usedHints,
+        maxAttempts,
+        baseStars,
+        skipped,
+        status,
+      } = req.body;
+
+      // Validation
+      if (!gameSessionId || !challengeId) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required fields: gameSessionId and challengeId",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      if (!baseStars || !status) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message:
+              "Missing required fields: baseStars and status",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      const result = await ChildrenService.submitChallengeAnswer({
+        gameSessionId,
+        challengeId,
+        challengeType: challengeType as ChallengeType,
+        answerId,
+        textAnswer,
+        isCorrect,
+        elapsedTime,
+        attemptNumber,
+        usedHints,
+        maxAttempts,
+        baseStars,
+        skipped: skipped || false,
+        status: status as ChallengeStatus,
+      });
+
+      res.status(200).json({
+        success: true,
+        data: result,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error submitting challenge answer:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "SUBMIT_ERROR",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to submit challenge answer",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  /**
+   * POST /api/progress/:gameSessionId/complete
+   * Complete a story for a game session
+   * Marks the story as completed and triggers completion rewards
+   */
+  static async completeStory(
+    req: Request,
+    res: Response<ApiResponse<GameSession | null>>,
+  ): Promise<void> {
+    try {
+      const { gameSessionId } = req.params;
+
+      // Validation
+      if (!gameSessionId) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required parameter: gameSessionId",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      const completedSession = await ChildrenService.completeStory(
+        gameSessionId,
+      );
+
+      res.status(200).json({
+        success: true,
+        data: completedSession,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error completing story:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "COMPLETE_ERROR",
+          message:
+            error instanceof Error ? error.message : "Failed to complete story",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
 }

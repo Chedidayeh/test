@@ -1,11 +1,6 @@
 
-interface StoryPage {
-  pageNumber: number;
-  text: string;
-  image: string;
-  alt: string;
-  hasRiddle: boolean;
-}
+import { motion, AnimatePresence } from "framer-motion";
+import { StoryPage } from "./storyDataTransform";
 
 interface StoryContentProps {
   currentPage: StoryPage;
@@ -13,8 +8,6 @@ interface StoryContentProps {
   highContrast: boolean;
   highlightedWord?: number;
 }
-
-import { motion, AnimatePresence } from "framer-motion";
 
 const StoryContent = ({ currentPage, textSize, highContrast, highlightedWord }: StoryContentProps) => {
   const textSizeClasses = {

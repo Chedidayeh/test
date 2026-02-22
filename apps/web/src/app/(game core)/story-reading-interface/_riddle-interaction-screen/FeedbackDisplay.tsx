@@ -19,10 +19,10 @@ interface Hint {
 import { Star, type LucideIcon } from "lucide-react";
 
 interface FeedbackDisplayProps {
-  type: "correct" | "almost" | "incorrect" | null;
+  type: "solved" | "almost" | "incorrect" | null;
   message: string;
   starsEarned?: number;
-  onContinue: () => void;
+  onContinue: (action: "solved" | "skipped") => void;
   onTryAgain: () => void;
   isVisible: boolean;
 }
@@ -38,7 +38,7 @@ const FeedbackDisplay2 = ({
   if (!isVisible || !type) return null;
 
   const feedbackConfig = {
-    correct: {
+    solved: {
       bgColor: "bg-secondary/80",
       title: "Amazing Work!",
     },
@@ -62,7 +62,7 @@ const FeedbackDisplay2 = ({
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 text-white bg-secondary rounded-full flex items-center justify-center">
               {type === "incorrect" && <CircleX />}
-              {type === "correct" && <CircleCheck />}
+              {type === "solved" && <CircleCheck />}
             </div>
             <div>
               <h2 className="font-heading text-xl text-foreground">
@@ -78,7 +78,7 @@ const FeedbackDisplay2 = ({
             <div className="relative w-60 h-60 rounded-2xl overflow-hidden">
               <img
                 src={
-                  type === "correct"
+                  type === "solved"
                     ? "/hint-avatars/great-work.png"
                     : "/hint-avatars/try-again.png"
                 }
@@ -94,7 +94,7 @@ const FeedbackDisplay2 = ({
           </div>
 
           {/* Stars Earned (for correct answers) */}
-          {type === "correct" && starsEarned > 0 && (
+          {type === "solved" && starsEarned > 0 && (
             <div className="flex items-center justify-center gap-3 mb-6 p-4 bg-secondary/20 rounded-xl">
               <Star />
               <span className="font-heading text-2xl text-foreground">
@@ -105,9 +105,9 @@ const FeedbackDisplay2 = ({
 
           {/* Actions */}
           <div className="space-y-3">
-            {type === "correct" ? (
+            {type === "solved" ? (
               <div className="flex items-center justify-center">
-                <Button variant={"secondary"} onClick={onContinue}>
+                <Button variant={"secondary"} onClick={() => onContinue("solved")}>
                   Continue Story
                 </Button>
               </div>
@@ -120,7 +120,7 @@ const FeedbackDisplay2 = ({
                 >
                   Try Again
                 </Button>
-                <Button variant={"outline"} onClick={onContinue}>
+                <Button variant={"outline"} onClick={() => onContinue("skipped")}>
                   Skip This Riddle
                 </Button>
               </div>

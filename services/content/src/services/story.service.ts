@@ -77,7 +77,9 @@ export class StoryService {
       const story = await this.prisma.story.findUnique({
         where: { id: storyId },
         include: {
-          world: true,
+          world: {
+            include:{roadmap: true}
+          },
           chapters: {
             include: {
               challenge: {

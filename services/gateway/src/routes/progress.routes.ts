@@ -2,7 +2,18 @@ import { Router, Request, Response } from "express";
 import axios from "axios";
 import { logger } from "../utils/logger";
 import { ChildProfileMatcher, ParentProfileMatcher } from "../services";
-import { ApiResponse, ChildProfile, Child, User, ParentUser } from "@shared/types";
+import {
+  ApiResponse,
+  ChildProfile,
+  Child,
+  User,
+  ParentUser,
+  Story,
+  GameSession,
+  Progress,
+  ChallengeAttempt,
+  StarEvent,
+} from "@shared/types";
 
 const router = Router();
 
@@ -10,6 +21,8 @@ const PROGRESS_SERVICE_URL =
   process.env.PROGRESS_SERVICE_URL || "http://localhost:3004";
 const AUTH_SERVICE_URL =
   process.env.AUTH_SERVICE_URL || "http://localhost:3002";
+const CONTENT_SERVICE_URL =
+  process.env.CONTENT_SERVICE_URL || "http://localhost:3003";
 /**
  * Helper function to fetch a specific child by ID
  * Orchestrates Progress Service (child profile) and Auth Service (child data)
@@ -262,10 +275,7 @@ async function forwardToProgressService(
           childrenResponse.status === 200 &&
           ChildProfileMatcher.validate(profiles, children)
         ) {
-          const matchedProfiles = ChildProfileMatcher.match(
-            profiles,
-            children,
-          );
+          const matchedProfiles = ChildProfileMatcher.match(profiles, children);
 
           logger.debug("Profiles matched successfully", {
             total: matchedProfiles.length,
@@ -470,6 +480,634 @@ async function forwardParentWithProfiles(
   }
 }
 
+/**
+ * Helper function to start a new story for a child
+ * Creates a new progress record with initial game session at page 1
+ * Fetches story details from Content Service first
+ */
+async function forwardStartStory(
+  req: Request,
+  res: Response<ApiResponse<Progress | null>>,
+): Promise<void> {
+  try {
+    const { childId, storyId } = req.params;
+
+    if (!childId || !storyId) {
+      logger.warn("Missing required parameters for start story", {
+        childId,
+        storyId,
+      });
+      res.status(400).json({
+        success: false,
+        error: {
+          code: "BAD_REQUEST",
+          message: "Missing required parameters: childId and storyId",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Starting new story", { childId, storyId });
+
+    // Step 1: Fetch story details from Content Service
+    const storyResponse = await axios.get<ApiResponse<Story>>(
+      `${CONTENT_SERVICE_URL}/api/stories/${storyId}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          // Forward auth header if available
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
+          }),
+        },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug("Content service story response received", {
+      status: storyResponse.status,
+      hasStory: !!storyResponse.data?.data,
+    });
+
+    // Handle story not found
+    if (storyResponse.status === 404) {
+      logger.warn("Story not found in content service", { storyId });
+      res.status(404).json({
+        success: false,
+        error: {
+          code: "NOT_FOUND",
+          message: "Story not found",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    // Handle content service error
+    if (storyResponse.status !== 200) {
+      logger.error("Content service error fetching story", {
+        status: storyResponse.status,
+        storyId,
+      });
+      res.status(503).json({
+        success: false,
+        error: {
+          code: "SERVICE_UNAVAILABLE",
+          message: "Content service unavailable",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    const story = storyResponse.data?.data;
+
+    if (!story) {
+      logger.warn("Story data is null in content service response", {
+        storyId,
+      });
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "INVALID_RESPONSE",
+          message: "Invalid response from content service",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Story fetched successfully from content service", {
+      storyId: story.id,
+      title: story.title,
+    });
+
+    // Step 2: Extract required fields from story
+    const firstChapter = story.chapters.find((ch) => ch.order === 1);
+    const firstChapterId = firstChapter?.id;
+    const worldId = story.worldId;
+    const roadmapId = story.world.roadmapId;
+
+    // Extract challenge IDs from all chapters
+    const challengeIds = story.chapters
+      .map((chapter) => chapter.challenge?.id)
+      .filter((id) => id !== undefined) as string[];
+
+    if (!firstChapterId || !worldId || !roadmapId) {
+      logger.warn("Story missing required fields", {
+        storyId,
+        hasFirstChapter: !!firstChapterId,
+        hasWorldId: !!worldId,
+        hasRoadmapId: !!roadmapId,
+      });
+      res.status(400).json({
+        success: false,
+        error: {
+          code: "INVALID_STORY",
+          message:
+            "Story is missing required fields: chapters, worldId, or roadmapId",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.debug("Extracted story metadata", {
+      storyId,
+      firstChapterId,
+      worldId,
+      roadmapId,
+      challengeCount: challengeIds.length,
+    });
+
+    // Step 3: Create new progress record in Progress Service
+    const progressResponse = await axios.post<ApiResponse<Progress | null>>(
+      `${PROGRESS_SERVICE_URL}/api/progress/${childId}/stories/${storyId}/start`,
+      {
+        firstChapterId,
+        worldId,
+        roadmapId,
+        challengeIds,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          // Forward auth header if available
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
+          }),
+        },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug("Progress service create progress response received", {
+      status: progressResponse.status,
+      hasProgress: !!progressResponse.data?.data,
+    });
+
+    // Handle progress service error
+    if (progressResponse.status !== 201 && progressResponse.status !== 200) {
+      logger.error("Progress service error creating progress record", {
+        status: progressResponse.status,
+        childId,
+        storyId,
+      });
+      res.status(503).json({
+        success: false,
+        error: {
+          code: "SERVICE_UNAVAILABLE",
+          message: "Progress service unavailable",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    const progressRecord = progressResponse.data?.data;
+
+    if (!progressRecord) {
+      logger.warn("Progress record is null in progress service response", {
+        childId,
+        storyId,
+      });
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "INVALID_RESPONSE",
+          message: "Invalid response from progress service",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Story progress record created successfully", {
+      childId,
+      storyId,
+      progressId: progressRecord.id,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: progressRecord,
+      timestamp: new Date(),
+    });
+  } catch (error) {
+    logger.error("Start story forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Failed to start story",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+/**
+ * Helper function to submit a challenge answer
+ * Records the challenge attempt with answer data and calculates star rewards
+ * Creates both ChallengeAttempt and StarEvent records
+ */
+async function forwardSubmitChallengeAnswer(
+  req: Request,
+  res: Response<
+    ApiResponse<{
+      attempt: ChallengeAttempt;
+      starEvent: StarEvent;
+      totalStars: number;
+    }>
+  >,
+): Promise<void> {
+  try {
+    const {
+      gameSessionId,
+      challengeId,
+      challengeType,
+      answerId,
+      textAnswer,
+      isCorrect,
+      elapsedTime,
+      attemptNumber,
+      usedHints,
+      maxAttempts,
+      baseStars,
+      skipped,
+      status,
+    } = req.body;
+
+    // Validation
+    if (!gameSessionId || !challengeId) {
+      logger.warn("Missing required fields for submit challenge", {
+        gameSessionId,
+        challengeId,
+      });
+      res.status(400).json({
+        success: false,
+        error: {
+          code: "BAD_REQUEST",
+          message: "Missing required fields: gameSessionId and challengeId",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Submitting challenge answer", {
+      gameSessionId,
+      challengeId,
+      challengeType,
+      isCorrect,
+      attemptNumber,
+      usedHints,
+      skipped,
+      status,
+    });
+
+    // Forward to Progress Service
+    const submitResponse = await axios.post<
+      ApiResponse<{
+        attempt: ChallengeAttempt;
+        starEvent: StarEvent;
+        totalStars: number;
+      }>
+    >(
+      `${PROGRESS_SERVICE_URL}/api/progress/challenge/submit`,
+      {
+        gameSessionId,
+        challengeId,
+        challengeType,
+        answerId,
+        textAnswer,
+        isCorrect,
+        elapsedTime,
+        attemptNumber,
+        usedHints,
+        maxAttempts,
+        baseStars,
+        skipped,
+        status,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
+          }),
+        },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug("Progress service submit challenge response received", {
+      status: submitResponse.status,
+      hasAttempt: !!submitResponse.data?.data?.attempt,
+      hasStarEvent: !!submitResponse.data?.data?.starEvent,
+    });
+
+    // Handle progress service error
+    if (submitResponse.status !== 200 && submitResponse.status !== 201) {
+      logger.error("Progress service error submitting challenge", {
+        status: submitResponse.status,
+        gameSessionId,
+        challengeId,
+      });
+      res.status(submitResponse.status).json({
+        success: false,
+        error: {
+          code: submitResponse.data?.error?.code || "SERVICE_ERROR",
+          message:
+            submitResponse.data?.error?.message ||
+            "Failed to submit challenge answer",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    const responseData = submitResponse.data?.data;
+
+    if (!responseData || !responseData.attempt) {
+      logger.warn(
+        "Challenge attempt data is null in progress service response",
+        {
+          gameSessionId,
+          challengeId,
+        },
+      );
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "INVALID_RESPONSE",
+          message: "Invalid response from progress service",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Challenge answer submitted successfully", {
+      gameSessionId,
+      challengeId,
+      attemptId: responseData.attempt.id,
+      totalStars: responseData.totalStars,
+      skipped,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        attempt: responseData.attempt,
+        starEvent: responseData.starEvent,
+        totalStars: responseData.totalStars,
+      },
+      timestamp: new Date(),
+    });
+  } catch (error) {
+    logger.error("Submit challenge forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Failed to submit challenge answer",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+/**
+ * Save checkpoint for a game session
+ * Takes gameSessionId and chapterId, forwards to Progress Service
+ */
+async function forwardSaveCheckpoint(
+  req: Request,
+  res: Response<ApiResponse<GameSession | null>>,
+): Promise<void> {
+  try {
+    const { gameSessionId, chapterId } = req.body;
+
+    if (!gameSessionId || !chapterId) {
+      logger.warn("Missing required fields for save checkpoint", {
+        gameSessionId,
+        chapterId,
+      });
+      res.status(400).json({
+        success: false,
+        error: {
+          code: "BAD_REQUEST",
+          message: "Missing required fields: gameSessionId and chapterId",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Saving checkpoint for game session", {
+      gameSessionId,
+      chapterId,
+    });
+
+    // Forward to Progress Service
+    const checkpointResponse = await axios.post<ApiResponse<GameSession>>(
+      `${PROGRESS_SERVICE_URL}/api/progress/checkpoint`,
+      {
+        gameSessionId,
+        chapterId,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          // Forward auth header if available
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
+          }),
+        },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug("Progress service save checkpoint response received", {
+      status: checkpointResponse.status,
+      hasGameSession: !!checkpointResponse.data?.data,
+    });
+
+    // Handle progress service error
+    if (checkpointResponse.status !== 200) {
+      logger.error("Progress service error saving checkpoint", {
+        status: checkpointResponse.status,
+        gameSessionId,
+      });
+      res.status(checkpointResponse.status).json({
+        success: false,
+        error: {
+          code: checkpointResponse.data?.error?.code || "SERVICE_ERROR",
+          message:
+            checkpointResponse.data?.error?.message ||
+            "Failed to save checkpoint",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    const updatedSession = checkpointResponse.data?.data;
+
+    if (!updatedSession) {
+      logger.warn("Game session is null in progress service response", {
+        gameSessionId,
+      });
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "INVALID_RESPONSE",
+          message: "Invalid response from progress service",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: updatedSession,
+      timestamp: new Date(),
+    });
+  } catch (error) {
+    logger.error("Save checkpoint forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Failed to save checkpoint",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+/**
+ * Complete a story for a game session
+ * Marks the story as completed and triggers completion rewards
+ */
+async function forwardCompleteStory(
+  req: Request,
+  res: Response<ApiResponse<GameSession | null>>,
+): Promise<void> {
+  try {
+    const { gameSessionId } = req.params;
+
+    if (!gameSessionId) {
+      logger.warn("Missing required parameter for complete story", {
+        gameSessionId,
+      });
+      res.status(400).json({
+        success: false,
+        error: {
+          code: "BAD_REQUEST",
+          message: "Missing required parameter: gameSessionId",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Completing story for game session", { gameSessionId });
+
+    // Forward to Progress Service
+    const completeResponse = await axios.post<ApiResponse<GameSession>>(
+      `${PROGRESS_SERVICE_URL}/api/progress/${gameSessionId}/complete`,
+      {},
+      {
+        headers: {
+          "Content-Type": "application/json",
+          // Forward auth header if available
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
+          }),
+        },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug("Progress service complete story response received", {
+      status: completeResponse.status,
+      hasGameSession: !!completeResponse.data?.data,
+    });
+
+    // Handle progress service error
+    if (completeResponse.status !== 200) {
+      logger.error("Progress service error completing story", {
+        status: completeResponse.status,
+        gameSessionId,
+      });
+      res.status(completeResponse.status).json({
+        success: false,
+        error: {
+          code: completeResponse.data?.error?.code || "SERVICE_ERROR",
+          message:
+            completeResponse.data?.error?.message ||
+            "Failed to complete story",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    const updatedSession = completeResponse.data?.data;
+
+    if (!updatedSession) {
+      logger.warn("Game session is null in progress service response", {
+        gameSessionId,
+      });
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "INVALID_RESPONSE",
+          message: "Invalid response from progress service",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Story completed successfully", {
+      gameSessionId,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: updatedSession,
+      timestamp: new Date(),
+    });
+  } catch (error) {
+    logger.error("Complete story forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Failed to complete story",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
 // Get specific child by ID (must be before the generic /children middleware)
 router.get("/children/:id", (req: Request, res: Response) => {
   forwardGetChildById(req, res);
@@ -482,6 +1120,29 @@ router.use("/children", (req: Request, res: Response) => {
 // Get parent with child profiles
 router.get("/parent-data/:parentId", (req: Request, res: Response) => {
   forwardParentWithProfiles(req, res);
+});
+
+// Story reading modes
+router.post(
+  "/progress/:childId/stories/:storyId/start",
+  (req: Request, res: Response) => {
+    forwardStartStory(req, res);
+  },
+);
+
+// Save checkpoint for a game session
+router.post("/progress/checkpoint", (req: Request, res: Response) => {
+  forwardSaveCheckpoint(req, res);
+});
+
+// Submit challenge answer and record attempt with star rewards
+router.post("/progress/challenge/submit", (req: Request, res: Response) => {
+  forwardSubmitChallengeAnswer(req, res);
+});
+
+// Complete a story for a game session
+router.post("/progress/:gameSessionId/complete", (req: Request, res: Response) => {
+  forwardCompleteStory(req, res);
 });
 
 export default router;

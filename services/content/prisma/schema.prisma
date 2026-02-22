@@ -29,7 +29,8 @@ model AgeGroup {
 model Theme {
   id   String @id @default(cuid())
   name String @unique // e.g., "Adventure", "Mystery", "Fantasy"
-
+  description String
+  imageUrl String?
   roadmap Roadmap?
 
   createdAt DateTime @default(now())
@@ -119,8 +120,9 @@ enum ChallengeType {
   MULTIPLE_CHOICE // Pick one from options
   TRUE_FALSE // True or False
   RIDDLE // Meaning-based riddle
-  CHOOSE_ENDING // Select the right story ending
-  MORAL_DECISION // Character choice question
+  CHOOSE_ENDING // Select the right story ending, all anserwers are correct, see if child understandood the story
+  MORAL_DECISION //  all anserwers are correct, see if child understood the moral of the story
+
 }
 
 // Challenge: Questions/riddles within chapters
@@ -132,7 +134,7 @@ model Challenge {
   type        ChallengeType
   question    String
   description String?
-  maxAttempts Int           @default(4) // Max attempts before auto-reveal
+  maxAttempts Int?          
   baseStars   Int           @default(20) // Base stars for solving
   order       Int // Order in chapter
   hints       String[] // Array of hints for the challenge

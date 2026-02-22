@@ -14,7 +14,6 @@ import type {
   Challenge,
   Answer,
   Level,
-  Milestone,
   Badge,
   // API types
   ApiResponse,
@@ -36,7 +35,6 @@ export type {
   Challenge,
   Answer,
   Level,
-  Milestone,
   Badge,
   ApiResponse,
   PaginationMeta,

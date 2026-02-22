@@ -82,7 +82,9 @@ export class RoadmapService {
           theme: true,
           worlds: {
             include: {
-              stories: true,
+              stories: {
+                include: { chapters: { include: { challenge: true } } },
+              },
             },
             orderBy: { order: "asc" },
           },

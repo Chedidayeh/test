@@ -23,14 +23,21 @@ export enum ChallengeType {
   MULTIPLE_CHOICE = "MULTIPLE_CHOICE",
   TRUE_FALSE = "TRUE_FALSE",
   RIDDLE = "RIDDLE",
-  CHOOSE_ENDING = "CHOOSE_ENDING",
-  MORAL_DECISION = "MORAL_DECISION",
+  CHOOSE_ENDING = "CHOOSE_ENDING", // all anserwers are correct, see if child understandood the story
+  MORAL_DECISION = "MORAL_DECISION", // all anserwers are correct, see if child understood the moral of the story
 }
 
 export enum ProgressStatus {
-  NOT_STARTED = "not_started",
-  IN_PROGRESS = "in_progress",
-  COMPLETED = "completed",
+  NOT_STARTED = "NOT_STARTED",
+  IN_PROGRESS = "IN_PROGRESS",
+  COMPLETED = "COMPLETED",
+}
+
+export enum ChallengeStatus {
+  SOLVED = "SOLVED",
+  SKIPPED = "SKIPPED",
+  INCORRECT = "INCORRECT",
+  NOT_ATTEMPTED = "NOT_ATTEMPTED",
 }
 
 // ============================================================================
@@ -113,6 +120,8 @@ export interface AgeGroup {
 export interface Theme {
   id: string;
   name: string; // e.g., "Adventure", "Mystery", "Fantasy"
+  description: string;
+  imageUrl?: string;
   createdAt: Date;
   updatedAt: Date;
   roadmap?: Roadmap;
@@ -178,7 +187,7 @@ export interface Challenge {
   type: ChallengeType;
   question: string;
   description?: string;
-  maxAttempts: number;
+  maxAttempts?: number;
   baseStars: number;
   order: number;
   hints: string[];
@@ -249,45 +258,67 @@ export interface ChildProfile {
   createdAt: Date;
   updatedAt: Date;
   progress: Progress[];
-  sessions: GameSession[];
-  starEvents: StarEvent[];
-  challengeAttempts: ChallengeAttempt[];
   badges: ChildBadge[];
 }
 
+// Progress represents a child's progress through a specific roadmap , world, story, tracking status, attempts, and rewards earned
 export interface Progress {
   id: string;
   childProfileId: string;
-  roadmapId: string; // References Content.Roadmap.id
-  worldId: string; // References Content.World.id
-  storyId: string; // References Content.Story.id
-  chapterId: string; // References Content.Chapter.id
+  roadmapId: string; // References Content.Roadmap.id - current roadmap being progressed through
+  worldId: string; // References Content.World.id - current world being progressed through
+  storyId: string; // References Content.Story.id - current story being progressed through
   status: ProgressStatus;
   timesCompleted: number;
   timesReplayed: number;
   correctAnswers: number;
   totalAnswers: number;
   completedAt?: Date;
+  gameSession?: GameSession;
   createdAt: Date;
   updatedAt: Date;
 }
 
+// GameSession represents a single playthrough of a story, tracking progress and rewards earned during that session
 export interface GameSession {
   id: string;
-  childProfileId: string;
+  progressId: string;
+  progress?: Progress;
   storyId: string; // References Content.Story.id
-  chapterId: string; // References Content.Chapter.id
+  chapterId: string | null; // References Content.Chapter.id - checkpoint for mid-story saves
   startedAt: Date;
-  checkpointAt?: Date; // Optional checkpoint time for mid-session saves
-  endedAt?: Date;
+  checkpointAt: Date | null; // Optional checkpoint time for mid-session saves
+  endedAt: Date | null;
   starsEarned: number;
+  challengeAttempts: ChallengeAttempt[];
   createdAt: Date;
   updatedAt: Date;
 }
 
+// ChallengeAttempt represents a single attempt at answering a challenge question, tracking the answer given, correctness, hints used, and time spent
+export interface ChallengeAttempt {
+  id: string;
+  sessionId: string;
+  session?: GameSession;
+  status: ChallengeStatus;
+  challengeId: string; // References Content.Challenge.id
+  answerId?: string | null; // For multiple choice / riddle - reference to content Answer.id
+  textAnswer: string | null; // For open-ended questions
+  isCorrect: boolean | null; // null for unanswered attempts or subjective questions
+  attemptNumber: number;
+  usedHints: number;
+  timeSpentSeconds: number;
+  starEventId?: string; // References StarEvent.id - rewards earned from this attempt
+  starEvent: StarEvent;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// StarEvent represents the outcome of a challenge attempt that results in star rewards, tracking details of the attempt and rewards earned
 export interface StarEvent {
   id: string;
-  childProfileId: string;
+  attemptId: string;
+  attempt?: ChallengeAttempt;
   challengeId: string; // References Content.Challenge.id
   baseStars: number;
   noHintBonus: number;
@@ -295,21 +326,7 @@ export interface StarEvent {
   totalStars: number;
   attemptNumber: number;
   usedHints: boolean;
-  wasCorrect: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface ChallengeAttempt {
-  id: string;
-  childProfileId: string;
-  challengeId: string; // References Content.Challenge.id
-  answerId?: string; // References Content.Answer.id
-  textAnswer?: string;
-  isCorrect: boolean;
-  attemptNumber: number;
-  usedHints: boolean;
-  timeSpentSeconds: number;
+  wasCorrect: boolean | null; // null for unanswered attempts or subjective questions
   createdAt: Date;
   updatedAt: Date;
 }

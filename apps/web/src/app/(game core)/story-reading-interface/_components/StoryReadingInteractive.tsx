@@ -1,44 +1,68 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import StoryContent from "./StoryContent";
 import Controls from "./Controls";
 import ReadingSettings from "./ReadingSettings";
-import {
-  CircleQuestionMark,
-  Lightbulb,
-  Puzzle,
-  Settings,
-  X,
-} from "lucide-react";
+import { CircleQuestionMark, Settings, X } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import RiddleInteractive from "../_riddle-interaction-screen/RiddleInteractive";
 import StoryFlowNavigation from "./StoryFlowNavigation";
-
-interface StoryPage {
-  pageNumber: number;
-  text: string;
-  image: string;
-  alt: string;
-  hasRiddle: boolean;
-}
+import {
+  Story,
+  Progress,
+  ChallengeStatus,
+  ChallengeAttempt,
+} from "@shared/types";
+import {
+  transformStoryToPages,
+  getChapterByPageNumber,
+} from "./storyDataTransform";
 
 interface StoryReadingInteractiveProps {
-  storyData: {
-    id: string;
-    title: string;
-    pages: StoryPage[];
-  };
+  story: Story;
+  currentProgress: Progress | null | undefined;
+}
+
+/**
+ * Get the page number for a given chapter ID
+ * Finds the chapter in the story and returns its page number based on order
+ */
+function getPageNumberFromChapterId(
+  story: Story,
+  chapterId: string | null | undefined,
+): number {
+  if (!chapterId || !story.chapters) {
+    return 1; // Default to page 1 if no chapter ID
+  }
+
+  // Find the chapter with matching ID
+  const chapter = story.chapters.find((ch) => ch.id === chapterId);
+  if (!chapter) {
+    return 1; // Default to page 1 if chapter not found
+  }
+
+  // Return the page number based on chapter order (0-indexed offset)
+  return chapter.order;
 }
 
 const StoryReadingInteractive = ({
-  storyData,
+  story,
+  currentProgress,
 }: StoryReadingInteractiveProps) => {
   const router = useRouter();
-  const [currentPage, setCurrentPage] = useState(1);
+
+  // Initialize page from checkpoint, or default to 1
+  const initialPage = getPageNumberFromChapterId(
+    story,
+    currentProgress?.gameSession?.chapterId,
+  );
+
+  const [currentPage, setCurrentPage] = useState(initialPage);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [wordIndex, setWordIndex] = useState(0); // Track word position across pause/play
   const [textSize, setTextSize] = useState<"small" | "medium" | "large">(
     "medium",
   );
@@ -50,40 +74,116 @@ const StoryReadingInteractive = ({
   const [showHelp, setShowHelp] = useState(false);
 
   const [showRiddle, setShowRiddle] = useState(false);
+  const currentChapter = getChapterByPageNumber(story, currentPage);
+
+  // Local cache of challenge attempts by challengeId to prevent losing submissions on page navigation
+  const [localChallengeAttempts, setLocalChallengeAttempts] = useState<
+    Record<string, ChallengeAttempt>
+  >({});
+
+  // Track current challenge attempt for real-time updates
+  const [currentChallengeAttemptState, setCurrentChallengeAttemptState] =
+    useState<ChallengeAttempt | undefined>(undefined);
+
+  // Track total stars earned locally from solved challenges - initialize from game session if available
+  const [totalStarsEarned, setTotalStarsEarned] = useState(
+    currentProgress?.gameSession?.starsEarned || 0,
+  );
+
+  // Transform story chapters into pages
+  const pages = useMemo(() => transformStoryToPages(story), [story]);
 
   useEffect(() => {
-    if (isPlaying) {
-      const words = storyData.pages[currentPage - 1].text.split(" ");
-      let wordIndex = 0;
+    // Update challenge attempt state when current chapter changes
+    const currentChallenge = currentChapter?.challenge;
+
+    if (!currentChallenge) {
+      setCurrentChallengeAttemptState(undefined);
+      return;
+    }
+
+    // 1. First, check if we have a locally cached attempt (from a previous submission)
+    const cachedAttempt = localChallengeAttempts[currentChallenge.id];
+    if (cachedAttempt) {
+      setCurrentChallengeAttemptState(cachedAttempt);
+      return;
+    }
+
+    // 2. If not in cache, try to find it from the server progress data
+    const serverAttempt = currentProgress?.gameSession?.challengeAttempts?.find(
+      (attempt) => attempt.challengeId === currentChallenge.id,
+    );
+    setCurrentChallengeAttemptState(serverAttempt);
+  }, [
+    currentChapter?.challenge?.id,
+    currentChapter?.id,
+    localChallengeAttempts,
+    currentProgress?.gameSession?.challengeAttempts,
+  ]);
+
+  useEffect(() => {
+    if (isPlaying && pages.length > 0) {
+      const words = pages[currentPage - 1].text.split(" ");
+
+      // Start from the current wordIndex, or 0 if at the beginning
+      let currentWordIndex = wordIndex;
 
       const interval = setInterval(() => {
-        if (wordIndex < words.length) {
-          setHighlightedWord(wordIndex);
-          wordIndex++;
+        if (currentWordIndex < words.length) {
+          setHighlightedWord(currentWordIndex);
+          setWordIndex(currentWordIndex + 1);
+          currentWordIndex++;
         } else {
+          // Text finished - reset to start and stop playing
+          setWordIndex(0);
           setIsPlaying(false);
           setHighlightedWord(undefined);
         }
-      }, 1000);
+      }, 700);
 
       return () => clearInterval(interval);
     }
-  }, [isPlaying, currentPage, storyData.pages]);
+  }, [isPlaying, currentPage, pages, wordIndex]);
 
-  const currentPageData = storyData.pages[currentPage - 1];
+  const handlePlayPause = () => {
+    setIsPlaying(!isPlaying);
+    if (!isPlaying) {
+      // Starting to play - show the current word index
+      setHighlightedWord(wordIndex);
+    } else {
+      // Pausing - hide highlight
+      setHighlightedWord(undefined);
+    }
+  };
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     setIsPlaying(false);
     setHighlightedWord(undefined);
+    setWordIndex(0); // Reset word index when changing pages
   };
 
-  const handlePlayPause = () => {
-    setIsPlaying(!isPlaying);
-    if (!isPlaying) {
-      setHighlightedWord(0);
-    } else {
-      setHighlightedWord(undefined);
+  // Get current page data
+  const currentPageData = pages[currentPage - 1];
+  const currentChallenge = currentChapter?.challenge || null;
+
+  // Determine if riddle button should be shown
+  // Show button only if challenge is not attempted
+  const shouldShowRiddleButton =
+    currentPageData.hasRiddle &&
+    currentChallengeAttemptState?.status === ChallengeStatus.NOT_ATTEMPTED;
+
+  // Callback to update challenge attempt when submitted from riddle component
+  const handleChallengeSubmitted = (updatedAttempt: ChallengeAttempt, starsEarned?: number) => {
+    setCurrentChallengeAttemptState(updatedAttempt);
+    // Also cache it locally so we don't lose it on page navigation
+    setLocalChallengeAttempts((prev) => ({
+      ...prev,
+      [updatedAttempt.challengeId]: updatedAttempt,
+    }));
+    // Accumulate stars earned from this challenge attempt
+    if (starsEarned !== undefined && starsEarned > 0) {
+      setTotalStarsEarned((prev) => prev + starsEarned);
     }
   };
 
@@ -91,13 +191,18 @@ const StoryReadingInteractive = ({
     <div className=" pb-32 md:py-24 flex flex-col">
       {/* Story Flow Navigation */}
       <StoryFlowNavigation
-        storyTitle={storyData.title}
+        storyTitle={story.title}
         currentPage={currentPage}
         riddleMode={currentPageData.hasRiddle}
         showRiddle={showRiddle}
         setShowRiddle={setShowRiddle}
-        totalPages={storyData.pages.length}
+        totalPages={pages.length}
         onPageChange={handlePageChange}
+        currentProgress={currentProgress}
+        pages={pages}
+        story={story}
+        currentChallengeAttemptState={currentChallengeAttemptState}
+        totalStarsEarned={totalStarsEarned}
       />
       {!showRiddle ? (
         <>
@@ -133,7 +238,7 @@ const StoryReadingInteractive = ({
                 </motion.div>
 
                 {/* Riddle Indicator */}
-                {currentPageData.hasRiddle && (
+                {shouldShowRiddleButton && (
                   <motion.div
                     layout
                     className="mt-4 flex flex-col items-center gap-3"
@@ -146,6 +251,29 @@ const StoryReadingInteractive = ({
                     >
                       <span>Solve the riddle</span>
                     </Button>
+                  </motion.div>
+                )}
+
+                {/* Challenge Status Display */}
+                {currentPageData.hasRiddle && currentChallengeAttemptState && (
+                  <motion.div
+                    layout
+                    className="mt-4 flex flex-col items-center gap-2"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    {currentChallengeAttemptState.status ===
+                      ChallengeStatus.SOLVED && (
+                      <span className="font-medium text-secondary">
+                        ✓ Challenge Solved
+                      </span>
+                    )}
+                    {currentChallengeAttemptState.status ===
+                      ChallengeStatus.SKIPPED && (
+                      <span className="font-medium text-primary">
+                        ⊘ Challenge Skipped
+                      </span>
+                    )}
                   </motion.div>
                 )}
               </div>
@@ -183,7 +311,14 @@ const StoryReadingInteractive = ({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }}
             >
-              <RiddleInteractive />
+              <RiddleInteractive
+                challenge={currentChallenge}
+                storyImage={currentPageData?.image}
+                storyImageAlt={currentPageData?.alt}
+                gameSessionId={currentProgress?.gameSession?.id}
+                onChallengeSubmitted={handleChallengeSubmitted}
+                onClose={() => setShowRiddle(false)}
+              />
             </motion.div>
           )}
         </AnimatePresence>

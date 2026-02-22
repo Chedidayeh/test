@@ -2,14 +2,12 @@ import { Lightbulb, PencilIcon } from "lucide-react";
 
 interface FloatingItemsProps {
   attempts: number;
-  maxAttempts: number;
   hintsUsed: number;
   totalHints: number;
 }
 
 const FloatingItems = ({
   attempts,
-  maxAttempts,
   hintsUsed,
   totalHints,
 }: FloatingItemsProps) => {
@@ -24,7 +22,7 @@ const FloatingItems = ({
             Attempts
           </p>
           <p className="font-data text-lg font-bold text-foreground">
-            {attempts}/{maxAttempts}
+            {attempts}
           </p>
         </div>
       </div>

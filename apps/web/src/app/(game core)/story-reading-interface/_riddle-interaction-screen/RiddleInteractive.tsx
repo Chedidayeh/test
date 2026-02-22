@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -8,9 +7,11 @@ import TextInputAnswer from "./TextInputAnswer";
 import MultipleChoiceAnswer from "./MultipleChoiceAnswer";
 import HintPanel from "./HintPanel";
 import FeedbackDisplay from "./FeedbackDisplay";
-import { ArrowLeftIcon, Lightbulb, PencilIcon, Route } from "lucide-react";
+import { Lightbulb } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import FloatingItems from "./FloatingItems";
+import { Challenge, ChallengeStatus, ChallengeType, ChallengeAttempt } from "@shared/types";
+import { submitChallengeAnswerAction } from "@/src/lib/progress-service/server-actions";
 
 interface Choice {
   id: string;
@@ -18,60 +19,64 @@ interface Choice {
 }
 
 interface Hint {
-  level: number;
   text: string;
-  difficulty: "easy" | "medium" | "hard";
 }
 
 interface Riddle {
   id: string;
   question: string;
-  type: "text" | "multiple-choice";
+  type: ChallengeType;
   correctAnswer: string;
   choices?: Choice[];
   hints: Hint[];
-  storyImage: string;
+  storyImage?: string;
   storyImageAlt: string;
   starsReward: number;
 }
 
-const RiddleInteractive = () => {
+interface RiddleInteractiveProps {
+  challenge?: Challenge | null;
+  storyImage?: string;
+  storyImageAlt?: string;
+  gameSessionId?: string;
+  onChallengeSubmitted?: (attempt: ChallengeAttempt, starsEarned?: number) => void;
+  onClose?: () => void;
+}
+
+const RiddleInteractive = ({
+  challenge,
+  storyImage,
+  storyImageAlt = "Story image",
+  gameSessionId,
+  onChallengeSubmitted,
+  onClose,
+}: RiddleInteractiveProps) => {
   const router = useRouter();
-  const [currentRiddle] = useState<Riddle>({
-    id: "riddle-1",
-    question:
-      "I have cities, but no houses. I have mountains, but no trees. I have water, but no fish. What am I?",
-    type: "multiple-choice",
-    correctAnswer: "map",
-    choices: [
-      { id: "a", text: "A Map" },
-      { id: "b", text: "A Globe" },
-      { id: "c", text: "A Picture" },
-      { id: "d", text: "A Book" },
-    ],
 
-    hints: [
-      {
-        level: 1,
-        text: "Think about something you use to find your way around. It shows places but is not the real thing.",
-        difficulty: "easy",
-      },
-      {
-        level: 2,
-        text: "This object is flat and has drawings of places. You can fold it and carry it with you.",
-        difficulty: "medium",
-      },
-      {
-        level: 3,
-        text: 'It starts with the letter "M" and helps you navigate from one place to another.',
-        difficulty: "hard",
-      },
-    ],
+  // Transform Challenge to Riddle format
+  const transformChallengeToRiddle = (challenge: Challenge): Riddle => {
+    const riddle: Riddle = {
+      id: challenge.id,
+      question: challenge.question,
+      type: challenge.type as ChallengeType,
+      correctAnswer: challenge.answers?.find((a) => a.isCorrect)?.text || "",
+      choices: challenge.answers?.map((answer) => ({
+        id: answer.id,
+        text: answer.text,
+      })),
+      hints: challenge.hints.map((hint) => ({
+        text: hint,
+      })),
+      storyImage: storyImage,
+      storyImageAlt: storyImageAlt,
+      starsReward: challenge.baseStars,
+    };
+    return riddle;
+  };
 
-    storyImage: "https://images.unsplash.com/photo-1730314737966-92b9760790eb",
-    storyImageAlt:
-      "Colorful illustrated map with mountains, rivers, and cities drawn in cartoon style",
-    starsReward: 5,
+  // Use challenge data if provided, otherwise use fallback
+  const [currentRiddle] = useState<Riddle>(() => {
+      return transformChallengeToRiddle(challenge!);
   });
 
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
@@ -80,7 +85,7 @@ const RiddleInteractive = () => {
   const [currentHintLevel, setCurrentHintLevel] = useState(0);
   const [isHintPanelVisible, setIsHintPanelVisible] = useState(false);
   const [feedbackState, setFeedbackState] = useState<{
-    type: "correct" | "almost" | "incorrect" | null;
+    type: "solved" | "almost" | "incorrect" | null;
     message: string;
     isVisible: boolean;
   }>({
@@ -89,10 +94,94 @@ const RiddleInteractive = () => {
     isVisible: false,
   });
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [isTimerRunning, setIsTimerRunning] = useState(true);
 
-  const maxAttempts = 5;
   const totalHints = currentRiddle.hints.length;
   const availableHints = totalHints - hintsUsed;
+
+  // Timer effect - counts up elapsed time for riddle solving
+  useEffect(() => {
+    if (!isTimerRunning) return;
+
+    const timer = setInterval(() => {
+      setElapsedTime((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isTimerRunning]);
+
+  // Stop timer and log the riddle completion data
+  const stopTimerAndLog = (
+    outcome: "solved" | "almost" | "incorrect" | "skipped",
+  ) => {
+    setIsTimerRunning(false);
+    console.log("[Riddle Timer]", {
+      elapsedSeconds: elapsedTime,
+      riddleId: currentRiddle.id,
+      question: currentRiddle.question,
+      attempts: attempts,
+      hintsUsed: hintsUsed,
+      outcome: outcome,
+    });
+  };
+
+  // Submit challenge answer to backend with attempt and star data
+  const submitChallengeAttempt = async (
+    selectedAnswerId: string | undefined,
+    answerText: string | undefined,
+    isCorrect: boolean,
+    isSkipped: boolean = false,
+    status : ChallengeStatus,
+    attemptNum: number = attempts
+  ) => {
+    if (!gameSessionId) {
+      console.error("[Riddle] No game session ID provided");
+      return;
+    }
+
+    try {
+      console.log("[Riddle] Submitting challenge attempt...", {
+        gameSessionId,
+        challengeId: currentRiddle.id,
+        attemptNumber: attemptNum,
+        isSkipped,
+      });
+
+      const result = await submitChallengeAnswerAction({
+        gameSessionId,
+        challengeId: currentRiddle.id,
+        challengeType: currentRiddle.type,
+        answerId: selectedAnswerId,
+        textAnswer: answerText,
+        isCorrect: isSkipped ? false : isCorrect,
+        elapsedTime: elapsedTime,
+        attemptNumber: attemptNum,
+        usedHints: hintsUsed,
+        baseStars: currentRiddle.starsReward,
+        skipped: isSkipped,
+        status: status
+      });
+
+      if (result.success) {
+        console.log("[Riddle] Challenge attempt recorded successfully", {
+          totalStars: result.data?.totalStarsEarned,
+          attemptId: result.data?.attempt?.id,
+          skipped: isSkipped,
+        });
+        // Notify parent component of the updated attempt with stars earned
+        if (result.data?.attempt) {
+          onChallengeSubmitted?.(result.data.attempt, result.data?.totalStarsEarned);
+        }
+      } else {
+        console.error("[Riddle] Failed to record challenge attempt", {
+          error: result.error,
+        });
+      }
+    } catch (error) {
+      console.error("[Riddle] Error submitting challenge attempt:", error);
+    }
+  };
 
   const handleTextSubmit = (answer: string) => {
     checkAnswer(answer);
@@ -111,32 +200,95 @@ const RiddleInteractive = () => {
   };
 
   const checkAnswer = (answer: string) => {
-    setAttempts((prev) => prev + 1);
+    const currentAttempt = attempts + 1;
+    setAttempts(currentAttempt);
 
     const normalizedAnswer = answer.toLowerCase().trim();
     const correctAnswer = currentRiddle.correctAnswer.toLowerCase();
+    let isCorrect = false;
+    let isAlmost = false;
+    let selectedAnswerId: string | undefined;
+    let answerText: string | undefined;
 
-    if (
-      normalizedAnswer === correctAnswer ||
-      normalizedAnswer.includes(correctAnswer)
-    ) {
+    // Type-specific validation logic
+    switch (currentRiddle.type) {
+      case "RIDDLE":
+        // For riddles: allow substring matching or exact match
+        if (
+          normalizedAnswer === correctAnswer ||
+          normalizedAnswer.includes(correctAnswer)
+        ) {
+          isCorrect = true;
+        } else if (
+          normalizedAnswer.length > 0 &&
+          correctAnswer.includes(normalizedAnswer.substring(0, 3))
+        ) {
+          isAlmost = true;
+        }
+        answerText = answer;
+        break;
+
+      case "TRUE_FALSE":
+        // For true/false: exact match only
+        if (normalizedAnswer === correctAnswer) {
+          isCorrect = true;
+        }
+        answerText = answer;
+        break;
+
+      case "MULTIPLE_CHOICE":
+        // For multiple choice: exact match required
+        if (normalizedAnswer === correctAnswer) {
+          isCorrect = true;
+        }
+        // Get the answer ID from selected choice
+        selectedAnswerId = selectedChoice || undefined;
+        answerText = answer;
+        break;
+
+      case "CHOOSE_ENDING":
+      case "MORAL_DECISION":
+        // For these types: all answers are correct (we log the child's choice to track story understanding)
+        isCorrect = true;
+        // Get the answer ID from selected choice
+        selectedAnswerId = selectedChoice || undefined;
+        answerText = answer;
+        break;
+    }
+
+    if (isCorrect) {
+      stopTimerAndLog("solved");
+      // Submit the challenge attempt to backend
+      submitChallengeAttempt(selectedAnswerId, answerText, true, false , ChallengeStatus.SOLVED, currentAttempt);
+      
+      const messages = {
+        RIDDLE: "Fantastic! You solved the riddle! Your reading skills are amazing!",
+        TRUE_FALSE: "Correct! You understood that statement perfectly!",
+        MULTIPLE_CHOICE: "Excellent choice! You really understood the story!",
+        CHOOSE_ENDING: "Excellent choice! Thank you for sharing your perspective!",
+        MORAL_DECISION: "Excellent choice! Thank you for sharing your perspective!",
+      };
       setFeedbackState({
-        type: "correct",
-        message:
-          "Fantastic! You solved the riddle! Your reading skills are amazing!",
+        type: "solved",
+        message: messages[currentRiddle.type] || messages.MULTIPLE_CHOICE,
         isVisible: true,
       });
-    } else if (
-      normalizedAnswer.length > 0 &&
-      correctAnswer.includes(normalizedAnswer.substring(0, 3))
-    ) {
+    } else if (isAlmost) {
+      stopTimerAndLog("almost");
+      // Submit the challenge attempt to backend (incorrect answer)
+      submitChallengeAttempt(selectedAnswerId, answerText, false, false, ChallengeStatus.INCORRECT, currentAttempt);
+      
       setFeedbackState({
         type: "almost",
         message:
-          "You're very close! Think about it a little more. You can do this!",
+          "Think about it a little more. You can do this!",
         isVisible: true,
       });
     } else {
+      stopTimerAndLog("incorrect");
+      // Submit the challenge attempt to backend (incorrect answer)
+      submitChallengeAttempt(selectedAnswerId, answerText, false, false, ChallengeStatus.INCORRECT, currentAttempt);
+      
       setFeedbackState({
         type: "incorrect",
         message:
@@ -166,10 +318,19 @@ const RiddleInteractive = () => {
 
   const handleTryAgain = () => {
     setFeedbackState({ type: null, message: "", isVisible: false });
+    // Resume timer when user tries again
+    setIsTimerRunning(true);
   };
 
-  const handleContinue = () => {
-    router.push("/story-reading-interface");
+  const handleContinue = (action: "solved" | "skipped") => {
+    stopTimerAndLog(action === "solved" ? "solved" : "skipped");
+    
+    // If skipped, record the attempt as skipped to the backend
+    if (action === "skipped") {
+      submitChallengeAttempt(undefined, undefined, false, true, ChallengeStatus.SKIPPED, attempts);
+    }
+    
+    onClose?.();
   };
 
   const handleAudioPlay = () => {
@@ -177,9 +338,6 @@ const RiddleInteractive = () => {
     setTimeout(() => setIsAudioPlaying(false), 3000);
   };
 
-  const handleBackToStory = () => {
-    router.push("/story-reading-interface");
-  };
 
   return (
     <div className="">
@@ -187,7 +345,6 @@ const RiddleInteractive = () => {
         {/* Progress Indicator */}
         <FloatingItems
           attempts={attempts}
-          maxAttempts={maxAttempts}
           hintsUsed={hintsUsed}
           totalHints={totalHints}
         />
@@ -196,18 +353,20 @@ const RiddleInteractive = () => {
         <div className="mt-6">
           <RiddleQuestion
             question={currentRiddle.question}
-            storyImage={currentRiddle.storyImage}
+            storyImage={currentRiddle.storyImage || "https://images.unsplash.com/photo-1730314737966-92b9760790eb"}
             storyImageAlt={currentRiddle.storyImageAlt}
             riddleNumber={1}
             totalRiddles={3}
             onAudioPlay={handleAudioPlay}
             isAudioPlaying={isAudioPlaying}
+            elapsedTime={elapsedTime}
+            challengeType={currentRiddle.type}
           />
         </div>
 
         {/* Answer Input */}
         <div className="mt-6 bg-card rounded-xl shadow-warm-lg p-6">
-          {currentRiddle.type === "text" ? (
+          {currentRiddle.type === "RIDDLE" ? (
             <TextInputAnswer
               onSubmit={handleTextSubmit}
               isDisabled={feedbackState.isVisible}
@@ -251,7 +410,7 @@ const RiddleInteractive = () => {
           type={feedbackState.type}
           message={feedbackState.message}
           starsEarned={
-            feedbackState.type === "correct" ? currentRiddle.starsReward : 0
+            feedbackState.type === "solved" ? currentRiddle.starsReward : 0
           }
           onContinue={handleContinue}
           onTryAgain={handleTryAgain}
@@ -263,7 +422,6 @@ const RiddleInteractive = () => {
       <div className="fixed right-4 bottom-24 z-50 pointer-events-none">
         <button
           onClick={handleShowHintPanel}
-          disabled={availableHints === 0}
           className="pointer-events-auto flex items-center gap-3 px-4 py-3 bg-secondary text-white rounded-full shadow-warm hover:scale-105 transition-smooth disabled:opacity-50"
         >
           <Lightbulb size={20} />

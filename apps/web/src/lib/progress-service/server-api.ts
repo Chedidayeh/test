@@ -14,11 +14,49 @@
  */
 
 import { auth } from "@/src/auth";
-import type { ApiResponse, ChildProfile, ParentUser } from "@shared/types";
+import type { ApiResponse, ChildProfile, ChallengeType, GameSession, ParentUser, Progress, ChallengeAttempt, StarEvent, ChallengeStatus } from "@shared/types";
 
 export interface PaginationParams {
   limit?: number;
   offset?: number;
+}
+
+/**
+ * Request payload for submitting a challenge answer
+ * Includes all data needed to create ChallengeAttempt and StarEvent
+ */
+export interface SubmitChallengeAnswerRequest {
+  gameSessionId: string;
+  challengeId: string;
+  challengeType: ChallengeType;
+  
+  // Answer data
+  answerId?: string;        // For multiple choice
+  textAnswer?: string;      // For text input
+  isCorrect: boolean;       // Whether the answer was correct
+  
+  // Attempt data
+  elapsedTime: number;      // seconds spent on this challenge
+  attemptNumber: number;    // Which attempt is this (1st, 2nd, etc)
+  usedHints: number;        // Number of hints used (0 = no hints, 1 = 1 hint, etc.)
+  maxAttempts?: number;     // Max allowed attempts for this challenge
+  skipped?: boolean;        // Whether the challenge was skipped
+  status: ChallengeStatus;  // The status of the challenge attempt
+  
+  // Challenge metadata for star calculation
+  baseStars: number;        // Base stars for this challenge
+}
+
+/**
+ * Response from challenge answer submission
+ * Contains both the attempt record and star event
+ */
+export interface SubmitChallengeAnswerResponse {
+  success: boolean;
+  attempt?: ChallengeAttempt;
+  starEvent?: StarEvent;
+  totalStarsEarned?: number;
+  error?: string;
 }
 
 
@@ -208,3 +246,193 @@ export async function getParentWithProfiles(parentId: string) {
   return response.data;
 }
 
+/**
+ * Start a new story for a child
+ * Saves a new progress record for the child profile with initial game session
+ * Initializes progress at page 1 (chapter 1)
+ *
+ * @param childId - The child ID
+ * @param storyId - The story ID to start
+ * @returns Progress record for the started story
+ *
+ * @example
+ * const progress = await startStory("child-123", "story-001");
+ */
+export async function startStory(childId: string, storyId: string) {
+  console.log("[Progress Service API] Starting new story:", { childId, storyId });
+
+  const response = await apiRequest<ApiResponse<Progress | null>>(
+    `/api/progress/${childId}/stories/${storyId}/start`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        startPage: 1,
+      }),
+    },
+  );
+
+  if (!response.success) {
+    const errorMsg = response.error?.message || "Failed to start story";
+    throw new Error(errorMsg);
+  }
+
+  return response.data;
+}
+
+/**
+ * Save a checkpoint for a game session
+ * Updates the game session with the current chapter and timestamp
+ * Used when a player pauses or completes a chapter
+ *
+ * @param gameSessionId - The game session ID
+ * @param chapterId - The chapter ID to save as checkpoint
+ * @returns Updated GameSession with checkpoint data
+ *
+ * @example
+ * const session = await saveCheckpoint("session-123", "chapter-456");
+ */
+export async function saveCheckpoint(
+  gameSessionId: string,
+  chapterId: string,
+) {
+  console.log("[Progress Service API] Saving checkpoint:", {
+    gameSessionId,
+    chapterId,
+  });
+
+  const response = await apiRequest<ApiResponse<GameSession | null>>(
+    `/api/progress/checkpoint`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        gameSessionId,
+        chapterId,
+      }),
+    },
+  );
+
+  if (!response.success) {
+    const errorMsg = response.error?.message || "Failed to save checkpoint";
+    throw new Error(errorMsg);
+  }
+
+  return response.data;
+}
+
+/**
+ * Submit a challenge answer and record the attempt with star rewards
+ * Creates both ChallengeAttempt and StarEvent records atomically
+ * Handles star calculation based on challenge type and difficulty
+ *
+ * @param request - Challenge answer submission data
+ * @returns Response with attempt and star event data
+ *
+ * @example
+ * const result = await submitChallengeAnswer({
+ *   gameSessionId: "session-123",
+ *   challengeId: "challenge-456",
+ *   challengeType: "RIDDLE",
+ *   answerId: "answer-789",
+ *   isCorrect: true,
+ *   elapsedTime: 45,
+ *   attemptNumber: 1,
+ *   usedHints: false,
+ *   baseStars: 20
+ * });
+ */
+export async function submitChallengeAnswer(
+  request: SubmitChallengeAnswerRequest,
+): Promise<SubmitChallengeAnswerResponse> {
+  console.log("[Progress Service API] Submitting challenge answer:", {
+    gameSessionId: request.gameSessionId,
+    challengeId: request.challengeId,
+    challengeType: request.challengeType,
+    isCorrect: request.isCorrect,
+    elapsedTime: request.elapsedTime,
+    attemptNumber: request.attemptNumber,
+    usedHints: request.usedHints,
+    skipped: request.skipped,
+    status: request.status,
+  });
+
+  const response = await apiRequest<
+    ApiResponse<{
+      attempt: ChallengeAttempt;
+      starEvent: StarEvent;
+      totalStars: number;
+    }>
+  >(`/api/progress/challenge/submit`, {
+    method: "POST",
+    body: JSON.stringify({
+      gameSessionId: request.gameSessionId,
+      challengeId: request.challengeId,
+      challengeType: request.challengeType,
+      answerId: request.answerId,
+      textAnswer: request.textAnswer,
+      isCorrect: request.isCorrect,
+      elapsedTime: request.elapsedTime,
+      attemptNumber: request.attemptNumber,
+      usedHints: request.usedHints,
+      maxAttempts: request.maxAttempts,
+      baseStars: request.baseStars,
+      skipped: request.skipped,
+      status: request.status,
+    }),
+  });
+
+  if (!response.success) {
+    const errorMsg =
+      response.error?.message || "Failed to submit challenge answer";
+    throw new Error(errorMsg);
+  }
+
+  const data = response.data!;
+
+  console.log("[Progress Service API] Challenge answer submitted successfully", {
+    challengeId: request.challengeId,
+    totalStars: data.totalStars,
+    attemptId: data.attempt.id,
+    skipped: request.skipped,
+  });
+
+  return {
+    success: true,
+    attempt: data.attempt,
+    starEvent: data.starEvent,
+    totalStarsEarned: data.totalStars,
+  };
+}
+
+/**
+ * Complete a story for a game session
+ * Marks the story as completed and triggers completion rewards
+ *
+ * @param gameSessionId - The game session ID
+ * @returns Updated GameSession with completion data
+ *
+ * @example
+ * const result = await completeStory("session-123");
+ */
+export async function completeStory(
+  gameSessionId: string,
+): Promise<GameSession | null> {
+  console.log("[Progress Service API] Completing story:", { gameSessionId });
+
+  const response = await apiRequest<ApiResponse<GameSession>>(
+    `/api/progress/${gameSessionId}/complete`,
+    {
+      method: "POST",
+    },
+  );
+
+  if (!response.success) {
+    const errorMsg = response.error?.message || "Failed to complete story";
+    throw new Error(errorMsg);
+  }
+
+  console.log("[Progress Service API] Story completed successfully", {
+    gameSessionId,
+  });
+
+  return response.data || null;
+}

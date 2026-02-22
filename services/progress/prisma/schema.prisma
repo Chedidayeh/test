@@ -25,11 +25,8 @@ model ChildProfile {
   currentLevel Int @default(1)
   totalStars   Int @default(0)
 
-  progress          Progress[]
-  sessions          Session[]
-  starEvents        StarEvent[]
-  challengeAttempts ChallengeAttempt[]
-  badges            ChildBadge[]
+  progress Progress[]
+  badges   ChildBadge[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -37,19 +34,24 @@ model ChildProfile {
   @@index([childId])
 }
 
-// Progress: Tracks child's progression through story content
+enum ProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+// Progress represents a child's progress through a specific roadmap , world, story, tracking status, attempts, and rewards earned
 model Progress {
   id             String       @id @default(cuid())
   childProfileId String
   childProfile   ChildProfile @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
 
   // References to content service (string IDs only - no direct FK)
-  roadmapId String
-  worldId   String
-  storyId   String
-  chapterId String
+  roadmapId String // Reference to content service Roadmap.id
+  worldId   String // Reference to content service World.id
+  storyId   String // Reference to content service Story.id
 
-  status String @default("not_started") // "not_started", "in_progress", "completed"
+  status ProgressStatus @default(NOT_STARTED) // "not_started", "in_progress", "completed"
 
   // Attempt tracking
   timesCompleted Int @default(0)
@@ -61,25 +63,26 @@ model Progress {
 
   completedAt DateTime?
 
+  gameSession GameSession?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Each child tracks progress on each chapter once
-  @@unique([childProfileId, chapterId])
+  @@unique([childProfileId, storyId])
   @@index([childProfileId])
   @@index([storyId])
-  @@index([chapterId])
 }
 
-// Session: Individual game session
-model Session {
-  id             String       @id @default(cuid())
-  childProfileId String
-  childProfile   ChildProfile @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
+// GameSession represents a single playthrough of a story, tracking progress and rewards earned during that session
+model GameSession {
+  id         String   @id @default(cuid())
+  progressId String   @unique
+  progress   Progress @relation(fields: [progressId], references: [id], onDelete: Cascade)
 
   // References to content service
-  storyId   String
-  chapterId String
+  storyId   String // Redundant reference for easier querying of sessions by story
+  chapterId String? // Optional reference to chapter for mid-story saves
 
   startedAt    DateTime  @default(now())
   checkpointAt DateTime? // For mid-session saves
@@ -88,21 +91,61 @@ model Session {
   // Rewards earned in this session
   starsEarned Int @default(0) // 1-3 stars based on performance
 
+  challengeAttempts ChallengeAttempt[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([childProfileId])
+  @@index([progressId])
   @@index([chapterId])
 }
 
-// Star Events: Detailed tracking of star gains
+enum ChallengeStatus {
+  SOLVED
+  SKIPPED
+  INCORRECT
+  NOT_ATTEMPTED
+}
+
+// ChallengeAttempt represents a single attempt at answering a challenge question, tracking the answer given, correctness, hints used, and time spent
+model ChallengeAttempt {
+  id        String      @id @default(cuid())
+  sessionId String
+  session   GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  // References to content service
+  challengeId String // Reference to content service Challenge.id
+  answerId    String? // For multiple choice / riddle - reference to content Answer.id
+
+  // Answer data
+  textAnswer String? // For short answer challenges - user's free text input
+  isCorrect  Boolean? // null for unanswered attempts or subjective questions
+  status     ChallengeStatus @default(NOT_ATTEMPTED)
+
+  // Attempt tracking
+  attemptNumber Int
+  usedHints     Int // Number of hints used (0 = no hints, 1 = 1 hint, etc.)
+
+  // Time tracking (in seconds)
+  timeSpentSeconds Int        @default(0)
+  starEvent        StarEvent?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sessionId])
+  @@index([challengeId])
+  @@index([answerId])
+}
+
+// StarEvent represents the outcome of a challenge attempt that results in star rewards, tracking details of the attempt and rewards earned
 model StarEvent {
-  id             String       @id @default(cuid())
-  childProfileId String
-  childProfile   ChildProfile @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
+  id        String           @id @default(cuid())
+  attemptId String           @unique
+  attempt   ChallengeAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
 
   // Reference to content service
-  challengeId String
+  challengeId String // Reference to content service Challenge.id
 
   // Stars breakdown
   baseStars     Int @default(0)
@@ -112,43 +155,14 @@ model StarEvent {
 
   // Challenge attempt info
   attemptNumber Int
-  usedHints     Boolean @default(false)
-  wasCorrect    Boolean @default(false)
+  usedHints     Boolean  @default(false)
+  wasCorrect    Boolean? // null for unanswered attempts or subjective questions
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([childProfileId])
+  @@index([attemptId])
   @@index([challengeId])
-}
-
-// Challenge Attempt: Detailed tracking of each challenge attempt with answer and time
-model ChallengeAttempt {
-  id             String       @id @default(cuid())
-  childProfileId String
-  childProfile   ChildProfile @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
-
-  // References to content service
-  challengeId String
-  answerId    String? // For multiple choice / riddle - reference to Answer.id
-
-  // Answer data
-  textAnswer String? // For short answer challenges - user's free text input
-  isCorrect  Boolean @default(false)
-
-  // Attempt tracking
-  attemptNumber Int
-  usedHints     Boolean @default(false)
-
-  // Time tracking (in seconds)
-  timeSpentSeconds Int @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([childProfileId])
-  @@index([challengeId])
-  @@index([answerId])
 }
 
 // Child Badge: Track earned badges for each child

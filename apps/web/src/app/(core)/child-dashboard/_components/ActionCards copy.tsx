@@ -121,6 +121,39 @@ const ActionCards = ({ continueStory }: ActionCardsProps) => {
           </div>
         </Link>
       )}
+
+      {/* Other Action Cards */}
+      {actions.map((action) => {
+        const Icon = action.icon as LucideIcon;
+        return (
+          <Link
+            key={action.id}
+            href="/story-reading-interface"
+            className="bg-black/90 text-white rounded-xl p-6 shadow-warm-lg group relative overflow-hidden transform-gpu transition-transform duration-300 hover:scale-105  hover:z-20"
+          >
+            <div className="absolute inset-0 opacity-80">
+              <img
+                src={action.image}
+                alt={action.title}
+                className="w-full h-full object-cover transform-gpu transition-transform duration-700 group-hover:scale-110"
+              />
+            </div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div className="bg-white/20 rounded-full px-3 py-1">
+                  {Icon && <Icon size={20} className={action.textColor} />}
+                </div>
+              </div>
+              <div className="bg-white/20 px-3 max-w-max rounded-xl opacity-90">
+                <h2 className="font-heading text-xl mb-2">{action.title}</h2>
+              </div>
+              <p className="font-body bg-white/20 px-3 max-w-max rounded-xl opacity-90 mb-4">
+                {action.description}
+              </p>
+            </div>
+          </Link>
+        );
+      })}
     </div>
   );
 };
