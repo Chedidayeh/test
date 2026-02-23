@@ -3,13 +3,13 @@
 import { TabsContent } from "@/src/components/ui/tabs";
 import RiddlesStats from "./RiddlesStats";
 import TimeAnalytics from "./TimeAnalytics";
-import { ChildDashboardData } from "../_data/mockData";
+import { ChildProfile } from "@shared/types";
 
 interface AnalyticsTabProps {
-  data: ChildDashboardData;
+  selectedChild: ChildProfile; // Replace with actual type if available
 }
 
-export default function AnalyticsTab({ data }: AnalyticsTabProps) {
+export default function AnalyticsTab({ selectedChild }: AnalyticsTabProps) {
   return (
     <TabsContent value="analytics" className="space-y-6">
       <div className="bg-linear-to-r from-primary/5 via-secondary/5 to-accent/5 rounded-xl p-6 border border-black/10">
@@ -17,7 +17,7 @@ export default function AnalyticsTab({ data }: AnalyticsTabProps) {
           Detailed Analytics
         </h2>
         <p className="text-muted-foreground">
-          In-depth insights into {data.child.name}'s reading and problem-solving
+          In-depth insights into {selectedChild.child.name}&apos;s reading and problem-solving
           journey
         </p>
       </div>
@@ -30,7 +30,7 @@ export default function AnalyticsTab({ data }: AnalyticsTabProps) {
               Riddle Statistics
             </h3>
           </div>
-          <RiddlesStats riddles={data.riddles} />
+          <RiddlesStats childProgress={selectedChild.progress} />
         </div>
 
         <div>
@@ -40,7 +40,7 @@ export default function AnalyticsTab({ data }: AnalyticsTabProps) {
               Time Analytics
             </h3>
           </div>
-          <TimeAnalytics timeData={data.timeData} />
+          <TimeAnalytics childProgress={selectedChild.progress} />
         </div>
       </div>
     </TabsContent>

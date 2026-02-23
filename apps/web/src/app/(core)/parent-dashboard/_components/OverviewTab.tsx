@@ -28,7 +28,7 @@ export default function OverviewTab({
   const riddlesSolved = getRiddlesSolved(selectedChild);
   const averagePerDay = getAverageReadingTimePerDay(selectedChild);
   const streak = getCurrentStreak(selectedChild);
-
+  
   return (
     <TabsContent value="overview" className="space-y-6">
       <div className="bg-linear-to-r from-primary/5 via-secondary/5 to-accent/5 rounded-xl p-6 border border-black/10">

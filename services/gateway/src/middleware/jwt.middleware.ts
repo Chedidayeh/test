@@ -64,7 +64,7 @@ export async function jwtMiddleware(
         });
         return;
       }
-
+      
       payload = jwt.verify(token, secret);
       logger.debug("JWT signature verified", { userId: payload.id });
     } catch (error) {

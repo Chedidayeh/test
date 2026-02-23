@@ -4,10 +4,8 @@ import { useState } from "react";
 import ChildSidebar from "./ChildSidebar";
 import DashboardTabs from "./DashboardTabs";
 import OverviewTab from "./OverviewTab";
-import ProgressTab from "./ProgressTab";
 import AchievementsTab from "./AchievementsTab";
 import AnalyticsTab from "./AnalyticsTab";
-import { getChildDashboardData } from "../_data/mockData";
 import { Badge, ParentUser } from "@shared/types";
 
 export default function ParentDashboardInteractive(
@@ -20,8 +18,6 @@ export default function ParentDashboardInteractive(
   const selectedChild = children.find((child) => child.childId === selectedChildId);
   const parentName = parentData?.name
   const [activeTab, setActiveTab] = useState("overview");
-
-  const dashboardData = getChildDashboardData(selectedChildId as any );
 
   return (
       <div className="container mx-auto px-4">
@@ -43,8 +39,8 @@ export default function ParentDashboardInteractive(
               onTabChange={setActiveTab}
             >
               <OverviewTab  parentName={parentName} selectedChild={selectedChild} />
-              <AchievementsTab data={dashboardData} selectedChild={selectedChild} allAvailableBadges={badges} />
-              <AnalyticsTab data={dashboardData} />
+              <AchievementsTab selectedChild={selectedChild} allAvailableBadges={badges} />
+              <AnalyticsTab selectedChild={selectedChild!} />
             </DashboardTabs>
           </div>
         </div>

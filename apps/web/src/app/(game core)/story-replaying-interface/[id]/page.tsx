@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import StoryReadingInteractive from "../_components/StoryReadingInteractive";
 import { getStoryById } from "@/src/lib/content-service/server-api";
 import { startStory } from "@/src/lib/progress-service/server-api";
-import { redirect } from "next/navigation";
+import StoryReplayingInteractive from "../_components/StoryReadingInteractive";
 
 export const metadata: Metadata = {
   title: "Story Reading - Readly",
@@ -34,37 +33,20 @@ export default async function page({
     return <div className="p-4 text-red-500">Story not found for id: {id}</div>;
   }
 
-  const currentProgress = await startStory(childId, id); // returned progress contains the current game session
-  if (!currentProgress) {
+  if (!childId) {
     return (
       <div className="p-4 text-red-500">
-        Child progress not found for childId: {childId} and storyId: {id}
+        Child not found for childId: {childId}
       </div>
     );
-  }
-  console.log("Created new progress record:", currentProgress);
-  let mode: "start" | "continue" | "replay";
-
-  if (currentProgress?.gameSession?.endedAt != null) {
-    mode = "replay";
-  } else if (currentProgress?.gameSession?.checkpointAt != null) {
-    mode = "continue";
-  } else {
-    mode = "start";
-  }
-  if (mode === "replay") {
-    redirect(`/story-replaying-interface/${id}?childId=${childId}`);
   }
 
   return (
     <>
-      {mode === "continue" || mode === "start" ? (
-        <StoryReadingInteractive
-          story={story!}
-          currentProgress={currentProgress}
-          childId={childId}
-        />
-      ) : null}
+      <StoryReplayingInteractive
+        story={story!}
+        childId={childId}
+      />
     </>
   );
 }

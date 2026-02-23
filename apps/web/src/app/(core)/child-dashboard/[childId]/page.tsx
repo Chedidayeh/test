@@ -36,7 +36,9 @@ export default async function ChildDashboardPage({
   const { childId } = await params;
   const childData = await getChildById(childId);
   if (!childData) {
-    redirect("parent-dashboard");
+    return (
+      <div className="p-4 text-red-500">Child not found for childId: {childId}</div>
+    )
   }
   const levels = await getLevels().catch(() => []);
   const badges = await getBadges().catch(() => []);

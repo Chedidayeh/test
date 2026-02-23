@@ -24,11 +24,27 @@ export default function StoriesRoadmap({
     childProfile,
   );
 
+  // Apply progressive locking: lock story if previous one is not completed
+  const progressiveLockedStories = enrichedStories.map((story, index) => {
+    if (index === 0) {
+      // First story is always available
+      return story;
+    }
+
+    const previousStory = enrichedStories[index - 1];
+    if (previousStory.status !== "completed") {
+      // Lock this story if previous is not completed
+      return { ...story, status: "locked" as const };
+    }
+
+    return story;
+  });
+
   console.log("Enriched Stories for World:", {
     worldId: selectedWorld,
   });
 
-  if (enrichedStories.length === 0) {
+  if (progressiveLockedStories.length === 0) {
     return (
       <div className="flex items-center justify-center w-full py-4">
         <p className="text-muted-foreground">
@@ -49,7 +65,7 @@ export default function StoriesRoadmap({
     >
       {/* Main Roadmap Container - Grid Layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 py-8">
-        {enrichedStories.map((story, index) => (
+        {progressiveLockedStories.map((story, index) => (
           <motion.div
             key={story.id}
             initial={{ opacity: 0, y: 20 }}
@@ -66,8 +82,8 @@ export default function StoriesRoadmap({
               {/* Background Image */}
               <img
                 src={
-                  selectedWorld.imageUrl ||
-                  "https://images.unsplash.com/photo-1507842331343-583f20270319?auto=format&fit=crop&w=1200&q=80"
+                  selectedWorld.imageUrl || 
+                  "https://picsum.photos/800/600"
                 }
                 alt={story.name}
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
@@ -92,28 +108,28 @@ export default function StoriesRoadmap({
                   <span
                     className={`text-sm px-3 py-1 rounded-full backdrop-blur-sm ${
                       story.status === "completed"
-                        ? "bg-accent/20 text-accent"
+                        ? "bg-accent text-white"
                         : story.status === "in_progress"
-                          ? "bg-primary/20 text-primary"
+                          ? "bg-secondary text-white"
                           : story.status === "locked"
-                            ? "bg-gray-500/20 text-gray-300"
-                            : "bg-gray-500/20 text-gray-300"
+                            ? "bg-gray-700 text-gray-300"
+                            : "bg-primary text-gray-200"
                     }`}
                   >
                     {story.status === "completed" && "✓ Completed"}
                     {story.status === "in_progress" &&
                       `In Progress (${story.completionPercentage}%)`}
-                    {story.status === "locked" && "🔒 Locked"}
+                    {story.status === "locked" && "Locked"}
                     {story.status === "not_started" && "Start"}
                   </span>
                   <div className="flex items-center gap-2 opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200">
-                    <div className="flex items-center gap-1 text-accent backdrop-blur-sm bg-accent/20 rounded-2xl px-3 py-1">
+                    <div className="flex items-center gap-1 text-white backdrop-blur-sm bg-accent rounded-2xl px-3 py-1">
                       <BookOpen className="w-4 h-4" />
                       <div className="text-sm">
                         {story.chapters.length} Chapters
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 text-secondary backdrop-blur-sm bg-secondary/20 rounded-2xl px-3 py-1">
+                    <div className="flex items-center gap-1 text-white backdrop-blur-sm bg-secondary rounded-2xl px-3 py-1">
                       <Zap className="w-4 h-4" />
                       <div className="text-sm">
                         {story.challengeCount} Challenges
@@ -125,7 +141,7 @@ export default function StoriesRoadmap({
                 {/* Centered Buttons (Hidden until hover) */}
                 <div className="max-w-max mx-auto opacity-0 scale-95 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200">
                   {story.status === "completed" && (
-                    <Link href={`/story-reading-interface/${story.id}?childId=${childProfile.id}`}>
+                    <Link href={`/story-replaying-interface/${story.id}?childId=${childProfile.child.id}`}>
                       <Button variant={"accent"} className="w-max">
                         Read again
                       </Button>
@@ -133,22 +149,17 @@ export default function StoriesRoadmap({
                   )}
 
                   {story.status === "in_progress" && (
-                    <Link href={`/story-reading-interface/${story.id}?childId=${childProfile.id}`}>
+                    <Link href={`/story-reading-interface/${story.id}?childId=${childProfile.child.id}`}>
                       <Button className="w-max">Continue</Button>
                     </Link>
                   )}
 
                   {story.status === "not_started" && (
-                    <Link href={`/story-reading-interface/${story.id}?childId=${childProfile.id}`}>
+                    <Link href={`/story-reading-interface/${story.id}?childId=${childProfile.child.id}`}>
                       <Button className="w-max">Start Reading</Button>
                     </Link>
                   )}
 
-                  {story.status === "locked" && (
-                    <Button disabled className="w-max">
-                      Locked
-                    </Button>
-                  )}
                 </div>
 
                 {/* Bottom: Title and Description */}

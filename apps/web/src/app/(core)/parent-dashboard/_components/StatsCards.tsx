@@ -7,6 +7,7 @@ interface StatCardProps {
   icon: string;
   label: string;
   value: number;
+  readingTimeSubtitle?: string;
   color: string;
   borderColor: string;
   textColor: string;
@@ -19,6 +20,7 @@ const StatCard = ({
   icon,
   label,
   value,
+  readingTimeSubtitle,
   color,
   borderColor,
   textColor,
@@ -69,6 +71,11 @@ const StatCard = ({
         {suffix && (
           <span className={`text-sm ${suffixColor || "text-muted-foreground"}`}>
             {suffix}
+          </span>
+        )}
+        {readingTimeSubtitle && (
+          <span className={`text-sm ${suffixColor || "text-muted-foreground"}`}>
+            {readingTimeSubtitle}
           </span>
         )}
       </div>
@@ -127,28 +134,32 @@ export default function StatsCards({
           icon=""
           label="Riddles Solved"
           value={riddlesSolved}
-          borderColor="border-green-200 dark:border-green-200/50"
-          color="bg-gradient-to-br from-green-200/20 to-emerald-200/20"
-          textColor="text-green-600"
+          borderColor="border-purple-200 dark:border-purple-200/50"
+          color="bg-gradient-to-br from-purple-200/20 to-emerald-200/20"
+          textColor="text-purple-600"
         />
 
         <StatCard
           icon=""
           label="Total Reading Time"
           value={totalReadingTime}
+          suffix="minutes"
+          readingTimeSubtitle={readingTimeSubtitle}
           borderColor="border-pink-200 dark:border-pink-200/50"
           color="bg-linear-to-br from-pink-200/20 to-rose-200/20"
           textColor="text-pink-600"
+          suffixColor="text-pink-500"
         />
         <StatCard
           icon=""
           label="Average Per Day"
           value={averagePerDay}
           suffix="minutes"
-          suffixColor="text-violet-500"
-          borderColor="border-violet-200 dark:border-violet-200/50"
-          color="bg-linear-to-br from-violet-200/20 to-purple-200/20"
-          textColor="text-violet-600"
+          readingTimeSubtitle={readingTimeSubtitle}
+          suffixColor="text-green-500"
+          borderColor="border-green-200 dark:border-green-200/50"
+          color="bg-linear-to-br from-green-200/20 to-green-200/20"
+          textColor="text-green-600"
         />
         <StatCard
           icon=""

@@ -1,6 +1,5 @@
 import { Metadata } from "next";
 import ParentDashboardInteractive from "./_components/ParentDashboardInteractive";
-import { getParentById } from "@/src/lib/auth-service/server-api";
 import { auth } from "@/src/auth";
 import { redirect } from "next/navigation";
 import { getParentWithProfiles } from "@/src/lib/progress-service/server-api";

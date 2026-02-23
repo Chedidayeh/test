@@ -16,6 +16,24 @@ import type {
 } from "@shared/types";
 import { getBadgeByLevel } from "../content-service/server-api";
 
+/**
+ * Global error response type
+ */
+export interface ApiError {
+  success: false;
+  error: {
+    message: string;
+    status?: number;
+  };
+}
+
+/**
+ * Type guard to check if response is an ApiError
+ */
+function isApiError(response: any): response is ApiError {
+  return response && 'error' in response && response.success === false;
+}
+
 interface PaginationParams {
   limit?: number;
   offset?: number;
@@ -53,7 +71,7 @@ function buildQueryString(params: Record<string, any>): string {
 async function apiRequest<T = any>(
   endpoint: string,
   options?: RequestInit
-): Promise<T> {
+): Promise<T | ApiError> {
   const url = `${getGatewayUrl()}${endpoint}`;
 
   // Get JWT token from NextAuth session
@@ -102,16 +120,26 @@ async function apiRequest<T = any>(
         error,
       });
 
-      throw new Error(
-        `API Error ${response.status}: ${error.error || error.message || "Unknown error"}`
-      );
+      return {
+        success: false,
+        error: {
+          message: `${error.error || error.message || "Unknown error"}`,
+          status: response.status,
+        },
+      } as ApiError;
     }
 
     const data = await response.json();
     return data;
   } catch (error) {
     console.error(`[Auth Service API] Request error: ${endpoint}`, error);
-    throw error;
+    
+    return {
+      success: false,
+      error: {
+        message: error instanceof Error ? error.message : "Unknown error occurred",
+      },
+    } as ApiError;
   }
 }
 
@@ -129,9 +157,20 @@ export async function getParents(params?: PaginationParams) {
     `/api/auth/parents${queryString}`
   );
 
+  if (isApiError(response)) {
+    console.warn("[Auth Service API] Failed to fetch parents:", response.error.message);
+    return {
+      parents: [],
+      pagination: undefined,
+    };
+  }
+
   if (!response.success) {
-    const errorMsg = response.error?.message || "Failed to fetch parents";
-    throw new Error(errorMsg);
+    console.warn("[Auth Service API] Failed to fetch parents: API returned success=false");
+    return {
+      parents: [],
+      pagination: undefined,
+    };
   }
 
   return {
@@ -155,12 +194,17 @@ export async function getParentById(parentId: string) {
     `/api/auth/parent/${parentId}`
   );
 
-  if (!response.success) {
-    const errorMsg = response.error?.message || "Failed to fetch parent";
-    throw new Error(errorMsg);
+  if (isApiError(response)) {
+    console.warn("[Auth Service API] Failed to fetch parent:", response.error.message);
+    return null;
   }
 
-  return response.data;
+  if (!response.success) {
+    console.warn("[Auth Service API] Failed to fetch parent: API returned success=false");
+    return null;
+  }
+
+  return response.data || null;
 }
 
 /**
@@ -189,11 +233,16 @@ export async function createChildProfile(payload: {
     }
   );
 
-  if (!response.success) {
-    const errorMsg = response.error?.message || "Failed to create child profile";
-    throw new Error(errorMsg);
+  if (isApiError(response)) {
+    console.warn("[Auth Service API] Failed to create child profile:", response.error.message);
+    return null;
   }
 
-  return response.data;
+  if (!response.success) {
+    console.warn("[Auth Service API] Failed to create child profile: API returned success=false");
+    return null;
+  }
+
+  return response.data || null;
 }
 

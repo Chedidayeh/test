@@ -47,15 +47,43 @@ export function getStoryStatus(
 }
 
 /**
- * Calculate completion percentage based on correct answers
+ * Calculate completion percentage based on the checkpointed chapter
+ * The checkpoint indicates the furthest chapter the child has reached
  */
 export function calculateCompletionPercentage(
-  progress: Progress | undefined
+  progress: Progress | undefined,
+  story: Story
 ): number {
-  if (!progress || progress.totalAnswers === 0) {
+  // Handle edge cases
+  if (!progress || !story.chapters || story.chapters.length === 0) {
     return 0;
   }
-  return Math.round((progress.correctAnswers / progress.totalAnswers) * 100);
+
+  // Get game session to find the checkpointed chapter
+  const gameSession = progress.gameSession;
+  if (!gameSession || !gameSession.chapterId) {
+    return 0;
+  }
+
+  // Find the checkpoint chapter in the story
+  const checkpointedChapter = story.chapters.find(
+    (chapter) => chapter.id === gameSession.chapterId
+  );
+
+  if (!checkpointedChapter) {
+    return 0;
+  }
+
+  // Find the index of the checkpointed chapter (0-indexed)
+  const checkpointedIndex = story.chapters.findIndex(
+    (chapter) => chapter.id === gameSession.chapterId
+  );
+
+  // Calculate completion percentage: (checkpointedIndex + 1) / totalChapters * 100
+  // +1 because if checkpoint is at chapter 1 (index 0), it means 1 chapter has been reached
+  const totalChapters = story.chapters.length;
+  const chaptersReached = checkpointedIndex + 1;
+  return Math.round((chaptersReached / totalChapters) * 100);
 }
 
 /**
@@ -80,7 +108,7 @@ export function enrichStoryWithProgress(
 ) {
   const progress = getStoryProgress(childProfile, story.id);
   const status = getStoryStatus(story, world, childProfile);
-  const completionPercentage = calculateCompletionPercentage(progress);
+  const completionPercentage = calculateCompletionPercentage(progress, story);
   const totalStars = childProfile.totalStars ?? 0;
   const isUnlocked = !(
     world.locked && totalStars < world.requiredStarCount

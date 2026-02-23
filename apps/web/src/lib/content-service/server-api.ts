@@ -19,6 +19,24 @@ import type {
   Badge,
 } from "@shared/types";
 
+/**
+ * Global error response type
+ */
+export interface ApiError {
+  success: false;
+  error: {
+    message: string;
+    status?: number;
+  };
+}
+
+/**
+ * Type guard to check if response is an ApiError
+ */
+function isApiError(response: any): response is ApiError {
+  return response && 'error' in response && response.success === false;
+}
+
 interface PaginationParams {
   limit?: number;
   offset?: number;
@@ -68,7 +86,7 @@ function buildQueryString(params: Record<string, any>): string {
 async function apiRequest<T = any>(
   endpoint: string,
   options?: RequestInit
-): Promise<T> {
+): Promise<T | ApiError> {
   const url = `${getGatewayUrl()}${endpoint}`;
 
   // Get JWT token from NextAuth session
@@ -117,16 +135,26 @@ async function apiRequest<T = any>(
         error,
       });
 
-      throw new Error(
-        `API Error ${response.status}: ${error.error || error.message || "Unknown error"}`
-      );
+      return {
+        success: false,
+        error: {
+          message: `${error.error || error.message || "Unknown error"}`,
+          status: response.status,
+        },
+      } as ApiError;
     }
 
     const data = await response.json();
     return data;
   } catch (error) {
     console.error(`[Content Server API] Request error: ${endpoint}`, error);
-    throw error;
+    
+    return {
+      success: false,
+      error: {
+        message: error instanceof Error ? error.message : "Unknown error occurred",
+      },
+    } as ApiError;
   }
 }
 
@@ -143,9 +171,20 @@ export async function getStories(params?: StoryQueryParams) {
     `/api/stories${queryString}`
   );
 
+  if (isApiError(response)) {
+    console.warn("[Content Server API] Failed to fetch stories:", response.error.message);
+    return {
+      stories: [],
+      pagination: undefined,
+    };
+  }
+
   if (!response.success) {
-    const errorMsg = response.error?.message || "Failed to fetch stories";
-    throw new Error(errorMsg);
+    console.warn("[Content Server API] Failed to fetch stories: API returned success=false");
+    return {
+      stories: [],
+      pagination: undefined,
+    };
   }
 
   return {
@@ -166,12 +205,17 @@ export async function getStoryById(storyId: string) {
     `/api/stories/${storyId}`
   );
 
-  if (!response.success) {
-    const errorMsg = response.error?.message || "Failed to fetch story";
-    throw new Error(errorMsg);
+  if (isApiError(response)) {
+    console.warn("[Content Server API] Failed to fetch story:", response.error.message);
+    return null;
   }
 
-  return response.data;
+  if (!response.success) {
+    console.warn("[Content Server API] Failed to fetch story: API returned success=false");
+    return null;
+  }
+
+  return response.data || null;
 }
 
 export async function getStoriesByWorld(worldId: string) {
@@ -179,9 +223,14 @@ export async function getStoriesByWorld(worldId: string) {
     `/api/stories/world/${worldId}`
   );
 
+  if (isApiError(response)) {
+    console.warn("[Content Server API] Failed to fetch stories by world:", response.error.message);
+    return [];
+  }
+
   if (!response.success) {
-    const errorMsg = response.error?.message || "Failed to fetch stories";
-    throw new Error(errorMsg);
+    console.warn("[Content Server API] Failed to fetch stories by world: API returned success=false");
+    return [];
   }
 
   return response.data || [];
@@ -192,9 +241,14 @@ export async function getStoriesCount() {
     `/api/stories/count`
   );
 
+  if (isApiError(response)) {
+    console.warn("[Content Server API] Failed to fetch stories count:", response.error.message);
+    return 0;
+  }
+
   if (!response.success) {
-    const errorMsg = response.error?.message || "Failed to fetch stories count";
-    throw new Error(errorMsg);
+    console.warn("[Content Server API] Failed to fetch stories count: API returned success=false");
+    return 0;
   }
 
   return response.data?.count || 0;
@@ -209,9 +263,14 @@ export async function getStoriesCount() {
 export async function getRoadmaps() {
   const response = await apiRequest<ApiResponse<Roadmap[]>>("/api/roadmaps");
 
+  if (isApiError(response)) {
+    console.warn("[Content Server API] Failed to fetch roadmaps:", response.error.message);
+    return [];
+  }
+
   if (!response.success) {
-    const errorMsg = response.error?.message || "Failed to fetch roadmaps";
-    throw new Error(errorMsg);
+    console.warn("[Content Server API] Failed to fetch roadmaps: API returned success=false");
+    return [];
   }
 
   return response.data || [];
@@ -222,12 +281,17 @@ export async function getRoadmapById(roadmapId: string) {
     `/api/roadmaps/${roadmapId}`
   );
 
-  if (!response.success) {
-    const errorMsg = response.error?.message || "Failed to fetch roadmap";
-    throw new Error(errorMsg);
+  if (isApiError(response)) {
+    console.warn("[Content Server API] Failed to fetch roadmap:", response.error.message);
+    return null;
   }
 
-  return response.data;
+  if (!response.success) {
+    console.warn("[Content Server API] Failed to fetch roadmap: API returned success=false");
+    return null;
+  }
+
+  return response.data || null;
 }
 
 export async function getRoadmapsByAgeGroup(ageGroupId: string) {
@@ -235,9 +299,14 @@ export async function getRoadmapsByAgeGroup(ageGroupId: string) {
     `/api/roadmaps/age-group/${ageGroupId}`
   );
 
+  if (isApiError(response)) {
+    console.warn("[Content Server API] Failed to fetch roadmaps by age group:", response.error.message);
+    return [];
+  }
+
   if (!response.success) {
-    const errorMsg = response.error?.message || "Failed to fetch roadmaps";
-    throw new Error(errorMsg);
+    console.warn("[Content Server API] Failed to fetch roadmaps by age group: API returned success=false");
+    return [];
   }
 
   return response.data || [];
@@ -252,9 +321,14 @@ export async function getRoadmapsByAgeGroup(ageGroupId: string) {
 export async function getWorlds() {
   const response = await apiRequest<ApiResponse<World[]>>("/api/worlds");
 
+  if (isApiError(response)) {
+    console.warn("[Content Server API] Failed to fetch worlds:", response.error.message);
+    return [];
+  }
+
   if (!response.success) {
-    const errorMsg = response.error?.message || "Failed to fetch worlds";
-    throw new Error(errorMsg);
+    console.warn("[Content Server API] Failed to fetch worlds: API returned success=false");
+    return [];
   }
 
   return response.data || [];
@@ -265,12 +339,17 @@ export async function getWorldById(worldId: string) {
     `/api/worlds/${worldId}`
   );
 
-  if (!response.success) {
-    const errorMsg = response.error?.message || "Failed to fetch world";
-    throw new Error(errorMsg);
+  if (isApiError(response)) {
+    console.warn("[Content Server API] Failed to fetch world:", response.error.message);
+    return null;
   }
 
-  return response.data;
+  if (!response.success) {
+    console.warn("[Content Server API] Failed to fetch world: API returned success=false");
+    return null;
+  }
+
+  return response.data || null;
 }
 
 export async function getWorldsByRoadmap(roadmapId: string) {
@@ -278,9 +357,14 @@ export async function getWorldsByRoadmap(roadmapId: string) {
     `/api/worlds/roadmap/${roadmapId}`
   );
 
+  if (isApiError(response)) {
+    console.warn("[Content Server API] Failed to fetch worlds by roadmap:", response.error.message);
+    return [];
+  }
+
   if (!response.success) {
-    const errorMsg = response.error?.message || "Failed to fetch worlds";
-    throw new Error(errorMsg);
+    console.warn("[Content Server API] Failed to fetch worlds by roadmap: API returned success=false");
+    return [];
   }
 
   return response.data || [];
@@ -295,9 +379,14 @@ export async function getWorldsByRoadmap(roadmapId: string) {
 export async function getAgeGroups() {
   const response = await apiRequest<ApiResponse<AgeGroup[]>>("/api/age-groups");
 
+  if (isApiError(response)) {
+    console.warn("[Content Server API] Failed to fetch age groups:", response.error.message);
+    return [];
+  }
+
   if (!response.success) {
-    const errorMsg = response.error?.message || "Failed to fetch age groups";
-    throw new Error(errorMsg);
+    console.warn("[Content Server API] Failed to fetch age groups: API returned success=false");
+    return [];
   }
 
   return response.data || [];
@@ -308,12 +397,17 @@ export async function getAgeGroupById(ageGroupId: string) {
     `/api/age-groups/${ageGroupId}`
   );
 
-  if (!response.success) {
-    const errorMsg = response.error?.message || "Failed to fetch age group";
-    throw new Error(errorMsg);
+  if (isApiError(response)) {
+    console.warn("[Content Server API] Failed to fetch age group:", response.error.message);
+    return null;
   }
 
-  return response.data;
+  if (!response.success) {
+    console.warn("[Content Server API] Failed to fetch age group: API returned success=false");
+    return null;
+  }
+
+  return response.data || null;
 }
 
 /**
@@ -325,9 +419,14 @@ export async function getAgeGroupById(ageGroupId: string) {
 export async function getThemes() {
   const response = await apiRequest<ApiResponse<Theme[]>>("/api/themes");
 
+  if (isApiError(response)) {
+    console.warn("[Content Server API] Failed to fetch themes:", response.error.message);
+    return [];
+  }
+
   if (!response.success) {
-    const errorMsg = response.error?.message || "Failed to fetch themes";
-    throw new Error(errorMsg);
+    console.warn("[Content Server API] Failed to fetch themes: API returned success=false");
+    return [];
   }
 
   return response.data || [];
@@ -345,9 +444,20 @@ export async function getChallenges(params?: ChallengeQueryParams) {
     `/api/challenges${queryString}`
   );
 
+  if (isApiError(response)) {
+    console.warn("[Content Server API] Failed to fetch challenges:", response.error.message);
+    return {
+      challenges: [],
+      pagination: undefined,
+    };
+  }
+
   if (!response.success) {
-    const errorMsg = response.error?.message || "Failed to fetch challenges";
-    throw new Error(errorMsg);
+    console.warn("[Content Server API] Failed to fetch challenges: API returned success=false");
+    return {
+      challenges: [],
+      pagination: undefined,
+    };
   }
 
   return {
@@ -368,12 +478,17 @@ export async function getChallengeById(challengeId: string) {
     `/api/challenges/${challengeId}`
   );
 
-  if (!response.success) {
-    const errorMsg = response.error?.message || "Failed to fetch challenge";
-    throw new Error(errorMsg);
+  if (isApiError(response)) {
+    console.warn("[Content Server API] Failed to fetch challenge:", response.error.message);
+    return null;
   }
 
-  return response.data;
+  if (!response.success) {
+    console.warn("[Content Server API] Failed to fetch challenge: API returned success=false");
+    return null;
+  }
+
+  return response.data || null;
 }
 
 export async function getChallengesByChapter(chapterId: string) {
@@ -381,9 +496,14 @@ export async function getChallengesByChapter(chapterId: string) {
     `/api/challenges/chapter/${chapterId}`
   );
 
+  if (isApiError(response)) {
+    console.warn("[Content Server API] Failed to fetch challenges by chapter:", response.error.message);
+    return [];
+  }
+
   if (!response.success) {
-    const errorMsg = response.error?.message || "Failed to fetch challenges";
-    throw new Error(errorMsg);
+    console.warn("[Content Server API] Failed to fetch challenges by chapter: API returned success=false");
+    return [];
   }
 
   return response.data || [];
@@ -399,9 +519,14 @@ export async function getChallengesByChapter(chapterId: string) {
 export async function getLevels() {
   const response = await apiRequest<ApiResponse<Level[]>>("/api/levels");
 
+  if (isApiError(response)) {
+    console.warn("[Content Server API] Failed to fetch levels:", response.error.message);
+    return [];
+  }
+
   if (!response.success) {
-    const errorMsg = response.error?.message || "Failed to fetch levels";
-    throw new Error(errorMsg);
+    console.warn("[Content Server API] Failed to fetch levels: API returned success=false");
+    return [];
   }
 
   return response.data || [];
@@ -412,12 +537,17 @@ export async function getLevelById(levelId: string) {
     `/api/levels/${levelId}`
   );
 
-  if (!response.success) {
-    const errorMsg = response.error?.message || "Failed to fetch level";
-    throw new Error(errorMsg);
+  if (isApiError(response)) {
+    console.warn("[Content Server API] Failed to fetch level:", response.error.message);
+    return null;
   }
 
-  return response.data;
+  if (!response.success) {
+    console.warn("[Content Server API] Failed to fetch level: API returned success=false");
+    return null;
+  }
+
+  return response.data || null;
 }
 
 export async function getLevelByNumber(levelNumber: number) {
@@ -425,12 +555,17 @@ export async function getLevelByNumber(levelNumber: number) {
     `/api/levels/number/${levelNumber}`
   );
 
-  if (!response.success) {
-    const errorMsg = response.error?.message || "Failed to fetch level";
-    throw new Error(errorMsg);
+  if (isApiError(response)) {
+    console.warn("[Content Server API] Failed to fetch level by number:", response.error.message);
+    return null;
   }
 
-  return response.data;
+  if (!response.success) {
+    console.warn("[Content Server API] Failed to fetch level by number: API returned success=false");
+    return null;
+  }
+
+  return response.data || null;
 }
 
 
@@ -443,9 +578,14 @@ export async function getLevelByNumber(levelNumber: number) {
 export async function getBadges() {
   const response = await apiRequest<ApiResponse<Badge[]>>("/api/badges");
 
+  if (isApiError(response)) {
+    console.warn("[Content Server API] Failed to fetch badges:", response.error.message);
+    return [];
+  }
+
   if (!response.success) {
-    const errorMsg = response.error?.message || "Failed to fetch badges";
-    throw new Error(errorMsg);
+    console.warn("[Content Server API] Failed to fetch badges: API returned success=false");
+    return [];
   }
 
   return response.data || [];
@@ -456,12 +596,17 @@ export async function getBadgeById(badgeId: string) {
     `/api/badges/${badgeId}`
   );
 
-  if (!response.success) {
-    const errorMsg = response.error?.message || "Failed to fetch badge";
-    throw new Error(errorMsg);
+  if (isApiError(response)) {
+    console.warn("[Content Server API] Failed to fetch badge:", response.error.message);
+    return null;
   }
 
-  return response.data;
+  if (!response.success) {
+    console.warn("[Content Server API] Failed to fetch badge: API returned success=false");
+    return null;
+  }
+
+  return response.data || null;
 }
 
 export async function getBadgeByLevel(levelNumber: number) {
@@ -469,10 +614,15 @@ export async function getBadgeByLevel(levelNumber: number) {
     `/api/badges/level/${levelNumber}`
   );
 
-  if (!response.success) {
-    const errorMsg = response.error?.message || "Failed to fetch badge";
-    throw new Error(errorMsg);
+  if (isApiError(response)) {
+    console.warn("[Content Server API] Failed to fetch badge by level:", response.error.message);
+    return null;
   }
 
-  return response.data;
+  if (!response.success) {
+    console.warn("[Content Server API] Failed to fetch badge by level: API returned success=false");
+    return null;
+  }
+
+  return response.data || null;
 }

@@ -53,13 +53,6 @@ model Progress {
 
   status ProgressStatus @default(NOT_STARTED) // "not_started", "in_progress", "completed"
 
-  // Attempt tracking
-  timesCompleted Int @default(0)
-  timesReplayed  Int @default(0)
-
-  // Performance
-  correctAnswers Int @default(0)
-  totalAnswers   Int @default(0)
 
   completedAt DateTime?
 

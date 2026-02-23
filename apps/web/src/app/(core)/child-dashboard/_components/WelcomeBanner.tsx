@@ -18,6 +18,7 @@ interface WelcomeBannerProps {
   storiesCompleted: number;
   readingTimeMinutes: number;
   recentBadges: Badge[];
+  readingTimeSubtitle?: string;
 }
 
 const WelcomeBanner = ({
@@ -28,6 +29,7 @@ const WelcomeBanner = ({
   storiesCompleted,
   readingTimeMinutes,
   recentBadges,
+  readingTimeSubtitle,
 }: WelcomeBannerProps) => {
   return (
     <div className="rounded-xl bg-card border border-black/30 p-6 shadow-warm-lg">
@@ -127,7 +129,7 @@ const WelcomeBanner = ({
                     Minutes read:{" "}
                   </span>
                   <span className="font-heading font-semibold text-foreground">
-                    {readingTimeMinutes}
+                    {readingTimeMinutes} min {readingTimeSubtitle && <span className="text-md text-muted-foreground">{readingTimeSubtitle}</span>}
                   </span>
                 </div>
               </motion.div>

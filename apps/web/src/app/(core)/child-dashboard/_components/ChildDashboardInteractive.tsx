@@ -50,6 +50,12 @@ const ChildDashboardInteractive = ({
   const [selectedRoadmap, setSelectedRoadmap] = useState<Roadmap>(roadmaps[0]);
   const [seeRoadmap, setSeeRoadmap] = useState(false);
 
+    const hours = Math.floor(readingTimeMinutes / 60);
+  const minutes = readingTimeMinutes % 60;
+  const readingTimeSubtitle =
+    minutes > 0 ? `(${hours}h ${minutes}m)` : `(${hours}h)`;
+
+
   return (
     <>
       {seeRoadmap ? (
@@ -76,6 +82,7 @@ const ChildDashboardInteractive = ({
               recentBadges={childBadges}
               storiesCompleted={storiesCompleted}
               readingTimeMinutes={readingTimeMinutes}
+              readingTimeSubtitle={readingTimeSubtitle}
             />
 
             {/* Action Cards */}

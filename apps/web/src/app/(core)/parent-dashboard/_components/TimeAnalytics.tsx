@@ -1,6 +1,6 @@
 "use client";
 
-import { TimeEntry } from "../_data/mockData";
+import { Progress } from "@shared/types";
 import {
   Table,
   TableBody,
@@ -9,31 +9,34 @@ import {
   TableHeader,
   TableRow,
 } from "@/src/components/ui/table";
+import { calculateTimeEntries, calculateDailyTimeStats } from "../_lib/stats";
+import { useMemo } from "react";
 
 interface TimeAnalyticsProps {
-  timeData: TimeEntry[];
+  childProgress: Progress[];
 }
 
-export default function TimeAnalytics({ timeData }: TimeAnalyticsProps) {
-  const totalMinutes = timeData.reduce((sum, entry) => sum + entry.minutes, 0);
-  const totalHours = Math.round((totalMinutes / 60) * 10) / 10;
-  const avgMinutesPerDay =
-    timeData.length > 0 ? Math.round(totalMinutes / timeData.length) : 0;
-  const totalStories = timeData.reduce((sum, entry) => sum + entry.storiesRead, 0);
-  const daysWithReading = timeData.filter((entry) => entry.minutes > 0).length;
-  const streak = calculateStreak(timeData);
+export default function TimeAnalytics({ childProgress }: TimeAnalyticsProps) {
+  // Calculate time entries from real progress data
+  const timeEntries = useMemo(
+    () => calculateTimeEntries(childProgress),
+    [childProgress]
+  );
 
-  function calculateStreak(data: TimeEntry[]): number {
-    let streak = 0;
-    for (let i = data.length - 1; i >= 0; i--) {
-      if (data[i].minutes > 0) {
-        streak++;
-      } else {
-        break;
-      }
-    }
-    return streak;
-  }
+  // Calculate aggregated time stats
+  const timeStats = useMemo(
+    () => calculateDailyTimeStats(timeEntries),
+    [timeEntries]
+  );
+
+  const {
+    totalMinutes,
+    totalHours,
+    avgMinutesPerDay,
+    totalStories,
+    daysWithReading,
+    currentStreak,
+  } = timeStats;
 
   return (
     <div className="space-y-6">
@@ -55,7 +58,7 @@ export default function TimeAnalytics({ timeData }: TimeAnalyticsProps) {
         <div className="rounded-lg bg-linear-to-br from-cyan-50 to-blue-50 border border-cyan-200 p-4">
           <p className="text-sm text-muted-foreground mb-1">Current Streak</p>
           <p className="text-3xl font-data font-bold text-cyan-900">
-            {streak}
+            {currentStreak}
           </p>
           <p className="text-xs text-cyan-700 mt-1">consecutive days</p>
         </div>
@@ -65,13 +68,13 @@ export default function TimeAnalytics({ timeData }: TimeAnalyticsProps) {
         <div className="rounded-lg bg-card border border-black/30 p-4 shadow-warm-lg">
           <p className="text-sm text-muted-foreground mb-2">Days with Reading</p>
           <p className="text-2xl font-data font-bold text-foreground">
-            {daysWithReading}/{timeData.length}
+            {daysWithReading}/{timeEntries.length}
           </p>
           <div className="w-full h-2 bg-muted rounded-full mt-3">
             <div
               className="h-full bg-green-500 rounded-full transition-all"
               style={{
-                width: `${(daysWithReading / timeData.length) * 100}%`,
+                width: `${timeEntries.length > 0 ? (daysWithReading / timeEntries.length) * 100 : 0}%`,
               }}
             />
           </div>
@@ -102,41 +105,49 @@ export default function TimeAnalytics({ timeData }: TimeAnalyticsProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {timeData.map((entry) => (
-              <TableRow key={entry.date}>
-                <TableCell className="font-medium">
-                  {new Date(entry.date).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    weekday: "short",
-                  })}
-                </TableCell>
-                <TableCell className="text-right">
-                  {entry.minutes > 0 ? `${entry.minutes} min` : "—"}
-                </TableCell>
-                <TableCell className="text-right">
-                  {entry.storiesRead > 0 ? entry.storiesRead : "—"}
-                </TableCell>
-                <TableCell>
-                  <div className="w-16 h-2 bg-muted rounded-full">
-                    <div
-                      className={`h-full rounded-full transition-all ${
-                        entry.minutes > 60
-                          ? "bg-amber-500"
-                          : entry.minutes > 30
-                            ? "bg-blue-500"
-                            : entry.minutes > 0
-                              ? "bg-green-500"
-                              : "bg-transparent"
-                      }`}
-                      style={{
-                        width: `${Math.min((entry.minutes / 120) * 100, 100)}%`,
-                      }}
-                    />
-                  </div>
+            {timeEntries.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center text-muted-foreground py-4">
+                  No reading activity yet. Start playing to see reading statistics!
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              timeEntries.map((entry) => (
+                <TableRow key={entry.date}>
+                  <TableCell className="font-medium">
+                    {new Date(entry.date).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      weekday: "short",
+                    })}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {entry.minutes > 0 ? `${entry.minutes} min` : "—"}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {entry.storiesRead > 0 ? entry.storiesRead : "—"}
+                  </TableCell>
+                  <TableCell>
+                    <div className="w-16 h-2 bg-muted rounded-full">
+                      <div
+                        className={`h-full rounded-full transition-all ${
+                          entry.minutes > 60
+                            ? "bg-amber-500"
+                            : entry.minutes > 30
+                              ? "bg-blue-500"
+                              : entry.minutes > 0
+                                ? "bg-green-500"
+                                : "bg-transparent"
+                        }`}
+                        style={{
+                          width: `${Math.min((entry.minutes / 120) * 100, 100)}%`,
+                        }}
+                      />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>

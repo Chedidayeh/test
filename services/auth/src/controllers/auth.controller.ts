@@ -121,8 +121,9 @@ export class AuthController {
         role: user.role as "PARENT" | "ADMIN",
       });
 
-      // Create session record
-      const sessionExpires = new Date(Date.now() + 86400 * 1000); // 24 hours
+      // Create session record - use JWT_EXPIRATION instead of hardcoded 24 hours
+      const jwtExpirationSeconds = parseInt(process.env.JWT_EXPIRATION!, 10);
+      const sessionExpires = new Date(Date.now() + jwtExpirationSeconds * 1000);
       await prisma.session
         .create({
           data: {

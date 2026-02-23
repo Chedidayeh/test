@@ -29,6 +29,10 @@ router.post("/progress/:childId/stories/:storyId/start", (req, res) =>
   ChildrenController.startStoryProgress(req, res),
 );
 
+// Get child progress for a specific story
+router.get("/progress/:childId/stories/:storyId", (req, res) =>
+  ChildrenController.getChildProgress(req, res),
+);
 
 // Save checkpoint for a game session
 router.post("/progress/checkpoint", (req, res) =>
@@ -43,6 +47,16 @@ router.post("/progress/challenge/submit", (req, res) =>
 // Complete a story for a game session
 router.post("/progress/:gameSessionId/complete", (req, res) =>
   ChildrenController.completeStory(req, res),
+);
+
+// Update child's current level
+router.patch("/children/:childId/level", (req, res) =>
+  ChildrenController.updateChildLevel(req, res),
+);
+
+// Assign badge to child
+router.post("/children/:childId/badges", (req, res) =>
+  ChildrenController.assignBadgeToChild(req, res),
 );
 
 export default router;

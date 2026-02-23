@@ -269,10 +269,6 @@ export interface Progress {
   worldId: string; // References Content.World.id - current world being progressed through
   storyId: string; // References Content.Story.id - current story being progressed through
   status: ProgressStatus;
-  timesCompleted: number;
-  timesReplayed: number;
-  correctAnswers: number;
-  totalAnswers: number;
   completedAt?: Date;
   gameSession?: GameSession;
   createdAt: Date;

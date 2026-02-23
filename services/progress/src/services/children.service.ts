@@ -209,6 +209,51 @@ export class ChildrenService {
     return childProfile as unknown as ChildProfile;
   }
 
+  /**
+   * Get progress for a specific child and story
+   */
+  static async getChildProgress(
+    childId: string,
+    storyId: string,
+  ): Promise<Progress | null> {
+    // First, find the child profile by childId
+    const childProfile = await prisma.childProfile.findUnique({
+      where: { childId },
+    });
+
+    if (!childProfile) {
+      return null;
+    }
+
+    // Then find the progress record for this child and story
+    const progress = await prisma.progress.findUnique({
+      where: {
+        childProfileId_storyId: {
+          childProfileId: childProfile.id,
+          storyId,
+        },
+      },
+      include: {
+        gameSession: {
+          include: {
+            challengeAttempts: {
+              include: {
+                starEvent: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!progress) {
+      return null;
+    }
+
+    // Cast to Progress - Prisma handles enum conversion
+    return progress as unknown as Progress;
+  }
+
   static async startStoryProgress(payload: {
     childId: string;
     storyId: string;
@@ -216,15 +261,13 @@ export class ChildrenService {
     roadmapId: string;
     firstChapterId: string;
     challengeIds?: string[];
-  }): Promise<Progress> {
+  }): Promise<Progress | null> {
     const childProfile = await prisma.childProfile.findUnique({
-      where: { id: payload.childId },
+      where: { childId: payload.childId },
     });
 
     if (!childProfile) {
-      throw new Error(
-        `Child profile not found for childId: ${payload.childId}`,
-      );
+      return null
     }
 
     const progress = await prisma.progress.upsert({
@@ -516,6 +559,135 @@ export class ChildrenService {
       },
     });
 
+    // update child profile total stars
+    if (progress) {
+      const childProfile = await prisma.childProfile.findUnique({
+        where: { id: progress.childProfileId },
+      });
+
+      if (childProfile) {
+        await prisma.childProfile.update({
+          where: { id: progress.childProfileId },
+          data: {
+            totalStars: childProfile.totalStars + gameSession.starsEarned,
+          },
+        });
+      }
+    }
+
     return completedSession as unknown as GameSession;
+  }
+
+  /**
+   * Update a child's current level
+   * Called when a child reaches a new level through progression
+   */
+  static async updateChildLevel(
+    childId: string,
+    newLevel: number,
+  ): Promise<ChildProfile | null> {
+    // Validate inputs
+    if (!childId || newLevel === undefined || newLevel === null) {
+      throw new Error("Missing required fields: childId and newLevel");
+    }
+
+    // Check if child profile exists
+    const childProfile = await prisma.childProfile.findUnique({
+      where: { childId },
+    });
+
+    if (!childProfile) {
+      return null;
+    }
+
+    // Update child's level
+    const updatedChild = await prisma.childProfile.update({
+      where: { id: childProfile.id },
+      data: {
+        currentLevel: newLevel,
+      },
+      include: {
+        progress: {
+          include: {
+            gameSession: {
+              include: {
+                challengeAttempts: {
+                  include: {
+                    starEvent: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        badges: true,
+      },
+    });
+
+    return updatedChild as unknown as ChildProfile;
+  }
+
+  /**
+   * Assign a badge to a child
+   * Called when a child earns a new badge through level progression
+   */
+  static async assignBadgeToChild(
+    childId: string,
+    badgeId: string,
+  ): Promise<ChildProfile | null> {
+    // Validate inputs
+    if (!childId || !badgeId) {
+      throw new Error("Missing required fields: childId and badgeId");
+    }
+
+    // Check if child profile exists
+    const childProfile = await prisma.childProfile.findUnique({
+      where: { childId },
+    });
+
+    if (!childProfile) {
+      return null;
+    }
+
+    // Check if badge is already assigned to avoid duplicates
+    const existingBadge = await prisma.childBadge.findFirst({
+      where: {
+        childProfileId: childProfile.id,
+        badgeId,
+      },
+    });
+
+    // If badge not already assigned, create it
+    if (!existingBadge) {
+      await prisma.childBadge.create({
+        data: {
+          childProfileId: childProfile.id,
+          badgeId,
+        },
+      });
+    }
+
+    // Fetch and return updated child profile with all badges
+    const updatedChild = await prisma.childProfile.findUnique({
+      where: { id: childProfile.id },
+      include: {
+        progress: {
+          include: {
+            gameSession: {
+              include: {
+                challengeAttempts: {
+                  include: {
+                    starEvent: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        badges: true,
+      },
+    });
+
+    return updatedChild as unknown as ChildProfile;
   }
 }

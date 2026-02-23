@@ -23,7 +23,8 @@ import {
 
 interface StoryReadingInteractiveProps {
   story: Story;
-  currentProgress: Progress | null | undefined;
+  currentProgress: Progress
+  childId: string;
 }
 
 /**
@@ -51,8 +52,8 @@ function getPageNumberFromChapterId(
 const StoryReadingInteractive = ({
   story,
   currentProgress,
+  childId,
 }: StoryReadingInteractiveProps) => {
-  const router = useRouter();
 
   // Initialize page from checkpoint, or default to 1
   const initialPage = getPageNumberFromChapterId(
@@ -203,6 +204,7 @@ const StoryReadingInteractive = ({
         story={story}
         currentChallengeAttemptState={currentChallengeAttemptState}
         totalStarsEarned={totalStarsEarned}
+        childId={childId}
       />
       {!showRiddle ? (
         <>

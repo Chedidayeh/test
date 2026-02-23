@@ -9,7 +9,272 @@ import {
   type Progress,
   type GameSession,
   type ChallengeAttempt,
+  ChallengeStatus,
 } from "@shared/types";
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
+/**
+ * Challenge statistics derived from ChallengeAttempt data
+ * Used for displaying challenge/riddle performance metrics
+ */
+export interface ChallengeStats {
+  id: string; // Challenge ID
+  totalAttempts: number; // Total number of attempts at this challenge
+  solvedAttempts: number; // Number of successful attempts
+  successRate: number; // Percentage (0-100)
+  isSolved: boolean; // Whether challenge was ever solved successfully
+  status: ChallengeStatus // Status of the challenge
+  lastAttemptDate?: Date; // Date of most recent attempt
+  timeSpentSeconds: number; // Total time spent on this challenge
+  hintsUsed: number; // Total hints used across all attempts
+}
+
+/**
+ * Daily reading time entry
+ * Represents one day's reading activity aggregated from game sessions
+ */
+export interface TimeEntry {
+  date: string; // YYYY-MM-DD format
+  minutes: number; // Total reading minutes for that day
+  storiesRead: number; // Number of unique stories read that day
+}
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+/**
+ * Calculate daily reading time entries from child progress data
+ * Groups game sessions by date and calculates reading duration and story count
+ * Creates one TimeEntry per day with activity, sorted chronologically
+ *
+ * @param progressArray - Array of Progress records (from ChildProfile)
+ * @returns Array of TimeEntry sorted by date (ascending)
+ */
+export function calculateTimeEntries(progressArray: Progress[] | undefined): TimeEntry[] {
+  if (!progressArray || !Array.isArray(progressArray) || progressArray.length === 0) {
+    return [];
+  }
+
+  // Group game sessions by date
+  const sessionsByDate = new Map<string, GameSession[]>();
+
+  for (const progress of progressArray) {
+    if (progress.gameSession) {
+      const session = progress.gameSession;
+      // Extract date from startedAt in YYYY-MM-DD format
+      const date = new Date(session.startedAt).toISOString().split("T")[0];
+
+      if (!sessionsByDate.has(date)) {
+        sessionsByDate.set(date, []);
+      }
+      sessionsByDate.get(date)!.push(session);
+    }
+  }
+
+  // Convert to TimeEntry array
+  const timeEntries: TimeEntry[] = Array.from(sessionsByDate.entries()).map(
+    ([date, sessions]) => {
+      // Calculate total reading time for the day
+      const totalMinutes = sessions.reduce((sum: number, session: GameSession) => {
+        // Use endedAt if available, otherwise use checkpointAt
+        const endTime = session.endedAt || session.checkpointAt;
+
+        if (endTime) {
+          const startTime = new Date(session.startedAt).getTime();
+          const endTimeMs = new Date(endTime).getTime();
+          const durationSeconds = Math.floor((endTimeMs - startTime) / 1000);
+          const durationMinutes = Math.round(durationSeconds / 60);
+          return sum + Math.max(0, durationMinutes); // Ensure positive duration
+        }
+        return sum;
+      }, 0);
+
+      // Count unique stories read that day
+      const uniqueStories = new Set(sessions.map((session) => session.storyId));
+      const storiesRead = uniqueStories.size;
+
+      return {
+        date,
+        minutes: totalMinutes,
+        storiesRead,
+      };
+    }
+  );
+
+  // Sort by date (ascending - oldest first)
+  return timeEntries.sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/**
+ * Calculate aggregated time statistics from time entries
+ * @param timeEntries - Array of TimeEntry records
+ * @returns Object with aggregated time statistics
+ */
+export function calculateDailyTimeStats(timeEntries: TimeEntry[] | undefined) {
+  if (!timeEntries || !Array.isArray(timeEntries) || timeEntries.length === 0) {
+    return {
+      totalMinutes: 0,
+      totalHours: 0,
+      avgMinutesPerDay: 0,
+      totalStories: 0,
+      daysWithReading: 0,
+      currentStreak: 0,
+    };
+  }
+
+  // Calculate total reading time
+  const totalMinutes = timeEntries.reduce((sum, entry) => sum + entry.minutes, 0);
+  const totalHours = Math.round((totalMinutes / 60) * 10) / 10;
+
+  // Calculate average per day (only count days with reading)
+  const daysWithReading = timeEntries.filter((entry) => entry.minutes > 0).length;
+  const avgMinutesPerDay = daysWithReading > 0 ? Math.round(totalMinutes / daysWithReading) : 0;
+
+  // Calculate total stories
+  const totalStories = timeEntries.reduce((sum, entry) => sum + entry.storiesRead, 0);
+
+  // Calculate current streak (consecutive days with reading from end)
+  let currentStreak = 0;
+  for (let i = timeEntries.length - 1; i >= 0; i--) {
+    if (timeEntries[i].minutes > 0) {
+      currentStreak++;
+    } else {
+      break;
+    }
+  }
+
+  return {
+    totalMinutes,
+    totalHours,
+    avgMinutesPerDay,
+    totalStories,
+    daysWithReading,
+    currentStreak,
+  };
+}
+
+/**
+ * Calculate per-challenge statistics from child progress data
+ * Groups all challenge attempts by challengeId and calculates metrics for each
+ * Filters out challenges with zero attempts
+ *
+ * @param progressArray - Array of Progress records (from ChildProfile)
+ * @returns Array of ChallengeStats sorted by most recent attempt
+ */
+export function calculateChallengeStats(
+  progressArray: Progress[] | undefined
+): ChallengeStats[] {
+  if (!progressArray || !Array.isArray(progressArray) || progressArray.length === 0) {
+    return [];
+  }
+
+  // Collect all challenge attempts from all game sessions
+  const allAttempts: ChallengeAttempt[] = [];
+  for (const progress of progressArray) {
+    if (progress.gameSession?.challengeAttempts && Array.isArray(progress.gameSession.challengeAttempts)) {
+      allAttempts.push(...progress.gameSession.challengeAttempts);
+    }
+  }
+
+  if (allAttempts.length === 0) {
+    return [];
+  }
+
+  // Group attempts by challengeId
+  const challengeMap = new Map<string, ChallengeAttempt[]>();
+  for (const attempt of allAttempts) {
+    const { challengeId } = attempt;
+    if (!challengeMap.has(challengeId)) {
+      challengeMap.set(challengeId, []);
+    }
+    challengeMap.get(challengeId)!.push(attempt);
+  }
+
+  // Calculate stats for each challenge
+  const stats: ChallengeStats[] = [];
+  for (const [challengeId, attempts] of challengeMap.entries()) {
+    // Get the highest attempt number to determine total attempts
+    const totalAttempts = attempts.length > 0 ? Math.max(...attempts.map((a) => a.attemptNumber)) : 0;
+    const solvedAttempts = attempts.filter((a) => a.isCorrect === true).length;
+    const successRate = totalAttempts > 0 ? Math.round((solvedAttempts / totalAttempts) * 100) : 0;
+    const timeSpentSeconds = attempts.reduce((sum, a) => sum + a.timeSpentSeconds, 0);
+    const hintsUsed = attempts.reduce((sum, a) => sum + a.usedHints, 0);
+
+    // Determine challenge status
+    let status: ChallengeStatus = ChallengeStatus.NOT_ATTEMPTED;
+    if (solvedAttempts > 0) {
+      status = ChallengeStatus.SOLVED;
+    } else if (attempts.some((a) => a.status === ChallengeStatus.SKIPPED)) {
+      status = ChallengeStatus.SKIPPED;
+    } else {
+      status = ChallengeStatus.NOT_ATTEMPTED;
+    }
+
+    // Get most recent attempt date
+    const sortedByDate = [...attempts].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    const lastAttemptDate = sortedByDate.length > 0 ? new Date(sortedByDate[0].createdAt) : undefined;
+
+    stats.push({
+      id: challengeId,
+      totalAttempts,
+      solvedAttempts,
+      successRate,
+      isSolved: solvedAttempts > 0,
+      status,
+      lastAttemptDate,
+      timeSpentSeconds,
+      hintsUsed,
+    });
+  }
+
+  // Filter out challenges that haven't been attempted and sort by most recent attempt date (descending)
+  return stats
+    .filter((stat) => stat.status !== ChallengeStatus.NOT_ATTEMPTED)
+    .sort((a, b) => {
+      const dateA = a.lastAttemptDate?.getTime() ?? 0;
+      const dateB = b.lastAttemptDate?.getTime() ?? 0;
+      return dateB - dateA;
+    });
+}
+
+/**
+ * Get total stats for all challenges
+ * @param progressArray - Array of Progress records
+ * @returns Object with aggregated challenge statistics
+ */
+export function getAggregatedChallengeStats(progressArray: Progress[] | undefined) {
+  const challengeStats = calculateChallengeStats(progressArray);
+
+  if (challengeStats.length === 0) {
+    return {
+      totalChallenges: 0,
+      solvedChallenges: 0,
+      successRate: 0,
+      avgAttemptsPerChallenge: 0,
+    };
+  }
+
+  const totalChallenges = challengeStats.length;
+  const solvedChallenges = challengeStats.filter((c) => c.isSolved).length;
+  const successRate =
+    totalChallenges > 0 ? Math.round((solvedChallenges / totalChallenges) * 100) : 0;
+  const totalAttempts = challengeStats.reduce((sum, c) => sum + c.totalAttempts, 0);
+  const avgAttemptsPerChallenge =
+    totalChallenges > 0 ? Math.round((totalAttempts / totalChallenges) * 10) / 10 : 0;
+
+  return {
+    totalChallenges,
+    solvedChallenges,
+    successRate,
+    avgAttemptsPerChallenge,
+  };
+}
 
 /**
  * Get total stars earned by child
@@ -41,16 +306,30 @@ export function getStoriesCompleted(profile: ChildProfile | undefined): number {
 
 /**
  * Get total reading time in minutes
- * Calculated from sessions array - sum of duration between startedAt and endedAt (or checkpointAt if no endedAt)
+ * Calculated from game sessions - sum of duration between startedAt and endedAt (or checkpointAt if no endedAt)
+ * Sessions are accessed through Progress → GameSession
  * @param profile - ChildProfile data
  * @returns Total reading time in minutes
  */
 export function getTotalReadingTime(profile: ChildProfile | undefined): number {
-  if (!profile?.sessions || !Array.isArray(profile.sessions)) {
+  if (!profile?.progress || !Array.isArray(profile.progress)) {
     return 0;
   }
+  
+  // Collect all game sessions from progress objects
+  const allSessions: GameSession[] = [];
+  for (const progress of profile.progress) {
+    if (progress.gameSession) {
+      allSessions.push(progress.gameSession);
+    }
+  }
+  
+  if (allSessions.length === 0) {
+    return 0;
+  }
+  
   // Calculate total reading time from session start and end times
-  const totalSeconds = profile.sessions.reduce((sum: number, session: GameSession) => {
+  const totalSeconds = allSessions.reduce((sum: number, session: GameSession) => {
     // Use endedAt if available, otherwise use checkpointAt
     const endTime = session.endedAt || session.checkpointAt;
     
@@ -70,20 +349,31 @@ export function getTotalReadingTime(profile: ChildProfile | undefined): number {
 
 /**
  * Get number of riddles solved/challenges completed
- * Calculated from challengeAttempts array where challenges were solved correctly
+ * Calculated from challengeAttempts where challenges were solved correctly
+ * Challenge attempts are accessed through Progress → GameSession → ChallengeAttempt
  * @param profile - ChildProfile data
  * @returns Number of solved challenges/riddles
  */
 export function getRiddlesSolved(profile: ChildProfile | undefined): number {
-  if (
-    !profile?.challengeAttempts ||
-    !Array.isArray(profile.challengeAttempts)
-  ) {
+  if (!profile?.progress || !Array.isArray(profile.progress)) {
     return 0;
   }
+  
+  // Collect all challenge attempts from game sessions
+  const allAttempts: ChallengeAttempt[] = [];
+  for (const progress of profile.progress) {
+    if (progress.gameSession?.challengeAttempts && Array.isArray(progress.gameSession.challengeAttempts)) {
+      allAttempts.push(...progress.gameSession.challengeAttempts);
+    }
+  }
+  
+  if (allAttempts.length === 0) {
+    return 0;
+  }
+  
   // Count unique challenges that were solved correctly (isCorrect = true)
   const solvedChallenges = new Set(
-    profile.challengeAttempts
+    allAttempts
       .filter((attempt: ChallengeAttempt) => attempt.isCorrect === true)
       .map((attempt: ChallengeAttempt) => attempt.challengeId),
   );
@@ -114,18 +404,31 @@ export function getBadgesCount(profile: ChildProfile | undefined): number {
 /**
  * Get average reading time per day
  * Calculated as total reading time divided by number of days since first session
+ * Sessions are accessed through Progress → GameSession
  * @param profile - ChildProfile data
  * @returns Average reading time in minutes per day
  */
 export function getAverageReadingTimePerDay(profile: ChildProfile | undefined): number {
-  if (!profile?.sessions || !Array.isArray(profile.sessions) || profile.sessions.length === 0) {
+  if (!profile?.progress || !Array.isArray(profile.progress) || profile.progress.length === 0) {
+    return 0;
+  }
+
+  // Collect all game sessions from progress objects
+  const allSessions: GameSession[] = [];
+  for (const progress of profile.progress) {
+    if (progress.gameSession) {
+      allSessions.push(progress.gameSession);
+    }
+  }
+  
+  if (allSessions.length === 0) {
     return 0;
   }
 
   const totalMinutes = getTotalReadingTime(profile);
   
   // Get first and last session dates
-  const sortedSessions = [...profile.sessions].sort(
+  const sortedSessions = [...allSessions].sort(
     (a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime()
   );
   
@@ -146,17 +449,30 @@ export function getAverageReadingTimePerDay(profile: ChildProfile | undefined): 
 /**
  * Get current reading streak (consecutive days)
  * Counts consecutive days from today going backwards where child had at least one session
+ * Sessions are accessed through Progress → GameSession
  * @param profile - ChildProfile data
  * @returns Number of consecutive days with reading activity
  */
 export function getCurrentStreak(profile: ChildProfile | undefined): number {
-  if (!profile?.sessions || !Array.isArray(profile.sessions) || profile.sessions.length === 0) {
+  if (!profile?.progress || !Array.isArray(profile.progress) || profile.progress.length === 0) {
+    return 0;
+  }
+
+  // Collect all game sessions from progress objects
+  const allSessions: GameSession[] = [];
+  for (const progress of profile.progress) {
+    if (progress.gameSession) {
+      allSessions.push(progress.gameSession);
+    }
+  }
+  
+  if (allSessions.length === 0) {
     return 0;
   }
 
   // Get unique dates from sessions (normalize to dates only, ignoring time)
   const sessionDates = new Set(
-    profile.sessions.map((session: GameSession) => {
+    allSessions.map((session: GameSession) => {
       const date = new Date(session.startedAt);
       return date.toISOString().split('T')[0]; // YYYY-MM-DD format
     })
@@ -167,12 +483,12 @@ export function getCurrentStreak(profile: ChildProfile | undefined): number {
 
   // Count consecutive days from today backwards
   let streak = 0;
-  let currentDate = new Date();
+  const currentDate = new Date();
   currentDate.setHours(0, 0, 0, 0);
 
   // Check if today has a session
   const todayString = currentDate.toISOString().split('T')[0];
-  let checkingDate = new Date(currentDate);
+  const checkingDate = new Date(currentDate);
 
   // If no session today, start from yesterday
   if (!sessionDates.has(todayString)) {

@@ -294,6 +294,62 @@ export class ChildrenController {
     }
   }
 
+  /**
+   * GET /api/progress/:childId/stories/:storyId
+   * Fetch child progress for a specific story
+   */
+  static async getChildProgress(
+    req: Request,
+    res: Response<ApiResponse<Progress | null>>,
+  ): Promise<void> {
+    try {
+      const { childId, storyId } = req.params;
+
+      // Validation
+      if (!childId || !storyId) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required parameters: childId and storyId",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      const progress = await ChildrenService.getChildProgress(childId, storyId);
+
+      if (!progress) {
+        res.status(404).json({
+          success: false,
+          error: {
+            code: "NOT_FOUND",
+            message: "Progress not found for this story",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: progress,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error fetching child progress:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "FETCH_ERROR",
+          message:
+            error instanceof Error ? error.message : "Failed to fetch progress",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
 
   /**
    * POST /api/progress/checkpoint
@@ -481,6 +537,154 @@ export class ChildrenController {
           code: "COMPLETE_ERROR",
           message:
             error instanceof Error ? error.message : "Failed to complete story",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  /**
+   * PATCH /api/children/:childId/level
+   * Update a child's current level
+   * Body: { currentLevel }
+   */
+  static async updateChildLevel(
+    req: Request,
+    res: Response<ApiResponse<ChildProfile>>,
+  ): Promise<void> {
+    try {
+      const { childId } = req.params;
+      const { currentLevel } = req.body;
+
+      // Validation
+      if (!childId) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required parameter: childId",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      if (currentLevel === undefined || currentLevel === null) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required field: currentLevel",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      const updatedChild = await ChildrenService.updateChildLevel(
+        childId,
+        currentLevel,
+      );
+
+      if (!updatedChild) {
+        res.status(404).json({
+          success: false,
+          error: {
+            code: "NOT_FOUND",
+            message: "Child profile not found",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: updatedChild,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error updating child level:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "UPDATE_ERROR",
+          message:
+            error instanceof Error ? error.message : "Failed to update child level",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  /**
+   * POST /api/children/:childId/badges
+   * Assign a badge to a child
+   * Body: { badgeId }
+   */
+  static async assignBadgeToChild(
+    req: Request,
+    res: Response<ApiResponse<ChildProfile>>,
+  ): Promise<void> {
+    try {
+      const { childId } = req.params;
+      const { badgeId } = req.body;
+
+      // Validation
+      if (!childId) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required parameter: childId",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      if (!badgeId) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required field: badgeId",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      const updatedChild = await ChildrenService.assignBadgeToChild(
+        childId,
+        badgeId,
+      );
+
+      if (!updatedChild) {
+        res.status(404).json({
+          success: false,
+          error: {
+            code: "NOT_FOUND",
+            message: "Child profile not found",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: updatedChild,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error assigning badge:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "ASSIGN_ERROR",
+          message:
+            error instanceof Error ? error.message : "Failed to assign badge",
         },
         timestamp: new Date(),
       });

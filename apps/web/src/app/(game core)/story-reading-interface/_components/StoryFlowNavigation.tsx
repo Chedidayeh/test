@@ -33,11 +33,12 @@ interface StoryFlowNavigationProps {
   setShowRiddle: (value: boolean) => void;
   totalPages?: number;
   onPageChange?: (page: number) => void;
-  currentProgress?: Progress | null;
+  currentProgress?: Progress;
   currentChallengeAttemptState: ChallengeAttempt | undefined;
   pages?: StoryPage[];
   story?: Story;
   totalStarsEarned?: number;
+  childId: string;
 }
 
 const StoryFlowNavigation = ({
@@ -53,6 +54,7 @@ const StoryFlowNavigation = ({
   pages = [],
   story,
   totalStarsEarned = 0,
+  childId,
 }: StoryFlowNavigationProps) => {
   const router = useRouter();
   const [isSavingCheckpoint, setIsSavingCheckpoint] = useState(false);
@@ -111,7 +113,7 @@ const StoryFlowNavigation = ({
     if (showRiddle) {
       setShowRiddle(false);
     } else {
-      router.back();
+      router.push("/child-dashboard/" + childId);
     }
   };
 
@@ -151,7 +153,7 @@ const StoryFlowNavigation = ({
             totalPages,
             gameSessionData: result.data,
           });
-          router.push(`/story-completion/${currentProgress.storyId}`);
+          router.push(`/story-completion/${currentProgress.storyId}?childId=${childId}`);
         } else {
           console.error("[Story Completion] Failed to complete story", {
             error: result.error,
