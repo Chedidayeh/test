@@ -15,6 +15,7 @@ import {
   Progress,
   ChallengeAttempt,
   StarEvent,
+  SessionCheckpoint,
 } from "@shared/types";
 
 
@@ -1101,6 +1102,610 @@ export async function forwardSaveCheckpoint(
       error: {
         code: "INTERNAL_ERROR",
         message: "Failed to save checkpoint",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+/**
+ * Create new checkpoint from a game session
+ * Records resume timestamp and calculates idle time
+ * Returns checkpoint with session duration and idle time
+ */
+export async function forwardCreateNewCheckpoint(
+  req: Request,
+  res: Response<
+    ApiResponse<SessionCheckpoint>
+  >,
+): Promise<void> {
+  try {
+    const { gameSessionId } = req.params;
+
+    if ( !gameSessionId) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: "BAD_REQUEST",
+          message: "Missing required parameters: gameSessionId",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Resuming from game session", {
+      gameSessionId,
+    });
+
+    // Forward to Progress Service
+    const resumeResponse = await axios.post<
+      ApiResponse<SessionCheckpoint>
+    >(
+      `${PROGRESS_SERVICE_URL}/api/progress/create-new-checkpoint/${gameSessionId}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
+          }),
+        },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug("Progress service resume checkpoint response received", {
+      status: resumeResponse.status,
+      hasCheckpoint: !!resumeResponse.data?.data,
+    });
+
+    // Handle progress service error
+    if (resumeResponse.status !== 200) {
+      logger.error("Progress service resume checkpoint error", {
+        status: resumeResponse.status,
+        message: resumeResponse.data?.error?.message,
+      });
+      res.status(resumeResponse.status).json(resumeResponse.data);
+      return;
+    }
+
+    const result = resumeResponse.data?.data;
+
+    if (!result) {
+      logger.error("Resume checkpoint returned no data", {
+        gameSessionId,
+      });
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "NO_DATA_ERROR",
+          message: "Failed to resume checkpoint: no data returned",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Game session resumed successfully", {
+      gameSessionId,
+      sessionDurationSeconds: result.sessionDurationSeconds,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: result,
+      timestamp: new Date(),
+    });
+  } catch (error) {
+    logger.error("Resume game session forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Failed to resume game session",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+/**
+ * Pause a game session - saves state when user exits the story
+ * Forwards the pause request to Progress Service
+ */
+export async function forwardPauseGameSession(
+  req: Request,
+  res: Response<
+    ApiResponse<SessionCheckpoint>
+  >,
+): Promise<void> {
+  try {
+    const { gameSessionId } = req.params;
+
+    if (!gameSessionId) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: "BAD_REQUEST",
+          message: "Missing required parameters: gameSessionId",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Pausing game session", {
+      gameSessionId,
+    });
+
+    // Forward to Progress Service
+    const pauseResponse = await axios.post<
+      ApiResponse<SessionCheckpoint>
+    >(
+      `${PROGRESS_SERVICE_URL}/api/progress/pause/${gameSessionId}`,
+      {},
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
+          }),
+        },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug("Progress service pause game session response received", {
+      status: pauseResponse.status,
+      hasCheckpoint: !!pauseResponse.data?.data,
+    });
+
+    // Handle progress service error
+    if (pauseResponse.status !== 200) {
+      logger.error("Progress service pause game session error", {
+        status: pauseResponse.status,
+        message: pauseResponse.data?.error?.message,
+      });
+      res.status(pauseResponse.status).json(pauseResponse.data);
+      return;
+    }
+
+    const result = pauseResponse.data?.data;
+
+    if (!result) {
+      logger.error("Pause game session returned no data", {
+        gameSessionId,
+      });
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "NO_DATA_ERROR",
+          message: "Failed to pause game session: no data returned",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Game session paused successfully", {
+      gameSessionId,
+      pausedAt: result.pausedAt,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: result,
+      timestamp: new Date(),
+    });
+  } catch (error) {
+    logger.error("Pause game session forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Failed to pause game session",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+/**
+ * Calculate total active time spent in a game session
+ * Gets total time from all challenge attempts
+ */
+export async function forwardCalculateSessionTime(
+  req: Request,
+  res: Response<ApiResponse<{ totalTimeSpent: number }>>,
+): Promise<void> {
+  try {
+    const { gameSessionId } = req.params;
+
+    if (!gameSessionId) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: "BAD_REQUEST",
+          message: "Missing required parameter: gameSessionId",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Calculating session time", { gameSessionId });
+
+    // Forward to Progress Service
+    const timeResponse = await axios.get<ApiResponse<{ totalTimeSpent: number }>>(
+      `${PROGRESS_SERVICE_URL}/api/progress/${gameSessionId}/time`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
+          }),
+        },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug("Progress service calculate session time response received", {
+      status: timeResponse.status,
+      hasData: !!timeResponse.data?.data,
+    });
+
+    // Handle progress service error
+    if (timeResponse.status !== 200) {
+      logger.error("Progress service calculate session time error", {
+        status: timeResponse.status,
+        message: timeResponse.data?.error?.message,
+      });
+      res.status(timeResponse.status).json(timeResponse.data);
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: timeResponse.data?.data || { totalTimeSpent: 0 },
+      timestamp: new Date(),
+    });
+  } catch (error) {
+    logger.error("Calculate session time forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Failed to calculate session time",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+/**
+ * Aggregate and store total time spent in a game session
+ * Updates GameSession with frontend-calculated total time
+ */
+export async function forwardAggregateSessionTime(
+  req: Request,
+  res: Response<ApiResponse<GameSession | null>>,
+): Promise<void> {
+  try {
+    const { gameSessionId } = req.params;
+    const { totalChallengeTimeSeconds } = req.body;
+
+    if (!gameSessionId) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: "BAD_REQUEST",
+          message: "Missing required parameter: gameSessionId",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    if (
+      totalChallengeTimeSeconds === undefined ||
+      totalChallengeTimeSeconds === null
+    ) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: "BAD_REQUEST",
+          message: "Missing required field: totalChallengeTimeSeconds",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Aggregating session time", {
+      gameSessionId,
+      totalChallengeTimeSeconds,
+    });
+
+    // Forward to Progress Service
+    const aggregateResponse = await axios.post<ApiResponse<GameSession>>(
+      `${PROGRESS_SERVICE_URL}/api/progress/${gameSessionId}/aggregate-time`,
+      {
+        totalChallengeTimeSeconds,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
+          }),
+        },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug("Progress service aggregate session time response received", {
+      status: aggregateResponse.status,
+      hasGameSession: !!aggregateResponse.data?.data,
+    });
+
+    // Handle progress service error
+    if (aggregateResponse.status !== 200) {
+      logger.error("Progress service aggregate session time error", {
+        status: aggregateResponse.status,
+        message: aggregateResponse.data?.error?.message,
+      });
+      res.status(aggregateResponse.status).json(aggregateResponse.data);
+      return;
+    }
+
+    const updatedSession = aggregateResponse.data?.data;
+
+    if (!updatedSession) {
+      logger.error("Aggregate session time returned no data", { gameSessionId });
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "NO_DATA_ERROR",
+          message: "Failed to aggregate session time: no data returned",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Session time aggregated successfully", {
+      gameSessionId,
+      totalTimeSpent: updatedSession.totalTimeSpent,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: updatedSession,
+      timestamp: new Date(),
+    });
+  } catch (error) {
+    logger.error("Aggregate session time forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Failed to aggregate session time",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+/**
+ * Aggregate and sync progress total time from game session
+ * Updates Progress.totalTimeSpent with GameSession time
+ */
+export async function forwardAggregateProgressTime(
+  req: Request,
+  res: Response<ApiResponse<Progress | null>>,
+): Promise<void> {
+  try {
+    const { progressId } = req.params;
+
+    if (!progressId) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: "BAD_REQUEST",
+          message: "Missing required parameter: progressId",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Aggregating progress time", { progressId });
+
+    // Forward to Progress Service
+    const aggregateResponse = await axios.post<ApiResponse<Progress>>(
+      `${PROGRESS_SERVICE_URL}/api/progress/${progressId}/aggregate-progress-time`,
+      {},
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
+          }),
+        },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug(
+      "Progress service aggregate progress time response received",
+      {
+        status: aggregateResponse.status,
+        hasProgress: !!aggregateResponse.data?.data,
+      },
+    );
+
+    // Handle progress service error
+    if (aggregateResponse.status !== 200) {
+      logger.error("Progress service aggregate progress time error", {
+        status: aggregateResponse.status,
+        message: aggregateResponse.data?.error?.message,
+      });
+      res.status(aggregateResponse.status).json(aggregateResponse.data);
+      return;
+    }
+
+    const updatedProgress = aggregateResponse.data?.data;
+
+    if (!updatedProgress) {
+      logger.error("Aggregate progress time returned no data", { progressId });
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "NO_DATA_ERROR",
+          message: "Failed to aggregate progress time: no data returned",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Progress time aggregated successfully", {
+      progressId,
+      totalTimeSpent: updatedProgress.totalTimeSpent,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: updatedProgress,
+      timestamp: new Date(),
+    });
+  } catch (error) {
+    logger.error("Aggregate progress time forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Failed to aggregate progress time",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+/**
+ * Get detailed time analytics for a game session
+ * Returns: totalTimeSpent, sessionCount, totalIdleTime, activeTimePercentage, checkpoints
+ */
+export async function forwardGetSessionAnalytics(
+  req: Request,
+  res: Response<
+    ApiResponse<{
+      gameSessionId: string;
+      totalTimeSpent: number;
+      sessionCount: number;
+      totalIdleTime: number;
+      activeTimePercentage: number;
+      checkpoints: Array<{
+        id: string;
+        chapterId: string;
+        pausedAt: Date;
+        resumedAt: Date | null;
+        sessionDurationSeconds: number | null;
+      }>;
+    }>
+  >,
+): Promise<void> {
+  try {
+    const { gameSessionId } = req.params;
+
+    if (!gameSessionId) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: "BAD_REQUEST",
+          message: "Missing required parameter: gameSessionId",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Fetching session analytics", { gameSessionId });
+
+    // Forward to Progress Service
+    const analyticsResponse = await axios.get<
+      ApiResponse<{
+        gameSessionId: string;
+        totalTimeSpent: number;
+        sessionCount: number;
+        totalIdleTime: number;
+        activeTimePercentage: number;
+        checkpoints: Array<{
+          id: string;
+          chapterId: string;
+          pausedAt: Date;
+          resumedAt: Date | null;
+          sessionDurationSeconds: number | null;
+        }>;
+      }>
+    >(
+      `${PROGRESS_SERVICE_URL}/api/progress/${gameSessionId}/analytics`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
+          }),
+        },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug("Progress service session analytics response received", {
+      status: analyticsResponse.status,
+      hasAnalytics: !!analyticsResponse.data?.data,
+    });
+
+    // Handle progress service error
+    if (analyticsResponse.status !== 200) {
+      logger.error("Progress service session analytics error", {
+        status: analyticsResponse.status,
+        message: analyticsResponse.data?.error?.message,
+      });
+      res.status(analyticsResponse.status).json(analyticsResponse.data);
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: analyticsResponse.data?.data,
+      timestamp: new Date(),
+    });
+  } catch (error) {
+    logger.error("Get session analytics forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Failed to fetch session analytics",
       },
       timestamp: new Date(),
     });

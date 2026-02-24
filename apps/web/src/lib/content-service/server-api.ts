@@ -98,8 +98,6 @@ async function apiRequest<T = any>(
       "[Content Server API] No JWT token found - user may not be authenticated",
       { hasSession: !!session, hasUser: !!session?.user }
     );
-  } else {
-    console.log("[Content Server API] JWT token found, length:", token.length);
   }
 
   const defaultHeaders: HeadersInit = {

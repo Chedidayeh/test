@@ -3,6 +3,8 @@
 import { TabsContent } from "@/src/components/ui/tabs";
 import BadgeCard from "./BadgeCard";
 import { Badge, ChildProfile } from "@shared/types";
+import Link from "next/link";
+import { Button } from "@/src/components/ui/button";
 
 interface AchievementsTabProps {
   selectedChild: ChildProfile | undefined;
@@ -26,7 +28,10 @@ export default function AchievementsTab({
   if (typeof childCurrentLevel === "number") {
     displayBadges.forEach((badge) => {
       const badgeLevelNumber = badge.level?.levelNumber;
-      if (typeof badgeLevelNumber === "number" && badgeLevelNumber <= childCurrentLevel) {
+      if (
+        typeof badgeLevelNumber === "number" &&
+        badgeLevelNumber <= childCurrentLevel
+      ) {
         unlockedBadgeIds.add(badge.id);
       }
     });
@@ -37,17 +42,28 @@ export default function AchievementsTab({
     selectedChild.badges.forEach((cb) => unlockedBadgeIds.add(cb.badgeId));
   }
 
-
   return (
     <TabsContent value="achievements" className="space-y-6">
       <div className="bg-linear-to-r from-primary/5 via-secondary/5 to-accent/5 rounded-xl p-6 border border-black/10">
-        <h2 className="font-heading text-3xl text-foreground mb-2">
-          Badges & Achievements
-        </h2>
-        <p className="text-muted-foreground">
-          {unlockedBadgeIds.size} of {displayBadges.length} badge
-          {displayBadges.length !== 1 ? "s" : ""} unlocked by {selectedChild?.child.name}
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="font-heading text-3xl text-foreground mb-2">
+              Badges & Achievements
+            </h2>
+            <p className="text-muted-foreground">
+              {unlockedBadgeIds.size} of {displayBadges.length} badge
+              {displayBadges.length !== 1 ? "s" : ""} unlocked by{" "}
+              {selectedChild?.child.name}
+            </p>
+          </div>
+          {selectedChild?.childId && (
+            <Link href={`/child-dashboard/${selectedChild.childId}`}>
+              <Button className="whitespace-nowrap">
+                {selectedChild.child?.name || "Child"}&apos;s dashboard →
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
 
       {displayBadges.length > 0 ? (

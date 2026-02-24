@@ -7,6 +7,7 @@ import {
   ChallengeAttempt,
   StarEvent,
   ChallengeType,
+  SessionCheckpoint,
 } from "@shared/types";
 
 const prisma = new PrismaClient();
@@ -43,8 +44,9 @@ export class ChildrenService {
                 challengeAttempts: {
                   include: {
                     starEvent: true,
-                  }
+                  },
                 },
+                checkpoints: true,
               },
             },
           },
@@ -89,7 +91,9 @@ export class ChildrenService {
                     starEvent: true,
                   },
                 },
+                checkpoints: true,
               },
+              
             },
           },
         },
@@ -134,6 +138,7 @@ export class ChildrenService {
                     starEvent: true,
                   },
                 },
+                checkpoints: true,
               },
             },
           },
@@ -165,6 +170,7 @@ export class ChildrenService {
                     starEvent: true,
                   },
                 },
+                checkpoints: true,
               },
             },
           },
@@ -195,6 +201,7 @@ export class ChildrenService {
                     starEvent: true,
                   },
                 },
+                checkpoints: true,
               },
             },
           },
@@ -241,6 +248,7 @@ export class ChildrenService {
                 starEvent: true,
               },
             },
+            checkpoints: true,
           },
         },
       },
@@ -267,7 +275,7 @@ export class ChildrenService {
     });
 
     if (!childProfile) {
-      return null
+      return null;
     }
 
     const progress = await prisma.progress.upsert({
@@ -319,8 +327,8 @@ export class ChildrenService {
 
   /**
    * Save checkpoint for a game session
-   * Updates the game session with chapter ID and checkpoint timestamp
-   * Used when player pauses or completes a chapter
+   * Updates the game session with chapter ID and checkpoint reference
+   * Used when player pauses or stops reading
    */
   static async saveCheckpoint(
     gameSessionId: string,
@@ -357,6 +365,203 @@ export class ChildrenService {
     });
 
     return updatedSession as unknown as GameSession;
+  }
+
+  /**
+   * Create a new checkpoint for the game session
+   * Records the current state and calculates time since last checkpoint
+   * Only creates if recent checkpoint has both startedAt and pausedAt to prevent duplicates
+   * Returns the newly created checkpoint
+   */
+  static async createNewCheckpoint(
+    gameSessionId: string,
+  ): Promise<SessionCheckpoint> {
+    // Validate inputs
+    if (!gameSessionId) {
+      throw new Error("Missing required field: gameSessionId");
+    }
+
+    // Check if game session exists
+    const gameSession = await prisma.gameSession.findUnique({
+      where: { id: gameSessionId },
+      include: { checkpoints: true },
+    });
+
+    if (!gameSession) {
+      throw new Error(`Game session not found for ID: ${gameSessionId}`);
+    }
+
+    // Check the most recent checkpoint to prevent duplicate checkpoints
+    if (gameSession.checkpoints.length > 0) {
+      const recentCheckpoint =
+        gameSession.checkpoints[gameSession.checkpoints.length - 1];
+
+      // Only create a new checkpoint if the recent checkpoint has both startedAt and pausedAt
+      if (!(recentCheckpoint.startedAt && recentCheckpoint.pausedAt)) {
+        return recentCheckpoint;
+      }
+    }
+
+    // Create a new checkpoint record
+    const newCheckpoint = await prisma.sessionCheckpoint.create({
+      data: {
+        gameSessionId,
+        firstChapterId: gameSession.chapterId!,
+        startedAt: new Date(),
+      },
+    });
+
+    return newCheckpoint;
+  }
+
+  /**
+   * Pause a game session - saves state when user exits the story
+   * Updates the most recent incomplete checkpoint with the pause timestamp
+   * Only updates checkpoints that have startedAt but pausedAt is null
+   */
+  static async pauseCheckpoint(
+    gameSessionId: string,
+  ): Promise<SessionCheckpoint | null> {
+    // Validate inputs
+    if (!gameSessionId) {
+      throw new Error("Missing required field: gameSessionId");
+    }
+
+    // Check if game session exists
+    const gameSession = await prisma.gameSession.findUnique({
+      where: { id: gameSessionId },
+      include: { checkpoints: true },
+    });
+
+    if (!gameSession) {
+      throw new Error(`Game session not found for ID: ${gameSessionId}`);
+    }
+
+    // Find the most recent checkpoint with pausedAt as null (incomplete)
+    const incompleteCheckpoint = gameSession.checkpoints.find(
+      (cp) => cp.pausedAt === null && cp.startedAt !== null,
+    );
+
+    if (!incompleteCheckpoint) {
+      return null;
+    }
+
+    // Update the checkpoint with the pause timestamp
+    const checkpoint = await prisma.sessionCheckpoint.update({
+      where: { id: incompleteCheckpoint.id },
+      data: {
+        pausedAt: new Date(),
+        sessionDurationSeconds: Math.floor((new Date().getTime() - incompleteCheckpoint.startedAt.getTime()) / 1000),
+        lastChapterId: gameSession.chapterId!,
+      },
+    });
+
+    return checkpoint;
+  }
+
+  /**
+   * Calculate total active time spent in a game session
+   * Sums all challenge attempt times within the session
+   * Returns total time in seconds
+   */
+  static async calculateSessionTime(gameSessionId: string): Promise<number> {
+    // Fetch all challenge attempts for this session
+    const attempts = await prisma.challengeAttempt.findMany({
+      where: { sessionId: gameSessionId },
+      select: { timeSpentSeconds: true },
+    });
+
+    // Sum all time spent on challenges
+    const totalTimeSpent = attempts.reduce(
+      (sum, attempt) => sum + attempt.timeSpentSeconds,
+      0,
+    );
+
+    return totalTimeSpent;
+  }
+
+  /**
+   * Aggregate total time spent across all checkpoints in a game session
+   * Updates GameSession.totalTimeSpent with sum of all active session durations
+   * Call this after calculating session times from challenge attempts
+   */
+  static async aggregateSessionTime(
+    gameSessionId: string,
+    totalChallengeTimeSeconds: number,
+  ): Promise<GameSession | null> {
+    // Fetch the game session
+    const gameSession = await prisma.gameSession.findUnique({
+      where: { id: gameSessionId },
+      include: { checkpoints: true },
+    });
+
+    if (!gameSession) {
+      throw new Error(`Game session not found for ID: ${gameSessionId}`);
+    }
+
+    // Sum challenge times (frontend sends aggregated time)
+    // Update the session with total time spent
+    const updatedSession = await prisma.gameSession.update({
+      where: { id: gameSessionId },
+      data: {
+        totalTimeSpent: totalChallengeTimeSeconds,
+      },
+      include: {
+        challengeAttempts: {
+          include: {
+            starEvent: true,
+          },
+        },
+        checkpoints: true,
+      },
+    });
+
+    return updatedSession as unknown as GameSession;
+  }
+
+  /**
+   * Aggregate progress total time
+   * Updates Progress.totalTimeSpent with the GameSession time
+   * Call this when story completes or to sync progress time
+   */
+  static async aggregateProgressTime(
+    progressId: string,
+  ): Promise<Progress | null> {
+    // Fetch the progress record with its game session
+    const progress = await prisma.progress.findUnique({
+      where: { id: progressId },
+      include: { gameSession: true },
+    });
+
+    if (!progress) {
+      throw new Error(`Progress not found for ID: ${progressId}`);
+    }
+
+    if (!progress.gameSession) {
+      throw new Error(`No game session found for progress ID: ${progressId}`);
+    }
+
+    // Update Progress with the GameSession's total time
+    const updatedProgress = await prisma.progress.update({
+      where: { id: progressId },
+      data: {
+        totalTimeSpent: progress.gameSession.totalTimeSpent,
+      },
+      include: {
+        gameSession: {
+          include: {
+            challengeAttempts: {
+              include: {
+                starEvent: true,
+              },
+            },
+            checkpoints: true,
+          },
+        },
+      },
+    });
+
+    return updatedProgress as unknown as Progress;
   }
 
   /**
@@ -499,7 +704,8 @@ export class ChildrenService {
 
   /**
    * Complete a story for a game session
-   * Marks the story as completed and updates the progress record
+   * Marks the story as completed, aggregates time metrics, and updates progress record
+   * Automatically pauses the last checkpoint if it hasn't been paused yet
    */
   static async completeStory(
     gameSessionId: string,
@@ -518,11 +724,49 @@ export class ChildrenService {
             starEvent: true,
           },
         },
+        checkpoints: true,
       },
     });
 
     if (!gameSession) {
       throw new Error(`Game session not found for ID: ${gameSessionId}`);
+    }
+
+    const completionTime = new Date();
+
+    // Handle the last checkpoint if it hasn't been paused
+    if (gameSession.checkpoints.length > 0) {
+      const lastCheckpoint = gameSession.checkpoints[gameSession.checkpoints.length - 1];
+
+      // If the last checkpoint is incomplete (pausedAt is null), complete it now
+      if (lastCheckpoint.pausedAt === null && lastCheckpoint.startedAt !== null) {
+        await prisma.sessionCheckpoint.update({
+          where: { id: lastCheckpoint.id },
+          data: {
+            pausedAt: completionTime,
+            sessionDurationSeconds: Math.floor((completionTime.getTime() - lastCheckpoint.startedAt.getTime()) / 1000),
+            lastChapterId: gameSession.chapterId!,
+          },
+        });
+      }
+    }
+
+    // Fetch updated checkpoints
+    const updatedGameSession = await prisma.gameSession.findUnique({
+      where: { id: gameSessionId },
+      include: { checkpoints: true },
+    });
+
+    if (!updatedGameSession) {
+      throw new Error(`Game session not found for ID: ${gameSessionId}`);
+    }
+
+    // Calculate total time spent in the session by summing checkpoint durations
+    let totalTimeSpent = 0;
+    for (const checkpoint of updatedGameSession.checkpoints) {
+      if (checkpoint.pausedAt && checkpoint.startedAt) {
+        totalTimeSpent += Math.floor((checkpoint.pausedAt.getTime() - checkpoint.startedAt.getTime()) / 1000);
+      }
     }
 
     // Find and update the progress record to mark as completed
@@ -535,11 +779,13 @@ export class ChildrenService {
     });
 
     if (progress) {
+      // Aggregate total time from game session to progress
       await prisma.progress.update({
         where: { id: progress.id },
         data: {
           status: ProgressStatus.COMPLETED,
-          completedAt: new Date(),
+          completedAt: completionTime,
+          totalTimeSpent: totalTimeSpent,
         },
       });
     }
@@ -548,7 +794,8 @@ export class ChildrenService {
     const completedSession = await prisma.gameSession.update({
       where: { id: gameSessionId },
       data: {
-        endedAt: new Date(),
+        endedAt: completionTime,
+        totalTimeSpent,
       },
       include: {
         challengeAttempts: {
@@ -556,6 +803,7 @@ export class ChildrenService {
             starEvent: true,
           },
         },
+        checkpoints: true,
       },
     });
 

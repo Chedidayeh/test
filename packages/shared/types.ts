@@ -269,6 +269,7 @@ export interface Progress {
   worldId: string; // References Content.World.id - current world being progressed through
   storyId: string; // References Content.Story.id - current story being progressed through
   status: ProgressStatus;
+  totalTimeSpent: number; // Total time spent on this story across all sessions (in seconds)
   completedAt?: Date;
   gameSession?: GameSession;
   createdAt: Date;
@@ -283,10 +284,29 @@ export interface GameSession {
   storyId: string; // References Content.Story.id
   chapterId: string | null; // References Content.Chapter.id - checkpoint for mid-story saves
   startedAt: Date;
-  checkpointAt: Date | null; // Optional checkpoint time for mid-session saves
+  checkpointAt: Date | null; // Optional checkpoint time for mid-session saves (deprecated, use SessionCheckpoint.pausedAt)
   endedAt: Date | null;
+  totalTimeSpent: number; // Total active time in seconds (sum of all pause-to-resume durations)
+  sessionCount: number; // Number of separate sessions (pause/resume cycles)
+  totalIdleTime: number; // Total time child was away between sessions (in seconds)
   starsEarned: number;
   challengeAttempts: ChallengeAttempt[];
+  checkpoints: SessionCheckpoint[]; // History of all pause/resume checkpoints
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// SessionCheckpoint records each pause/resume event within a GameSession
+// Allows tracking of when child paused, started, and calculating idle time between sessions
+export interface SessionCheckpoint {
+  id: string;
+  gameSessionId: string;
+  gameSession?: GameSession;
+  firstChapterId: string; // Which chapter was the child reading when they started this session
+  lastChapterId: string | null; // Which chapter was the child reading when they paused (null if not paused yet)
+  pausedAt: Date | null; 
+  startedAt: Date
+  sessionDurationSeconds?: number | null; 
   createdAt: Date;
   updatedAt: Date;
 }
@@ -408,170 +428,8 @@ export interface TokenVerificationResponse {
   error?: string;
 }
 
-// ============================================================================
-// DTO TYPES (Data Transfer Objects for APIs)
-// ============================================================================
 
-/**
- * DTOs for Content Service endpoints
- */
-export namespace ContentServiceDTOs {
-  export interface CreateStoryDTO {
-    worldId: string;
-    title: string;
-    description?: string;
-    difficulty: number;
-    isMandatory?: boolean;
-    order: number;
-  }
 
-  export interface UpdateStoryDTO {
-    title?: string;
-    description?: string;
-    difficulty?: number;
-    isMandatory?: boolean;
-    order?: number;
-  }
-
-  export interface CreateRoadmapDTO {
-    ageGroupId: string;
-    themeId: string;
-    worlds?: CreateWorldDTO[];
-  }
-
-  export interface UpdateRoadmapDTO {
-    ageGroupId?: string;
-    themeId?: string;
-    worlds?: UpdateWorldDTO[];
-  }
-
-  export interface CreateWorldDTO {
-    name: string;
-    description?: string;
-    imageUrl?: string;
-    order: number;
-    locked?: boolean;
-    requiredStarCount?: number;
-  }
-
-  export interface UpdateWorldDTO {
-    name?: string;
-    description?: string;
-    imageUrl?: string;
-    order?: number;
-    locked?: boolean;
-    requiredStarCount?: number;
-  }
-
-  export interface CreateChapterDTO {
-    storyId: string;
-    title: string;
-    content: string;
-    imageUrl?: string;
-    audioUrl?: string;
-    order: number;
-  }
-
-  export interface UpdateChapterDTO {
-    title?: string;
-    content?: string;
-    imageUrl?: string;
-    audioUrl?: string;
-    order?: number;
-  }
-
-  export interface CreateChallengeDTO {
-    chapterId: string;
-    type: ChallengeType;
-    question: string;
-    description?: string;
-    maxAttempts?: number;
-    baseStars?: number;
-    order: number;
-    hints?: string[];
-    answers: CreateAnswerDTO[];
-  }
-
-  export interface CreateAnswerDTO {
-    text: string;
-    isCorrect: boolean;
-    order?: number;
-  }
-}
-
-/**
- * DTOs for Progress Service endpoints
- */
-export namespace ProgressServiceDTOs {
-  export interface CreateProgressDTO {
-    childProfileId: string;
-    worldId: string;
-    storyId: string;
-    chapterId: string;
-  }
-
-  export interface UpdateProgressDTO {
-    status?: ProgressStatus;
-    correctAnswers?: number;
-    totalAnswers?: number;
-    completedAt?: Date;
-  }
-
-  export interface CreateSessionDTO {
-    childProfileId: string;
-    storyId: string;
-    chapterId: string;
-    starsEarned?: number;
-  }
-
-  export interface EndSessionDTO {
-    starsEarned: number;
-  }
-
-  export interface RecordChallengeAttemptDTO {
-    childProfileId: string;
-    challengeId: string;
-    answerId?: string;
-    textAnswer?: string;
-    usedHints: boolean;
-    timeSpentSeconds: number;
-  }
-}
-
-/**
- * DTOs for Auth Service endpoints
- */
-export namespace AuthServiceDTOs {
-  export interface RegisterDTO {
-    email: string;
-    password: string;
-    name: string;
-  }
-
-  export interface LoginDTO {
-    email: string;
-    password: string;
-  }
-
-  export interface CreateChildDTO {
-    name: string;
-    ageGroup: string;
-    avatar?: string;
-  }
-
-  export interface UpdateChildDTO {
-    name?: string;
-    ageGroup?: string;
-    avatar?: string;
-    favoriteGenres?: string[];
-  }
-
-  export interface LoginResponseDTO {
-    user: User;
-    token: string;
-    expiresIn: number;
-  }
-}
 
 // ============================================================================
 // HELPER TYPES

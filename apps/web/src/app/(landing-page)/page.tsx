@@ -1,5 +1,6 @@
-"use client";
 
+
+import { auth } from "@/src/auth";
 import { About } from "@/src/components/landing/about";
 import { FAQ } from "@/src/components/landing/FAQ";
 import Hero from "@/src/components/landing/hero";
@@ -7,21 +8,9 @@ import { HowItWorks } from "@/src/components/landing/HowItWorks";
 import { Pricing } from "@/src/components/landing/Pricing";
 import { useView } from "@/src/hooks/use-inViews";
 
-const AnimatedSection = ({ children }: { children: React.ReactNode }) => {
-  const [ref, isInView] = useView({ threshold: 0.1 });
-  return (
-    <div
-      ref={ref}
-      className={`transition-all duration-1000 transform ${
-        isInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-      }`}
-    >
-      {children}
-    </div>
-  );
-};
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth()
   return (
     <div>
       <div className="min-h-screen flex flex-col items-center justify-center ">
@@ -32,7 +21,7 @@ export default function Home() {
           <div className="absolute inset-0 bg-linear-to-b from-black/70 via-black/60 to-black/80" />
         </div>
 
-        <Hero />
+        <Hero session={session} />
       </div>
       {/* sections */}
       <div className="w-full">

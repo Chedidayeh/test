@@ -14,7 +14,7 @@
  */
 
 import { auth } from "@/src/auth";
-import type { ApiResponse, ChildProfile, ChallengeType, GameSession, ParentUser, Progress, ChallengeAttempt, StarEvent, ChallengeStatus } from "@shared/types";
+import type { ApiResponse, ChildProfile, ChallengeType, GameSession, ParentUser, Progress, ChallengeAttempt, StarEvent, ChallengeStatus, SessionCheckpoint } from "@shared/types";
 
 /**
  * Global error response type
@@ -122,8 +122,6 @@ async function apiRequest<T = any>(
       hasSession: !!session,
       hasUser: !!session?.user,
     });
-  } else {
-    console.log("[Progress Service API] JWT token found, length:", token.length);
   }
 
   const defaultHeaders: HeadersInit = {
@@ -627,6 +625,145 @@ export async function assignBadgeToChild(
   console.log("[Progress Service API] Badge assigned successfully", {
     childId,
     badgeId,
+  });
+
+  return response.data || null;
+}
+
+/**
+ * Resume a checkpoint - marks it as resumed and returns idle time
+ * @param gameSessionId - The game session ID to resume
+ * @returns SessionCheckpoint response with resumedAt and idle time
+ */
+export async function createNewCheckpointSession(gameSessionId: string): Promise<SessionCheckpoint | undefined> {
+  console.log("[Progress Service API] Creating new checkpoint for game session:", { gameSessionId });
+
+  const response = await apiRequest<ApiResponse<SessionCheckpoint>>(
+    `/api/progress/create-new-checkpoint/${gameSessionId}`,
+    {
+      method: "POST",
+      body: JSON.stringify({}),
+    },
+  );
+
+  if (isApiError(response)) {
+    throw new Error(response.error.message);
+  }
+
+  if (!response.success) {
+    throw new Error("Failed to create new checkpoint");
+  }
+
+  console.log("[Progress Service API] New checkpoint created successfully", {
+    gameSessionId,
+  });
+
+  return response.data;
+}
+
+/**
+ * Aggregate session time - stores total time spent reading
+ * @param gameSessionId - The game session ID
+ * @param totalTimeSpentSeconds - Total seconds spent reading
+ * @returns Updated GameSession
+ */
+export async function aggregateSessionTime(
+  gameSessionId: string,
+  totalTimeSpentSeconds: number,
+): Promise<any> {
+  console.log("[Progress Service API] Aggregating session time:", {
+    gameSessionId,
+    totalTimeSpentSeconds,
+  });
+
+  const response = await apiRequest<ApiResponse<any>>(
+    `/api/progress/${gameSessionId}/aggregate-time`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        totalTimeSpentSeconds,
+      }),
+    },
+  );
+
+  if (isApiError(response)) {
+    throw new Error(response.error.message);
+  }
+
+  if (!response.success) {
+    throw new Error("Failed to aggregate session time");
+  }
+
+  console.log("[Progress Service API] Session time aggregated successfully", {
+    gameSessionId,
+    totalTimeSpentSeconds,
+  });
+
+  return response.data;
+}
+
+/**
+ * Get session analytics - retrieves detailed time tracking data
+ * @param gameSessionId - The game session ID
+ * @returns SessionAnalyticsDTO with time breakdown
+ */
+export async function getSessionAnalytics(gameSessionId: string): Promise<any> {
+  console.log("[Progress Service API] Getting session analytics:", {
+    gameSessionId,
+  });
+
+  const response = await apiRequest<ApiResponse<any>>(
+    `/api/progress/${gameSessionId}/analytics`,
+    {
+      method: "GET",
+    },
+  );
+
+  if (isApiError(response)) {
+    throw new Error(response.error.message);
+  }
+
+  if (!response.success) {
+    throw new Error("Failed to get session analytics");
+  }
+
+  console.log("[Progress Service API] Session analytics retrieved successfully", {
+    gameSessionId,
+  });
+
+  return response.data;
+}
+
+/**
+ * Pause a game session - saves state when user exits the story
+ * @param gameSessionId - The game session ID to pause
+ * @returns SessionCheckpoint response with pause timestamp
+ */
+export async function pauseGameSession(
+  gameSessionId: string,
+): Promise<SessionCheckpoint | null> {
+  console.log("[Progress Service API] Pausing game session:", { gameSessionId });
+
+  const response = await apiRequest<ApiResponse<SessionCheckpoint>>(
+    `/api/progress/pause/${gameSessionId}`,
+    {
+      method: "POST",
+      body: JSON.stringify({}),
+    },
+  );
+
+  if (isApiError(response)) {
+    console.warn("[Progress Service API] Failed to pause game session:", response.error.message);
+    return null;
+  }
+
+  if (!response.success) {
+    console.warn("[Progress Service API] Failed to pause game session: API returned success=false");
+    return null;
+  }
+
+  console.log("[Progress Service API] Game session paused successfully", {
+    gameSessionId,
   });
 
   return response.data || null;

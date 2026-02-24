@@ -1,5 +1,22 @@
 import { Router, Request, Response } from "express";
-import { forwardAssignBadgeToChild, forwardCompleteStory, forwardGetChildById, forwardGetChildProgress, forwardParentWithProfiles, forwardSaveCheckpoint, forwardStartStory, forwardSubmitChallengeAnswer, forwardToProgressService, forwardUpdateChildLevel } from "../helpers/progress.helpers";
+import {
+  forwardAssignBadgeToChild,
+  forwardCompleteStory,
+  forwardGetChildById,
+  forwardGetChildProgress,
+  forwardParentWithProfiles,
+  forwardSaveCheckpoint,
+  forwardStartStory,
+  forwardSubmitChallengeAnswer,
+  forwardToProgressService,
+  forwardUpdateChildLevel,
+  forwardCreateNewCheckpoint,
+  forwardPauseGameSession,
+  forwardCalculateSessionTime,
+  forwardAggregateSessionTime,
+  forwardAggregateProgressTime,
+  forwardGetSessionAnalytics,
+} from "../helpers/progress.helpers";
 
 const router = Router();
 
@@ -40,6 +57,45 @@ router.post(
 router.post("/progress/checkpoint", (req: Request, res: Response) => {
   forwardSaveCheckpoint(req, res);
 });
+
+// Resume from a checkpoint
+router.post("/progress/create-new-checkpoint/:gameSessionId", (req: Request, res: Response) => {
+  forwardCreateNewCheckpoint(req, res);
+});
+
+// Pause a game session
+router.post("/progress/pause/:gameSessionId", (req: Request, res: Response) => {
+  forwardPauseGameSession(req, res);
+});
+
+// Calculate total active time spent in a game session
+router.get("/progress/:gameSessionId/time", (req: Request, res: Response) => {
+  forwardCalculateSessionTime(req, res);
+});
+
+// Aggregate and store total time spent in a game session
+router.post(
+  "/progress/:gameSessionId/aggregate-time",
+  (req: Request, res: Response) => {
+    forwardAggregateSessionTime(req, res);
+  },
+);
+
+// Aggregate and sync progress total time from game session
+router.post(
+  "/progress/:progressId/aggregate-progress-time",
+  (req: Request, res: Response) => {
+    forwardAggregateProgressTime(req, res);
+  },
+);
+
+// Get detailed time analytics for a game session
+router.get(
+  "/progress/:gameSessionId/analytics",
+  (req: Request, res: Response) => {
+    forwardGetSessionAnalytics(req, res);
+  },
+);
 
 // Submit challenge answer and record attempt with star rewards
 router.post("/progress/challenge/submit", (req: Request, res: Response) => {

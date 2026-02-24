@@ -24,6 +24,7 @@ import { StoryPage } from "./storyDataTransform";
 import {
   saveCheckpointAction,
   completeStoryAction,
+  pauseGameSessionAction,
 } from "@/src/lib/progress-service/server-actions";
 interface StoryFlowNavigationProps {
   storyTitle?: string;
@@ -109,11 +110,30 @@ const StoryFlowNavigation = ({
     return () => clearInterval(timer);
   }, [currentPage, isTimerActive]); // Reset timer when page changes or timer state changes
 
-  const handleBack = () => {
+  const handleBack = async () => {
     if (showRiddle) {
       setShowRiddle(false);
     } else {
-      router.push("/child-dashboard/" + childId);
+      // Pause the game session before navigating back to dashboard
+      if (currentProgress?.gameSession?.id) {
+        setIsSavingCheckpoint(true);
+        const result = await pauseGameSessionAction(
+          currentProgress.gameSession.id,
+        );
+        setIsSavingCheckpoint(false);
+
+        if (result.success) {
+          console.log("[Game Pause] Game session paused successfully", {
+            gameSessionId: currentProgress.gameSession.id,
+            checkpointData: result.data,
+          });
+          router.push("/child-dashboard/" + childId);
+        } else {
+          console.error("[Game Pause] Failed to pause game session", {
+            error: result.error,
+          });
+        }
+      }
     }
   };
 
@@ -153,7 +173,9 @@ const StoryFlowNavigation = ({
             totalPages,
             gameSessionData: result.data,
           });
-          router.push(`/story-completion/${currentProgress.storyId}?childId=${childId}`);
+          router.push(
+            `/story-completion/${currentProgress.storyId}?childId=${childId}`,
+          );
         } else {
           console.error("[Story Completion] Failed to complete story", {
             error: result.error,

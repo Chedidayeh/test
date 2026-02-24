@@ -8,6 +8,7 @@ import {
   type ChildProfile,
   type Progress,
   type GameSession,
+  type SessionCheckpoint,
   type ChallengeAttempt,
   ChallengeStatus,
 } from "@shared/types";
@@ -48,7 +49,7 @@ export interface TimeEntry {
 
 /**
  * Calculate daily reading time entries from child progress data
- * Groups game sessions by date and calculates reading duration and story count
+ * Groups session checkpoints by date and calculates reading duration and story count
  * Creates one TimeEntry per day with activity, sorted chronologically
  *
  * @param progressArray - Array of Progress records (from ChildProfile)
@@ -59,47 +60,59 @@ export function calculateTimeEntries(progressArray: Progress[] | undefined): Tim
     return [];
   }
 
-  // Group game sessions by date
-  const sessionsByDate = new Map<string, GameSession[]>();
+  // Group checkpoints by date (using pausedAt as the checkpoint completion date)
+  const checkpointsByDate = new Map<string, SessionCheckpoint[]>();
 
   for (const progress of progressArray) {
-    if (progress.gameSession) {
-      const session = progress.gameSession;
-      // Extract date from startedAt in YYYY-MM-DD format
-      const date = new Date(session.startedAt).toISOString().split("T")[0];
+    if (!progress.gameSession?.checkpoints || !Array.isArray(progress.gameSession.checkpoints)) {
+      continue;
+    }
 
-      if (!sessionsByDate.has(date)) {
-        sessionsByDate.set(date, []);
+    for (const checkpoint of progress.gameSession.checkpoints) {
+      // Only count completed checkpoints (those with pausedAt set)
+      if (!checkpoint.pausedAt) {
+        continue;
       }
-      sessionsByDate.get(date)!.push(session);
+
+      // Extract date from pausedAt in YYYY-MM-DD format
+      const date = new Date(checkpoint.pausedAt).toISOString().split("T")[0];
+
+      if (!checkpointsByDate.has(date)) {
+        checkpointsByDate.set(date, []);
+      }
+      checkpointsByDate.get(date)!.push(checkpoint);
     }
   }
 
   // Convert to TimeEntry array
-  const timeEntries: TimeEntry[] = Array.from(sessionsByDate.entries()).map(
-    ([date, sessions]) => {
-      // Calculate total reading time for the day
-      const totalMinutes = sessions.reduce((sum: number, session: GameSession) => {
-        // Use endedAt if available, otherwise use checkpointAt
-        const endTime = session.endedAt || session.checkpointAt;
+  const timeEntries: TimeEntry[] = Array.from(checkpointsByDate.entries()).map(
+    ([date, checkpoints]) => {
+      // Calculate total reading time from checkpoints
+      const totalSeconds = checkpoints.reduce((sum: number, checkpoint: SessionCheckpoint) => {
+        let duration = 0;
 
-        if (endTime) {
-          const startTime = new Date(session.startedAt).getTime();
-          const endTimeMs = new Date(endTime).getTime();
-          const durationSeconds = Math.floor((endTimeMs - startTime) / 1000);
-          const durationMinutes = Math.round(durationSeconds / 60);
-          return sum + Math.max(0, durationMinutes); // Ensure positive duration
+        // Use sessionDurationSeconds if available, otherwise calculate from times
+        if (checkpoint.sessionDurationSeconds !== null && checkpoint.sessionDurationSeconds !== undefined) {
+          duration = checkpoint.sessionDurationSeconds;
+        } else if (checkpoint.pausedAt) {
+          // Calculate duration from startedAt to pausedAt
+          const startMs = new Date(checkpoint.startedAt).getTime();
+          const pauseMs = new Date(checkpoint.pausedAt).getTime();
+          duration = Math.floor((pauseMs - startMs) / 1000);
         }
-        return sum;
+
+        return sum + Math.max(0, duration); // Ensure non-negative duration
       }, 0);
 
-      // Count unique stories read that day
-      const uniqueStories = new Set(sessions.map((session) => session.storyId));
-      const storiesRead = uniqueStories.size;
+      const minutes = Math.round(totalSeconds / 60);
+
+      // Count unique game sessions (stories) from checkpoints on this date
+      const uniqueSessions = new Set(checkpoints.map((cp) => cp.gameSessionId));
+      const storiesRead = uniqueSessions.size;
 
       return {
         date,
-        minutes: totalMinutes,
+        minutes,
         storiesRead,
       };
     }
@@ -306,8 +319,8 @@ export function getStoriesCompleted(profile: ChildProfile | undefined): number {
 
 /**
  * Get total reading time in minutes
- * Calculated from game sessions - sum of duration between startedAt and endedAt (or checkpointAt if no endedAt)
- * Sessions are accessed through Progress → GameSession
+ * Calculated from session checkpoints - sum of sessionDurationSeconds for completed checkpoints
+ * Checkpoints are accessed through Progress → GameSession → SessionCheckpoint
  * @param profile - ChildProfile data
  * @returns Total reading time in minutes
  */
@@ -315,35 +328,42 @@ export function getTotalReadingTime(profile: ChildProfile | undefined): number {
   if (!profile?.progress || !Array.isArray(profile.progress)) {
     return 0;
   }
-  
-  // Collect all game sessions from progress objects
-  const allSessions: GameSession[] = [];
+
+  // Collect all completed checkpoints from progress objects
+  const allCheckpoints: SessionCheckpoint[] = [];
   for (const progress of profile.progress) {
-    if (progress.gameSession) {
-      allSessions.push(progress.gameSession);
+    if (!progress.gameSession?.checkpoints || !Array.isArray(progress.gameSession.checkpoints)) {
+      continue;
     }
+
+    // Only count checkpoints that have been paused (completed)
+    const completedCheckpoints = progress.gameSession.checkpoints.filter(
+      (cp) => cp.pausedAt !== null
+    );
+    allCheckpoints.push(...completedCheckpoints);
   }
-  
-  if (allSessions.length === 0) {
+
+  if (allCheckpoints.length === 0) {
     return 0;
   }
-  
-  // Calculate total reading time from session start and end times
-  const totalSeconds = allSessions.reduce((sum: number, session: GameSession) => {
-    // Use endedAt if available, otherwise use checkpointAt
-    const endTime = session.endedAt || session.checkpointAt;
-    
-    if (endTime) {
-      const startTime = new Date(session.startedAt).getTime();
-      const endTimeMs = new Date(endTime).getTime();
-      const durationMs = endTimeMs - startTime;
-      const durationSeconds = Math.floor(durationMs / 1000);
-      return sum + Math.max(0, durationSeconds); // Ensure positive duration
+
+  // Calculate total reading time from completed checkpoints
+  const totalSeconds = allCheckpoints.reduce((sum: number, checkpoint: SessionCheckpoint) => {
+    let duration = 0;
+
+    // Use sessionDurationSeconds if available
+    if (checkpoint.sessionDurationSeconds !== null && checkpoint.sessionDurationSeconds !== undefined) {
+      duration = checkpoint.sessionDurationSeconds;
+    } else if (checkpoint.pausedAt) {
+      // Calculate from startedAt to pausedAt
+      const startMs = new Date(checkpoint.startedAt).getTime();
+      const pauseMs = new Date(checkpoint.pausedAt).getTime();
+      duration = Math.floor((pauseMs - startMs) / 1000);
     }
-    // If neither endedAt nor checkpointAt exist, don't count it
-    return sum;
+
+    return sum + Math.max(0, duration);
   }, 0);
-  // Convert seconds to minutes
+
   return Math.round(totalSeconds / 60);
 }
 
@@ -403,8 +423,8 @@ export function getBadgesCount(profile: ChildProfile | undefined): number {
 
 /**
  * Get average reading time per day
- * Calculated as total reading time divided by number of days since first session
- * Sessions are accessed through Progress → GameSession
+ * Calculated as total reading time divided by number of calendar days with checkpoints
+ * Checkpoints are accessed through Progress → GameSession → SessionCheckpoint
  * @param profile - ChildProfile data
  * @returns Average reading time in minutes per day
  */
@@ -413,43 +433,27 @@ export function getAverageReadingTimePerDay(profile: ChildProfile | undefined): 
     return 0;
   }
 
-  // Collect all game sessions from progress objects
-  const allSessions: GameSession[] = [];
-  for (const progress of profile.progress) {
-    if (progress.gameSession) {
-      allSessions.push(progress.gameSession);
-    }
-  }
-  
-  if (allSessions.length === 0) {
+  // Calculate time entries to get days with reading
+  const timeEntries = calculateTimeEntries(profile.progress);
+
+  if (timeEntries.length === 0) {
     return 0;
   }
 
   const totalMinutes = getTotalReadingTime(profile);
-  
-  // Get first and last session dates
-  const sortedSessions = [...allSessions].sort(
-    (a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime()
-  );
-  
-  const firstSessionDate = new Date(sortedSessions[0].startedAt);
-  const lastSessionDate = new Date(sortedSessions[sortedSessions.length - 1].startedAt);
-  
-  // Calculate number of days between first and last session (inclusive)
-  const daysDiff = Math.floor((lastSessionDate.getTime() - firstSessionDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-  
-  // Avoid division by zero
-  if (daysDiff === 0) {
-    return totalMinutes;
+  const daysWithReading = timeEntries.filter((entry) => entry.minutes > 0).length;
+
+  if (daysWithReading === 0) {
+    return 0;
   }
-  
-  return Math.round(totalMinutes / daysDiff);
+
+  return Math.round(totalMinutes / daysWithReading);
 }
 
 /**
  * Get current reading streak (consecutive days)
- * Counts consecutive days from today going backwards where child had at least one session
- * Sessions are accessed through Progress → GameSession
+ * Counts consecutive days from today going backwards where child had at least one completed checkpoint
+ * Checkpoints are accessed through Progress → GameSession → SessionCheckpoint
  * @param profile - ChildProfile data
  * @returns Number of consecutive days with reading activity
  */
@@ -458,51 +462,61 @@ export function getCurrentStreak(profile: ChildProfile | undefined): number {
     return 0;
   }
 
-  // Collect all game sessions from progress objects
-  const allSessions: GameSession[] = [];
+  // Collect all completed checkpoints from progress objects
+  const allCheckpoints: SessionCheckpoint[] = [];
   for (const progress of profile.progress) {
-    if (progress.gameSession) {
-      allSessions.push(progress.gameSession);
+    if (!progress.gameSession?.checkpoints || !Array.isArray(progress.gameSession.checkpoints)) {
+      continue;
     }
+
+    // Only count checkpoints that have been paused (completed)
+    const completedCheckpoints = progress.gameSession.checkpoints.filter(
+      (cp) => cp.pausedAt !== null
+    );
+    allCheckpoints.push(...completedCheckpoints);
   }
-  
-  if (allSessions.length === 0) {
+
+  if (allCheckpoints.length === 0) {
     return 0;
   }
 
-  // Get unique dates from sessions (normalize to dates only, ignoring time)
-  const sessionDates = new Set(
-    allSessions.map((session: GameSession) => {
-      const date = new Date(session.startedAt);
+  // Get unique dates from completed checkpoints using pausedAt
+  const checkpointDates = new Set(
+    allCheckpoints.map((checkpoint: SessionCheckpoint) => {
+      const date = new Date(checkpoint.pausedAt!);
       return date.toISOString().split('T')[0]; // YYYY-MM-DD format
     })
   );
 
   // Sort dates in descending order
-  const sortedDates = Array.from(sessionDates).sort().reverse();
+  const sortedDates = Array.from(checkpointDates).sort().reverse();
+
+  if (sortedDates.length === 0) {
+    return 0;
+  }
 
   // Count consecutive days from today backwards
   let streak = 0;
   const currentDate = new Date();
   currentDate.setHours(0, 0, 0, 0);
 
-  // Check if today has a session
+  // Check if today has a checkpoint
   const todayString = currentDate.toISOString().split('T')[0];
   const checkingDate = new Date(currentDate);
 
-  // If no session today, start from yesterday
-  if (!sessionDates.has(todayString)) {
+  // If no checkpoint today, start from yesterday
+  if (!checkpointDates.has(todayString)) {
     checkingDate.setDate(checkingDate.getDate() - 1);
   }
 
   // Count consecutive days
-  for (const sessionDate of sortedDates) {
+  for (const checkpointDate of sortedDates) {
     const checkingDateString = checkingDate.toISOString().split('T')[0];
-    
-    if (sessionDate === checkingDateString) {
+
+    if (checkpointDate === checkingDateString) {
       streak++;
       checkingDate.setDate(checkingDate.getDate() - 1);
-    } else if (new Date(sessionDate) < checkingDate) {
+    } else if (new Date(checkpointDate) < checkingDate) {
       // Gap found, streak is broken
       break;
     }

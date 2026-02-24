@@ -16,6 +16,11 @@ interface TimeAnalyticsProps {
   childProgress: Progress[];
 }
 
+/**
+ * TimeAnalytics Component
+ * Displays reading time statistics and daily activity breakdown
+ * Data is calculated from SessionCheckpoint records within GameSession objects
+ */
 export default function TimeAnalytics({ childProgress }: TimeAnalyticsProps) {
   // Calculate time entries from real progress data
   const timeEntries = useMemo(
@@ -43,17 +48,27 @@ export default function TimeAnalytics({ childProgress }: TimeAnalyticsProps) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="rounded-lg bg-linear-to-br from-pink-50 to-rose-50 border border-pink-200 p-4">
           <p className="text-sm text-muted-foreground mb-1">Total Reading Time</p>
-          <p className="text-3xl font-data font-bold text-pink-900">
-            {totalHours}h
-          </p>
-          <p className="text-xs text-pink-700 mt-1">({totalMinutes} minutes)</p>
+          <div className="flex items-baseline gap-1">
+            <p className="text-3xl font-data font-bold text-pink-600">
+              {totalMinutes}
+            </p>
+            <span className="text-sm text-pink-500">minutes</span>
+            <span className="text-sm text-pink-500">
+              ({Math.floor(totalMinutes / 60)}h {totalMinutes % 60}m)
+            </span>
+          </div>
         </div>
         <div className="rounded-lg bg-linear-to-br from-violet-50 to-purple-50 border border-violet-200 p-4">
           <p className="text-sm text-muted-foreground mb-1">Average Per Day</p>
-          <p className="text-3xl font-data font-bold text-violet-900">
-            {avgMinutesPerDay}
-          </p>
-          <p className="text-xs text-violet-700 mt-1">minutes</p>
+          <div className="flex items-baseline gap-1">
+            <p className="text-3xl font-data font-bold text-violet-600">
+              {avgMinutesPerDay}
+            </p>
+            <span className="text-sm text-violet-500">minutes</span>
+            <span className="text-sm text-violet-500">
+              ({Math.floor(avgMinutesPerDay / 60)}h {avgMinutesPerDay % 60}m)
+            </span>
+          </div>
         </div>
         <div className="rounded-lg bg-linear-to-br from-cyan-50 to-blue-50 border border-cyan-200 p-4">
           <p className="text-sm text-muted-foreground mb-1">Current Streak</p>
@@ -93,21 +108,20 @@ export default function TimeAnalytics({ childProgress }: TimeAnalyticsProps) {
 
       <div className="rounded-xl bg-card border border-black/30 p-6 shadow-warm-lg overflow-x-auto">
         <h3 className="font-heading text-lg text-foreground mb-4">
-          Daily Reading Time (Past 2 Weeks)
+          Daily Reading Time
         </h3>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Date</TableHead>
-              <TableHead className="text-right">Minutes</TableHead>
+              <TableHead>Minutes</TableHead>
               <TableHead className="text-right">Stories</TableHead>
-              <TableHead>Progress</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {timeEntries.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground py-4">
+                <TableCell colSpan={3} className="text-center text-muted-foreground py-4">
                   No reading activity yet. Start playing to see reading statistics!
                 </TableCell>
               </TableRow>
@@ -122,28 +136,18 @@ export default function TimeAnalytics({ childProgress }: TimeAnalyticsProps) {
                     })}
                   </TableCell>
                   <TableCell className="text-right">
-                    {entry.minutes > 0 ? `${entry.minutes} min` : "—"}
+                    {entry.minutes > 0 ? (
+                      <div className="flex items-baseline gap-1">
+                        <span className="font-data">{entry.minutes}</span>
+                        <span className="text-sm">min</span>
+                        <span className="text-xs">({Math.floor(entry.minutes / 60)}h {entry.minutes % 60}m)</span>
+                      </div>
+                    ) : (
+                      "—"
+                    )}
                   </TableCell>
                   <TableCell className="text-right">
                     {entry.storiesRead > 0 ? entry.storiesRead : "—"}
-                  </TableCell>
-                  <TableCell>
-                    <div className="w-16 h-2 bg-muted rounded-full">
-                      <div
-                        className={`h-full rounded-full transition-all ${
-                          entry.minutes > 60
-                            ? "bg-amber-500"
-                            : entry.minutes > 30
-                              ? "bg-blue-500"
-                              : entry.minutes > 0
-                                ? "bg-green-500"
-                                : "bg-transparent"
-                        }`}
-                        style={{
-                          width: `${Math.min((entry.minutes / 120) * 100, 100)}%`,
-                        }}
-                      />
-                    </div>
                   </TableCell>
                 </TableRow>
               ))

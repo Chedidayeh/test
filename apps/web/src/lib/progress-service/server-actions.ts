@@ -1,6 +1,6 @@
 "use server";
 
-import { ChildProfile, GameSession } from "@shared/types";
+import { ChildProfile, GameSession, SessionCheckpoint } from "@shared/types";
 import {
   getAllChildren,
   PaginationParams,
@@ -9,6 +9,9 @@ import {
   completeStory,
   SubmitChallengeAnswerRequest,
   SubmitChallengeAnswerResponse,
+  aggregateSessionTime,
+  getSessionAnalytics,
+  pauseGameSession,
 } from "./server-api";
 
 type FetchChildrenResult =
@@ -231,6 +234,169 @@ export async function completeStoryAction(
       error instanceof Error ? error.message : "Unknown error occurred";
 
     console.error("[Progress Service] Error completing story:", {
+      gameSessionId,
+      error: errorMessage,
+    });
+
+    return {
+      success: false,
+      error: errorMessage,
+    };
+  }
+}
+
+
+
+export interface AggregateSessionTimeResult {
+  success: boolean;
+  data?: GameSession;
+  error?: string;
+}
+
+/**
+ * Server action to aggregate total session time
+ * Records the total time spent reading in a story session
+ *
+ * @param gameSessionId - The game session ID
+ * @param totalTimeSpentSeconds - Total seconds spent reading
+ * @returns Result object with success status and updated GameSession
+ *
+ * @example
+ * const result = await aggregateSessionTimeAction("session-123", 3600);
+ * if (result.success) {
+ *   console.log("Time aggregated - Total:", result.data?.totalTimeSpent, "seconds");
+ * }
+ */
+export async function aggregateSessionTimeAction(
+  gameSessionId: string,
+  totalTimeSpentSeconds: number,
+): Promise<AggregateSessionTimeResult> {
+  try {
+    console.log(
+      "[Progress Service] Aggregating session time via server action",
+      {
+        gameSessionId,
+        totalTimeSpentSeconds,
+      },
+    );
+
+    const result = await aggregateSessionTime(gameSessionId, totalTimeSpentSeconds);
+
+    return {
+      success: true,
+      data: result,
+    };
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred";
+
+    console.error("[Progress Service] Error aggregating session time:", {
+      gameSessionId,
+      error: errorMessage,
+    });
+
+    return {
+      success: false,
+      error: errorMessage,
+    };
+  }
+}
+
+export interface GetSessionAnalyticsResult {
+  success: boolean;
+  data?: any;
+  error?: string;
+}
+
+/**
+ * Server action to get detailed session analytics
+ * Returns comprehensive time tracking data including breakdowns by checkpoint
+ *
+ * @param gameSessionId - The game session ID
+ * @returns Result object with success status and analytics data
+ *
+ * @example
+ * const result = await getSessionAnalyticsAction("session-123");
+ * if (result.success) {
+ *   const { totalTimeSpent, sessionCount, activeTimePercentage } = result.data;
+ *   console.log("Total time:", totalTimeSpent, "seconds");
+ *   console.log("Session count:", sessionCount);
+ * }
+ */
+export async function getSessionAnalyticsAction(
+  gameSessionId: string,
+): Promise<GetSessionAnalyticsResult> {
+  try {
+    console.log(
+      "[Progress Service] Getting session analytics via server action",
+      {
+        gameSessionId,
+      },
+    );
+
+    const result = await getSessionAnalytics(gameSessionId);
+
+    return {
+      success: true,
+      data: result,
+    };
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred";
+
+    console.error("[Progress Service] Error getting session analytics:", {
+      gameSessionId,
+      error: errorMessage,
+    });
+
+    return {
+      success: false,
+      error: errorMessage,
+    };
+  }
+}
+
+export interface PauseGameSessionResult {
+  success: boolean;
+  data?: SessionCheckpoint | null;
+  error?: string;
+}
+
+/**
+ * Server action to pause a game session
+ * Called when user exits the story to save the current progress and pause state
+ * Creates a checkpoint with the pause timestamp
+ *
+ * @param gameSessionId - The game session ID to pause
+ * @returns Result object with success status and checkpoint data
+ *
+ * @example
+ * const result = await pauseGameSessionAction("session-123");
+ * if (result.success) {
+ *   console.log("Game session paused:", result.data);
+ * } else {
+ *   console.error("Failed to pause:", result.error);
+ * }
+ */
+export async function pauseGameSessionAction(
+  gameSessionId: string,
+): Promise<PauseGameSessionResult> {
+  try {
+    console.log("[Progress Service] Pausing game session via server action", {
+      gameSessionId,
+    });
+
+    const result = await pauseGameSession(gameSessionId);
+
+    return {
+      success: true,
+      data: result,
+    };
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred";
+
+    console.error("[Progress Service] Error pausing game session:", {
       gameSessionId,
       error: errorMessage,
     });

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import StoryReadingInteractive from "../_components/StoryReadingInteractive";
 import { getStoryById } from "@/src/lib/content-service/server-api";
-import { startStory } from "@/src/lib/progress-service/server-api";
+import { createNewCheckpointSession, startStory } from "@/src/lib/progress-service/server-api";
 import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
@@ -42,7 +42,12 @@ export default async function page({
       </div>
     );
   }
-  console.log("Created new progress record:", currentProgress);
+  // create new checkpoint session
+  const checkpoint = await createNewCheckpointSession(
+    currentProgress.gameSession!.id,
+  );
+  console.log("Created new checkpoint session:", checkpoint);
+
   let mode: "start" | "continue" | "replay";
 
   if (currentProgress?.gameSession?.endedAt != null) {
@@ -51,6 +56,7 @@ export default async function page({
     mode = "continue";
   } else {
     mode = "start";
+    // create new checkpoint session
   }
   if (mode === "replay") {
     redirect(`/story-replaying-interface/${id}?childId=${childId}`);

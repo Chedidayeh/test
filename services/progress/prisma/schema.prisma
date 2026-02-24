@@ -53,6 +53,8 @@ model Progress {
 
   status ProgressStatus @default(NOT_STARTED) // "not_started", "in_progress", "completed"
 
+  // Total time spent on this story across all sessions/attempts (in seconds)
+  totalTimeSpent Int @default(0)
 
   completedAt DateTime?
 
@@ -78,19 +80,56 @@ model GameSession {
   chapterId String? // Optional reference to chapter for mid-story saves
 
   startedAt    DateTime  @default(now())
-  checkpointAt DateTime? // For mid-session saves
+  checkpointAt DateTime? // Legacy field: timestamp of latest checkpoint (will be deprecated in favor of SessionCheckpoint records)
   endedAt      DateTime?
+
+  // Time tracking fields (calculated from checkpoints)
+  totalTimeSpent Int @default(0) // Total active time in seconds (sum of all pause-to-resume durations)
+  sessionCount   Int @default(1) // Number of separate sessions (pause/resume cycles)
+  totalIdleTime  Int @default(0) // Total time child was away between sessions (sum of idle periods)
 
   // Rewards earned in this session
   starsEarned Int @default(0) // 1-3 stars based on performance
 
+  // Relations
   challengeAttempts ChallengeAttempt[]
+  checkpoints       SessionCheckpoint[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([progressId])
   @@index([chapterId])
+  @@index([storyId])
+}
+
+// SessionCheckpoint records each pause/resume event within a GameSession
+// Allows tracking of when child paused, resumed, and calculating idle time between sessions
+model SessionCheckpoint {
+  id String @id @default(cuid())
+
+  gameSessionId String
+  gameSession   GameSession @relation(fields: [gameSessionId], references: [id], onDelete: Cascade)
+
+  firstChapterId String
+  lastChapterId  String?
+
+  // Timestamp when child startedAt
+  startedAt DateTime @default(now())
+
+  // Timestamp when child paused checkpoint
+  pausedAt DateTime?
+
+  // Duration from started to paused in seconds
+  sessionDurationSeconds Int?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@index([gameSessionId])
+  @@index([firstChapterId])
+  @@index([lastChapterId])
+  @@index([pausedAt])
+  @@index([startedAt])
 }
 
 enum ChallengeStatus {

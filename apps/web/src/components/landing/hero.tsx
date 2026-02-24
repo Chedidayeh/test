@@ -1,16 +1,17 @@
 "use client";
 
 import React from "react";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useLoginModal } from "@/src/providers/login-provider";
 import { Button } from "../ui/button";
 import { FlipWords } from "../ui/flip-words";
+import { Session } from "next-auth";
 
-export default function Hero() {
+export default function Hero(
+  { session }: { session: Session | null }
+) {
   const words = ["Think", "Imagine", "Explore", "Learn"];
 
-  const { data: session } = useSession();
   const router = useRouter();
   const loginModal = useLoginModal();
 
@@ -45,7 +46,8 @@ export default function Hero() {
               }
             }}
           >
-            Start Your child Adventure
+            {!session ? "Get Started" : session.user.newUser ? "Start Your child Adventure" : "Parent Dashboard"}
+           
           </Button>
           {/* <Button
             variant={"outline"}
