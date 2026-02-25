@@ -5,43 +5,44 @@ import { motion } from "motion/react";
 import { BookOpen, Lock, Zap } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import Link from "next/link";
-import { World, ChildProfile } from "@shared/types";
+import { World, ChildProfile, Roadmap } from "@shared/types";
 import { getEnrichedStoriesForWorld } from "../../_lib/helpers";
 
 interface StoriesRoadmapProps {
   selectedWorld: World;
+  roadmap: Roadmap;
   childProfile: ChildProfile;
-  currentStoryId?: string;
 }
 
 export default function StoriesRoadmap({
   selectedWorld,
+  roadmap,
   childProfile,
 }: StoriesRoadmapProps) {
-  // Enrich all stories with progress data
+  // Enrich all stories with progress data (includes cross-world locking)
   const enrichedStories = getEnrichedStoriesForWorld(
     selectedWorld,
+    roadmap,
     childProfile,
   );
 
-  // Apply progressive locking: lock story if previous one is not completed
-  const progressiveLockedStories = enrichedStories.map((story, index) => {
-    if (index === 0) {
-      // First story is always available
+  // Apply within-world progressive locking: lock story if previous one in same world is not completed
+  const progressiveLockedStories = enrichedStories.map((story) => {
+    // If already locked by cross-world logic, keep it locked
+    if (story.status === "locked") {
       return story;
     }
 
-    const previousStory = enrichedStories[index - 1];
-    if (previousStory.status !== "completed") {
-      // Lock this story if previous is not completed
-      return { ...story, status: "locked" as const };
+    // If this is not the first story in the world, check if previous story is completed
+    if (story.order > 1) {
+      const previousStory = enrichedStories.find((s) => s.order === story.order - 1);
+      if (previousStory && previousStory.status !== "completed") {
+        // Lock this story if previous in same world is not completed
+        return { ...story, status: "locked" as const };
+      }
     }
 
     return story;
-  });
-
-  console.log("Enriched Stories for World:", {
-    worldId: selectedWorld,
   });
 
   if (progressiveLockedStories.length === 0) {
@@ -82,8 +83,7 @@ export default function StoriesRoadmap({
               {/* Background Image */}
               <img
                 src={
-                  selectedWorld.imageUrl || 
-                  "https://picsum.photos/800/600"
+                  roadmap.theme.imageUrl
                 }
                 alt={story.name}
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
@@ -113,7 +113,7 @@ export default function StoriesRoadmap({
                           ? "bg-secondary text-white"
                           : story.status === "locked"
                             ? "bg-gray-700 text-gray-300"
-                            : "bg-primary text-gray-200"
+                            : "bg-primary text-white"
                     }`}
                   >
                     {story.status === "completed" && "✓ Completed"}
@@ -150,7 +150,7 @@ export default function StoriesRoadmap({
 
                   {story.status === "in_progress" && (
                     <Link href={`/story-reading-interface/${story.id}?childId=${childProfile.child.id}`}>
-                      <Button className="w-max">Continue</Button>
+                      <Button className="w-max">Continue Reading</Button>
                     </Link>
                   )}
 

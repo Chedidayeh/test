@@ -107,21 +107,23 @@ const FeedbackDisplay2 = ({
           <div className="space-y-3">
             {type === "solved" ? (
               <div className="flex items-center justify-center">
-                <Button variant={"secondary"} onClick={() => onContinue("solved")}>
+                <Button
+                  variant={"secondary"}
+                  onClick={() => onContinue("solved")}
+                >
                   Continue Story
                 </Button>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center gap-4">
+              <div className="flex items-center justify-between gap-4">
                 <Button
-                  variant={"secondary"}
-                  className="w-full"
-                  onClick={onTryAgain}
+                  variant={"outline"}
+                  onClick={() => onContinue("skipped")}
                 >
-                  Try Again
-                </Button>
-                <Button variant={"outline"} onClick={() => onContinue("skipped")}>
                   Skip This Riddle
+                </Button>
+                <Button variant={"secondary"} onClick={onTryAgain}>
+                  Try Again
                 </Button>
               </div>
             )}

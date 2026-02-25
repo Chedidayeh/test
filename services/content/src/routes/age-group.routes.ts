@@ -6,6 +6,15 @@ const router = Router();
 // GET all age groups
 router.get("/", (req, res) => ageGroupController.getAgeGroups(req, res));
 
+// POST - create new age group
+router.post("/", (req, res) => ageGroupController.createAgeGroup(req, res));
+
+// PUT - update age group by ID
+router.put("/:id", (req, res) => ageGroupController.updateAgeGroup(req, res));
+
+// DELETE - delete age group by ID
+router.delete("/:id", (req, res) => ageGroupController.deleteAgeGroup(req, res));
+
 // GET single age group by ID
 router.get("/:id", (req, res) => ageGroupController.getAgeGroupById(req, res));
 

@@ -172,7 +172,7 @@ const StoryReadingInteractive = ({
   // Show button only if challenge is not attempted
   const shouldShowRiddleButton =
     currentPageData.hasRiddle &&
-    currentChallengeAttemptState?.status === ChallengeStatus.NOT_ATTEMPTED;
+    (currentChallengeAttemptState?.status === ChallengeStatus.NOT_ATTEMPTED || currentChallengeAttemptState?.status === ChallengeStatus.INCORRECT);
 
   // Callback to update challenge attempt when submitted from riddle component
   const handleChallengeSubmitted = (updatedAttempt: ChallengeAttempt, starsEarned?: number) => {

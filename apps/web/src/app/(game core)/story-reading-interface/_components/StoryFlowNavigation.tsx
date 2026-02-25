@@ -59,7 +59,7 @@ const StoryFlowNavigation = ({
 }: StoryFlowNavigationProps) => {
   const router = useRouter();
   const [isSavingCheckpoint, setIsSavingCheckpoint] = useState(false);
-  const MIN_READ_TIME = 10; // Minimum time in seconds before allowing next page
+  const MIN_READ_TIME = 3; // Minimum time in seconds before allowing next page
 
   const [timeRemaining, setTimeRemaining] = useState(MIN_READ_TIME); // 10 seconds timer
   const [optimisticCheckpointPage, setOptimisticCheckpointPage] = useState<

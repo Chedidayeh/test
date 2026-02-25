@@ -36,27 +36,27 @@ export default function RiddlesStats({ childProgress }: RiddlesStatsProps) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="rounded-lg bg-linear-to-br from-purple-50 to-indigo-50 border border-purple-200 p-4">
+        <div className="rounded-lg bg-linear-to-br from-purple-200/20 to-indigo-200/20 border border-purple-200 dark:border-purple-200/50  p-4">
           <p className="text-sm text-muted-foreground mb-1">Total Challenges</p>
-          <p className="text-3xl font-data font-bold text-purple-900">
+          <p className="text-3xl font-data font-bold text-purple-600">
             {totalChallenges}
           </p>
         </div>
-        <div className="rounded-lg bg-linear-to-br from-green-50 to-emerald-50 border border-green-200 p-4">
+        <div className="rounded-lg bg-linear-to-br from-green-200/20 to-emerald-200/20 border border-green-200 dark:border-green-200/50 p-4">
           <p className="text-sm text-muted-foreground mb-1">Solved</p>
-          <p className="text-3xl font-data font-bold text-green-900">
+          <p className="text-3xl font-data font-bold text-green-600">
             {solvedChallenges}
           </p>
         </div>
-        <div className="rounded-lg bg-linear-to-br from-blue-50 to-cyan-50 border border-blue-200 p-4">
+        <div className="rounded-lg bg-linear-to-br from-blue-200/20 to-cyan-200/20 border border-blue-200 dark:border-blue-200/50 p-4">
           <p className="text-sm text-muted-foreground mb-1">Success Rate</p>
-          <p className="text-3xl font-data font-bold text-blue-900">
+          <p className="text-3xl font-data font-bold text-blue-600">
             {successRate}%
           </p>
         </div>
-        <div className="rounded-lg bg-linear-to-br from-orange-50 to-red-50 border border-orange-200 p-4">
+        <div className="rounded-lg bg-linear-to-br from-orange-200/20 to-red-200/20 border border-orange-200 dark:border-orange-200/50 p-4">
           <p className="text-sm text-muted-foreground mb-1">Avg Attempts</p>
-          <p className="text-3xl font-data font-bold text-orange-900">
+          <p className="text-3xl font-data font-bold text-orange-600">
             {avgAttemptsPerChallenge}
           </p>
         </div>
@@ -78,6 +78,7 @@ export default function RiddlesStats({ childProgress }: RiddlesStatsProps) {
                 <TableHead>Status</TableHead>
                 <TableHead>Attempts</TableHead>
                 <TableHead className="text-right">Success Rate</TableHead>
+                <TableHead className="text-right">Hints Used</TableHead>
                 <TableHead className="text-right">Time (sec)</TableHead>
               </TableRow>
             </TableHeader>
@@ -107,6 +108,9 @@ export default function RiddlesStats({ childProgress }: RiddlesStatsProps) {
                   <TableCell className="text-center">{challenge.totalAttempts}</TableCell>
                   <TableCell className="text-right font-semibold">
                     {challenge.successRate}%
+                  </TableCell>
+                  <TableCell className="text-right text-sm">
+                    {challenge.hintsUsed}
                   </TableCell>
                   <TableCell className="text-right text-sm text-muted-foreground">
                     {challenge.timeSpentSeconds}s

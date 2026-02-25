@@ -1,12 +1,10 @@
-/* eslint-disable react-hooks/set-state-in-effect */
+
 "use client";
 
 import ActionCards from "./ActionCards";
 import WelcomeBanner from "./WelcomeBanner";
 import ProgressTracker from "./ProgressTracker";
-import StoryRecommendations from "./Roadmaps";
-import QuickActions from "./QuickActions";
-import { Badge, ChildProfile, Level, Roadmap } from "@shared/types";
+import { Badge, ChildProfile, Level, Progress, Roadmap, ProgressStatus } from "@shared/types";
 import {
   getStoriesCompleted,
   getTotalReadingTime,
@@ -16,27 +14,19 @@ import { useState } from "react";
 import RoadmapPage from "../_roadmap_progress/RoadmapPage";
 
 interface ChildDashboardInteractiveProps {
-  continueStory: {
-    id: number;
-    title: string;
-    coverImage: string;
-    coverAlt: string;
-    progress: number;
-    totalPages: number;
-  } | null;
-
   levels: Level[];
   allBadges: Badge[];
   child: ChildProfile;
   roadmaps: Roadmap[];
+  currentProgresses: Progress[];
 }
 
 const ChildDashboardInteractive = ({
-  continueStory,
   levels,
   allBadges,
   child,
   roadmaps,
+  currentProgresses,
 }: ChildDashboardInteractiveProps) => {
   const childBadges =
     child.badges
@@ -50,7 +40,12 @@ const ChildDashboardInteractive = ({
   const [selectedRoadmap, setSelectedRoadmap] = useState<Roadmap>(roadmaps[0]);
   const [seeRoadmap, setSeeRoadmap] = useState(false);
 
-    const hours = Math.floor(readingTimeMinutes / 60);
+  // Check if child has any in-progress stories
+  const hasInProgressStories = currentProgresses.some(
+    (progress) => progress.status === ProgressStatus.IN_PROGRESS
+  );
+
+  const hours = Math.floor(readingTimeMinutes / 60);
   const minutes = readingTimeMinutes % 60;
   const readingTimeSubtitle =
     minutes > 0 ? `(${hours}h ${minutes}m)` : `(${hours}h)`;
@@ -86,7 +81,9 @@ const ChildDashboardInteractive = ({
             />
 
             {/* Action Cards */}
-            {/* <ActionCards continueStory={continueStory} /> */}
+            {hasInProgressStories && (
+              <ActionCards currentProgresses={currentProgresses} roadmaps={roadmaps} childProfile={child} />
+            )}
 
             <Roadmaps roadmaps={roadmaps} setSelectedRoadmap={setSelectedRoadmap} setSeeRoadmap={setSeeRoadmap} />
           </div>

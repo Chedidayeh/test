@@ -1,126 +1,134 @@
 /* eslint-disable @next/next/no-img-element */
-/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import Link from "next/link";
-import {
-  BookMarked,
-  BookmarkIcon,
-  BookOpenIcon,
-  BookText,
-  LucideIcon,
-  MapPinned,
-  MapPlus,
-  TrophyIcon,
-} from "lucide-react";
+import { BookMarked, MapPlus } from "lucide-react";
+import { Progress, Roadmap, ProgressStatus, ChildProfile, Story, Chapter } from "@shared/types";
 
-interface Story {
-  id: number;
+interface StoryCardData {
+  storyId: string;
   title: string;
   coverImage: string;
   coverAlt: string;
-  progress: number;
-  totalPages: number;
+  totalChapters: number;
+  chapters: Chapter[];
 }
 
 interface ActionCardsProps {
-  continueStory: Story | null;
+  currentProgresses: Progress[];
+  roadmaps: Roadmap[];
+  childProfile: ChildProfile;
 }
 
-const ActionCards = ({ continueStory }: ActionCardsProps) => {
-  const actions = [
-    {
-      id: 1,
-      title: "Track Progress",
-      image: "/child-dashboard/roadmap3.jpg",
-      description: "See your reading journey",
-      icon: MapPinned,
-      color: "bg-secondary",
-      textColor: "text-white",
-      href: "/story-library",
-    },
-    {
-      id: 2,
-      title: "My Rewards",
-      image: "/child-dashboard/achievements.jpg",
-      description: "See all your achievements",
-      icon: TrophyIcon,
-      color: "bg-accent",
-      textColor: "text-white",
-      href: "/child-dashboard",
-    },
-  ];
+const ActionCards = ({
+  currentProgresses,
+  roadmaps,
+  childProfile,
+}: ActionCardsProps) => {
+  // Helper function to find story details from roadmaps
+  const findStoryDetails = (storyId: string): StoryCardData | null => {
+    for (const roadmap of roadmaps) {
+      for (const world of roadmap.worlds) {
+        const story = world.stories.find((s) => s.id === storyId);
+        if (story) {
+          const totalChapters = story.chapters?.length || 1;
+
+          return {
+            storyId: story.id,
+            title: story.title,
+            coverImage: roadmap.theme.imageUrl!,
+            coverAlt: story.title,
+            totalChapters,
+            chapters: story.chapters || [],
+          };
+        }
+      }
+    }
+    return null;
+  };
+
+  // Filter stories that are in progress
+  const inProgressStories = currentProgresses
+    .filter((progress) => progress.status === ProgressStatus.IN_PROGRESS)
+    .map((progress) => ({
+      progressId: progress.id,
+      storyData: findStoryDetails(progress.storyId),
+      progress: progress,
+    }))
+    .filter((item) => item.storyData !== null) as Array<{
+    progressId: string;
+    storyData: StoryCardData;
+    progress: Progress;
+  }>;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {/* Continue Reading Card */}
-      {continueStory ? (
-        <Link
-          href="/story-reading-interface"
-          className="bg-black/90 text-white rounded-xl h-52 p-6 shadow-warm-lg group relative overflow-hidden transform-gpu transition-transform duration-300 hover:scale-105  hover:z-20"
-        >
-          <div className="absolute inset-0 opacity-80">
-            <img
-              src={continueStory.coverImage}
-              alt={continueStory.coverAlt}
-              className="w-full h-full object-cover transform-gpu transition-transform duration-700 group-hover:scale-110"
-            />
-          </div>
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-4">
-              <div className="bg-primary/80 rounded-full px-3 py-1">
-                <BookMarked size={20} className="text-white" />
-              </div>
-              <div className="bg-primary/80 rounded-full px-3 py-1">
-                <span className="font-data text-sm font-bold">
-                  {continueStory.progress}/{continueStory.totalPages}
-                </span>
-              </div>
-            </div>
-            <div className="bg-primary/80 px-3 max-w-max rounded-xl opacity-90">
-              <h2 className="font-heading text-xl mb-2">Continue Reading</h2>
-            </div>
-            <p className="font-body bg-primary/80 px-3 max-w-max rounded-xl opacity-90 mb-4">
-              {continueStory.title}
-            </p>
-            <div className="w-full bg-white/20 rounded-full h-2 mt-10 overflow-hidden">
-              <div
-                className="bg-white h-full rounded-full transition-smooth"
-                style={{
-                  width: `${(continueStory.progress / continueStory.totalPages) * 100}%`,
-                }}
-              />
-            </div>
-          </div>
-        </Link>
-      ) : (
-        <Link
-          href="/story-reading-interface"
-          className="bg-black/90 text-white rounded-xl h-52 p-6 shadow-warm-lg group relative overflow-hidden transform-gpu transition-transform duration-300 hover:scale-105  hover:z-20"
-        >
-          <div className="absolute inset-0 opacity-80">
-            <img
-              src={"/child-dashboard/new-story.jpeg"}
-              alt={"inviting readers to start a new story"}
-              className="w-full h-full object-cover transform-gpu transition-transform duration-700 group-hover:scale-110"
-            />
-          </div>
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-4">
-              <div className="bg-primary/80 rounded-full px-3 py-1">
-                <MapPlus size={20} className="text-white" />
-              </div>
-            </div>
-            <div className="bg-primary/80 px-3 max-w-max rounded-xl opacity-90">
-              <h2 className="font-heading text-xl mb-2">Start new story</h2>
-            </div>
-            <p className="font-body opacity-90 mb-4">
-              Explore new stories <br />
-              and embark on new adventures
-            </p>
-          </div>
-        </Link>
-      )}
+    <div className="bg-card border border-black/30 rounded-xl p-6 shadow-warm-lg">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="font-heading text-2xl md:text-3xl text-foreground">
+          Continue Reading
+        </h2>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* In Progress Stories Cards */}
+        {inProgressStories.length > 0 &&
+          inProgressStories.map(({ progressId, storyData, progress }) => {
+            // Calculate progress chapters using the chapter's order property
+            let progressChapters = 0;
+            const gameSession = progress.gameSession;
+            
+            if (gameSession?.chapterId) {
+              const lastChapter = storyData.chapters.find(
+                (chapter) => chapter.id === gameSession.chapterId
+              );
+              if (lastChapter) {
+                progressChapters = lastChapter.order;
+              }
+            }
+
+            return (
+              <Link
+                key={progressId}
+                href={`/story-reading-interface/${storyData.storyId}?childId=${childProfile.child.id}`}
+                className="bg-black/90 text-white rounded-xl h-52 p-4 shadow-warm-lg group relative overflow-hidden transform-gpu transition-transform duration-300 hover:scale-105  hover:z-20"
+              >
+                <div className="absolute inset-0 opacity-20">
+                  <img
+                    src={storyData.coverImage}
+                    alt={storyData.coverAlt}
+                    className="w-full h-full object-cover transform-gpu transition-transform duration-700 group-hover:scale-110"
+                  />
+                </div>
+                <div className="relative z-10 h-full flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-8">
+                      <div className="bg-primary/80 rounded-full px-3 py-1">
+                        <BookMarked size={20} className="text-white" />
+                      </div>
+                      <div className="bg-primary/80 rounded-full px-3 py-1">
+                        <span className="font-data text-sm font-bold">
+                          {progressChapters}/{storyData.totalChapters}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="max-w-max mx-auto rounded-xl opacity-90">
+                      <h2 className="font-heading text-xl text-center">
+                        {storyData.title}
+                      </h2>
+                    </div>
+                  </div>
+                  <div className="w-full bg-white/20 rounded-full h-1 overflow-hidden">
+                    <div
+                      className="bg-primary h-full rounded-full transition-smooth"
+                      style={{
+                        width: `${(progressChapters / storyData.totalChapters) * 100}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+      </div>
     </div>
   );
 };

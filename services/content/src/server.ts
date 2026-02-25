@@ -44,29 +44,6 @@ app.get("/health", (req: Request, res: Response) => {
 
 /**
  * API Routes (mounted at /api)
- * Routes:
- * - GET /api/stories
- * - GET /api/stories/:id
- * - GET /api/stories/world/:worldId
- * - GET /api/stories/count
- * - GET /api/roadmaps
- * - GET /api/roadmaps/:id
- * - GET /api/roadmaps/age-group/:ageGroupId
- * - GET /api/worlds
- * - GET /api/worlds/:id
- * - GET /api/worlds/roadmap/:roadmapId
- * - GET /api/age-groups
- * - GET /api/age-groups/:id
- * - GET /api/themes
- * - GET /api/challenges
- * - GET /api/challenges/:id
- * - GET /api/challenges/chapter/:chapterId
- * - GET /api/levels
- * - GET /api/levels/:id
- * - GET /api/levels/number/:levelNumber
- * - GET /api/badges
- * - GET /api/badges/:id
- * - GET /api/badges/level/:levelNumber
  */
 app.use("/api", contentRoutes);
 

@@ -8,7 +8,6 @@
 import { auth } from "@/src/auth";
 import type {
   ApiResponse,
-  PaginationMeta,
   Story,
   Roadmap,
   World,
@@ -430,6 +429,25 @@ export async function getThemes() {
   return response.data || [];
 }
 
+export async function getThemeById(themeId: string) {
+  const response = await apiRequest<ApiResponse<Theme>>(
+    `/api/themes/${themeId}`
+  );
+
+  if (isApiError(response)) {
+    console.warn("[Content Server API] Failed to fetch theme:", response.error.message);
+    return null;
+  }
+
+  if (!response.success) {
+    console.warn("[Content Server API] Failed to fetch theme: API returned success=false");
+    return null;
+  }
+
+  return response.data || null;
+}
+
+
 /**
  * ============================================
  * CHALLENGE ENDPOINTS
@@ -623,4 +641,279 @@ export async function getBadgeByLevel(levelNumber: number) {
   }
 
   return response.data || null;
+}
+
+
+/**
+ * ============================================
+ * CREATE/UPDATE/DELETE ENDPOINTS (CRUD)
+ * ============================================
+ */
+
+// Age Group CRUD
+export async function createAgeGroup(data: Omit<AgeGroup, "id" | "createdAt" | "updatedAt" | "roadmaps">) {
+  const response = await apiRequest<ApiResponse<AgeGroup>>(
+    "/api/age-groups",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (isApiError(response)) {
+    console.error("[Content Server API] Failed to create age group:", response.error.message);
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error("[Content Server API] Failed to create age group: API returned success=false");
+    return { success: false as const, error: response.error?.message || "Failed to create age group" };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+export async function updateAgeGroup(
+  id: string,
+  data: Partial<Omit<AgeGroup, "id" | "createdAt" | "updatedAt" | "roadmaps">>
+) {
+  const response = await apiRequest<ApiResponse<AgeGroup>>(
+    `/api/age-groups/${id}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (isApiError(response)) {
+    console.error("[Content Server API] Failed to update age group:", response.error.message);
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error("[Content Server API] Failed to update age group: API returned success=false");
+    return { success: false as const, error: response.error?.message || "Failed to update age group" };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+export async function deleteAgeGroup(id: string) {
+  const response = await apiRequest<ApiResponse<{ id: string }>>(
+    `/api/age-groups/${id}`,
+    { method: "DELETE" }
+  );
+
+  if (isApiError(response)) {
+    console.error("[Content Server API] Failed to delete age group:", response.error.message);
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error("[Content Server API] Failed to delete age group: API returned success=false");
+    return { success: false as const, error: response.error?.message || "Failed to delete age group" };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+// Theme CRUD
+export async function createTheme(data: Omit<Theme, "id" | "createdAt" | "updatedAt" | "roadmap">) {
+  const response = await apiRequest<ApiResponse<Theme>>(
+    "/api/themes",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (isApiError(response)) {
+    console.error("[Content Server API] Failed to create theme:", response.error.message);
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error("[Content Server API] Failed to create theme: API returned success=false");
+    return { success: false as const, error: response.error?.message || "Failed to create theme" };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+export async function updateTheme(
+  id: string,
+  data: Partial<Omit<Theme, "id" | "createdAt" | "updatedAt" | "roadmap">>
+) {
+  const response = await apiRequest<ApiResponse<Theme>>(
+    `/api/themes/${id}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (isApiError(response)) {
+    console.error("[Content Server API] Failed to update theme:", response.error.message);
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error("[Content Server API] Failed to update theme: API returned success=false");
+    return { success: false as const, error: response.error?.message || "Failed to update theme" };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+export async function deleteTheme(id: string) {
+  const response = await apiRequest<ApiResponse<{ id: string }>>(
+    `/api/themes/${id}`,
+    { method: "DELETE" }
+  );
+
+  if (isApiError(response)) {
+    console.error("[Content Server API] Failed to delete theme:", response.error.message);
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error("[Content Server API] Failed to delete theme: API returned success=false");
+    return { success: false as const, error: response.error?.message || "Failed to delete theme" };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+// Roadmap CRUD
+export async function createRoadmap(data: Omit<Roadmap, "id" | "createdAt" | "updatedAt" | "ageGroup" | "theme" | "worlds">) {
+  const response = await apiRequest<ApiResponse<Roadmap>>(
+    "/api/roadmaps",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (isApiError(response)) {
+    console.error("[Content Server API] Failed to create roadmap:", response.error.message);
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error("[Content Server API] Failed to create roadmap: API returned success=false");
+    return { success: false as const, error: response.error?.message || "Failed to create roadmap" };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+export async function updateRoadmap(
+  id: string,
+  data: Partial<Omit<Roadmap, "id" | "createdAt" | "updatedAt" | "ageGroup" | "theme" | "worlds">>
+) {
+  const response = await apiRequest<ApiResponse<Roadmap>>(
+    `/api/roadmaps/${id}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (isApiError(response)) {
+    console.error("[Content Server API] Failed to update roadmap:", response.error.message);
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error("[Content Server API] Failed to update roadmap: API returned success=false");
+    return { success: false as const, error: response.error?.message || "Failed to update roadmap" };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+export async function deleteRoadmap(id: string) {
+  const response = await apiRequest<ApiResponse<{ id: string }>>(
+    `/api/roadmaps/${id}`,
+    { method: "DELETE" }
+  );
+
+  if (isApiError(response)) {
+    console.error("[Content Server API] Failed to delete roadmap:", response.error.message);
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error("[Content Server API] Failed to delete roadmap: API returned success=false");
+    return { success: false as const, error: response.error?.message || "Failed to delete roadmap" };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+// World CRUD
+export async function createWorld(data: Omit<World, "id" | "createdAt" | "updatedAt" | "roadmap" | "stories">) {
+  const response = await apiRequest<ApiResponse<World>>(
+    "/api/worlds",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (isApiError(response)) {
+    console.error("[Content Server API] Failed to create world:", response.error.message);
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error("[Content Server API] Failed to create world: API returned success=false");
+    return { success: false as const, error: response.error?.message || "Failed to create world" };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+export async function updateWorld(
+  id: string,
+  data: Partial<Omit<World, "id" | "createdAt" | "updatedAt" | "roadmap" | "stories">>
+) {
+  const response = await apiRequest<ApiResponse<World>>(
+    `/api/worlds/${id}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (isApiError(response)) {
+    console.error("[Content Server API] Failed to update world:", response.error.message);
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error("[Content Server API] Failed to update world: API returned success=false");
+    return { success: false as const, error: response.error?.message || "Failed to update world" };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+export async function deleteWorld(id: string) {
+  const response = await apiRequest<ApiResponse<{ id: string }>>(
+    `/api/worlds/${id}`,
+    { method: "DELETE" }
+  );
+
+  if (isApiError(response)) {
+    console.error("[Content Server API] Failed to delete world:", response.error.message);
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error("[Content Server API] Failed to delete world: API returned success=false");
+    return { success: false as const, error: response.error?.message || "Failed to delete world" };
+  }
+
+  return { success: true as const, data: response.data };
 }

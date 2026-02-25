@@ -25,25 +25,21 @@ export default function WorldTabs({
         <div className="flex items-center justify-center">
           <div className="flex flex-wrap gap-3 bg-card rounded-xl border p-3 max-w-max items-center justify-center ">
             {worlds.map((world) => {
-              const isLocked = world.locked
               const isSelected = world.id === selectedWorldId;
 
               return (
                 <motion.button
                   key={world.id}
-                  onClick={() => !isLocked && onWorldSelect(world.id)}
-                  disabled={isLocked}
-                  whileHover={!isLocked ? { scale: 1.05 } : {}}
-                  whileTap={!isLocked ? { scale: 0.98 } : {}}
+                  onClick={() => onWorldSelect(world.id)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.98 }}
                   className={`
                   relative px-4 py-2 rounded-xl transition-all duration-300
                   flex items-center gap-2
                   ${
                     isSelected
                       ? "text-white shadow-lg bg-primary"
-                      : isLocked
-                        ? "text-muted-foreground opacity-50"
-                        : "text-foreground hover:text-primary"
+                      : "text-foreground bg-primary/10 hover:text-primary"
                   }
                 `}
                 >
@@ -61,17 +57,6 @@ export default function WorldTabs({
                   )}
 
                   <span className="hidden sm:inline">{world.name}</span>
-
-                  {/* Lock Badge */}
-                  {isLocked && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", stiffness: 200 }}
-                    >
-                      <Lock className="w-4 h-4" />
-                    </motion.div>
-                  )}
                 </motion.button>
               );
             })}
@@ -98,15 +83,6 @@ export default function WorldTabs({
                 <span className="text-muted-foreground">
                   {selectedWorld.stories.length} stories
                 </span>
-                {/* <span className="text-muted-foreground">
-                  {" "}
-                  {
-                    selectedWorld.stories.filter(
-                      (s) => s.status === "completed",
-                    ).length
-                  }
-                  /{selectedWorld.stories.length} completed
-                </span> */}
               </div>
             </div>
           </motion.div>

@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, ReadingLevel } from "@prisma/client";
 import { logger } from "../utils/logger";
 import type { Roadmap } from "../types";
 
@@ -17,6 +17,7 @@ export class RoadmapService {
       const roadmaps = await this.prisma.roadmap.findMany({
         include: {
           theme: true,
+          ageGroup: true,
           worlds: {
             include: {
               stories: true,
@@ -100,6 +101,142 @@ export class RoadmapService {
     } catch (error) {
       logger.error("Error fetching roadmaps by age group", {
         ageGroupId,
+        error: String(error),
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Get roadmap by theme ID (for uniqueness validation)
+   */
+  async getRoadmapByThemeId(themeId: string): Promise<Roadmap | null> {
+    try {
+      const roadmap = await this.prisma.roadmap.findUnique({
+        where: { themeId },
+        include: {
+          theme: true,
+          ageGroup: true,
+        },
+      });
+
+      return roadmap as Roadmap | null;
+    } catch (error) {
+      logger.error("Error fetching roadmap by theme ID", {
+        themeId,
+        error: String(error),
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new roadmap
+   */
+  async createRoadmap(data: {
+    ageGroupId: string;
+    themeId: string;
+    readingLevel: ReadingLevel
+  }): Promise<Roadmap> {
+    try {
+      logger.info("Creating roadmap", {
+        ageGroupId: data.ageGroupId,
+        themeId: data.themeId,
+      });
+
+      const roadmap = await this.prisma.roadmap.create({
+        data,
+        include: {
+          theme: true,
+          ageGroup: true,
+          worlds: {
+            include: {
+              stories: true,
+            },
+            orderBy: { order: "asc" },
+          },
+        },
+      });
+
+      logger.info("Roadmap created successfully", {
+        roadmapId: roadmap.id,
+        ageGroupId: data.ageGroupId,
+      });
+
+      return roadmap as Roadmap;
+    } catch (error) {
+      logger.error("Error creating roadmap", {
+        data,
+        error: String(error),
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing roadmap
+   */
+  async updateRoadmap(
+    roadmapId: string,
+    data: Partial<{
+      ageGroupId: string;
+      readingLevel: ReadingLevel;
+    }>
+  ): Promise<Roadmap> {
+    try {
+      logger.info("Updating roadmap", { roadmapId });
+
+      const roadmap = await this.prisma.roadmap.update({
+        where: { id: roadmapId },
+        data,
+        include: {
+          theme: true,
+          ageGroup: true,
+          worlds: {
+            include: {
+              stories: true,
+            },
+            orderBy: { order: "asc" },
+          },
+        },
+      });
+
+      logger.info("Roadmap updated successfully", { roadmapId });
+      return roadmap as Roadmap;
+    } catch (error) {
+      logger.error("Error updating roadmap", {
+        roadmapId,
+        error: String(error),
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a roadmap (cascades to worlds, stories, chapters, challenges)
+   */
+  async deleteRoadmap(roadmapId: string): Promise<Roadmap> {
+    try {
+      logger.info("Deleting roadmap", { roadmapId });
+
+      const roadmap = await this.prisma.roadmap.delete({
+        where: { id: roadmapId },
+        include: {
+          theme: true,
+          ageGroup: true,
+        },
+      });
+
+      logger.info("Roadmap deleted successfully", {
+        roadmapId,
+        ageGroupId: roadmap.ageGroupId,
+        themeId: roadmap.themeId,
+      });
+
+      return roadmap as Roadmap;
+    } catch (error) {
+      logger.error("Error deleting roadmap", {
+        roadmapId,
         error: String(error),
       });
       throw error;

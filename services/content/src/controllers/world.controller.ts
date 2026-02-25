@@ -79,6 +79,211 @@ export class WorldController {
       sendError(res, String(error), 500, "Failed to fetch worlds");
     }
   }
+
+  /**
+   * Create a new world
+   * POST /api/worlds
+   */
+  async createWorld(req: Request, res: Response): Promise<void> {
+    try {
+      const { roadmapId, name, description, imageUrl, order } = req.body;
+
+      logger.info("Create world request", { name, roadmapId });
+
+      // Validate required fields
+      if (!roadmapId || roadmapId.trim() === "") {
+        sendError(res, "Roadmap ID is required", 400);
+        return;
+      }
+
+      if (!name || name.trim() === "") {
+        sendError(res, "World name is required", 400);
+        return;
+      }
+
+      // Validate order if provided
+      if (order !== undefined && order !== null) {
+        if (typeof order !== "number" || order < 0) {
+          sendError(res, "Order must be a positive number", 400);
+          return;
+        }
+      }
+
+      // Check if roadmap exists
+      const roadmap = await prisma.roadmap.findUnique({
+        where: { id: roadmapId },
+      });
+      if (!roadmap) {
+        sendError(
+          res,
+          `Roadmap with ID '${roadmapId}' not found`,
+          404,
+          "INVALID_ROADMAP"
+        );
+        return;
+      }
+
+      // Check if order is already used in this roadmap
+      if (order !== undefined && order !== null) {
+        const orderExists = await worldService.isOrderUsedInRoadmap(
+          roadmapId,
+          order
+        );
+        if (orderExists) {
+          sendError(
+            res,
+            `Order ${order} is already used in this roadmap`,
+            409,
+            "DUPLICATE_ORDER"
+          );
+          return;
+        }
+      }
+
+      const world = await worldService.createWorld({
+        roadmapId,
+        name: name.trim(),
+        description: description?.trim() || null,
+        imageUrl: imageUrl?.trim() || null,
+        order: order ?? 0,
+      });
+
+      sendSuccess(res, world, 201);
+    } catch (error) {
+      logger.error("Error in createWorld controller", { error: String(error) });
+      sendError(res, String(error), 500, "Failed to create world");
+    }
+  }
+
+  /**
+   * Update a world
+   * PUT /api/worlds/:id
+   */
+  async updateWorld(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { name, description, imageUrl, order } = req.body;
+
+      logger.info("Update world request", { worldId: id });
+
+      if (!id) {
+        sendError(res, "World ID is required", 400);
+        return;
+      }
+
+      // Validate at least one field is provided
+      if (
+        name === undefined &&
+        description === undefined &&
+        imageUrl === undefined &&
+        order === undefined
+      ) {
+        sendError(
+          res,
+          "At least one field to update is required",
+          400
+        );
+        return;
+      }
+
+      // Check if world exists
+      const world = await worldService.getWorldById(id);
+      if (!world) {
+        sendError(res, `World with ID '${id}' not found`, 404);
+        return;
+      }
+
+      const updateData: any = {};
+
+      if (name !== undefined) {
+        if (!name || name.trim() === "") {
+          sendError(res, "World name cannot be empty", 400);
+          return;
+        }
+        updateData.name = name.trim();
+      }
+
+      if (description !== undefined) {
+        updateData.description = description?.trim() || null;
+      }
+
+      if (imageUrl !== undefined) {
+        updateData.imageUrl = imageUrl?.trim() || null;
+      }
+
+      if (order !== undefined && order !== null) {
+        if (typeof order !== "number" || order < 0) {
+          sendError(res, "Order must be a positive number", 400);
+          return;
+        }
+
+        // Check if new order is already used in this roadmap
+        const orderExists = await worldService.isOrderUsedInRoadmap(
+          world.roadmapId,
+          order,
+          id
+        );
+        if (orderExists) {
+          sendError(
+            res,
+            `Order ${order} is already used in this roadmap`,
+            409,
+            "DUPLICATE_ORDER"
+          );
+          return;
+        }
+
+        updateData.order = order;
+      }
+
+      const updatedWorld = await worldService.updateWorld(id, updateData);
+
+      sendSuccess(res, updatedWorld, 200);
+    } catch (error) {
+      logger.error("Error in updateWorld controller", { error: String(error) });
+      sendError(res, String(error), 500, "Failed to update world");
+    }
+  }
+
+  /**
+   * Delete a world
+   * DELETE /api/worlds/:id
+   */
+  async deleteWorld(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+
+      logger.info("Delete world request", { worldId: id });
+
+      if (!id) {
+        sendError(res, "World ID is required", 400);
+        return;
+      }
+
+      // Check if world exists
+      const world = await worldService.getWorldById(id);
+      if (!world) {
+        sendError(res, `World with ID '${id}' not found`, 404);
+        return;
+      }
+
+      const deletedWorld = await worldService.deleteWorld(id);
+
+      sendSuccess(
+        res,
+        {
+          success: true,
+          deletedId: deletedWorld.id,
+          name: deletedWorld.name,
+          roadmapId: deletedWorld.roadmapId,
+        },
+        200
+      );
+    } catch (error) {
+      logger.error("Error in deleteWorld controller", { error: String(error) });
+      sendError(res, String(error), 500, "Failed to delete world");
+    }
+  }
 }
 
 export const worldController = new WorldController();

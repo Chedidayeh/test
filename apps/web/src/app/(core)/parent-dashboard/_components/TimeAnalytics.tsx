@@ -46,7 +46,7 @@ export default function TimeAnalytics({ childProgress }: TimeAnalyticsProps) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="rounded-lg bg-linear-to-br from-pink-50 to-rose-50 border border-pink-200 p-4">
+        <div className="rounded-lg bg-linear-to-br from-pink-200/20 to-rose-200/20 border border-pink-200 dark:border-pink-200/50 p-4">
           <p className="text-sm text-muted-foreground mb-1">Total Reading Time</p>
           <div className="flex items-baseline gap-1">
             <p className="text-3xl font-data font-bold text-pink-600">
@@ -58,7 +58,7 @@ export default function TimeAnalytics({ childProgress }: TimeAnalyticsProps) {
             </span>
           </div>
         </div>
-        <div className="rounded-lg bg-linear-to-br from-violet-50 to-purple-50 border border-violet-200 p-4">
+        <div className="rounded-lg bg-linear-to-br from-violet-200/20 to-purple-200/20 border border-violet-200 dark:border-violet-200/50 p-4">
           <p className="text-sm text-muted-foreground mb-1">Average Per Day</p>
           <div className="flex items-baseline gap-1">
             <p className="text-3xl font-data font-bold text-violet-600">
@@ -70,12 +70,12 @@ export default function TimeAnalytics({ childProgress }: TimeAnalyticsProps) {
             </span>
           </div>
         </div>
-        <div className="rounded-lg bg-linear-to-br from-cyan-50 to-blue-50 border border-cyan-200 p-4">
+        <div className="rounded-lg bg-linear-to-br from-cyan-200/20 to-blue-200/20 border border-cyan-200 dark:border-cyan-200/50 p-4">
           <p className="text-sm text-muted-foreground mb-1">Current Streak</p>
-          <p className="text-3xl font-data font-bold text-cyan-900">
+          <p className="text-3xl font-data font-bold text-cyan-600">
             {currentStreak}
           </p>
-          <p className="text-xs text-cyan-700 mt-1">consecutive days</p>
+          <p className="text-xs text-cyan-500 mt-1">consecutive days</p>
         </div>
       </div>
 

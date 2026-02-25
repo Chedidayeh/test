@@ -23,11 +23,6 @@ const Header = ({ session  }: { session: Session | null }) => {
       icon: Users,
       href: "#pricing",
     },
-    {
-      label: "Story Library",
-      icon: Users,
-      href: "/story-library",
-    },
   ];
 
   const isActive = (href: string) => {

@@ -40,6 +40,14 @@ export enum ChallengeStatus {
   NOT_ATTEMPTED = "NOT_ATTEMPTED",
 }
 
+export enum ReadingLevel {
+  BEGINNER = "BEGINNER",
+  EASY = "EASY",
+  MEDIUM = "MEDIUM",
+  HARD = "HARD",
+  ADVANCED = "ADVANCED",
+}
+
 // ============================================================================
 // AUTH SERVICE TYPES
 // ============================================================================
@@ -135,6 +143,7 @@ export interface Roadmap {
   updatedAt: Date;
   ageGroup: AgeGroup;
   theme: Theme;
+  readingLevel: ReadingLevel;
   worlds: World[];
 }
 
@@ -145,8 +154,6 @@ export interface World {
   description?: string;
   imageUrl?: string;
   order: number;
-  locked: boolean;
-  requiredStarCount: number;
   createdAt: Date;
   updatedAt: Date;
   roadmap: Roadmap;

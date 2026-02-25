@@ -3,41 +3,31 @@
 "use client";
 
 import { Button } from "@/src/components/ui/button";
+import { Roadmap } from "@shared/types";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 
-interface FeaturedStory {
-  id: number;
-  title: string;
-  description: string;
-  coverImage: string;
-  coverAlt: string;
-  badge: string;
-  badgeColor: string;
-}
 
-interface FeaturedCarouselProps {
-  stories: FeaturedStory[];
-  onStoryClick: (id: number) => void;
-}
 
-const FeaturedCarousel = ({ stories, onStoryClick }: FeaturedCarouselProps) => {
+
+
+const FeaturedCarousel = ({ roadmaps }: { roadmaps: Roadmap[] }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % stories.length);
+      setCurrentIndex((prev) => (prev + 1) % roadmaps.length);
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [stories.length]);
+  }, [roadmaps.length]);
 
   const handlePrevious = () => {
-    setCurrentIndex((prev) => (prev - 1 + stories.length) % stories.length);
+    setCurrentIndex((prev) => (prev - 1 + roadmaps.length) % roadmaps.length);
   };
 
   const handleNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % stories.length);
+    setCurrentIndex((prev) => (prev + 1) % roadmaps.length);
   };
 
   return (
@@ -47,12 +37,12 @@ const FeaturedCarousel = ({ stories, onStoryClick }: FeaturedCarouselProps) => {
         className="flex h-full transition-transform duration-700 ease-in-out"
         style={{ transform: `translateX(-${currentIndex * 100}%)` }}
       >
-        {stories.map((story) => (
-          <div key={story.id} className="min-w-full h-full flex-shrink-0 relative">
+        {roadmaps.map((roadmap) => (
+          <div key={roadmap.id} className="min-w-full h-full flex-shrink-0 relative">
             {/* Background Image */}
             <img
-              src={story.coverImage}
-              alt={story.coverAlt}
+              src={roadmap.theme.imageUrl || '/images/placeholder-roadmap.jpg'}
+              alt={roadmap.theme.name}
               className="w-full h-full object-cover"
             />
 
@@ -63,14 +53,14 @@ const FeaturedCarousel = ({ stories, onStoryClick }: FeaturedCarouselProps) => {
             <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-8 mx-10">
               {/* Title & Description */}
               <h2 className="font-heading text-2xl md:text-3xl text-white mb-2">
-                {story.title}
+                {roadmap.theme.name}
               </h2>
               <p className="font-body text-white/90 mb-4 line-clamp-2 max-w-2xl">
-                {story.description}
+                {roadmap.theme.description}
               </p>
 
               {/* Action Button */}
-              <Button className="max-w-max" onClick={() => onStoryClick(story.id)}>
+              <Button className="max-w-max">
                 Start Reading
               </Button>
             </div>
@@ -97,14 +87,14 @@ const FeaturedCarousel = ({ stories, onStoryClick }: FeaturedCarouselProps) => {
 
       {/* Dots Indicator */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2">
-        {stories.map((_, index) => (
+        {roadmaps.map((_, index) => (
           <button
             key={index}
             onClick={() => setCurrentIndex(index)}
             className={`w-2 h-2 rounded-full transition-smooth ${
               index === currentIndex ? "bg-white w-6" : "bg-white/50"
             }`}
-            aria-label={`Go to story ${index + 1}`}
+            aria-label={`Go to roadmap ${index + 1}`}
           />
         ))}
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, Settings } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
   Dialog,
@@ -19,8 +19,26 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import { RoadmapForm } from "./_components/RoadmapForm";
-import { RoadmapFormData } from "./schemas/roadmapSchemas";
-import { AgeGroup, Roadmap, World, Theme } from "@shared/types";
+import { AgeGroupsDialog } from "./_components/AgeGroupsDialog";
+import { ThemesDialog } from "./_components/ThemesDialog";
+import { WorldsDialog } from "./_components/WorldsDialog";
+import { RoadmapFormData, AgeGroupFormData, ThemeFormData, WorldFormData } from "./schemas/roadmapSchemas";
+import { AgeGroup, Roadmap, World, Theme, ReadingLevel } from "@shared/types";
+import {
+  createAgeGroupAction,
+  updateAgeGroupAction,
+  deleteAgeGroupAction,
+  createThemeAction,
+  updateThemeAction,
+  deleteThemeAction,
+  createRoadmapAction,
+  updateRoadmapAction,
+  deleteRoadmapAction,
+  createWorldAction,
+  updateWorldAction,
+  deleteWorldAction,
+} from "@/src/lib/content-service/server-actions";
+import { toast } from "sonner";
 
 
 
@@ -33,121 +51,282 @@ interface RoadmapsContentProps {
 
 export function RoadmapsContent({
   roadmaps: initialRoadmaps,
-  ageGroups,
+  ageGroups: initialAgeGroups,
   worlds: initialWorlds,
-  themes,
+  themes: initialThemes,
 }: RoadmapsContentProps) {
+  // Data state
   const [roadmaps, setRoadmaps] = useState<Roadmap[]>(initialRoadmaps);
+  const [ageGroups, setAgeGroups] = useState<AgeGroup[]>(initialAgeGroups);
   const [worlds, setWorlds] = useState<World[]>(initialWorlds);
-  console.log("Initial Roadmaps:", initialRoadmaps);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [themes, setThemes] = useState<Theme[]>(initialThemes);
+
+  // Roadmap dialog state
+  const [isCreateRoadmapDialogOpen, setIsCreateRoadmapDialogOpen] = useState(false);
   const [editingRoadmap, setEditingRoadmap] = useState<Roadmap | null>(null);
   const [roadmapToDelete, setRoadmapToDelete] = useState<Roadmap | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isRoadmapLoading, setIsRoadmapLoading] = useState(false);
 
+  // Management dialog state
+  const [isAgeGroupsDialogOpen, setIsAgeGroupsDialogOpen] = useState(false);
+  const [isThemesDialogOpen, setIsThemesDialogOpen] = useState(false);
+  const [isWorldsDialogOpen, setIsWorldsDialogOpen] = useState(false);
 
-  const handleCreateRoadmap = (data: RoadmapFormData) => {
-    setIsLoading(true);
-    setTimeout(() => {
-      const newWorlds: World[] = data.worlds.map((w, idx) => ({
-        id: w.id || `world-new-${Date.now()}-${idx}`,
-        roadmapId: `roadmap-new-${Date.now()}`,
-        name: w.name,
-        description: w.description,
-        imageUrl: w.imageUrl,
-        order: w.order,
-        locked: w.locked,
-        requiredStarCount: w.requiredStarCount,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        roadmap: {} as Roadmap,
-        stories: [],
-      }));
+  /**
+   * ============================================
+   * AGE GROUP HANDLERS
+   * ============================================
+   */
 
-      const newRoadmap: Roadmap = {
-        id: `roadmap-new-${Date.now()}`,
-        ageGroupId: data.ageGroupId,
-        themeId: data.themeId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        ageGroup: ageGroups.find(ag => ag.id === data.ageGroupId) || ({} as AgeGroup),
-        theme: themes.find(t => t.id === data.themeId) || ({} as Theme),
-        worlds: newWorlds,
-      };
-
-      setRoadmaps([...roadmaps, newRoadmap]);
-      setWorlds([...worlds, ...newWorlds]);
-      setIsCreateDialogOpen(false);
-      setIsLoading(false);
-    }, 800);
+  const handleCreateAgeGroup = async (data: AgeGroupFormData): Promise<boolean> => {
+    try {
+      const result = await createAgeGroupAction(data);
+      if (!result.success) {
+        toast.error(result.error);
+        return false;
+      }
+      setAgeGroups([...ageGroups, result.data]);
+      return true;
+    } catch (error) {
+      toast.error("Failed to create age group");
+      console.error(error);
+      return false;
+    }
   };
 
-  const handleUpdateRoadmap = (data: RoadmapFormData) => {
-    setIsLoading(true);
-    setTimeout(() => {
-      if (!editingRoadmap) return;
+  const handleUpdateAgeGroup = async (id: string, data: AgeGroupFormData): Promise<boolean> => {
+    try {
+      const result = await updateAgeGroupAction(id, data);
+      if (!result.success) {
+        toast.error(result.error);
+        return false;
+      }
+      setAgeGroups(ageGroups.map((ag) => (ag.id === id ? result.data : ag)));
+      return true;
+    } catch (error) {
+      toast.error("Failed to update age group");
+      console.error(error);
+      return false;
+    }
+  };
 
+  const handleDeleteAgeGroup = async (id: string): Promise<boolean> => {
+    try {
+      const result = await deleteAgeGroupAction(id);
+      if (!result.success) {
+        toast.error(result.error);
+        return false;
+      }
+      setAgeGroups(ageGroups.filter((ag) => ag.id !== id));
+      setRoadmaps(roadmaps.filter((r) => r.ageGroupId !== id));
+      return true;
+    } catch (error) {
+      toast.error("Failed to delete age group");
+      console.error(error);
+      return false;
+    }
+  };
+
+  /**
+   * ============================================
+   * THEME HANDLERS
+   * ============================================
+   */
+
+  const handleCreateTheme = async (data: ThemeFormData): Promise<boolean> => {
+    try {
+      const result = await createThemeAction(data);
+      if (!result.success) {
+        toast.error(result.error);
+        return false;
+      }
+      setThemes([...themes, result.data]);
+      return true;
+    } catch (error) {
+      toast.error("Failed to create theme");
+      console.error(error);
+      return false;
+    }
+  };
+
+  const handleUpdateTheme = async (id: string, data: ThemeFormData): Promise<boolean> => {
+    try {
+      const result = await updateThemeAction(id, data);
+      if (!result.success) {
+        toast.error(result.error);
+        return false;
+      }
+      setThemes(themes.map((t) => (t.id === id ? result.data : t)));
+      return true;
+    } catch (error) {
+      toast.error("Failed to update theme");
+      console.error(error);
+      return false;
+    }
+  };
+
+  const handleDeleteTheme = async (id: string): Promise<boolean> => {
+    try {
+      const result = await deleteThemeAction(id);
+      if (!result.success) {
+        toast.error(result.error);
+        return false;
+      }
+      setThemes(themes.filter((t) => t.id !== id));
+      setRoadmaps(roadmaps.filter((r) => r.themeId !== id));
+      return true;
+    } catch (error) {
+      toast.error("Failed to delete theme");
+      console.error(error);
+      return false;
+    }
+  };
+
+  /**
+   * ============================================
+   * WORLD HANDLERS
+   * ============================================
+   */
+
+  const handleCreateWorld = async (data: WorldFormData): Promise<boolean> => {
+    try {
+      const result = await createWorldAction(data);
+      if (!result.success) {
+        toast.error(result.error);
+        return false;
+      }
+      setWorlds([...worlds, result.data]);
+      return true;
+    } catch (error) {
+      toast.error("Failed to create world");
+      console.error(error);
+      return false;
+    }
+  };
+
+  const handleUpdateWorld = async (id: string, data: WorldFormData): Promise<boolean> => {
+    try {
+      const result = await updateWorldAction(id, data);
+      if (!result.success) {
+        toast.error(result.error);
+        return false;
+      }
+      setWorlds(worlds.map((w) => (w.id === id ? result.data : w)));
+      return true;
+    } catch (error) {
+      toast.error("Failed to update world");
+      console.error(error);
+      return false;
+    }
+  };
+
+  const handleDeleteWorld = async (id: string): Promise<boolean> => {
+    try {
+      const result = await deleteWorldAction(id);
+      if (!result.success) {
+        toast.error(result.error);
+        return false;
+      }
+      setWorlds(worlds.filter((w) => w.id !== id));
+      return true;
+    } catch (error) {
+      toast.error("Failed to delete world");
+      console.error(error);
+      return false;
+    }
+  };
+
+  /**
+   * ============================================
+   * ROADMAP HANDLERS
+   * ============================================
+   */
+
+  const handleCreateRoadmap = async (data: RoadmapFormData) => {
+    setIsRoadmapLoading(true);
+    try {
+      const roadmapData = {
+        ageGroupId: data.ageGroupId,
+        themeId: data.themeId,
+        readingLevel: data.readingLevel,
+      };
+
+      const result = await createRoadmapAction(roadmapData);
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+
+      // Add new roadmap with populated relationships
+      const completeRoadmap: Roadmap = {
+        ...result.data,
+        ageGroup: ageGroups.find((ag) => ag.id === data.ageGroupId) || ({} as AgeGroup),
+        theme: themes.find((t) => t.id === data.themeId) || ({} as Theme),
+        worlds: [],
+      };
+
+      setRoadmaps([...roadmaps, completeRoadmap]);
+      setIsCreateRoadmapDialogOpen(false);
+      toast.success("Roadmap created successfully");
+    } finally {
+      setIsRoadmapLoading(false);
+    }
+  };
+
+  const handleUpdateRoadmap = async (data: RoadmapFormData) => {
+    setIsRoadmapLoading(true);
+    if (!editingRoadmap) return;
+
+    try {
+      const roadmapData = {
+        ageGroupId: data.ageGroupId,
+        themeId: data.themeId,
+        readingLevel: data.readingLevel,
+      };
+
+      const result = await updateRoadmapAction(editingRoadmap.id, roadmapData);
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+
+      // Update roadmaps list
       setRoadmaps(
         roadmaps.map((r) =>
           r.id === editingRoadmap.id
             ? {
                 ...r,
-                ageGroupId: data.ageGroupId,
-                themeId: data.themeId,
-                ageGroup: ageGroups.find(ag => ag.id === data.ageGroupId) || r.ageGroup,
-                theme: themes.find(t => t.id === data.themeId) || r.theme,
+                ...result.data,
+                ageGroup: ageGroups.find((ag) => ag.id === data.ageGroupId) || r.ageGroup,
+                theme: themes.find((t) => t.id === data.themeId) || r.theme,
               }
             : r
         )
       );
 
-      // Update or add worlds
-      const oldWorldIds = new Set(
-        worlds
-          .filter((w) => w.roadmapId === editingRoadmap.id)
-          .map((w) => w.id)
-      );
-      const newWorldIds = new Set(data.worlds.map((w) => w.id || ""));
-      const worldsToRemove = Array.from(oldWorldIds).filter(
-        (id) => !newWorldIds.has(id)
-      );
-
-      const newWorlds = data.worlds
-        .filter((w) => !w.id)
-        .map((w, idx): World => ({
-          id: `world-new-${Date.now()}-${idx}`,
-          roadmapId: editingRoadmap.id,
-          name: w.name,
-          description: w.description,
-          imageUrl: w.imageUrl,
-          order: w.order,
-          locked: w.locked,
-          requiredStarCount: w.requiredStarCount,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          roadmap: editingRoadmap,
-          stories: [],
-        }));
-
-      setWorlds(
-        worlds
-          .filter((w) => !worldsToRemove.includes(w.id))
-          .map((w) => {
-            const updated = data.worlds.find((nw) => nw.id === w.id);
-            return updated ? { ...w, name: updated.name, description: updated.description, imageUrl: updated.imageUrl, order: updated.order, locked: updated.locked, requiredStarCount: updated.requiredStarCount, updatedAt: new Date() } : w;
-          })
-          .concat(newWorlds)
-      );
-
       setEditingRoadmap(null);
-      setIsLoading(false);
-    }, 800);
+      setIsCreateRoadmapDialogOpen(false);
+      toast.success("Roadmap updated successfully");
+    } finally {
+      setIsRoadmapLoading(false);
+    }
   };
 
-  const handleDeleteRoadmap = (roadmap: Roadmap) => {
-    setRoadmaps(roadmaps.filter((r) => r.id !== roadmap.id));
-    setWorlds(worlds.filter((w) => w.roadmapId !== roadmap.id));
-    setRoadmapToDelete(null);
+  const handleDeleteRoadmap = async (roadmap: Roadmap) => {
+    setIsRoadmapLoading(true);
+    try {
+      const result = await deleteRoadmapAction(roadmap.id);
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+
+      setRoadmaps(roadmaps.filter((r) => r.id !== roadmap.id));
+      setRoadmapToDelete(null);
+      toast.success("Roadmap deleted successfully");
+    } finally {
+      setIsRoadmapLoading(false);
+    }
   };
 
   return (
@@ -157,12 +336,35 @@ export function RoadmapsContent({
         <div>
           <h1 className="text-3xl font-bold">Roadmaps Management</h1>
           <p className="text-slate-500 mt-1">
-            Manage age groups, themes, and worlds
+            Manage age groups, themes, worlds, and roadmaps
           </p>
         </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" /> Create Roadmap
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setIsAgeGroupsDialogOpen(true)}
+            title="Manage age groups"
+          >
+            <Settings className="w-4 h-4 mr-2" /> Age Groups
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setIsThemesDialogOpen(true)}
+            title="Manage themes"
+          >
+            <Settings className="w-4 h-4 mr-2" /> Themes
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setIsWorldsDialogOpen(true)}
+            title="Manage worlds"
+          >
+            <Settings className="w-4 h-4 mr-2" /> Worlds
+          </Button>
+          <Button onClick={() => setIsCreateRoadmapDialogOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" /> Create Roadmap
+          </Button>
+        </div>
       </div>
 
       {/* Age Groups with Roadmaps */}
@@ -233,7 +435,7 @@ export function RoadmapsContent({
                           </div>
 
                           {/* Worlds List */}
-                          {roadmapWorlds.length > 0 && (
+                          {roadmapWorlds.length > 0 ? (
                             <div className="space-y-2 text-sm">
                               {roadmapWorlds.map((world) => (
                                 <div
@@ -242,14 +444,11 @@ export function RoadmapsContent({
                                 >
                                   <span className="w-1.5 h-1.5 rounded-full bg-primary/60"></span>
                                   <span className="flex-1">{world.name}</span>
-                                  {world.locked && (
-                                    <span className="text-xs bg-secondary text-white px-2 py-0.5 rounded">
-                                      Locked
-                                    </span>
-                                  )}
                                 </div>
                               ))}
                             </div>
+                          ) : (
+                            <p className="text-xs text-slate-400 italic">No worlds yet</p>
                           )}
                         </div>
                       );
@@ -264,7 +463,7 @@ export function RoadmapsContent({
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => setIsCreateDialogOpen(true)}
+                        onClick={() => setIsCreateRoadmapDialogOpen(true)}
                       >
                         Create one
                       </Button>
@@ -281,12 +480,12 @@ export function RoadmapsContent({
         </div>
       )}
 
-      {/* Create/Edit Dialog */}
+      {/* Create/Edit Roadmap Dialog */}
       <Dialog
-        open={isCreateDialogOpen || !!editingRoadmap}
+        open={isCreateRoadmapDialogOpen || !!editingRoadmap}
         onOpenChange={(open) => {
           if (!open) {
-            setIsCreateDialogOpen(false);
+            setIsCreateRoadmapDialogOpen(false);
             setEditingRoadmap(null);
           }
         }}
@@ -298,8 +497,8 @@ export function RoadmapsContent({
             </DialogTitle>
             <DialogDescription>
               {editingRoadmap
-                ? "Update the roadmap configuration and worlds"
-                : "Create a new roadmap with age group, theme, and worlds"}
+                ? "Update the roadmap configuration (age group, theme, reading level)"
+                : "Create a new roadmap with age group, theme, and reading level"}
             </DialogDescription>
           </DialogHeader>
 
@@ -312,21 +511,21 @@ export function RoadmapsContent({
                       (ag) => ag.id === editingRoadmap.ageGroupId
                     ) || editingRoadmap.ageGroup,
                     theme: editingRoadmap.theme,
-                    worlds: worlds.filter((w) => w.roadmapId === editingRoadmap.id),
                   }
                 : undefined
             }
             ageGroups={ageGroups}
             themes={themes}
+            allRoadmaps={roadmaps}
             onSubmit={
               editingRoadmap ? handleUpdateRoadmap : handleCreateRoadmap
             }
-            isLoading={isLoading}
+            isLoading={isRoadmapLoading}
           />
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Roadmap Confirmation Dialog */}
       <AlertDialog
         open={!!roadmapToDelete}
         onOpenChange={(open) => !open && setRoadmapToDelete(null)}
@@ -334,8 +533,7 @@ export function RoadmapsContent({
         <AlertDialogContent>
           <AlertDialogTitle>Delete Roadmap?</AlertDialogTitle>
           <AlertDialogDescription>
-            This will delete the roadmap and all its worlds. This action cannot
-            be undone.
+            This will delete the roadmap. This action cannot be undone.
           </AlertDialogDescription>
           <div className="flex gap-3 justify-end">
             <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -344,12 +542,46 @@ export function RoadmapsContent({
                 roadmapToDelete && handleDeleteRoadmap(roadmapToDelete)
               }
               className="bg-red-500 hover:bg-red-700"
+              disabled={isRoadmapLoading}
             >
-              Delete
+              {isRoadmapLoading ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </div>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Age Groups Management Dialog */}
+      <AgeGroupsDialog
+        open={isAgeGroupsDialogOpen}
+        onOpenChange={setIsAgeGroupsDialogOpen}
+        ageGroups={ageGroups}
+        roadmaps={roadmaps}
+        onAgeGroupCreate={handleCreateAgeGroup}
+        onAgeGroupUpdate={handleUpdateAgeGroup}
+        onAgeGroupDelete={handleDeleteAgeGroup}
+      />
+
+      {/* Themes Management Dialog */}
+      <ThemesDialog
+        open={isThemesDialogOpen}
+        onOpenChange={setIsThemesDialogOpen}
+        themes={themes}
+        roadmaps={roadmaps}
+        onThemeCreate={handleCreateTheme}
+        onThemeUpdate={handleUpdateTheme}
+        onThemeDelete={handleDeleteTheme}
+      />
+
+      {/* Worlds Management Dialog */}
+      <WorldsDialog
+        open={isWorldsDialogOpen}
+        onOpenChange={setIsWorldsDialogOpen}
+        worlds={worlds}
+        roadmaps={roadmaps}
+        onWorldCreate={handleCreateWorld}
+        onWorldUpdate={handleUpdateWorld}
+        onWorldDelete={handleDeleteWorld}
+      />
     </div>
   );
 }

@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { useForm, useFieldArray, Controller, UseFormRegister, FieldErrors } from "react-hook-form";
+import { useState, useMemo } from "react";
+import {
+  useForm,
+  Controller,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, ChevronUp, ChevronDown } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Card } from "@/src/components/ui/card";
 import {
@@ -15,13 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import {roadmapFormSchema, RoadmapFormData} from "../schemas/roadmapSchemas";
-import { Roadmap, AgeGroup, Theme, World } from "@shared/types";
+import { roadmapFormSchema, RoadmapFormData } from "../schemas/roadmapSchemas";
+import { Roadmap, AgeGroup, Theme, ReadingLevel } from "@shared/types";
 
 interface RoadmapFormProps {
-  roadmap?: Roadmap & { ageGroup?: AgeGroup; theme?: Theme; worlds?: World[] };
+  roadmap?: Roadmap & { ageGroup?: AgeGroup; theme?: Theme };
   ageGroups: AgeGroup[];
   themes: Theme[];
+  allRoadmaps?: Roadmap[]; // For validation of unique theme assignment
   onSubmit: (data: RoadmapFormData) => void;
   isLoading?: boolean;
 }
@@ -30,71 +33,121 @@ export function RoadmapForm({
   roadmap,
   ageGroups,
   themes,
+  allRoadmaps = [],
   onSubmit,
   isLoading = false,
 }: RoadmapFormProps) {
-  const [expandedWorlds, setExpandedWorlds] = useState<Set<number>>(
-    new Set([0])
-  );
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   const {
-    register,
     handleSubmit,
     formState: { errors },
     control,
+    watch,
   } = useForm<RoadmapFormData>({
     resolver: zodResolver(roadmapFormSchema),
     defaultValues: roadmap
       ? {
           ageGroupId: roadmap.ageGroupId,
           themeId: roadmap.themeId,
-          worlds: roadmap.worlds || [],
+          readingLevel: roadmap.readingLevel,
         }
       : {
           ageGroupId: "",
           themeId: "",
-          worlds: [
-            {
-              id: undefined,
-              roadmapId: "",
-              name: "",
-              description: "",
-              imageUrl: "",
-              order: 1,
-              locked: false,
-              requiredStarCount: 0,
-            },
-          ],
+          readingLevel: ReadingLevel.BEGINNER,
         },
   });
 
-  const {
-    fields: worldFields,
-    append: appendWorld,
-    remove: removeWorld,
-  } = useFieldArray({
-    control,
-    name: "worlds",
-  });
+  // Watch selected values for validation
+  const selectedThemeId = watch("themeId");
 
-  const toggleWorld = (index: number) => {
-    const newExpanded = new Set(expandedWorlds);
-    if (newExpanded.has(index)) {
-      newExpanded.delete(index);
-    } else {
-      newExpanded.add(index);
+  // Validate theme is not already assigned to another roadmap
+  const isThemeAlreadyAssigned = useMemo(() => {
+    if (!selectedThemeId) return false;
+    return allRoadmaps.some(
+      (r) =>
+        r.themeId === selectedThemeId &&
+        r.id !== roadmap?.id // Allow current roadmap to keep its theme
+    );
+  }, [selectedThemeId, allRoadmaps, roadmap?.id]);
+
+  // Get themes that are not assigned to other roadmaps
+  const availableThemes = useMemo(() => {
+    return themes.filter(
+      (t) =>
+        !allRoadmaps.some(
+          (r) =>
+            r.themeId === t.id &&
+            r.id !== roadmap?.id // Allow current roadmap to keep its theme
+        )
+    );
+  }, [themes, allRoadmaps, roadmap?.id]);
+
+  // Custom validation on submit
+  const handleFormSubmit = (data: RoadmapFormData) => {
+    const newErrors: string[] = [];
+
+    // Validate age group selection
+    if (!data.ageGroupId) {
+      newErrors.push("Age group is required");
     }
-    setExpandedWorlds(newExpanded);
+
+    // Validate theme selection
+    if (!data.themeId) {
+      newErrors.push("Theme is required");
+    }
+
+    // Validate theme is not already assigned
+    if (
+      data.themeId &&
+      allRoadmaps.some(
+        (r) =>
+          r.themeId === data.themeId &&
+          r.id !== roadmap?.id
+      )
+    ) {
+      newErrors.push("This theme is already assigned to another roadmap");
+    }
+
+    if (newErrors.length > 0) {
+      setValidationErrors(newErrors);
+      return;
+    }
+
+    setValidationErrors([]);
+    onSubmit(data);
   };
 
+  const readingLevels = Object.values(ReadingLevel);
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+      {/* Validation Errors Alert */}
+      {validationErrors.length > 0 && (
+        <Card className="p-4 bg-red-50 border-red-200">
+          <div className="flex gap-3">
+            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-red-900 mb-2">Validation Errors</h3>
+              <ul className="space-y-1">
+                {validationErrors.map((error, idx) => (
+                  <li key={idx} className="text-sm text-red-800">
+                    • {error}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Roadmap Configuration */}
       <Card className="p-6">
         <h3 className="font-medium mb-4">Roadmap Configuration</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <Label htmlFor="ageGroupId">Age Group</Label>
+            <Label htmlFor="ageGroupId">Age Group *</Label>
             <Controller
               control={control}
               name="ageGroupId"
@@ -104,11 +157,17 @@ export function RoadmapForm({
                     <SelectValue placeholder="Select age group" />
                   </SelectTrigger>
                   <SelectContent>
-                    {ageGroups.map((ag) => (
-                      <SelectItem key={ag.id} value={ag.id}>
-                        {ag.name}
-                      </SelectItem>
-                    ))}
+                    {ageGroups.length === 0 ? (
+                      <div className="p-2 text-sm text-slate-500">
+                        No age groups available
+                      </div>
+                    ) : (
+                      ageGroups.map((ag) => (
+                        <SelectItem key={ag.id} value={ag.id}>
+                          {ag.name} ({ag.minAge}-{ag.maxAge} years)
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               )}
@@ -121,217 +180,98 @@ export function RoadmapForm({
           </div>
 
           <div>
-            <Label htmlFor="themeId">Theme</Label>
+            <Label htmlFor="themeId">Theme *</Label>
             <Controller
               control={control}
               name="themeId"
               render={({ field }) => (
                 <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger className="mt-1">
+                  <SelectTrigger
+                    className={`mt-1 ${
+                      isThemeAlreadyAssigned ? "border-red-500" : ""
+                    }`}
+                  >
                     <SelectValue placeholder="Select theme" />
                   </SelectTrigger>
                   <SelectContent>
-                    {themes.map((theme) => (
-                      <SelectItem key={theme.id} value={theme.id}>
-                        {theme.name}
-                      </SelectItem>
-                    ))}
+                    {availableThemes.length === 0 ? (
+                      <div className="p-2 text-sm text-slate-500">
+                        No available themes (all are assigned to other roadmaps)
+                      </div>
+                    ) : (
+                      availableThemes.map((theme) => (
+                        <SelectItem key={theme.id} value={theme.id}>
+                          {theme.name}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               )}
             />
+            {isThemeAlreadyAssigned && (
+              <span className="text-xs text-red-600 mt-1">
+                This theme is already assigned to another roadmap
+              </span>
+            )}
             {errors.themeId && (
               <span className="text-xs text-red-600 mt-1">
                 {errors.themeId.message}
               </span>
             )}
           </div>
-        </div>
-      </Card>
 
-      {/* Worlds Section */}
-      <Card className="p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-medium">Worlds ({worldFields.length})</h3>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              const newIndex = worldFields.length;
-              appendWorld({
-                id: undefined,
-                roadmapId: "",
-                name: "",
-                description: "",
-                imageUrl: "",
-                order: newIndex + 1,
-                locked: false,
-                requiredStarCount: 0,
-              });
-              setExpandedWorlds(new Set([...expandedWorlds, newIndex]));
-            }}
-          >
-            <Plus className="w-4 h-4 mr-2" /> Add World
-          </Button>
-        </div>
-
-        <div className="space-y-3">
-          {worldFields.map((world, worldIndex) => (
-            <WorldItem
-              key={world.id}
-              worldIndex={worldIndex}
-              isExpanded={expandedWorlds.has(worldIndex)}
-              onToggle={() => toggleWorld(worldIndex)}
-              onRemove={() => worldFields.length > 1 && removeWorld(worldIndex)}
-              register={register}
-              errors={errors}
+          <div>
+            <Label htmlFor="readingLevel">Reading Level *</Label>
+            <Controller
+              control={control}
+              name="readingLevel"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select reading level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {readingLevels.map((level) => (
+                      <SelectItem key={level} value={level}>
+                        {level.charAt(0).toUpperCase() + level.slice(1).toLowerCase()}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             />
-          ))}
+            {errors.readingLevel && (
+              <span className="text-xs text-red-600 mt-1">
+                {errors.readingLevel.message}
+              </span>
+            )}
+          </div>
         </div>
 
-        {errors.worlds && typeof errors.worlds === "object" && (
-          <span className="text-xs text-red-600 mt-4">
-            Worlds configuration error
-          </span>
+        {/* Theme Assignment Info */}
+        {selectedThemeId && !isThemeAlreadyAssigned && (
+          <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
+            <p className="text-sm text-green-800">
+              ✓ Theme "{themes.find((t) => t.id === selectedThemeId)?.name}" is available for assignment
+            </p>
+          </div>
         )}
       </Card>
 
       {/* Actions */}
       <div className="flex gap-3 justify-end">
-        <Button type="button" variant="outline">
+        <Button type="button" variant="outline" disabled={isLoading}>
           Cancel
         </Button>
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? "Saving..." : roadmap ? "Update Roadmap" : "Create Roadmap"}
+        <Button type="submit" disabled={isLoading || isThemeAlreadyAssigned}>
+          {isLoading
+            ? "Saving..."
+            : roadmap
+              ? "Update Roadmap"
+              : "Create Roadmap"}
         </Button>
       </div>
     </form>
-  );
-}
-
-// World Item Component
-interface WorldItemProps {
-  worldIndex: number;
-  isExpanded: boolean;
-  onToggle: () => void;
-  onRemove: () => void;
-  register: UseFormRegister<RoadmapFormData>;
-  errors: FieldErrors<RoadmapFormData>;
-}
-
-function WorldItem({
-  worldIndex,
-  isExpanded,
-  onToggle,
-  onRemove,
-  register,
-  errors,
-}: WorldItemProps) {
-  return (
-    <div className="border rounded-lg">
-      <div
-        onClick={onToggle}
-        className="p-4 cursor-pointer flex items-center justify-between"
-      >
-        <div className="flex-1">
-          <p className="font-medium">World {worldIndex + 1}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {isExpanded ? (
-            <ChevronUp className="w-5 h-5" />
-          ) : (
-            <ChevronDown className="w-5 h-5" />
-          )}
-        </div>
-      </div>
-
-      {isExpanded && (
-        <div className="p-4 space-y-4 border-t">
-          <div className="flex justify-end">
-            <Button
-              type="button"
-              variant="destructive"
-              size="xs"
-              onClick={onRemove}
-            >
-              Remove World
-            </Button>
-          </div>
-
-          <div>
-            <Label className="text-sm">World Name</Label>
-            <Input
-              placeholder="e.g., Enchanted Forest"
-              {...register(`worlds.${worldIndex}.name`)}
-              className="mt-1"
-            />
-            {errors.worlds?.[worldIndex]?.name && (
-              <span className="text-xs text-red-600 mt-1">
-                {errors.worlds[worldIndex].name.message}
-              </span>
-            )}
-          </div>
-
-          <div>
-            <Label className="text-sm">Description (Optional)</Label>
-            <Input
-              placeholder="Brief description of the world"
-              {...register(`worlds.${worldIndex}.description`)}
-              className="mt-1"
-            />
-          </div>
-
-          <div>
-            <Label className="text-sm">Image URL (Optional)</Label>
-            <Input
-              placeholder="/images/world-name.jpg"
-              {...register(`worlds.${worldIndex}.imageUrl`)}
-              className="mt-1"
-            />
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label className="text-sm">Order</Label>
-              <Input
-                type="number"
-                min="1"
-                {...register(`worlds.${worldIndex}.order`, {
-                  valueAsNumber: true,
-                })}
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <Label className="text-sm">Locked</Label>
-              <div className="mt-2 flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  {...register(`worlds.${worldIndex}.locked`)}
-                  className="w-4 h-4"
-                />
-                <span className="text-sm text-slate-600">
-                  Lock until stars earned
-                </span>
-              </div>
-            </div>
-
-            <div>
-              <Label className="text-sm">Required Stars</Label>
-              <Input
-                type="number"
-                min="0"
-                {...register(`worlds.${worldIndex}.requiredStarCount`, {
-                  valueAsNumber: true,
-                })}
-                className="mt-1"
-              />
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { motion } from "motion/react";
 import { Button } from "@/src/components/ui/button";
@@ -21,6 +21,11 @@ export default function RoadmapPage({
   setSeeRoadmap,
 }: RoadmapPageProps) {
   const [selectedWorldId, setSelectedWorldId] = useState(roadmap.worlds[0].id);
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const selectedWorld = roadmap.worlds.find((w) => w.id === selectedWorldId);
 
@@ -61,39 +66,41 @@ export default function RoadmapPage({
           animate={{ opacity: 1 }}
           className="p-6 rounded-xl bg-muted/30 border border-border text-center"
         >
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground">
             💡 <span className="font-semibold">Pro Tip:</span> Hover over story
             cards to see details. Complete stories to earn stars and unlock new
             challenges!
           </p>
         </motion.div>
 
-        {/* Roadmap Tree */}
-        <section>
-          <StoriesRoadmap
-            selectedWorld={selectedWorld}
-            childProfile={child}
-          />
-        </section>
-
-        {/* Footer Info */}
-        {/* End of Roadmap Message */}
-        <motion.div
+        {/* <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: selectedWorld.stories.length * 0.1 + 0.3 }}
           className="flex justify-center mb-8 "
         >
           <div className="bg-linear-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-xl px-6 py-4 text-center max-w-sm">
-            <p className="text-sm font-medium text-foreground">
-              🎯 <span className="font-semibold">Journey Progress</span>
+            <p className="font-medium text-foreground">
+              🎯 <span className="font-medium">Journey Progress</span>
             </p>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Complete all stories in {selectedWorld.name} to unlock special
               rewards!
             </p>
           </div>
-        </motion.div>
+        </motion.div> */}
+
+        {/* Roadmap Tree */}
+        <section>
+          <StoriesRoadmap
+            selectedWorld={selectedWorld}
+            roadmap={roadmap}
+            childProfile={child}
+          />
+        </section>
+
+        {/* Footer Info */}
+        {/* End of Roadmap Message */}
       </main>
     </>
   );

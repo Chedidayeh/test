@@ -10,5 +10,9 @@ export default async function Layout({
   if (!session) {
     redirect("/");
   }
+
+  if (session?.user.newUser) {
+    redirect("/onboarding");
+  }
   return <div className="">{children}</div>;
 }

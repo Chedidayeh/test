@@ -36,6 +36,13 @@ model Theme {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+enum ReadingLevel {
+  BEGINNER
+  EASY
+  MEDIUM
+  HARD
+  ADVANCED
+}
 
 // Roadmap: Fixed progression graph for an age group
 model Roadmap {
@@ -45,6 +52,8 @@ model Roadmap {
 
   themeId    String @unique
   theme      Theme    @relation(fields: [themeId], references: [id])
+
+  readingLevel ReadingLevel @default(BEGINNER)
 
   worlds World[]
 
@@ -64,8 +73,6 @@ model World {
   description       String?
   imageUrl          String?
   order             Int // Order in roadmap
-  locked            Boolean @default(true) // Locked until previous world completed
-  requiredStarCount Int     @default(0) // Stars needed to unlock
 
   stories Story[]
 

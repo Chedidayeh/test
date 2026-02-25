@@ -44,8 +44,7 @@ const Roadmaps = ({
             <div className="relative h-48 overflow-hidden">
               <img
                 src={
-                  roadmap.theme.imageUrl ||
-                  "https://images.unsplash.com/photo-1724257454938-569ee2228430"
+                  roadmap.theme.imageUrl
                 }
                 alt={"Roadmap cover image for " + roadmap.theme.name}
                 className="w-full h-full object-cover transition-transform duration-500 transform group-hover:scale-110"

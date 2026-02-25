@@ -55,6 +55,185 @@ export class ThemeController {
       sendError(res, String(error), 500, "Failed to fetch theme");
     }
   }
+
+  /**
+   * Create a new theme
+   * POST /api/themes
+   */
+  async createTheme(req: Request, res: Response): Promise<void> {
+    try {
+      const { name, description, imageUrl } = req.body;
+
+      logger.info("Create theme request", { name });
+
+      // Validate required fields
+      if (!name || name.trim() === "") {
+        sendError(res, "Theme name is required and cannot be empty", 400);
+        return;
+      }
+
+      if (!description || description.trim() === "") {
+        sendError(res, "Theme description is required and cannot be empty", 400);
+        return;
+      }
+
+      if (description.trim().length < 5) {
+        sendError(res, "Theme description must be at least 5 characters long", 400);
+        return;
+      }
+
+      // Validate imageUrl if provided
+      if (imageUrl && imageUrl.trim() !== "") {
+        try {
+          new URL(imageUrl);
+        } catch {
+          sendError(res, "Invalid image URL format", 400);
+          return;
+        }
+      }
+
+      // Check for duplicate name
+      const existingTheme = await themeService.getThemeByName(name.trim());
+      if (existingTheme) {
+        sendError(res, `Theme name '${name}' already exists`, 409, "DUPLICATE_NAME");
+        return;
+      }
+
+      const theme = await themeService.createTheme({
+        name: name.trim(),
+        description: description.trim(),
+        imageUrl: imageUrl && imageUrl.trim() !== "" ? imageUrl.trim() : null,
+      });
+
+      sendSuccess(res, theme, 201);
+    } catch (error) {
+      logger.error("Error in createTheme controller", { error: String(error) });
+      sendError(res, String(error), 500, "Failed to create theme");
+    }
+  }
+
+  /**
+   * Update a theme
+   * PUT /api/themes/:id
+   */
+  async updateTheme(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { name, description, imageUrl } = req.body;
+
+      logger.info("Update theme request", { themeId: id });
+
+      if (!id) {
+        sendError(res, "Theme ID is required", 400);
+        return;
+      }
+
+      // Validate at least one field is provided
+      if (!name && !description && imageUrl === undefined) {
+        sendError(res, "At least one field (name, description, imageUrl) must be provided", 400);
+        return;
+      }
+
+      // Check if theme exists
+      const existingTheme = await themeService.getThemeById(id);
+      if (!existingTheme) {
+        sendError(res, "Theme not found", 404, `Theme with ID ${id} not found`);
+        return;
+      }
+
+      // Build update data
+      const updateData: any = {};
+
+      if (name !== undefined) {
+        if (name.trim() === "") {
+          sendError(res, "Theme name cannot be empty", 400);
+          return;
+        }
+        updateData.name = name.trim();
+
+        // Check for duplicate name (if changing)
+        if (name.trim() !== existingTheme.name) {
+          const duplicateTheme = await themeService.getThemeByName(name.trim());
+          if (duplicateTheme) {
+            sendError(res, `Theme name '${name}' already exists`, 409, "DUPLICATE_NAME");
+            return;
+          }
+        }
+      }
+
+      if (description !== undefined) {
+        if (description.trim() === "") {
+          sendError(res, "Theme description cannot be empty", 400);
+          return;
+        }
+        if (description.trim().length < 5) {
+          sendError(res, "Theme description must be at least 5 characters long", 400);
+          return;
+        }
+        updateData.description = description.trim();
+      }
+
+      if (imageUrl !== undefined) {
+        if (imageUrl && imageUrl.trim() !== "") {
+          try {
+            new URL(imageUrl);
+          } catch {
+            sendError(res, "Invalid image URL format", 400);
+            return;
+          }
+          updateData.imageUrl = imageUrl.trim();
+        } else {
+          updateData.imageUrl = null;
+        }
+      }
+
+      const updatedTheme = await themeService.updateTheme(id, updateData);
+
+      sendSuccess(res, updatedTheme, 200);
+    } catch (error) {
+      logger.error("Error in updateTheme controller", { error: String(error) });
+      sendError(res, String(error), 500, "Failed to update theme");
+    }
+  }
+
+  /**
+   * Delete a theme
+   * DELETE /api/themes/:id
+   */
+  async deleteTheme(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+
+      logger.info("Delete theme request", { themeId: id });
+
+      if (!id) {
+        sendError(res, "Theme ID is required", 400);
+        return;
+      }
+
+      // Check if theme exists
+      const theme = await themeService.getThemeById(id);
+      if (!theme) {
+        sendError(res, "Theme not found", 404, `Theme with ID ${id} not found`);
+        return;
+      }
+
+      const deletedTheme = await themeService.deleteTheme(id);
+
+      sendSuccess(
+        res,
+        {
+          success: true,
+          deletedId: deletedTheme.id,
+          name: deletedTheme.name,
+        },
+        200
+      );
+    } catch (error) {
+      logger.error("Error in deleteTheme controller", { error: String(error) });
+      sendError(res, String(error), 500, "Failed to delete theme");
+    }
+  }
 }
 
 export const themeController = new ThemeController();

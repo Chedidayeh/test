@@ -13,45 +13,68 @@ import { toast } from "sonner";
 import { DataTable, Column } from "../../_components/DataTable";
 import { FilterBar } from "../../_components/FilterBar";
 import { ConfirmDialog } from "../../_components/ConfirmDialog";
-import { ChildProfile } from "@shared/types";
+import { ChildProfile, ProgressStatus } from "@shared/types";
 import { fetchChildrenAction } from "@/src/lib/progress-service/server-actions";
 
 /**
  * Helper function to calculate stories completed from progress
+ * Counts unique stories that have COMPLETED status
  */
 function getStoriesCompleted(profile: ChildProfile): number {
-  return new Set(profile.progress.map((p) => p.storyId)).size;
+  return new Set(
+    profile.progress
+      .filter((p) => p.status === ProgressStatus.COMPLETED)
+      .map((p) => p.storyId)
+  ).size;
 }
 
 /**
- * Helper function to calculate current streak from sessions
+ * Helper function to calculate current streak from session checkpoints
+ * Counts consecutive days from today going backwards where child had at least one completed checkpoint
  */
 function getCurrentStreak(profile: ChildProfile): number {
-  if (profile.sessions.length === 0) return 0;
+  if (profile.progress.length === 0) return 0;
 
-  // Sort sessions by date descending
-  const sortedSessions = [...profile.sessions].sort(
-    (a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
+  // Collect all completed checkpoints from all game sessions
+  const allCheckpoints = profile.progress
+    .flatMap((p) => p.gameSession?.checkpoints || [])
+    .filter((checkpoint) => checkpoint.pausedAt !== null);
+
+  if (allCheckpoints.length === 0) return 0;
+
+  // Get unique dates from completed checkpoints
+  const checkpointDates = new Set(
+    allCheckpoints.map((checkpoint) => {
+      const date = new Date(checkpoint.pausedAt!);
+      return date.toISOString().split("T")[0]; // YYYY-MM-DD format
+    })
   );
 
+  // Sort dates in descending order
+  const sortedDates = Array.from(checkpointDates).sort().reverse();
+
   let streak = 0;
-  const today = new Date();
-  const currentDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const currentDate = new Date();
+  currentDate.setHours(0, 0, 0, 0);
 
-  for (const session of sortedSessions) {
-    const sessionDate = new Date(
-      session.startedAt.getFullYear(),
-      session.startedAt.getMonth(),
-      session.startedAt.getDate()
-    );
+  // Check if today has a checkpoint
+  const todayString = currentDate.toISOString().split("T")[0];
+  const checkingDate = new Date(currentDate);
 
-    const timeDiff = currentDate.getTime() - sessionDate.getTime();
-    const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+  // If no checkpoint today, start from yesterday
+  if (!checkpointDates.has(todayString)) {
+    checkingDate.setDate(checkingDate.getDate() - 1);
+  }
 
-    if (daysDiff === 0 || daysDiff === 1) {
+  // Count consecutive days
+  for (const checkpointDate of sortedDates) {
+    const checkingDateString = checkingDate.toISOString().split("T")[0];
+
+    if (checkpointDate === checkingDateString) {
       streak++;
-      currentDate.setDate(currentDate.getDate() - 1);
-    } else {
+      checkingDate.setDate(checkingDate.getDate() - 1);
+    } else if (new Date(checkpointDate) < checkingDate) {
+      // Gap found, streak is broken
       break;
     }
   }
@@ -179,7 +202,7 @@ export default function ChildrenPage(
       width: "15%",
     },
     {
-      key: "sessions",
+      key: "progress",
       label: "Current Streak",
       render: (_, row) => (
         <div className="flex items-center gap-1">
