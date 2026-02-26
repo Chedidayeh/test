@@ -205,7 +205,7 @@ export function StoriesContent({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <Link href={`/admin-dashboard/stories/${story.id}`}>
+                <Link href={`/admin-dashboard/stories/edit/${story.id}`}>
                   <DropdownMenuItem className="cursor-pointer">
                     <Edit2 className="mr-2 h-4 w-4" />
                     <span>Edit</span>

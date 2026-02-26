@@ -1,4 +1,4 @@
-import { ReadingLevel } from "@shared/types";
+import { ReadingLevel, AgeGroupStatus } from "@shared/types";
 import { z } from "zod";
 
 export const ageGroupSchema = z.object({
@@ -6,6 +6,7 @@ export const ageGroupSchema = z.object({
   name: z.string().min(2, "Age group name must be at least 2 characters"),
   minAge: z.number().int().min(1, "Min age must be at least 1"),
   maxAge: z.number().int().min(1, "Max age must be at least 1"),
+  status: z.nativeEnum(AgeGroupStatus),
 });
 
 export const themeSchema = z.object({

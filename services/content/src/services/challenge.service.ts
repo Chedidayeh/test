@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { logger } from "../utils/logger";
-import { Challenge, ChallengeQuery } from "../types";
+import { Challenge, ChallengeQuery, ChallengeType } from "../types";
 
 export class ChallengeService {
   private prisma: PrismaClient;
@@ -116,6 +116,95 @@ export class ChallengeService {
     } catch (error) {
       logger.error("Error fetching challenges by chapter", {
         chapterId,
+        error: String(error),
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new challenge
+   */
+  async createChallenge(data: {
+    chapterId: string;
+    type: ChallengeType;
+    question: string;
+    description?: string | null;
+    baseStars?: number;
+    order: number;
+    hints?: string[];
+  }): Promise<Challenge> {
+    try {
+      logger.info("Creating challenge", {
+        chapterId: data.chapterId,
+        type: data.type,
+        order: data.order,
+      });
+
+      const challenge = await this.prisma.challenge.create({
+        data: {
+          chapterId: data.chapterId,
+          type: data.type,
+          question: data.question,
+          description: data.description || null,
+          baseStars: data.baseStars || 20,
+          order: data.order,
+          hints: data.hints || [],
+        },
+        include: {
+          answers: {
+            orderBy: { order: "asc" },
+          },
+        },
+      });
+
+      logger.info("Challenge created successfully", {
+        challengeId: challenge.id,
+        chapterId: data.chapterId,
+      });
+
+      return challenge as Challenge;
+    } catch (error) {
+      logger.error("Error creating challenge", {
+        data,
+        error: String(error),
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing challenge
+   */
+  async updateChallenge(
+    challengeId: string,
+    data: Partial<{
+      type: ChallengeType;
+      question: string;
+      description: string | null;
+      baseStars: number;
+      order: number;
+      hints: string[];
+    }>
+  ): Promise<Challenge> {
+    try {
+      logger.info("Updating challenge", { challengeId });
+
+      const challenge = await this.prisma.challenge.update({
+        where: { id: challengeId },
+        data,
+        include: {
+          answers: {
+            orderBy: { order: "asc" },
+          },
+        },
+      });
+
+      logger.info("Challenge updated successfully", { challengeId });
+      return challenge as Challenge;
+    } catch (error) {
+      logger.error("Error updating challenge", {
+        challengeId,
         error: String(error),
       });
       throw error;

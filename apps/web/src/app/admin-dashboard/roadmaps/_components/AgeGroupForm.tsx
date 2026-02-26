@@ -6,8 +6,15 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Card } from "@/src/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 import { ageGroupSchema, AgeGroupFormData } from "../schemas/roadmapSchemas";
-import { AgeGroup } from "@shared/types";
+import { AgeGroup, AgeGroupStatus } from "@shared/types";
 
 interface AgeGroupFormProps {
   ageGroup?: AgeGroup;
@@ -26,6 +33,7 @@ export function AgeGroupForm({
     register,
     handleSubmit,
     formState: { errors },
+    setValue,
   } = useForm<AgeGroupFormData>({
     resolver: zodResolver(ageGroupSchema),
     defaultValues: ageGroup
@@ -33,11 +41,13 @@ export function AgeGroupForm({
           name: ageGroup.name,
           minAge: ageGroup.minAge,
           maxAge: ageGroup.maxAge,
+          status: ageGroup.status,
         }
       : {
           name: "",
           minAge: 1,
           maxAge: 1,
+          status: AgeGroupStatus.INACTIVE,
         },
   });
 
@@ -93,6 +103,27 @@ export function AgeGroupForm({
                 </span>
               )}
             </div>
+          </div>
+
+          <div>
+            <Label htmlFor="status">Status</Label>
+            <Select
+              onValueChange={(value) => setValue("status", value as AgeGroupStatus)}
+              defaultValue={ageGroup?.status}
+            >
+              <SelectTrigger id="status" className="mt-1">
+                <SelectValue placeholder="Select a status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={AgeGroupStatus.ACTIVE}>Active</SelectItem>
+                <SelectItem value={AgeGroupStatus.INACTIVE}>Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+            {errors.status && (
+              <span className="text-xs text-red-600 mt-1">
+                {errors.status.message}
+              </span>
+            )}
           </div>
         </div>
       </Card>

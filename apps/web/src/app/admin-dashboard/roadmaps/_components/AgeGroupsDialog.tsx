@@ -150,6 +150,7 @@ export function AgeGroupsDialog({
                       <TableRow>
                         <TableHead>Name</TableHead>
                         <TableHead>Age Range</TableHead>
+                        <TableHead>Status</TableHead>
                         <TableHead>Roadmaps</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
@@ -160,6 +161,17 @@ export function AgeGroupsDialog({
                           <TableCell className="font-medium">{ag.name}</TableCell>
                           <TableCell>
                             {ag.minAge} - {ag.maxAge} years
+                          </TableCell>
+                          <TableCell>
+                            <span
+                              className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                                ag.status === "ACTIVE"
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-slate-100 text-slate-800"
+                              }`}
+                            >
+                              {ag.status === "ACTIVE" ? "Active" : "Inactive"}
+                            </span>
                           </TableCell>
                           <TableCell>
                             {getAgeGroupRoadmapCount(ag.id)} roadmap(s)

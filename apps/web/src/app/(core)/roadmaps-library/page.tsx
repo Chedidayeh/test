@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import RoadmapsLibrary from './_components/RoadmapsLibrary';
-import { getRoadmaps } from '@/src/lib/content-service/server-api';
+import { getAgeGroups, getRoadmaps } from '@/src/lib/content-service/server-api';
 
 export const metadata: Metadata = {
   title: 'Story Library - Readly',
@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 export default async function page() {
-  
-  const roadmaps = await getRoadmaps();
+  const ageGroups = await getAgeGroups();
+  const roadmaps = ageGroups.map((ageGroup) => ageGroup.roadmaps).flat();
   return <RoadmapsLibrary roadmaps={roadmaps} />;
 }

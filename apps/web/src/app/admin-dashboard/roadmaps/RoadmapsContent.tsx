@@ -382,9 +382,20 @@ export function RoadmapsContent({
               >
                 {/* Age Group Header */}
                 <div className="bg-linear-to-r from-primary/10 to-primary/5 px-6 py-4 border-b">
-                  <h2 className="text-xl font-bold text-primary">
-                    {ageGroup.name}
-                  </h2>
+                  <div className="flex items-center justify-between mb-2">
+                    <h2 className="text-xl font-bold text-primary">
+                      {ageGroup.name}
+                    </h2>
+                    <span
+                      className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                        ageGroup.status === "ACTIVE"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-slate-100 text-slate-800"
+                      }`}
+                    >
+                      {ageGroup.status === "ACTIVE" ? "Active" : "Inactive"}
+                    </span>
+                  </div>
                   <p className=" text-slate-500 mt-2">
                     {ageGroupRoadmaps.length} roadmap
                     {ageGroupRoadmaps.length !== 1 ? "s" : ""}

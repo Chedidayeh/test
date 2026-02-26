@@ -26,7 +26,6 @@ export class StoryService {
       const whereClause: any = {};
       if (query.worldId) whereClause.worldId = query.worldId;
       if (query.difficulty) whereClause.difficulty = query.difficulty;
-      if (query.isMandatory !== undefined) whereClause.isMandatory = query.isMandatory;
 
       const [stories, total] = await Promise.all([
         this.prisma.story.findMany({
@@ -158,6 +157,125 @@ export class StoryService {
       return count;
     } catch (error) {
       logger.error("Error counting stories", { error: String(error) });
+      throw error;
+    }
+  }
+
+  /**
+   * Check if order is already used in a world
+   */
+  async isOrderUsedInWorld(
+    worldId: string,
+    order: number,
+    excludeStoryId?: string
+  ): Promise<boolean> {
+    try {
+      const story = await this.prisma.story.findFirst({
+        where: {
+          worldId,
+          order,
+          ...(excludeStoryId && { NOT: { id: excludeStoryId } }),
+        },
+      });
+
+      return !!story;
+    } catch (error) {
+      logger.error("Error checking order in world", {
+        worldId,
+        order,
+        error: String(error),
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new story
+   */
+  async createStory(data: {
+    worldId: string;
+    title: string;
+    description?: string | null;
+    difficulty: number;
+    order: number;
+  }): Promise<Story> {
+    try {
+      logger.info("Creating story", {
+        worldId: data.worldId,
+        title: data.title,
+        order: data.order,
+      });
+
+      const story = await this.prisma.story.create({
+        data,
+        include: {
+          chapters: {
+            include: {
+              challenge: {
+                include: {
+                  answers: true,
+                },
+              },
+            },
+          },
+          world: true,
+        },
+      });
+
+      logger.info("Story created successfully", {
+        storyId: story.id,
+        worldId: data.worldId,
+      });
+
+      return story as Story;
+    } catch (error) {
+      logger.error("Error creating story", {
+        data,
+        error: String(error),
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing story
+   */
+  async updateStory(
+    storyId: string,
+    data: Partial<{
+      title: string;
+      description: string | null;
+      difficulty: number;
+      order: number;
+    }>
+  ): Promise<Story> {
+    try {
+      logger.info("Updating story", { storyId });
+
+      const story = await this.prisma.story.update({
+        where: { id: storyId },
+        data,
+        include: {
+          chapters: {
+            include: {
+              challenge: {
+                include: {
+                  answers: true,
+                },
+              },
+            },
+          },
+          world: true,
+        },
+      });
+
+      logger.info("Story updated successfully", { storyId });
+      return story as Story;
+    } catch (error) {
+      logger.error("Error updating story", {
+        storyId,
+        error: String(error),
+      });
       throw error;
     }
   }

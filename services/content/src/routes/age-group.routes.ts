@@ -3,8 +3,11 @@ import { ageGroupController } from "../controllers/age-group.controller";
 
 const router = Router();
 
-// GET all age groups
+// GET all age groups (only active ones)
 router.get("/", (req, res) => ageGroupController.getAgeGroups(req, res));
+
+// GET all age groups for admin (including inactive ones)
+router.get("/admin/all", (req, res) => ageGroupController.getAgeGroupsForAdmin(req, res));
 
 // POST - create new age group
 router.post("/", (req, res) => ageGroupController.createAgeGroup(req, res));

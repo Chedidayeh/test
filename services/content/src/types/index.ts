@@ -19,11 +19,10 @@ import type {
   ApiResponse,
   PaginationMeta,
   PaginatedResponse,
-  // DTOs
-  ContentServiceDTOs,
-  // Enums
-  ChallengeType,
 } from "@shared/types";
+
+import { ChallengeType } from "@shared/types";
+
 // Re-export all shared types for convenience
 export type {
   AgeGroup,
@@ -39,7 +38,6 @@ export type {
   ApiResponse,
   PaginationMeta,
   PaginatedResponse,
-  ContentServiceDTOs,
 };
 
 export { ChallengeType };

@@ -26,7 +26,7 @@ const Roadmaps = ({
           Roadmaps
         </h2>
         <Link
-          href="/story-library"
+          href="/roadmaps-library"
           className="flex items-center gap-2 text-primary hover:text-primary/80 transition-smooth"
         >
           <span className="font-body font-medium">See All</span>

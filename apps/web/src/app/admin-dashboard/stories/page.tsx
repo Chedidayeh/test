@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import { getStories, getAgeGroups, getWorlds } from "@/src/lib/content-service/server-api";
+import { getStories } from "@/src/lib/content-service/server-api";
 import { StoriesContent } from "./_components/StoriesContent";
 
 export default async function StoriesPage() {
@@ -11,8 +11,6 @@ export default async function StoriesPage() {
       stories: [],
       pagination: { total: 0, page: 1, pageSize: 10, hasMore: false },
     })),
-    getAgeGroups().catch(() => []),
-    getWorlds().catch(() => []),
   ]);
 
   const stories = storiesData.stories || [];

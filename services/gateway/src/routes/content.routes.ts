@@ -16,8 +16,48 @@ router.use("/stories", (req: Request, res: Response) => {
 });
 
 /**
+ * Chapters Routes - CRUD Operations
+ * GET /api/chapters - fetch all chapters
+ * GET /api/chapters/:id - fetch single chapter
+ * GET /api/chapters/story/:storyId - fetch chapters by story
+ * POST /api/chapters - create new chapter
+ * PUT /api/chapters/:id - update chapter
+ * DELETE /api/chapters/:id - delete chapter
+ */
+router.use("/chapters", (req: Request, res: Response) => {
+  forwardToContentService(req, res, `/api/chapters${req.path}`);
+});
+
+/**
+ * Challenges Routes
+ * GET /api/challenges - fetch all challenges
+ * GET /api/challenges/:id - fetch single challenge
+ * GET /api/challenges/chapter/:chapterId - fetch challenges by chapter
+ * POST /api/challenges - create new challenge
+ * PUT /api/challenges/:id - update challenge
+ * DELETE /api/challenges/:id - delete challenge
+ */
+router.use("/challenges", (req: Request, res: Response) => {
+  forwardToContentService(req, res, `/api/challenges${req.path}`);
+});
+
+/**
+ * Answers Routes - CRUD Operations
+ * GET /api/answers - fetch all answers
+ * GET /api/answers/:id - fetch single answer
+ * GET /api/answers/challenge/:challengeId - fetch answers by challenge
+ * POST /api/answers - create new answer
+ * PUT /api/answers/:id - update answer
+ * DELETE /api/answers/:id - delete answer
+ */
+router.use("/answers", (req: Request, res: Response) => {
+  forwardToContentService(req, res, `/api/answers${req.path}`);
+});
+
+/**
  * Age Groups Routes - CRUD Operations
- * GET /api/age-groups - fetch all age groups
+ * GET /api/age-groups - fetch all active age groups
+ * GET /api/age-groups/admin/all - fetch all age groups (including inactive) - admin only
  * GET /api/age-groups/:id - fetch single age group
  * POST /api/age-groups - create new age group
  * PUT /api/age-groups/:id - update age group
@@ -65,14 +105,7 @@ router.use("/worlds", (req: Request, res: Response) => {
   forwardToContentService(req, res, `/api/worlds${req.path}`);
 });
 
-/**
- * Challenges Routes
- * GET /api/challenges - fetch all challenges
- * GET /api/challenges/:id - fetch single challenge
- */
-router.use("/challenges", (req: Request, res: Response) => {
-  forwardToContentService(req, res, `/api/challenges${req.path}`);
-});
+
 
 /**
  * Levels Routes

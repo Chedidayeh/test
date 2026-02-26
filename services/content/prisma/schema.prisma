@@ -13,12 +13,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum AgeGroupStatus {
+  ACTIVE
+  INACTIVE
+}
+
 // Age Group: Defines target audience for content
 model AgeGroup {
   id     String @id @default(cuid())
   name   String @unique // e.g., "6-7 years", "8-9 years"
   minAge Int
   maxAge Int
+
+  status AgeGroupStatus @default(ACTIVE)
 
   roadmaps Roadmap[]
 
@@ -91,7 +98,6 @@ model Story {
   title       String
   description String?
   difficulty  Int // 1-5 difficulty scale
-  isMandatory Boolean @default(true) // Required to complete world
   order       Int // Order in world
 
   chapters Chapter[]
@@ -141,7 +147,6 @@ model Challenge {
   type        ChallengeType
   question    String
   description String?
-  maxAttempts Int?          
   baseStars   Int           @default(20) // Base stars for solving
   order       Int // Order in chapter
   hints       String[] // Array of hints for the challenge

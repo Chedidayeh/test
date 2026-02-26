@@ -1,6 +1,7 @@
 import { PrismaClient, ReadingLevel } from "@prisma/client";
 import { logger } from "../utils/logger";
 import type { Roadmap } from "../types";
+import { AgeGroupStatus } from "@shared/types";
 
 export class RoadmapService {
   private prisma: PrismaClient;
@@ -15,6 +16,7 @@ export class RoadmapService {
   async getRoadmaps(): Promise<Roadmap[]> {
     try {
       const roadmaps = await this.prisma.roadmap.findMany({
+        where:{ ageGroup: { status: AgeGroupStatus.ACTIVE } },
         include: {
           theme: true,
           ageGroup: true,

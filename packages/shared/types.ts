@@ -20,9 +20,9 @@ export enum RoleType {
 }
 
 export enum ChallengeType {
-  MULTIPLE_CHOICE = "MULTIPLE_CHOICE",
-  TRUE_FALSE = "TRUE_FALSE",
-  RIDDLE = "RIDDLE",
+  MULTIPLE_CHOICE = "MULTIPLE_CHOICE", // standard quiz format with predefined answers
+  TRUE_FALSE = "TRUE_FALSE", // standard true/false format
+  RIDDLE = "RIDDLE", // open-ended question where child must type an answer, correctness is determined by keyword matching or manual review
   CHOOSE_ENDING = "CHOOSE_ENDING", // all anserwers are correct, see if child understandood the story
   MORAL_DECISION = "MORAL_DECISION", // all anserwers are correct, see if child understood the moral of the story
 }
@@ -46,6 +46,11 @@ export enum ReadingLevel {
   MEDIUM = "MEDIUM",
   HARD = "HARD",
   ADVANCED = "ADVANCED",
+}
+
+export enum AgeGroupStatus {
+  ACTIVE = "ACTIVE",
+  INACTIVE = "INACTIVE",
 }
 
 // ============================================================================
@@ -120,6 +125,7 @@ export interface AgeGroup {
   name: string; // e.g., "6-7 years", "8-9 years"
   minAge: number;
   maxAge: number;
+  status: AgeGroupStatus;
   createdAt: Date;
   updatedAt: Date;
   roadmaps: Roadmap[];
@@ -166,7 +172,6 @@ export interface Story {
   title: string;
   description?: string;
   difficulty: number; // 1-5 difficulty scale
-  isMandatory: boolean;
   order: number;
   createdAt: Date;
   updatedAt: Date;
@@ -194,7 +199,6 @@ export interface Challenge {
   type: ChallengeType;
   question: string;
   description?: string;
-  maxAttempts?: number;
   baseStars: number;
   order: number;
   hints: string[];
@@ -362,6 +366,60 @@ export interface ChildBadge {
   createdAt: Date;
   updatedAt: Date;
 }
+
+
+
+// ============================================================================
+// 
+// ============================================================================
+
+/**
+ * Input type for creating an answer
+ */
+export interface CreateAnswerInput {
+  text: string;
+  isCorrect: boolean;
+  order?: number | null;
+}
+
+/**
+ * Input type for creating a challenge with answers
+ */
+export interface CreateChallengeInput {
+  type: ChallengeType;
+  question: string;
+  description?: string | null;
+  baseStars?: number;
+  order: number;
+  hints?: string[];
+  answers: CreateAnswerInput[];
+}
+
+/**
+ * Input type for creating a chapter with challenge
+ */
+export interface CreateChapterInput {
+  title: string;
+  content: string;
+  imageUrl?: string | null;
+  audioUrl?: string | null;
+  order: number;
+  challenge?: CreateChallengeInput;
+}
+
+/**
+ * Input type for creating a complete story with chapters
+ */
+export interface CreateStoryWithChaptersInput {
+  worldId: string;
+  title: string;
+  description?: string | null;
+  difficulty: number;
+  order: number;
+  chapters: CreateChapterInput[];
+}
+
+
 
 // ============================================================================
 // API REQUEST/RESPONSE TYPES

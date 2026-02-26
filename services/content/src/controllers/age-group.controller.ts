@@ -2,14 +2,33 @@ import { Request, Response } from "express";
 import { AgeGroupService } from "../services/age-group.service";
 import { sendSuccess, sendError } from "../utils/response";
 import { logger } from "../utils/logger";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, AgeGroupStatus } from "@prisma/client";
 
 const prisma = new PrismaClient();
 const ageGroupService = new AgeGroupService(prisma);
 
 export class AgeGroupController {
   /**
-   * Get all age groups
+   * Get all age groups (including inactive ones) - for admin dashboard
+   * GET /api/age-groups/admin/all
+   */
+  async getAgeGroupsForAdmin(req: Request, res: Response): Promise<void> {
+    try {
+      logger.info("Get all age groups for admin request");
+
+      const ageGroups = await ageGroupService.getAgeGroupsForAdmin();
+
+      sendSuccess(res, ageGroups, 200);
+    } catch (error) {
+      logger.error("Error in getAgeGroupsForAdmin controller", {
+        error: String(error),
+      });
+      sendError(res, String(error), 500, "Failed to fetch age groups");
+    }
+  }
+
+  /**
+   * Get all age groups (only active ones)
    * GET /api/age-groups
    */
   async getAgeGroups(req: Request, res: Response): Promise<void> {
@@ -20,7 +39,9 @@ export class AgeGroupController {
 
       sendSuccess(res, ageGroups, 200);
     } catch (error) {
-      logger.error("Error in getAgeGroups controller", { error: String(error) });
+      logger.error("Error in getAgeGroups controller", {
+        error: String(error),
+      });
       sendError(res, String(error), 500, "Failed to fetch age groups");
     }
   }
@@ -43,7 +64,12 @@ export class AgeGroupController {
       const ageGroup = await ageGroupService.getAgeGroupById(id);
 
       if (!ageGroup) {
-        sendError(res, "Age group not found", 404, `Age group with ID ${id} not found`);
+        sendError(
+          res,
+          "Age group not found",
+          404,
+          `Age group with ID ${id} not found`,
+        );
         return;
       }
 
@@ -62,7 +88,7 @@ export class AgeGroupController {
    */
   async createAgeGroup(req: Request, res: Response): Promise<void> {
     try {
-      const { name, minAge, maxAge } = req.body;
+      const { name, minAge, maxAge, status } = req.body;
 
       logger.info("Create age group request", { name });
 
@@ -97,18 +123,24 @@ export class AgeGroupController {
       }
 
       if (maxAgeNum < minAgeNum) {
-        sendError(res, "Maximum age must be greater than or equal to minimum age", 400);
+        sendError(
+          res,
+          "Maximum age must be greater than or equal to minimum age",
+          400,
+        );
         return;
       }
 
       // Check for duplicate name
-      const existingAgeGroup = await ageGroupService.getAgeGroupByName(name.trim());
+      const existingAgeGroup = await ageGroupService.getAgeGroupByName(
+        name.trim(),
+      );
       if (existingAgeGroup) {
         sendError(
           res,
           `Age group name '${name}' already exists`,
           409,
-          "DUPLICATE_NAME"
+          "DUPLICATE_NAME",
         );
         return;
       }
@@ -117,11 +149,14 @@ export class AgeGroupController {
         name: name.trim(),
         minAge: minAgeNum,
         maxAge: maxAgeNum,
+        status: status || AgeGroupStatus.INACTIVE,
       });
 
       sendSuccess(res, ageGroup, 201);
     } catch (error) {
-      logger.error("Error in createAgeGroup controller", { error: String(error) });
+      logger.error("Error in createAgeGroup controller", {
+        error: String(error),
+      });
       sendError(res, String(error), 500, "Failed to create age group");
     }
   }
@@ -133,7 +168,7 @@ export class AgeGroupController {
   async updateAgeGroup(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const { name, minAge, maxAge } = req.body;
+      const { name, minAge, maxAge, status } = req.body;
 
       logger.info("Update age group request", { ageGroupId: id });
 
@@ -144,21 +179,30 @@ export class AgeGroupController {
       }
 
       // Validate at least one field is provided
-      if (!name && minAge === undefined && maxAge === undefined) {
-        sendError(res, "At least one field (name, minAge, maxAge) must be provided", 400);
+      if (!name && minAge === undefined && maxAge === undefined && status === undefined) {
+        sendError(
+          res,
+          "At least one field (name, minAge, maxAge, status) must be provided",
+          400,
+        );
         return;
       }
 
       // Check if age group exists
       const existingAgeGroup = await ageGroupService.getAgeGroupById(id);
       if (!existingAgeGroup) {
-        sendError(res, "Age group not found", 404, `Age group with ID ${id} not found`);
+        sendError(
+          res,
+          "Age group not found",
+          404,
+          `Age group with ID ${id} not found`,
+        );
         return;
       }
 
       // Build update data
       const updateData: any = {};
-      
+
       if (name !== undefined) {
         if (name.trim() === "") {
           sendError(res, "Age group name cannot be empty", 400);
@@ -168,13 +212,15 @@ export class AgeGroupController {
 
         // Check for duplicate name (if changing)
         if (name.trim() !== existingAgeGroup.name) {
-          const duplicateAgeGroup = await ageGroupService.getAgeGroupByName(name.trim());
+          const duplicateAgeGroup = await ageGroupService.getAgeGroupByName(
+            name.trim(),
+          );
           if (duplicateAgeGroup) {
             sendError(
               res,
               `Age group name '${name}' already exists`,
               409,
-              "DUPLICATE_NAME"
+              "DUPLICATE_NAME",
             );
             return;
           }
@@ -199,19 +245,40 @@ export class AgeGroupController {
         updateData.maxAge = maxAgeNum;
       }
 
+      if (status !== undefined && status !== null) {
+        if (!Object.values(AgeGroupStatus).includes(status)) {
+          sendError(
+            res,
+            `Invalid status value. Must be one of: ${Object.values(AgeGroupStatus).join(", ")}`,
+            400,
+          );
+          return;
+        }
+        updateData.status = status;
+      }
+
       // Validate age range if both are present
       const finalMinAge = updateData.minAge ?? existingAgeGroup.minAge;
       const finalMaxAge = updateData.maxAge ?? existingAgeGroup.maxAge;
       if (finalMaxAge < finalMinAge) {
-        sendError(res, "Maximum age must be greater than or equal to minimum age", 400);
+        sendError(
+          res,
+          "Maximum age must be greater than or equal to minimum age",
+          400,
+        );
         return;
       }
 
-      const updatedAgeGroup = await ageGroupService.updateAgeGroup(id, updateData);
+      const updatedAgeGroup = await ageGroupService.updateAgeGroup(
+        id,
+        updateData,
+      );
 
       sendSuccess(res, updatedAgeGroup, 200);
     } catch (error) {
-      logger.error("Error in updateAgeGroup controller", { error: String(error) });
+      logger.error("Error in updateAgeGroup controller", {
+        error: String(error),
+      });
       sendError(res, String(error), 500, "Failed to update age group");
     }
   }
@@ -234,7 +301,12 @@ export class AgeGroupController {
       // Check if age group exists
       const ageGroup = await ageGroupService.getAgeGroupById(id);
       if (!ageGroup) {
-        sendError(res, "Age group not found", 404, `Age group with ID ${id} not found`);
+        sendError(
+          res,
+          "Age group not found",
+          404,
+          `Age group with ID ${id} not found`,
+        );
         return;
       }
 
@@ -247,10 +319,12 @@ export class AgeGroupController {
           deletedId: deletedAgeGroup.id,
           name: deletedAgeGroup.name,
         },
-        200
+        200,
       );
     } catch (error) {
-      logger.error("Error in deleteAgeGroup controller", { error: String(error) });
+      logger.error("Error in deleteAgeGroup controller", {
+        error: String(error),
+      });
       sendError(res, String(error), 500, "Failed to delete age group");
     }
   }

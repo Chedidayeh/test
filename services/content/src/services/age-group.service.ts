@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { AgeGroupStatus, PrismaClient } from "@prisma/client";
 import { logger } from "../utils/logger";
 import type { AgeGroup } from "../types";
 
@@ -9,12 +9,40 @@ export class AgeGroupService {
     this.prisma = prisma;
   }
 
+    /**
+   * Get all age groups
+   */
+  async getAgeGroupsForAdmin(): Promise<AgeGroup[]> {
+    try {
+      const ageGroups = await this.prisma.ageGroup.findMany({
+        include: {
+          roadmaps: {
+            include: {
+              worlds: true,
+              theme: true
+            },
+          },
+        },
+      });
+
+      logger.info("Age groups retrieved successfully", {
+        count: ageGroups.length,
+      });
+
+      return ageGroups as AgeGroup[];
+    } catch (error) {
+      logger.error("Error fetching age groups", { error: String(error) });
+      throw error;
+    }
+  }
+
   /**
    * Get all age groups
    */
   async getAgeGroups(): Promise<AgeGroup[]> {
     try {
       const ageGroups = await this.prisma.ageGroup.findMany({
+        where: { status: AgeGroupStatus.ACTIVE },
         include: {
           roadmaps: {
             include: {
@@ -97,6 +125,7 @@ export class AgeGroupService {
     name: string;
     minAge: number;
     maxAge: number;
+    status: AgeGroupStatus;
   }): Promise<AgeGroup> {
     try {
       logger.info("Creating age group", { name: data.name });
@@ -132,6 +161,7 @@ export class AgeGroupService {
       name: string;
       minAge: number;
       maxAge: number;
+      status: AgeGroupStatus;
     }>
   ): Promise<AgeGroup> {
     try {

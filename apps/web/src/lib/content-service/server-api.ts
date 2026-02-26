@@ -9,13 +9,16 @@ import { auth } from "@/src/auth";
 import type {
   ApiResponse,
   Story,
+  Chapter,
+  Challenge,
+  Answer,
   Roadmap,
   World,
   AgeGroup,
-  Challenge,
   Theme,
   Level,
   Badge,
+  CreateStoryWithChaptersInput,
 } from "@shared/types";
 
 /**
@@ -383,6 +386,22 @@ export async function getAgeGroups() {
 
   if (!response.success) {
     console.warn("[Content Server API] Failed to fetch age groups: API returned success=false");
+    return [];
+  }
+
+  return response.data || [];
+}
+
+export async function getAgeGroupsForAdmin() {
+  const response = await apiRequest<ApiResponse<AgeGroup[]>>("/api/age-groups/admin/all");
+
+  if (isApiError(response)) {
+    console.warn("[Content Server API] Failed to fetch age groups for admin:", response.error.message);
+    return [];
+  }
+
+  if (!response.success) {
+    console.warn("[Content Server API] Failed to fetch age groups for admin: API returned success=false");
     return [];
   }
 
@@ -913,6 +932,326 @@ export async function deleteWorld(id: string) {
   if (!response.success) {
     console.error("[Content Server API] Failed to delete world: API returned success=false");
     return { success: false as const, error: response.error?.message || "Failed to delete world" };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+// Story CRUD
+export async function createStory(data: Omit<Story, "id" | "createdAt" | "updatedAt" | "world" | "chapters">) {
+  const response = await apiRequest<ApiResponse<Story>>(
+    "/api/stories",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (isApiError(response)) {
+    console.error("[Content Server API] Failed to create story:", response.error.message);
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error("[Content Server API] Failed to create story: API returned success=false");
+    return { success: false as const, error: response.error?.message || "Failed to create story" };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+export async function updateStory(
+  id: string,
+  data: Partial<Omit<Story, "id" | "createdAt" | "updatedAt" | "world" | "chapters">>
+) {
+  const response = await apiRequest<ApiResponse<Story>>(
+    `/api/stories/${id}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (isApiError(response)) {
+    console.error("[Content Server API] Failed to update story:", response.error.message);
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error("[Content Server API] Failed to update story: API returned success=false");
+    return { success: false as const, error: response.error?.message || "Failed to update story" };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+export async function deleteStory(id: string) {
+  const response = await apiRequest<ApiResponse<{ id: string }>>(
+    `/api/stories/${id}`,
+    { method: "DELETE" }
+  );
+
+  if (isApiError(response)) {
+    console.error("[Content Server API] Failed to delete story:", response.error.message);
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error("[Content Server API] Failed to delete story: API returned success=false");
+    return { success: false as const, error: response.error?.message || "Failed to delete story" };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+/**
+ * Create a story with chapters, challenges, and answers atomically
+ * All nested data is created in a single transaction or rolled back entirely on error
+ */
+export async function createStoryWithChapters(data: CreateStoryWithChaptersInput) {
+  const response = await apiRequest<ApiResponse<Story>>(
+    "/api/stories/batch/create",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (isApiError(response)) {
+    console.error("[Content Server API] Failed to create story with chapters:", response.error.message);
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error("[Content Server API] Failed to create story with chapters: API returned success=false");
+    return { success: false as const, error: response.error?.message || "Failed to create story with chapters" };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+/**
+ * Edit a story with chapters, challenges, and answers atomically
+ * Updates story and all nested data in a single transaction or rolled back entirely on error
+ */
+export async function editStoryWithChapters(storyId: string, data: CreateStoryWithChaptersInput) {
+  const response = await apiRequest<ApiResponse<Story>>(
+    `/api/stories/${storyId}/batch/edit`,
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (isApiError(response)) {
+    console.error("[Content Server API] Failed to edit story with chapters:", response.error.message);
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error("[Content Server API] Failed to edit story with chapters: API returned success=false");
+    return { success: false as const, error: response.error?.message || "Failed to edit story with chapters" };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+// Chapter CRUD
+export async function createChapter(data: Omit<Chapter, "id" | "createdAt" | "updatedAt" | "story">) {
+  const response = await apiRequest<ApiResponse<Chapter>>(
+    "/api/chapters",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (isApiError(response)) {
+    console.error("[Content Server API] Failed to create chapter:", response.error.message);
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error("[Content Server API] Failed to create chapter: API returned success=false");
+    return { success: false as const, error: response.error?.message || "Failed to create chapter" };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+export async function updateChapter(
+  id: string,
+  data: Partial<Omit<Chapter, "id" | "createdAt" | "updatedAt" | "story">>
+) {
+  const response = await apiRequest<ApiResponse<Chapter>>(
+    `/api/chapters/${id}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (isApiError(response)) {
+    console.error("[Content Server API] Failed to update chapter:", response.error.message);
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error("[Content Server API] Failed to update chapter: API returned success=false");
+    return { success: false as const, error: response.error?.message || "Failed to update chapter" };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+export async function deleteChapter(id: string) {
+  const response = await apiRequest<ApiResponse<{ id: string }>>(
+    `/api/chapters/${id}`,
+    { method: "DELETE" }
+  );
+
+  if (isApiError(response)) {
+    console.error("[Content Server API] Failed to delete chapter:", response.error.message);
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error("[Content Server API] Failed to delete chapter: API returned success=false");
+    return { success: false as const, error: response.error?.message || "Failed to delete chapter" };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+// Challenge CRUD
+export async function createChallenge(data: Omit<Challenge, "id" | "createdAt" | "updatedAt" | "chapter" | "answers">) {
+  const response = await apiRequest<ApiResponse<Challenge>>(
+    "/api/challenges",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (isApiError(response)) {
+    console.error("[Content Server API] Failed to create challenge:", response.error.message);
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error("[Content Server API] Failed to create challenge: API returned success=false");
+    return { success: false as const, error: response.error?.message || "Failed to create challenge" };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+export async function updateChallenge(
+  id: string,
+  data: Partial<Omit<Challenge, "id" | "createdAt" | "updatedAt" | "chapter" | "answers">>
+) {
+  const response = await apiRequest<ApiResponse<Challenge>>(
+    `/api/challenges/${id}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (isApiError(response)) {
+    console.error("[Content Server API] Failed to update challenge:", response.error.message);
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error("[Content Server API] Failed to update challenge: API returned success=false");
+    return { success: false as const, error: response.error?.message || "Failed to update challenge" };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+export async function deleteChallenge(id: string) {
+  const response = await apiRequest<ApiResponse<{ id: string }>>(
+    `/api/challenges/${id}`,
+    { method: "DELETE" }
+  );
+
+  if (isApiError(response)) {
+    console.error("[Content Server API] Failed to delete challenge:", response.error.message);
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error("[Content Server API] Failed to delete challenge: API returned success=false");
+    return { success: false as const, error: response.error?.message || "Failed to delete challenge" };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+// Answer CRUD
+export async function createAnswer(data: Omit<Answer, "id" | "createdAt" | "updatedAt">) {
+  const response = await apiRequest<ApiResponse<Answer>>(
+    "/api/answers",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (isApiError(response)) {
+    console.error("[Content Server API] Failed to create answer:", response.error.message);
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error("[Content Server API] Failed to create answer: API returned success=false");
+    return { success: false as const, error: response.error?.message || "Failed to create answer" };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+export async function updateAnswer(
+  id: string,
+  data: Partial<Omit<Answer, "id" | "createdAt" | "updatedAt">>
+) {
+  const response = await apiRequest<ApiResponse<Answer>>(
+    `/api/answers/${id}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (isApiError(response)) {
+    console.error("[Content Server API] Failed to update answer:", response.error.message);
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error("[Content Server API] Failed to update answer: API returned success=false");
+    return { success: false as const, error: response.error?.message || "Failed to update answer" };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+export async function deleteAnswer(id: string) {
+  const response = await apiRequest<ApiResponse<{ id: string }>>(
+    `/api/answers/${id}`,
+    { method: "DELETE" }
+  );
+
+  if (isApiError(response)) {
+    console.error("[Content Server API] Failed to delete answer:", response.error.message);
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error("[Content Server API] Failed to delete answer: API returned success=false");
+    return { success: false as const, error: response.error?.message || "Failed to delete answer" };
   }
 
   return { success: true as const, data: response.data };
