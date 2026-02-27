@@ -2,10 +2,10 @@
   "name": "readly-ai-service",
   "version": "1.0.0",
   "description": "AI Service - validation and hint generation (mock)",
-  "main": "dist/index.js",
+  "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "node dist/server.js",
     "dev": "ts-node src/server.ts",
     "dev:watch": "ts-node-dev --respawn src/server.ts"
   },

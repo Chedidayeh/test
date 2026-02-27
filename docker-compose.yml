@@ -11,6 +11,8 @@ services:
     container_name: gateway
     ports:
       - "3001:3001"
+    env_file:
+      - .env
     environment:
       - PORT=3001
       - NODE_ENV=development
@@ -18,15 +20,22 @@ services:
       - AUTH_SERVICE_URL=http://auth-service:3002
       - CONTENT_SERVICE_URL=http://content-service:3003
       - PROGRESS_SERVICE_URL=http://progress-service:3004
-      - AI_SERVICE_URL=http://ai-service:3005
-      - JWT_SECRET=supersecretkey
       - JWT_EXPIRATION=604800
     depends_on:
-      - auth-service
-      - content-service
-      - progress-service
+      auth-service:
+        condition: service_started
+      content-service:
+        condition: service_started
+      progress-service:
+        condition: service_started
     networks:
       - story-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   # -------------------------
   # AUTH SERVICE
@@ -38,31 +47,21 @@ services:
     container_name: auth-service
     ports:
       - "3002:3002"
+    env_file:
+      - .env
     environment:
       - PORT=3002
       - NODE_ENV=development
-      - DATABASE_URL=postgresql://auth_user:auth_pass@auth-db:5432/auth_db
-      - JWT_SECRET=supersecretkey
+      - DATABASE_URL=postgresql://neondb_owner:npg_nfUFjW4pRE9a@ep-misty-bar-agnfqnlj-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require&schema=auth-schema
       - JWT_EXPIRATION=604800
-    depends_on:
-      - auth-db
     networks:
       - story-network
-
-  auth-db:
-    image: postgres:15
-    container_name: auth-db
-    restart: always
-    environment:
-      POSTGRES_DB: auth_db
-      POSTGRES_USER: auth_user
-      POSTGRES_PASSWORD: auth_pass
-    volumes:
-      - auth_data:/var/lib/postgresql/data
-    ports:
-      - "5435:5432"
-    networks:
-      - story-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3002/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   # -------------------------
   # CONTENT SERVICE
@@ -76,26 +75,16 @@ services:
       - "3003:3003"
     environment:
       - PORT=3003
-      - DATABASE_URL=postgresql://content_user:content_pass@content-db:5432/content_db
-    depends_on:
-      - content-db
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://neondb_owner:npg_nfUFjW4pRE9a@ep-misty-bar-agnfqnlj-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require&schema=content-schema
     networks:
       - story-network
-
-  content-db:
-    image: postgres:15
-    container_name: content-db
-    restart: always
-    environment:
-      POSTGRES_DB: content_db
-      POSTGRES_USER: content_user
-      POSTGRES_PASSWORD: content_pass
-    volumes:
-      - content_data:/var/lib/postgresql/data
-    ports:
-      - "5433:5432"
-    networks:
-      - story-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3003/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   # -------------------------
   # PROGRESS SERVICE
@@ -109,26 +98,16 @@ services:
       - "3004:3004"
     environment:
       - PORT=3004
-      - DATABASE_URL=postgresql://progress_user:progress_pass@progress-db:5432/progress_db
-    depends_on:
-      - progress-db
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://neondb_owner:npg_nfUFjW4pRE9a@ep-misty-bar-agnfqnlj-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require&schema=progress-schema
     networks:
       - story-network
-
-  progress-db:
-    image: postgres:15
-    container_name: progress-db
-    restart: always
-    environment:
-      POSTGRES_DB: progress_db
-      POSTGRES_USER: progress_user
-      POSTGRES_PASSWORD: progress_pass
-    volumes:
-      - progress_data:/var/lib/postgresql/data
-    ports:
-      - "5434:5432"
-    networks:
-      - story-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3004/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 # -------------------------
 # NETWORK
@@ -136,11 +115,3 @@ services:
 networks:
   story-network:
     driver: bridge
-
-# -------------------------
-# VOLUMES
-# -------------------------
-volumes:
-  auth_data:
-  content_data:
-  progress_data:

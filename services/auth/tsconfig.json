@@ -8,7 +8,7 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
-      "@shared/*": ["../../packages/shared/*"]
+      "@shared/*": ["./packages/shared/*"]
     },
     "strict": true,
     "esModuleInterop": true,
@@ -19,7 +19,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "strictNullChecks": true,
-    "strictFunctionTypes": true,
+    "strictFunctionTypes": true
   },
   "include": [
     "src/**/*"

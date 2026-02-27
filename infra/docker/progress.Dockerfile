@@ -1,5 +1,7 @@
 # Progress Service Dockerfile
-FROM node:18-alpine
+FROM node:18-slim
+
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -7,6 +9,13 @@ WORKDIR /app
 COPY services/progress/package.json services/progress/package-lock.json ./
 
 RUN npm install
+
+# Copy shared packages for path alias resolution
+COPY packages/shared ./packages/shared
+
+# Copy Prisma schema
+COPY services/progress/prisma ./prisma
+RUN npx prisma generate
 
 # Copy source code
 COPY services/progress/src ./src
