@@ -19,6 +19,7 @@ import type {
   Level,
   Badge,
   CreateStoryWithChaptersInput,
+  AgeGroupContentValidationResult,
 } from "@shared/types";
 
 /**
@@ -731,6 +732,29 @@ export async function deleteAgeGroup(id: string) {
   if (!response.success) {
     console.error("[Content Server API] Failed to delete age group: API returned success=false");
     return { success: false as const, error: response.error?.message || "Failed to delete age group" };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+/**
+ * Validate age group content completeness before activation
+ * Returns details about missing content if validation fails
+ */
+export async function validateAgeGroupReadiness(ageGroupId: string) {
+  const response = await apiRequest<ApiResponse<AgeGroupContentValidationResult>>(
+    `/api/age-groups/${ageGroupId}/validate-readiness`,
+    { method: "GET" }
+  );
+
+  if (isApiError(response)) {
+    console.error("[Content Server API] Failed to validate age group readiness:", response.error.message);
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error("[Content Server API] Failed to validate age group readiness: API returned success=false");
+    return { success: false as const, error: response.error?.message || "Failed to validate age group" };
   }
 
   return { success: true as const, data: response.data };

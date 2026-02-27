@@ -370,7 +370,7 @@ export interface ChildBadge {
 
 
 // ============================================================================
-// 
+// Create/Update Input Types
 // ============================================================================
 
 /**
@@ -417,6 +417,36 @@ export interface CreateStoryWithChaptersInput {
   difficulty: number;
   order: number;
   chapters: CreateChapterInput[];
+}
+
+
+// =============================================================================
+// Age Group Content Validation Types
+// =============================================================================
+/**
+ * Represents missing content for a specific roadmap
+ */
+export interface MissingContent {
+  roadmapId: string;
+  themeName?: string;
+  readings: {
+    worldsCount: number;
+    storiesCount: number;
+    chaptersCount: number;
+  };
+  missingItems: string[];
+}
+
+/**
+ * Represents the result of age group content validation
+ */
+export interface AgeGroupContentValidationResult {
+  isComplete: boolean;
+  ageGroupId: string;
+  roadmapsCount: number;
+  completeRoadmapsCount: number;
+  missingContent: MissingContent[];
+  errors: string[];
 }
 
 
@@ -501,18 +531,9 @@ export interface TokenVerificationResponse {
 // ============================================================================
 
 /**
- * Generic type for ID-based entity lookups
- */
-export type EntityById<T> = Record<string, T>;
-
-/**
  * Type for service response with optional error details
  */
 export type ServiceResponse<T> =
   | { success: true; data: T }
   | { success: false; error: string; code?: string };
 
-/**
- * Partial type for update operations
- */
-export type PartialEntity<T> = Partial<T>;

@@ -2,6 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useState, useEffect } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
@@ -14,7 +15,9 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { ageGroupSchema, AgeGroupFormData } from "../schemas/roadmapSchemas";
-import { AgeGroup, AgeGroupStatus } from "@shared/types";
+import { AgeGroup, AgeGroupContentValidationResult, AgeGroupStatus } from "@shared/types";
+import { validateAgeGroupReadinessAction } from "@/src/lib/content-service/server-actions";
+import { AgeGroupReadinessChecker } from "./AgeGroupReadinessChecker";
 
 interface AgeGroupFormProps {
   ageGroup?: AgeGroup;
@@ -29,6 +32,13 @@ export function AgeGroupForm({
   isLoading = false,
   onCancel,
 }: AgeGroupFormProps) {
+  const [selectedStatus, setSelectedStatus] = useState<string>(
+    ageGroup?.status || AgeGroupStatus.INACTIVE
+  );
+  const [validationResult, setValidationResult] = useState<AgeGroupContentValidationResult | undefined>(undefined);
+  const [isValidating, setIsValidating] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
   const {
     register,
     handleSubmit,
@@ -50,6 +60,49 @@ export function AgeGroupForm({
           status: AgeGroupStatus.INACTIVE,
         },
   });
+
+  // When status changes to ACTIVE, validate content completeness
+  useEffect(() => {
+    const validateIfNeeded = async () => {
+      if (
+        selectedStatus === AgeGroupStatus.ACTIVE &&
+        ageGroup?.id
+      ) {
+        setIsValidating(true);
+        setValidationError(null);
+        const result = await validateAgeGroupReadinessAction(ageGroup.id);
+
+        if (!result.success) {
+          setValidationError(result.error);
+          setValidationResult(undefined);
+        } else {
+          setValidationResult(result.data);
+          setValidationError(null);
+        }
+        setIsValidating(false);
+      } else {
+        setValidationResult(undefined);
+        setValidationError(null);
+      }
+    };
+
+    validateIfNeeded();
+  }, [selectedStatus, ageGroup?.id]);
+
+  const handleStatusChange = (value: string) => {
+    setSelectedStatus(value);
+    setValue("status", value as AgeGroupStatus);
+  };
+
+  const isReadyToActivate =
+    selectedStatus === AgeGroupStatus.ACTIVE &&
+    validationResult &&
+    validationResult.isComplete;
+
+  const shouldBlockSubmit =
+    isLoading ||
+    (selectedStatus === AgeGroupStatus.ACTIVE &&
+      (!validationResult || !validationResult.isComplete || isValidating));
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -107,18 +160,34 @@ export function AgeGroupForm({
 
           <div>
             <Label htmlFor="status">Status</Label>
-            <Select
-              onValueChange={(value) => setValue("status", value as AgeGroupStatus)}
-              defaultValue={ageGroup?.status}
+            <Select 
+              value={selectedStatus} 
+              onValueChange={handleStatusChange}
+              disabled={!ageGroup} // Disable status change during creation
             >
-              <SelectTrigger id="status" className="mt-1">
+              <SelectTrigger 
+                id="status" 
+                className="mt-1"
+                disabled={!ageGroup}
+              >
                 <SelectValue placeholder="Select a status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={AgeGroupStatus.ACTIVE}>Active</SelectItem>
-                <SelectItem value={AgeGroupStatus.INACTIVE}>Inactive</SelectItem>
+                {ageGroup ? (
+                  <>
+                    <SelectItem value={AgeGroupStatus.ACTIVE}>Active</SelectItem>
+                    <SelectItem value={AgeGroupStatus.INACTIVE}>Inactive</SelectItem>
+                  </>
+                ) : (
+                  <SelectItem value={AgeGroupStatus.INACTIVE}>Inactive (Default)</SelectItem>
+                )}
               </SelectContent>
             </Select>
+            {!ageGroup && (
+              <p className="text-xs text-slate-500 mt-1">
+                New age groups are created as inactive. Update after creation to activate.
+              </p>
+            )}
             {errors.status && (
               <span className="text-xs text-red-600 mt-1">
                 {errors.status.message}
@@ -128,6 +197,16 @@ export function AgeGroupForm({
         </div>
       </Card>
 
+      {/* Content Readiness Checker */}
+      {selectedStatus === AgeGroupStatus.ACTIVE && ageGroup?.id && (
+        <AgeGroupReadinessChecker
+          validationResult={validationResult}
+          isLoading={isValidating}
+          error={validationError}
+        />
+      )}
+
+
       {/* Actions */}
       <div className="flex gap-3 justify-end">
         {onCancel && (
@@ -135,7 +214,7 @@ export function AgeGroupForm({
             Cancel
           </Button>
         )}
-        <Button type="submit" disabled={isLoading}>
+        <Button type="submit" disabled={shouldBlockSubmit}>
           {isLoading
             ? "Saving..."
             : ageGroup

@@ -98,10 +98,19 @@ export function RoadmapsContent({
     try {
       const result = await updateAgeGroupAction(id, data);
       if (!result.success) {
-        toast.error(result.error);
+        // Show detailed error message for incomplete content validation
+        const errorMessage =
+          result.error.includes("INCOMPLETE_CONTENT") ||
+          result.error.includes("incomplete content") ||
+          result.error.includes("Cannot activate")
+            ? `${result.error}. Please add worlds, stories, and chapters to all roadmaps before activating.`
+            : result.error;
+
+        toast.error(errorMessage);
         return false;
       }
       setAgeGroups(ageGroups.map((ag) => (ag.id === id ? result.data : ag)));
+      toast.success("Age group updated successfully");
       return true;
     } catch (error) {
       toast.error("Failed to update age group");
@@ -416,7 +425,7 @@ export function RoadmapsContent({
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex-1">
                               <p className="font-medium">
-                                {theme?.name || "Unknown"}
+                               Roadmap: {theme?.name || "Unknown"}
                               </p>
                               <p className="text-xs text-slate-500 mt-1">
                                 {roadmapWorlds.length} world
@@ -455,6 +464,7 @@ export function RoadmapsContent({
                                 >
                                   <span className="w-1.5 h-1.5 rounded-full bg-primary/60"></span>
                                   <span className="flex-1">{world.name}</span>
+                                  <span className="text-xs text-slate-400">{world.stories?.length || 0} stories</span>
                                 </div>
                               ))}
                             </div>

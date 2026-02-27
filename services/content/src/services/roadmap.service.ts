@@ -112,9 +112,9 @@ export class RoadmapService {
   /**
    * Get roadmap by theme ID (for uniqueness validation)
    */
-  async getRoadmapByThemeId(themeId: string): Promise<Roadmap | null> {
+  async getRoadmapByThemeId(themeId: string): Promise<Roadmap[]> {
     try {
-      const roadmap = await this.prisma.roadmap.findUnique({
+      const roadmap = await this.prisma.roadmap.findMany({
         where: { themeId },
         include: {
           theme: true,
@@ -122,7 +122,7 @@ export class RoadmapService {
         },
       });
 
-      return roadmap as Roadmap | null;
+      return roadmap as Roadmap[];
     } catch (error) {
       logger.error("Error fetching roadmap by theme ID", {
         themeId,

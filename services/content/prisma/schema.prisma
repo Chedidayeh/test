@@ -38,7 +38,7 @@ model Theme {
   name String @unique // e.g., "Adventure", "Mystery", "Fantasy"
   description String
   imageUrl String?
-  roadmap Roadmap?
+  roadmaps Roadmap[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -57,7 +57,7 @@ model Roadmap {
   ageGroupId String
   ageGroup   AgeGroup @relation(fields: [ageGroupId], references: [id], onDelete: Cascade)
 
-  themeId    String @unique
+  themeId    String   
   theme      Theme    @relation(fields: [themeId], references: [id])
 
   readingLevel ReadingLevel @default(BEGINNER)

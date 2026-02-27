@@ -12,6 +12,7 @@ import {
   ServiceResponse,
   CreateStoryWithChaptersInput,
   ApiResponse,
+  AgeGroupContentValidationResult,
 } from "@shared/types";
 import {
   getStories,
@@ -19,6 +20,7 @@ import {
   createAgeGroup,
   updateAgeGroup,
   deleteAgeGroup,
+  validateAgeGroupReadiness,
   createTheme,
   updateTheme,
   deleteTheme,
@@ -170,6 +172,37 @@ export async function deleteAgeGroupAction(
       success: false,
       error:
         error instanceof Error ? error.message : "Failed to delete age group",
+    };
+  }
+}
+
+/**
+ * Server Action to validate age group content completeness
+ * Checks if all roadmaps have worlds, stories, and chapters
+ */
+export async function validateAgeGroupReadinessAction(
+  ageGroupId: string,
+): Promise<ServiceResponse<AgeGroupContentValidationResult | undefined>> {
+  try {
+    const result = await validateAgeGroupReadiness(ageGroupId);
+
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.error,
+      };
+    }
+
+    return {
+      success: true,
+      data: result.data,
+    };
+  } catch (error) {
+    console.error("Server action error validating age group readiness:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to validate age group readiness",
     };
   }
 }

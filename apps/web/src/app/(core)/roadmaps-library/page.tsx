@@ -10,5 +10,6 @@ export const metadata: Metadata = {
 export default async function page() {
   const ageGroups = await getAgeGroups();
   const roadmaps = ageGroups.map((ageGroup) => ageGroup.roadmaps).flat();
+  console.log('Fetched roadmaps:', roadmaps[0].ageGroup.name);
   return <RoadmapsLibrary roadmaps={roadmaps} />;
 }

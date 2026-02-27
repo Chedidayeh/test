@@ -16,7 +16,7 @@ export class ThemeService {
     try {
       const themes = await this.prisma.theme.findMany({
         include: {
-          roadmap: true,
+          roadmaps: true,
         },
       });
 
@@ -39,7 +39,7 @@ export class ThemeService {
       const theme = await this.prisma.theme.findUnique({
         where: { id: themeId },
         include: {
-          roadmap: true,
+          roadmaps: true,
         },
       });
 
@@ -64,7 +64,7 @@ export class ThemeService {
       const theme = await this.prisma.theme.findUnique({
         where: { name },
         include: {
-          roadmap: true,
+          roadmaps: true,
         },
       });
 
@@ -92,7 +92,7 @@ export class ThemeService {
       const theme = await this.prisma.theme.create({
         data,
         include: {
-          roadmap: true,
+          roadmaps: true,
         },
       });
 
@@ -129,7 +129,7 @@ export class ThemeService {
         where: { id: themeId },
         data,
         include: {
-          roadmap: true,
+          roadmaps: true,
         },
       });
 

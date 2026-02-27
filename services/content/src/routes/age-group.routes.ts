@@ -12,6 +12,9 @@ router.get("/admin/all", (req, res) => ageGroupController.getAgeGroupsForAdmin(r
 // POST - create new age group
 router.post("/", (req, res) => ageGroupController.createAgeGroup(req, res));
 
+// GET validate readiness for age group (before the /:id route to avoid conflicts)
+router.get("/:id/validate-readiness", (req, res) => ageGroupController.validateAgeGroupReadiness(req, res));
+
 // PUT - update age group by ID
 router.put("/:id", (req, res) => ageGroupController.updateAgeGroup(req, res));
 

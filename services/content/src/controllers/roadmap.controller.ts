@@ -145,18 +145,6 @@ export class RoadmapController {
         return;
       }
 
-      // Check if theme is already assigned to another roadmap
-      const existingRoadmapWithTheme = await roadmapService.getRoadmapByThemeId(themeId);
-      if (existingRoadmapWithTheme) {
-        sendError(
-          res,
-          `Theme '${theme.name}' is already assigned to another roadmap`,
-          409,
-          "THEME_ALREADY_ASSIGNED"
-        );
-        return;
-      }
-
       const roadmap = await roadmapService.createRoadmap({
         ageGroupId,
         themeId,

@@ -64,7 +64,6 @@ async function createChallenge(input: CreateChallengeInput) {
       question: input.question,
       description: input.description,
       baseStars: input.baseStars,
-      maxAttempts: input.maxAttempts,
       hints: input.hints || [],
       order: input.order,
       answers: {
@@ -89,7 +88,6 @@ async function createStory(
       worldId,
       title,
       difficulty,
-      isMandatory: true,
       order,
     },
   });
@@ -462,8 +460,6 @@ async function main() {
         name: "Forest Quest",
         description: "Begin your adventure in an enchanted forest",
         order: 1,
-        locked: false,
-        requiredStarCount: 0,
       },
     });
 
@@ -592,8 +588,6 @@ async function main() {
         name: "Desert Journey",
         description: "Continue your adventure in a vast desert",
         order: 2,
-        locked: true,
-        requiredStarCount: 250,
       },
     });
 
@@ -722,8 +716,6 @@ async function main() {
         name: "The Missing Toy",
         description: "Help solve the mystery of the missing toy",
         order: 1,
-        locked: false,
-        requiredStarCount: 0,
       },
     });
 
@@ -843,8 +835,6 @@ async function main() {
         name: "Secret of the Old House",
         description: "Uncover the secrets hidden in the old house",
         order: 2,
-        locked: true,
-        requiredStarCount: 250,
       },
     });
 

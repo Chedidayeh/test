@@ -24,7 +24,7 @@ interface RoadmapFormProps {
   roadmap?: Roadmap & { ageGroup?: AgeGroup; theme?: Theme };
   ageGroups: AgeGroup[];
   themes: Theme[];
-  allRoadmaps?: Roadmap[]; // For validation of unique theme assignment
+  allRoadmaps?: Roadmap[];
   onSubmit: (data: RoadmapFormData) => void;
   isLoading?: boolean;
 }
@@ -38,6 +38,12 @@ export function RoadmapForm({
   isLoading = false,
 }: RoadmapFormProps) {
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  // Deduplicate themes by ID
+  const uniqueThemes = useMemo(
+    () => Array.from(new Map(themes.map((theme) => [theme.id, theme])).values()),
+    [themes]
+  );
 
   const {
     handleSubmit,
@@ -62,28 +68,6 @@ export function RoadmapForm({
   // Watch selected values for validation
   const selectedThemeId = watch("themeId");
 
-  // Validate theme is not already assigned to another roadmap
-  const isThemeAlreadyAssigned = useMemo(() => {
-    if (!selectedThemeId) return false;
-    return allRoadmaps.some(
-      (r) =>
-        r.themeId === selectedThemeId &&
-        r.id !== roadmap?.id // Allow current roadmap to keep its theme
-    );
-  }, [selectedThemeId, allRoadmaps, roadmap?.id]);
-
-  // Get themes that are not assigned to other roadmaps
-  const availableThemes = useMemo(() => {
-    return themes.filter(
-      (t) =>
-        !allRoadmaps.some(
-          (r) =>
-            r.themeId === t.id &&
-            r.id !== roadmap?.id // Allow current roadmap to keep its theme
-        )
-    );
-  }, [themes, allRoadmaps, roadmap?.id]);
-
   // Custom validation on submit
   const handleFormSubmit = (data: RoadmapFormData) => {
     const newErrors: string[] = [];
@@ -96,18 +80,6 @@ export function RoadmapForm({
     // Validate theme selection
     if (!data.themeId) {
       newErrors.push("Theme is required");
-    }
-
-    // Validate theme is not already assigned
-    if (
-      data.themeId &&
-      allRoadmaps.some(
-        (r) =>
-          r.themeId === data.themeId &&
-          r.id !== roadmap?.id
-      )
-    ) {
-      newErrors.push("This theme is already assigned to another roadmap");
     }
 
     if (newErrors.length > 0) {
@@ -145,7 +117,7 @@ export function RoadmapForm({
       {/* Roadmap Configuration */}
       <Card className="p-6">
         <h3 className="font-medium mb-4">Roadmap Configuration</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           <div>
             <Label htmlFor="ageGroupId">Age Group *</Label>
             <Controller
@@ -186,20 +158,16 @@ export function RoadmapForm({
               name="themeId"
               render={({ field }) => (
                 <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger
-                    className={`mt-1 ${
-                      isThemeAlreadyAssigned ? "border-red-500" : ""
-                    }`}
-                  >
+                  <SelectTrigger className="mt-1">
                     <SelectValue placeholder="Select theme" />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableThemes.length === 0 ? (
+                    {themes.length === 0 ? (
                       <div className="p-2 text-sm text-slate-500">
-                        No available themes (all are assigned to other roadmaps)
+                        No themes available
                       </div>
                     ) : (
-                      availableThemes.map((theme) => (
+                      uniqueThemes.map((theme) => (
                         <SelectItem key={theme.id} value={theme.id}>
                           {theme.name}
                         </SelectItem>
@@ -209,11 +177,6 @@ export function RoadmapForm({
                 </Select>
               )}
             />
-            {isThemeAlreadyAssigned && (
-              <span className="text-xs text-red-600 mt-1">
-                This theme is already assigned to another roadmap
-              </span>
-            )}
             {errors.themeId && (
               <span className="text-xs text-red-600 mt-1">
                 {errors.themeId.message}
@@ -249,22 +212,11 @@ export function RoadmapForm({
           </div>
         </div>
 
-        {/* Theme Assignment Info */}
-        {selectedThemeId && !isThemeAlreadyAssigned && (
-          <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
-            <p className="text-sm text-green-800">
-              ✓ Theme "{themes.find((t) => t.id === selectedThemeId)?.name}" is available for assignment
-            </p>
-          </div>
-        )}
       </Card>
 
       {/* Actions */}
       <div className="flex gap-3 justify-end">
-        <Button type="button" variant="outline" disabled={isLoading}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isLoading || isThemeAlreadyAssigned}>
+        <Button type="submit" disabled={isLoading}>
           {isLoading
             ? "Saving..."
             : roadmap

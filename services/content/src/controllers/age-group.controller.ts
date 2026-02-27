@@ -3,6 +3,7 @@ import { AgeGroupService } from "../services/age-group.service";
 import { sendSuccess, sendError } from "../utils/response";
 import { logger } from "../utils/logger";
 import { PrismaClient, AgeGroupStatus } from "@prisma/client";
+import { validateAgeGroupContentCompleteness } from "../utils/validation";
 
 const prisma = new PrismaClient();
 const ageGroupService = new AgeGroupService(prisma);
@@ -255,6 +256,49 @@ export class AgeGroupController {
           return;
         }
         updateData.status = status;
+
+        // Validate content completeness if activating the age group
+        if (status === AgeGroupStatus.ACTIVE) {
+          try {
+            const validationResult = await validateAgeGroupContentCompleteness(
+              id,
+              prisma
+            );
+
+            if (!validationResult.isComplete) {
+              const errorMessage =
+                validationResult.errors.length > 0
+                  ? validationResult.errors[0]
+                  : "Cannot activate age group with incomplete content";
+
+              res.status(422).json({
+                success: false,
+                error: {
+                  message: errorMessage,
+                  code: "INCOMPLETE_CONTENT",
+                  details: {
+                    roadmapsCount: validationResult.roadmapsCount,
+                    completeRoadmapsCount: validationResult.completeRoadmapsCount,
+                    missingContent: validationResult.missingContent,
+                  },
+                },
+              });
+              return;
+            }
+          } catch (validationError) {
+            logger.error("Content validation error during age group update", {
+              ageGroupId: id,
+              error: String(validationError),
+            });
+            sendError(
+              res,
+              "Failed to validate age group content",
+              500,
+              "VALIDATION_ERROR"
+            );
+            return;
+          }
+        }
       }
 
       // Validate age range if both are present
@@ -328,6 +372,43 @@ export class AgeGroupController {
       sendError(res, String(error), 500, "Failed to delete age group");
     }
   }
-}
 
+  /**
+   * Validate age group content completeness
+   * GET /api/age-groups/:id/validate-readiness
+   */
+  async validateAgeGroupReadiness(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+
+      logger.info("Validate age group readiness request", { ageGroupId: id });
+
+      if (!id) {
+        sendError(res, "Age group ID is required", 400);
+        return;
+      }
+
+      // Check if age group exists
+      const ageGroup = await ageGroupService.getAgeGroupById(id);
+      if (!ageGroup) {
+        sendError(
+          res,
+          "Age group not found",
+          404,
+          `Age group with ID ${id} not found`,
+        );
+        return;
+      }
+
+      const validationResult = await validateAgeGroupContentCompleteness(id, prisma);
+
+      sendSuccess(res, validationResult, 200);
+    } catch (error) {
+      logger.error("Error in validateAgeGroupReadiness controller", {
+        error: String(error),
+      });
+      sendError(res, String(error), 500, "Failed to validate age group readiness");
+    }
+  }
+}
 export const ageGroupController = new AgeGroupController();

@@ -51,6 +51,11 @@ export function ThemesDialog({
   const [isFormLoading, setIsFormLoading] = useState(false);
   const [view, setView] = useState<"list" | "create" | "edit">("list");
 
+  // Deduplicate themes by ID to avoid showing the same theme multiple times
+  const uniqueThemes = Array.from(
+    new Map(themes.map((theme) => [theme.id, theme])).values()
+  );
+
   const getThemeRoadmapCount = (themeId: string) => {
     return roadmaps.filter((r) => r.themeId === themeId).length;
   };
@@ -149,18 +154,14 @@ export function ThemesDialog({
                     <TableHeader>
                       <TableRow>
                         <TableHead>Name</TableHead>
-                        <TableHead>Description</TableHead>
                         <TableHead>Roadmaps</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {themes.map((theme) => (
+                      {uniqueThemes.map((theme) => (
                         <TableRow key={theme.id}>
                           <TableCell className="font-medium">{theme.name}</TableCell>
-                          <TableCell className="max-w-xs truncate">
-                            {theme.description}
-                          </TableCell>
                           <TableCell>
                             {getThemeRoadmapCount(theme.id)} roadmap(s)
                           </TableCell>

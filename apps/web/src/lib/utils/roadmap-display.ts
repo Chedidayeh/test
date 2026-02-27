@@ -21,7 +21,7 @@ export interface RoadmapDisplay {
  */
 export function transformRoadmapForDisplay(roadmap: Roadmap): RoadmapDisplay {
   const storyCount = roadmap.worlds.reduce(
-    (total, world) => total + world.stories.length,
+    (total, world) => total + (world.stories?.length ?? 0),
     0
   );
 
@@ -31,7 +31,7 @@ export function transformRoadmapForDisplay(roadmap: Roadmap): RoadmapDisplay {
     description: roadmap.theme.description || '',
     coverImage: roadmap.theme.imageUrl || '/images/placeholder-roadmap.jpg',
     readingLevel: roadmap.readingLevel,
-    ageGroup: roadmap.ageGroup.name,
+    ageGroup: roadmap.ageGroup?.name || '',
     worldCount: roadmap.worlds.length,
     storyCount,
   };
