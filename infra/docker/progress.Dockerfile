@@ -7,10 +7,9 @@ WORKDIR /app
 
 # Install production dependencies
 COPY services/progress/package.json services/progress/package-lock.json ./
-
 RUN npm install
 
-# Copy shared packages for path alias resolution
+# Copy shared packages
 COPY packages/shared ./packages/shared
 
 # Copy Prisma schema
@@ -21,7 +20,10 @@ RUN npx prisma generate
 COPY services/progress/src ./src
 COPY services/progress/tsconfig.json ./
 
-# Build TypeScript (if needed)
+# Rewrite path alias for flat Docker layout
+RUN sed -i 's|../../packages/shared|./packages/shared|g' tsconfig.json
+
+# Build TypeScript
 RUN npm run build
 
 # Expose port

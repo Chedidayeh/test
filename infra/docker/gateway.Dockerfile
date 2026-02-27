@@ -5,17 +5,19 @@ WORKDIR /app
 
 # Install production dependencies
 COPY services/gateway/package.json services/gateway/package-lock.json ./
-
 RUN npm install
 
-# Copy shared packages for path alias resolution
+# Copy shared packages
 COPY packages/shared ./packages/shared
 
 # Copy source code
 COPY services/gateway/src ./src
 COPY services/gateway/tsconfig.json ./
 
-# Build TypeScript (if needed)
+# Rewrite path alias for flat Docker layout
+RUN sed -i 's|../../packages/shared|./packages/shared|g' tsconfig.json
+
+# Build TypeScript
 RUN npm run build
 
 # Expose port
