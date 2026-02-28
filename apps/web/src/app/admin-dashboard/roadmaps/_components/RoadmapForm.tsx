@@ -10,6 +10,7 @@ import { AlertCircle } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Label } from "@/src/components/ui/label";
 import { Card } from "@/src/components/ui/card";
+import { Input } from "@/src/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -33,7 +34,6 @@ export function RoadmapForm({
   roadmap,
   ageGroups,
   themes,
-  allRoadmaps = [],
   onSubmit,
   isLoading = false,
 }: RoadmapFormProps) {
@@ -50,6 +50,7 @@ export function RoadmapForm({
     formState: { errors },
     control,
     watch,
+    register,
   } = useForm<RoadmapFormData>({
     resolver: zodResolver(roadmapFormSchema),
     defaultValues: roadmap
@@ -57,11 +58,13 @@ export function RoadmapForm({
           ageGroupId: roadmap.ageGroupId,
           themeId: roadmap.themeId,
           readingLevel: roadmap.readingLevel,
+          title: roadmap.title || "",
         }
       : {
           ageGroupId: "",
           themeId: "",
           readingLevel: ReadingLevel.BEGINNER,
+          title: "",
         },
   });
 
@@ -207,6 +210,21 @@ export function RoadmapForm({
             {errors.readingLevel && (
               <span className="text-xs text-red-600 mt-1">
                 {errors.readingLevel.message}
+              </span>
+            )}
+          </div>
+
+          <div>
+            <Label htmlFor="title">Roadmap Title (Optional)</Label>
+            <Input
+              id="title"
+              placeholder="e.g., Adventure Frontier"
+              {...register("title")}
+              className="mt-1"
+            />
+            {errors.title && (
+              <span className="text-xs text-red-600 mt-1">
+                {errors.title.message}
               </span>
             )}
           </div>

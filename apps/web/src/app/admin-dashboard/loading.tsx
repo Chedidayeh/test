@@ -1,16 +1,29 @@
-export default function Loading() {
+import { auth } from "@/src/auth";
+import { RoleType } from "@shared/types";
+import { redirect } from "next/navigation";
+
+export default async function Loading() {
+  const session = await auth();
+  if (!session) {
+    redirect("/");
+  }
+  if (session.user.role !== RoleType.ADMIN) {
+    redirect("/");
+  }
   // Or a custom loading skeleton component
-  return <>
-    <div className="fixed inset-0 z-99 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-      <div className="flex flex-col items-center gap-4">
-        <span className="inline-flex items-center gap-3">
-          <span
-            className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"
-            aria-hidden="true"
-          />
-          <span>Loading...</span>
-        </span>
+  return (
+    <>
+      <div className="fixed inset-0 z-99 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+        <div className="flex flex-col items-center gap-4">
+          <span className="inline-flex items-center gap-3">
+            <span
+              className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"
+              aria-hidden="true"
+            />
+            <span>Loading...</span>
+          </span>
+        </div>
       </div>
-    </div>
-  </>;
+    </>
+  );
 }

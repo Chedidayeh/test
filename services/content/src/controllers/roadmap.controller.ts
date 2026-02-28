@@ -83,7 +83,7 @@ export class RoadmapController {
    */
   async createRoadmap(req: Request, res: Response<ApiResponse<Roadmap>>): Promise<void> {
     try {
-      const { ageGroupId, themeId, readingLevel } = req.body;
+      const { ageGroupId, themeId, readingLevel, title } = req.body;
 
       logger.info("Create roadmap request", { ageGroupId, themeId });
 
@@ -111,6 +111,17 @@ export class RoadmapController {
           `Invalid reading level. Must be one of: ${validReadingLevels.join(", ")}`,
           400
         );
+        return;
+      }
+
+      // Validate title if provided
+      if (title && title.trim() === "") {
+        sendError(res, "Roadmap title cannot be empty", 400);
+        return;
+      }
+
+      if (title && title.length < 2) {
+        sendError(res, "Roadmap title must be at least 2 characters", 400);
         return;
       }
 
@@ -146,6 +157,7 @@ export class RoadmapController {
         ageGroupId,
         themeId,
         readingLevel: readingLevel.toUpperCase(),
+        title: title || null,
       });
 
       sendSuccess(res, roadmap, 201);
@@ -161,7 +173,7 @@ export class RoadmapController {
   async updateRoadmap(req: Request, res: Response<ApiResponse<Roadmap>>): Promise<void> {
     try {
       const { id } = req.params;
-      const { ageGroupId, readingLevel } = req.body;
+      const { ageGroupId, readingLevel, title } = req.body;
 
       logger.info("Update roadmap request", { roadmapId: id });
 
@@ -171,8 +183,8 @@ export class RoadmapController {
       }
 
       // Validate at least one field is provided
-      if (!ageGroupId && !readingLevel) {
-        sendError(res, "At least one field (ageGroupId, readingLevel) must be provided", 400);
+      if (!ageGroupId && !readingLevel && !title) {
+        sendError(res, "At least one field (ageGroupId, readingLevel, title) must be provided", 400);
         return;
       }
 
@@ -225,6 +237,16 @@ export class RoadmapController {
         }
 
         updateData.readingLevel = readingLevel.toUpperCase();
+      }
+
+      if (title !== undefined && title !== null) {
+        if (typeof title === "string" && title.trim() !== "") {
+          if (title.length < 2) {
+            sendError(res, "Roadmap title must be at least 2 characters", 400);
+            return;
+          }
+          updateData.title = title;
+        }
       }
 
       const updatedRoadmap = await roadmapService.updateRoadmap(id, updateData);

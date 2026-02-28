@@ -197,6 +197,7 @@ export function WorldsDialog({
             </div>
           ) : view === "create" ? (
             <WorldForm
+              worlds={worlds}
               roadmaps={roadmaps}
               onSubmit={handleCreate}
               isLoading={isFormLoading}
@@ -205,6 +206,7 @@ export function WorldsDialog({
           ) : (
             <WorldForm
               world={editingWorld}
+              worlds={worlds}
               roadmaps={roadmaps}
               onSubmit={handleUpdate}
               isLoading={isFormLoading}

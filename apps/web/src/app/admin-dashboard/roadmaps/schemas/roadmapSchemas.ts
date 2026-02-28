@@ -30,6 +30,7 @@ export const roadmapSchema = z.object({
   ageGroupId: z.string().min(1, "Age group required"),
   themeId: z.string().min(1, "Theme required"),
   readingLevel: z.nativeEnum(ReadingLevel),
+  title: z.string().min(2, "Roadmap title must be at least 2 characters").optional(),
 });
 
 // Form schema - simplified, no worlds array
@@ -37,6 +38,7 @@ export const roadmapFormSchema = z.object({
   ageGroupId: z.string().min(1, "Age group required"),
   themeId: z.string().min(1, "Theme required"),
   readingLevel: z.nativeEnum(ReadingLevel),
+  title: z.string().min(2, "Roadmap title must be at least 2 characters").optional(),
 });
 
 export type AgeGroupFormData = z.infer<typeof ageGroupSchema>;

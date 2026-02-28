@@ -59,22 +59,61 @@ export function StoryCreateClient({
       const result = await createStoryWithChaptersAction(batchData);
 
       if (!result.success) {
-        toast.error(result.error?.message || "Failed to create story");
+        // Enhanced error handling with polished feedback
+        const errorCode = result.error?.code;
+        const errorMessage = result.error?.message || "Failed to create story";
+
+        if (errorCode === "DUPLICATE_ORDER") {
+          // Parse the order from the error message (e.g., "Order 1 is already used in this world")
+          const orderMatch = errorMessage.match(/Order (\d+)/);
+          const duplicateOrder = orderMatch ? parseInt(orderMatch[1]) : validatedData.order;
+
+          // Get the selected world to show taken orders
+          const selectedWorld = worlds.find((w) => w.id === validatedData.worldId);
+          const takenOrders = selectedWorld?.stories
+            ?.map((s) => s.order)
+            .sort((a, b) => a - b)
+            .join(", ") || `${duplicateOrder}`;
+
+          // Show polished error toast with actionable feedback
+          toast.error(
+            `Order ${duplicateOrder} is already taken in "${selectedWorld?.name || "this world"}".`,
+            {
+              description: `Taken orders: ${takenOrders}. Please choose a different order number.`,
+              duration: 5000,
+            }
+          );
+        } else {
+          toast.error("Failed to create story", {
+            description: errorMessage,
+            duration: 4000,
+          });
+        }
         return;
       }
 
       // Show success message with metadata
-      const successMessage = `Story created successfully!`;
-      toast.success(successMessage);
+      const selectedWorld = worlds.find((w) => w.id === validatedData.worldId);
+      toast.success("Story created successfully!", {
+        description: `"${validatedData.title}" has been added to ${selectedWorld?.name || "the world"}.`,
+        duration: 4000,
+      });
       
       router.push("/admin-dashboard/stories");
     } catch (error) {
       console.error("Story creation error:", error);
       if (error instanceof Error) {
-        toast.error(error.message);
+        toast.error("Validation failed", {
+          description: error.message,
+          duration: 4000,
+        });
       } else {
-        toast.error("Failed to create story");
+        toast.error("Failed to create story", {
+          description: "An unexpected error occurred. Please try again.",
+          duration: 4000,
+        });
       }
+
     } finally {
       setIsLoading(false);
     }

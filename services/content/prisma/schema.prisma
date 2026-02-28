@@ -57,6 +57,8 @@ model Roadmap {
   ageGroupId String
   ageGroup   AgeGroup @relation(fields: [ageGroupId], references: [id], onDelete: Cascade)
 
+  title       String?
+
   themeId    String   
   theme      Theme    @relation(fields: [themeId], references: [id])
 

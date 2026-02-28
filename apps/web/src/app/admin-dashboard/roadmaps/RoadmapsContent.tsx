@@ -258,6 +258,7 @@ export function RoadmapsContent({
         ageGroupId: data.ageGroupId,
         themeId: data.themeId,
         readingLevel: data.readingLevel,
+        title: data.title,
       };
 
       const result = await createRoadmapAction(roadmapData);
@@ -291,7 +292,8 @@ export function RoadmapsContent({
         ageGroupId: data.ageGroupId,
         themeId: data.themeId,
         readingLevel: data.readingLevel,
-      };
+        title: data.title,
+      }
 
       const result = await updateRoadmapAction(editingRoadmap.id, roadmapData);
       if (!result.success) {

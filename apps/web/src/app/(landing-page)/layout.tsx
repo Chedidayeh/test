@@ -8,6 +8,7 @@ export default async function Layout({
   children: React.ReactNode;
 }>) {
   const session = await auth();
+  console.log("Session in layout:", session);
   return (
     <div className="flex flex-col min-h-screen w-full">
       <Header session={session} />

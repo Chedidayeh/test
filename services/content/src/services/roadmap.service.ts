@@ -139,6 +139,7 @@ export class RoadmapService {
     ageGroupId: string;
     themeId: string;
     readingLevel: ReadingLevel
+    title?: string;
   }): Promise<Roadmap> {
     try {
       logger.info("Creating roadmap", {
@@ -183,6 +184,7 @@ export class RoadmapService {
     data: Partial<{
       ageGroupId: string;
       readingLevel: ReadingLevel;
+      title: string;
     }>
   ): Promise<Roadmap> {
     try {

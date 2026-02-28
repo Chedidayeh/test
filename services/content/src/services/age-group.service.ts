@@ -9,7 +9,7 @@ export class AgeGroupService {
     this.prisma = prisma;
   }
 
-    /**
+  /**
    * Get all age groups
    */
   async getAgeGroupsForAdmin(): Promise<AgeGroup[]> {
@@ -23,7 +23,8 @@ export class AgeGroupService {
                   stories: true,
                 },
               },
-              theme: true
+              theme: true,
+              ageGroup: true,
             },
           },
         },
@@ -52,7 +53,7 @@ export class AgeGroupService {
             include: {
               ageGroup: true,
               worlds: true,
-              theme: true
+              theme: true,
             },
           },
         },
@@ -167,7 +168,7 @@ export class AgeGroupService {
       minAge: number;
       maxAge: number;
       status: AgeGroupStatus;
-    }>
+    }>,
   ): Promise<AgeGroup> {
     try {
       logger.info("Updating age group", { ageGroupId });

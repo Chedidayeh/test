@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { AgeGroup, World, Roadmap, ChallengeType } from "@shared/types";
+import { World, ChallengeType, Story } from "@shared/types";
 import {
   storyFormSchema,
   ChallengTypeDescriptions,
@@ -96,8 +96,31 @@ export function StoryForm({
   const [expandedChallenge, setExpandedChallenge] = useState<Set<number>>(
     new Set([0])
   );
+  const [orderValidationError, setOrderValidationError] = useState<string>("");
 
   const selectedWorld = worlds.find((w) => w.id === formData.worldId);
+  const existingStories = selectedWorld?.stories || [];
+
+  // Calculate next available order for the selected world
+  const getNextAvailableOrder = (worldId: string) => {
+    const world = worlds.find((w) => w.id === worldId);
+    if (!world || !world.stories || world.stories.length === 0) {
+      return 1;
+    }
+    const maxOrder = Math.max(...world.stories.map((s) => s.order));
+    return maxOrder + 1;
+  };
+
+  // Handle world selection with auto-calculated order
+  const handleWorldChange = (worldId: string) => {
+    const nextOrder = getNextAvailableOrder(worldId);
+    setFormData((prev) => ({
+      ...prev,
+      worldId,
+      order: nextOrder,
+    }));
+    setOrderValidationError("");
+  };
 
   const toggleChapter = (index: number) => {
     const newExpanded = new Set(expandedChapters);
@@ -157,26 +180,57 @@ export function StoryForm({
   };
 
   const addChapter = () => {
+    const nextChapterIndex = formData.chapters.length;
     const newChapter = {
       title: "",
       content: "",
       imageUrl: "",
       audioUrl: "",
-      order: formData.chapters.length + 1,
+      order: nextChapterIndex + 1,
       challenge: undefined,
     };
     updateField("chapters", [...formData.chapters, newChapter]);
     setExpandedChapters(
-      new Set([...expandedChapters, formData.chapters.length])
+      new Set([...expandedChapters, nextChapterIndex])
     );
   };
 
   const removeChapter = (index: number) => {
     if (formData.chapters.length > 1) {
-      updateField(
-        "chapters",
-        formData.chapters.filter((_, i) => i !== index)
+      const updatedChapters = formData.chapters.filter((_, i) => i !== index);
+      updateField("chapters", updatedChapters);
+      // Sync orders after removal
+      const syncedChapters = updatedChapters.map((chapter, i) => ({
+        ...chapter,
+        order: i + 1,
+      }));
+      setFormData((prev) => ({
+        ...prev,
+        chapters: syncedChapters,
+      }));
+    }
+  };
+
+  // Validate order against existing stories when field loses focus
+  const handleOrderBlur = () => {
+    if (!formData.worldId) {
+      setOrderValidationError("");
+      return;
+    }
+
+    const isOrderTaken = existingStories.some(
+      (story) => story.order === formData.order
+    );
+
+    if (isOrderTaken) {
+      const takenOrders = existingStories
+        .map((s) => s.order)
+        .sort((a, b) => a - b);
+      setOrderValidationError(
+        `Order ${formData.order} is already used in this world. Taken orders: ${takenOrders.join(", ")}`
       );
+    } else {
+      setOrderValidationError("");
     }
   };
 
@@ -186,7 +240,7 @@ export function StoryForm({
       {Object.keys(errors).length > 0 && (
         <Card className="sticky top-20 z-50 p-4 border-red-200 bg-red-50 shadow-lg">
           <div className="flex gap-2">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
             <div>
               <p className="font-medium text-red-900 mb-2">
                 Form validation failed
@@ -208,7 +262,7 @@ export function StoryForm({
         <h3 className="font-medium mb-4">Select World</h3>
         <div>
           <Label htmlFor="worldId">World</Label>
-          <Select value={formData.worldId} onValueChange={(value) => updateField("worldId", value)}>
+          <Select value={formData.worldId} onValueChange={handleWorldChange}>
             <SelectTrigger id="worldId" className="mt-1">
               <SelectValue placeholder="Select a world" />
             </SelectTrigger>
@@ -225,6 +279,15 @@ export function StoryForm({
           )}
         </div>
       </Card>
+
+      {/* Existing Stories Reference */}
+      {formData.worldId && (
+        <ExistingStoriesReference
+          stories={existingStories}
+          isLoading={false}
+          currentOrder={formData.order}
+        />
+      )}
 
       {/* Story Information */}
       <Card className="p-6">
@@ -291,8 +354,22 @@ export function StoryForm({
                 onChange={(e) =>
                   updateField("order", parseInt(e.target.value) || 1)
                 }
-                className="mt-1"
+                onBlur={handleOrderBlur}
+                disabled={mode === "edit"}
+                className={`mt-1 ${
+                  mode === "edit" ? "bg-slate-100 cursor-not-allowed" : ""
+                } ${
+                  orderValidationError && mode !== "edit" ? "border-red-500" : ""
+                }`}
               />
+              {mode === "edit" && (
+                <p className="text-xs text-slate-500 mt-1">Story order cannot be changed after creation</p>
+              )}
+              {orderValidationError && mode !== "edit" && (
+                <span className="text-xs text-red-600 mt-1">
+                  {orderValidationError}
+                </span>
+              )}
               {errors.order && (
                 <span className="text-xs text-red-600 mt-1">{errors.order}</span>
               )}
@@ -331,7 +408,6 @@ export function StoryForm({
               onUpdateField={(path, value) =>
                 updateField(`chapters.${chapterIndex}.${path}`, value)
               }
-              worlds={worlds}
               errors={errors}
             />
           ))}
@@ -368,7 +444,6 @@ interface ChapterAccordionProps {
   onToggleChallenge: () => void;
   onRemove: () => void;
   onUpdateField: (path: string, value: any) => void;
-  worlds: World[];
   errors: ValidationErrors;
 }
 
@@ -381,7 +456,6 @@ function ChapterAccordion({
   onToggleChallenge,
   onRemove,
   onUpdateField,
-  worlds,
   errors,
 }: ChapterAccordionProps) {
   const [showAddChallenge, setShowAddChallenge] = useState(!!chapter.challenge);
@@ -453,12 +527,11 @@ function ChapterAccordion({
             <Input
               type="number"
               min="1"
-              value={chapter.order}
-              onChange={(e) =>
-                onUpdateField("order", parseInt(e.target.value) || 1)
-              }
-              className="mt-1"
+              value={chapterIndex + 1}
+              disabled
+              className="mt-1 bg-slate-100 cursor-not-allowed"
             />
+            <p className="text-xs text-slate-500 mt-1">Automatically set based on chapter position</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -851,6 +924,67 @@ function ChallengeSection({
         </div>
       )}
     </div>
+  );
+}
+
+// Existing Stories Reference Component
+interface ExistingStoriesReferenceProps {
+  stories: Story[];
+  isLoading: boolean;
+  currentOrder: number;
+}
+
+function ExistingStoriesReference({
+  stories,
+  isLoading,
+}: ExistingStoriesReferenceProps) {
+  if (isLoading) {
+    return (
+      <Card className="p-6 bg-slate-50 border-slate-200">
+        <h3 className="font-medium mb-4 text-slate-700">Existing Stories</h3>
+        <p className="text-sm text-slate-600">Loading stories...</p>
+      </Card>
+    );
+  }
+
+  if (stories.length === 0) {
+    return (
+      <Card className="p-6 bg-blue-50 border-blue-200">
+        <h3 className="font-medium mb-2 text-blue-900">Existing Stories</h3>
+        <p className="text-sm text-blue-700">
+          No stories in this world yet. You can start with any order number.
+        </p>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="p-6 bg-amber-50 border-amber-200">
+      <h3 className="font-medium mb-4 text-amber-900">Existing Stories in this World</h3>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-amber-200">
+              <th className="text-left font-medium text-amber-900 py-2 px-2">Order</th>
+              <th className="text-left font-medium text-amber-900 py-2 px-2">Title</th>
+            </tr>
+          </thead>
+          <tbody>
+            {stories.map((story) => (
+              <tr
+                key={story.id}
+                className={`border-b border-amber-100`}
+              >
+                <td className="py-2 px-2 font-semibold text-amber-900">
+                  {story.order}
+                </td>
+                <td className="py-2 px-2 text-amber-900">{story.title}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Card>
   );
 }
 

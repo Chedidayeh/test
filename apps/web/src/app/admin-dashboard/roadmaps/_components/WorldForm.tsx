@@ -2,10 +2,12 @@
 
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMemo, useState } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Card } from "@/src/components/ui/card";
+import { AlertCircle } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -18,6 +20,7 @@ import { World, Roadmap } from "@shared/types";
 
 interface WorldFormProps {
   world?: World;
+  worlds?: World[];
   roadmaps: Roadmap[];
   onSubmit: (data: WorldFormData) => void;
   isLoading?: boolean;
@@ -26,16 +29,21 @@ interface WorldFormProps {
 
 export function WorldForm({
   world,
+  worlds = [],
   roadmaps,
   onSubmit,
   isLoading = false,
   onCancel,
 }: WorldFormProps) {
+  const [orderValidationError, setOrderValidationError] = useState<string>("");
+
   const {
     register,
     handleSubmit,
     formState: { errors },
     control,
+    watch,
+    setValue,
   } = useForm<WorldFormData>({
     resolver: zodResolver(worldSchema),
     defaultValues: world
@@ -55,6 +63,58 @@ export function WorldForm({
         },
   });
 
+  const roadmapId = watch("roadmapId");
+  const orderValue = watch("order");
+
+  // Get worlds for the selected roadmap
+  const roadmapWorlds = roadmapId ? worlds.filter((w) => w.roadmapId === roadmapId) : [];
+
+  // Calculate next available order for the selected roadmap
+  const getNextAvailableOrder = (selectedRoadmapId: string) => {
+    const selectedRoadmapWorlds = worlds.filter((w) => w.roadmapId === selectedRoadmapId);
+    if (selectedRoadmapWorlds.length === 0) {
+      return 1;
+    }
+    const maxOrder = Math.max(...selectedRoadmapWorlds.map((w) => w.order));
+    return maxOrder + 1;
+  };
+
+  // Handle roadmap selection with auto-calculated order
+  const handleRoadmapChange = (newRoadmapId: string) => {
+    const nextOrder = getNextAvailableOrder(newRoadmapId);
+    setValue("roadmapId", newRoadmapId);
+    setValue("order", nextOrder);
+    setOrderValidationError("");
+  };
+
+  // Validate order against existing worlds in selected roadmap on blur
+  const handleOrderBlur = () => {
+    if (!roadmapId) {
+      setOrderValidationError("");
+      return;
+    }
+
+    const isOrderTaken = roadmapWorlds.some((w) => w.order === orderValue);
+
+    if (isOrderTaken) {
+      const takenOrders = roadmapWorlds
+        .map((w) => w.order)
+        .sort((a, b) => a - b);
+      setOrderValidationError(
+        `Order ${orderValue} is already used in this roadmap. Taken orders: ${takenOrders.join(", ")}`
+      );
+    } else {
+      setOrderValidationError("");
+    }
+  };
+
+
+  // Memoize roadmap worlds for display
+  const memoizedRoadmapWorlds = useMemo(
+    () => roadmapWorlds,
+    [roadmapId, worlds]
+  );
+    
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <Card className="p-6">
@@ -68,7 +128,7 @@ export function WorldForm({
               render={({ field }) => (
                 <Select
                   value={field.value}
-                  onValueChange={field.onChange}
+                  onValueChange={handleRoadmapChange}
                   disabled={!!world}
                 >
                   <SelectTrigger className="mt-1">
@@ -143,8 +203,22 @@ export function WorldForm({
               type="number"
               min="1"
               {...register("order", { valueAsNumber: true })}
-              className="mt-1"
+              onBlur={handleOrderBlur}
+              disabled={!!world}
+              className={`mt-1 ${
+                world ? "bg-slate-100 cursor-not-allowed" : ""
+              } ${
+                orderValidationError && !world ? "border-red-500" : ""
+              }`}
             />
+            {world && (
+              <p className="text-xs text-slate-500 mt-1">World order cannot be changed after creation</p>
+            )}
+            {orderValidationError && !world && (
+              <span className="text-xs text-red-600 mt-1">
+                {orderValidationError}
+              </span>
+            )}
             {errors.order && (
               <span className="text-xs text-red-600 mt-1">
                 {errors.order.message}
@@ -153,6 +227,15 @@ export function WorldForm({
           </div>
         </div>
       </Card>
+
+      {/* Existing Worlds Reference */}
+      {roadmapId && (
+        <ExistingWorldsReference
+          worlds={memoizedRoadmapWorlds}
+          roadmapId={roadmapId}
+          currentOrder={orderValue}
+        />
+      )}
 
       {/* Actions */}
       <div className="flex gap-3 justify-end">
@@ -166,5 +249,56 @@ export function WorldForm({
         </Button>
       </div>
     </form>
+  );
+}
+
+// Existing Worlds Reference Component
+interface ExistingWorldsReferenceProps {
+  worlds: World[];
+  roadmapId: string;
+  currentOrder: number;
+}
+
+function ExistingWorldsReference({
+  worlds,
+}: ExistingWorldsReferenceProps) {
+  if (worlds.length === 0) {
+    return (
+      <Card className="p-6 bg-blue-50 border-blue-200">
+        <h3 className="font-medium mb-2 text-blue-900">Existing Worlds</h3>
+        <p className="text-sm text-blue-700">
+          No worlds in this roadmap yet. You can start with any order number.
+        </p>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="p-6 border-amber-200">
+      <h3 className="font-medium mb-4 text-amber-500">Existing Worlds in this Roadmap</h3>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-amber-200">
+              <th className="text-left font-medium text-amber-500 py-2 px-2">Order</th>
+              <th className="text-left font-medium text-amber-500 py-2 px-2">Name</th>
+              <th className="text-left font-medium text-amber-500 py-2 px-2">Stories</th>
+            </tr>
+          </thead>
+          <tbody>
+            {worlds.map((world) => (
+              <tr
+                key={world.id}
+                className="border-b border-amber-100"
+              >
+                <td className="py-2 px-2 font-medium">{world.order}</td>
+                <td className="py-2 px-2">{world.name}</td>
+                <td className="py-2 px-2">{world.stories?.length || 0}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Card>
   );
 }

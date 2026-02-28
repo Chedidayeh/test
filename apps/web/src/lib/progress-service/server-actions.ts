@@ -9,8 +9,6 @@ import {
   completeStory,
   SubmitChallengeAnswerRequest,
   SubmitChallengeAnswerResponse,
-  aggregateSessionTime,
-  getSessionAnalytics,
   pauseGameSession,
 } from "./server-api";
 
@@ -251,55 +249,6 @@ export interface AggregateSessionTimeResult {
   success: boolean;
   data?: GameSession;
   error?: string;
-}
-
-/**
- * Server action to aggregate total session time
- * Records the total time spent reading in a story session
- *
- * @param gameSessionId - The game session ID
- * @param totalTimeSpentSeconds - Total seconds spent reading
- * @returns Result object with success status and updated GameSession
- *
- * @example
- * const result = await aggregateSessionTimeAction("session-123", 3600);
- * if (result.success) {
- *   console.log("Time aggregated - Total:", result.data?.totalTimeSpent, "seconds");
- * }
- */
-export async function aggregateSessionTimeAction(
-  gameSessionId: string,
-  totalTimeSpentSeconds: number,
-): Promise<AggregateSessionTimeResult> {
-  try {
-    console.log(
-      "[Progress Service] Aggregating session time via server action",
-      {
-        gameSessionId,
-        totalTimeSpentSeconds,
-      },
-    );
-
-    const result = await aggregateSessionTime(gameSessionId, totalTimeSpentSeconds);
-
-    return {
-      success: true,
-      data: result,
-    };
-  } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-
-    console.error("[Progress Service] Error aggregating session time:", {
-      gameSessionId,
-      error: errorMessage,
-    });
-
-    return {
-      success: false,
-      error: errorMessage,
-    };
-  }
 }
 
 export interface PauseGameSessionResult {

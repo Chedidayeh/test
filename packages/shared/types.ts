@@ -152,6 +152,7 @@ export interface Roadmap {
   id: string;
   ageGroupId: string;
   themeId: string;
+  title? : string | null;
   createdAt: Date;
   updatedAt: Date;
   ageGroup: AgeGroup;

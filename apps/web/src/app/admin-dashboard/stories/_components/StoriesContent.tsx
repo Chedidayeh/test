@@ -17,7 +17,10 @@ import { Column, DataTable, PaginationData } from "../../_components/DataTable";
 import { FilterBar } from "../../_components/FilterBar";
 import { ConfirmDialog } from "../../_components/ConfirmDialog";
 import { Chapter, Story } from "@shared/types";
-import { fetchStoriesAction } from "@/src/lib/content-service/server-actions";
+import {
+  fetchStoriesAction,
+  deleteStoryAction,
+} from "@/src/lib/content-service/server-actions";
 
 interface StoriesContentProps {
   stories: Story[];
@@ -29,14 +32,13 @@ export function StoriesContent({
   pagination: initialPagination,
 }: StoriesContentProps) {
   const [stories, setStories] = useState<Story[]>(initialStories);
-  const [pagination, setPagination] = useState<PaginationData>(initialPagination);
+  const [pagination, setPagination] =
+    useState<PaginationData>(initialPagination);
   const [searchTerm, setSearchTerm] = useState("");
   const [worldFilter, setWorldFilter] = useState("all");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
-  
 
   // Extract unique worlds from stories
   const availableWorlds = useMemo(() => {
@@ -61,12 +63,26 @@ export function StoriesContent({
     });
   }, [stories, searchTerm, worldFilter]);
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (deletingId) {
-      setStories((prev) => prev.filter((s) => s.id !== deletingId));
-      toast.success("Story deleted successfully");
-      setDeleteConfirmOpen(false);
-      setDeletingId(null);
+      setIsLoading(true);
+      try {
+        const result = await deleteStoryAction(deletingId);
+
+        if (result.success) {
+          setStories((prev) => prev.filter((s) => s.id !== deletingId));
+          toast.success("Story deleted successfully");
+          setDeleteConfirmOpen(false);
+          setDeletingId(null);
+        } else {
+          toast.error(result.error || "Failed to delete story");
+        }
+      } catch (error) {
+        toast.error("Failed to delete story");
+        console.error("Error deleting story:", error);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -134,7 +150,10 @@ export function StoriesContent({
       label: "Challenges",
       render: (value: any) => {
         const totalChallenges =
-          value?.reduce((acc: number, ch: Chapter) => acc + (ch.challenge ? 1 : 0), 0) || 0;
+          value?.reduce(
+            (acc: number, ch: Chapter) => acc + (ch.challenge ? 1 : 0),
+            0,
+          ) || 0;
         return <span className="font-medium">{totalChallenges}</span>;
       },
       width: "12%",
@@ -205,16 +224,19 @@ export function StoriesContent({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <Link href={`/story-preview-interface/${story.id}`}>
+                  <DropdownMenuItem className="cursor-pointer">
+                    <Eye className="mr-2 h-4 w-4" />
+                    <span>Preview</span>
+                  </DropdownMenuItem>
+                </Link>
                 <Link href={`/admin-dashboard/stories/edit/${story.id}`}>
                   <DropdownMenuItem className="cursor-pointer">
                     <Edit2 className="mr-2 h-4 w-4" />
                     <span>Edit</span>
                   </DropdownMenuItem>
                 </Link>
-                <DropdownMenuItem className="cursor-pointer">
-                  <Eye className="mr-2 h-4 w-4" />
-                  <span>Preview</span>
-                </DropdownMenuItem>
+
                 <DropdownMenuItem
                   className="cursor-pointer text-red-600"
                   onClick={() => {
@@ -240,6 +262,7 @@ export function StoriesContent({
         confirmText="Delete"
         cancelText="Cancel"
         isDangerous
+        isLoading={isLoading}
         onConfirm={handleDelete}
       />
     </div>
