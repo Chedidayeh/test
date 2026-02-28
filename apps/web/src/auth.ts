@@ -1,12 +1,13 @@
 import NextAuth from "next-auth";
 import authConfig from "./auth.config";
+import { RoleType } from "@shared/types";
 
 declare module "next-auth" {
   interface User {
     id: string;
     email: string;
     name: string;
-    role: "PARENT" | "ADMIN";
+    role: RoleType;
     newUser: boolean;
     childId?: string;
     parentId?: string;
@@ -18,7 +19,7 @@ declare module "next-auth" {
       id: string;
       email: string;
       name: string;
-      role: "PARENT" | "ADMIN";
+      role: RoleType;
       newUser?: boolean;
       childId?: string;
       parentId?: string;
@@ -57,7 +58,7 @@ export const { auth, handlers, signIn, signOut, unstable_update } = NextAuth({
       session.user.id = token.id as string;
       session.user.email = token.email as string;
       session.user.name = token.name as string;
-      session.user.role = token.role as "PARENT" | "ADMIN";
+      session.user.role = token.role as RoleType;
       session.user.childId = token.childId as string | undefined;
       session.user.parentId = token.parentId as string | undefined;
       session.user.token = token.accessToken as string | undefined; // Include Auth Service JWT in session

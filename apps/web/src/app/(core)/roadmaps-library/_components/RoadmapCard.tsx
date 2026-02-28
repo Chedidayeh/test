@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/src/components/ui/button";
-import { RoadmapDisplay } from "@/src/lib/utils/roadmap-display";
+import { RoadmapDisplay } from "@/src/app/(core)/roadmaps-library/_lib/roadmap-display";
 import { useState } from "react";
 
 interface RoadmapCardProps {

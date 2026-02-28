@@ -10,6 +10,13 @@
  *
  * Ensures type consistency and coherence across the entire system.
  */
+
+// ============================================================================
+// API CONFIGURATION
+// ============================================================================
+
+export const API_BASE_URL_V1 = "/api/v1";
+
 // ============================================================================
 // ENUMS
 // ============================================================================
@@ -464,6 +471,7 @@ export interface ApiResponse<T> {
   error?: {
     code: string;
     message: string;
+    details?: any;
   };
   pagination?: PaginationMeta;
   timestamp?: Date;

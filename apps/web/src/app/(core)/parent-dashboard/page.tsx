@@ -13,7 +13,6 @@ export const metadata: Metadata = {
 
 export default async function ParentDashboardPage() {
   const session = await auth();
-  console.log("Parent session data:", session);
   const parentId = session?.user?.id;
   if (!parentId) {
     redirect("/");

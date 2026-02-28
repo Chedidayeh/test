@@ -9,6 +9,7 @@ import { jwtMiddleware } from "./middleware/jwt.middleware";
 import { logger } from "./utils/logger";
 import { authServiceClient } from "./utils/auth-service";
 import { authRoutes, contentRoutes, progressRoutes } from "./routes";
+import { API_BASE_URL_V1 } from "@shared/types";
 
 const app = express();
 
@@ -46,7 +47,7 @@ const selectiveJwtMiddleware = (
     "/verify-token",
   ];
   const isPublicAuth = publicAuthEndpoints.some(
-    (ep) => req.path === `/api/auth${ep}` || req.path === ep,
+    (ep) => req.path === `${API_BASE_URL_V1}/auth${ep}` || req.path === ep,
   );
 
   if (isPublicAuth) {
@@ -64,19 +65,18 @@ const selectiveJwtMiddleware = (
 app.use(selectiveJwtMiddleware);
 
 // Auth routes (public endpoints are open, protected endpoints require JWT)
-app.use("/api/auth", authRoutes);
+app.use(`${API_BASE_URL_V1}/auth`, authRoutes);
 
 /**
  * Progress service Routes (Protected)
  */
-app.use("/api", progressRoutes);
+app.use(`${API_BASE_URL_V1}`, progressRoutes);
 
 
 /**
  * Content Service Routes (Protected)
- * Forwards requests to content service for stories, roadmaps, worlds, challenges, age-groups, themes
  */
-app.use("/api", contentRoutes);
+app.use(`${API_BASE_URL_V1}`, contentRoutes);
 
 // 404 handler
 app.use((req, res) => {

@@ -279,4 +279,42 @@ export class StoryService {
       throw error;
     }
   }
+
+  /**
+   * Delete a story by ID (cascades to chapters, challenges, answers)
+   */
+  async deleteStory(storyId: string) {
+    try {
+      logger.info("Deleting story", { storyId });
+
+      const story = await this.prisma.story.delete({
+        where: { id: storyId },
+        include: {
+          chapters: {
+            include: {
+              challenge: {
+                include: {
+                  answers: true,
+                },
+              },
+            },
+          },
+          world: true,
+        },
+      });
+
+      logger.info("Story deleted successfully", {
+        storyId,
+        chaptersDeleted: story.chapters.length,
+      });
+
+      return true
+    } catch (error) {
+      logger.error("Error deleting story", {
+        storyId,
+        error: String(error),
+      });
+      throw error;
+    }
+  }
 }

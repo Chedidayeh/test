@@ -2,6 +2,7 @@ import express, { Request, Response, Application } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import childrenRoutes from "./routes/children.routes";
+import { API_BASE_URL_V1 } from "@shared/types";
 
 dotenv.config();
 
@@ -62,8 +63,8 @@ app.get("/", (_req: Request, res: Response) =>
 // ROUTES
 // ============================================================================
 
-// Children endpoints (mounted at /api/children)
-app.use("/api", childrenRoutes);
+// Children endpoints (mounted at /api/v1/children)
+app.use(API_BASE_URL_V1, childrenRoutes);
 
 // ============================================================================
 // ERROR HANDLERS

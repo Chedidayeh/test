@@ -13,26 +13,12 @@
  * Pattern follows auth-service/server-api.ts for consistency.
  */
 
-import { auth } from "@/src/auth";
 import type { ApiResponse, ChildProfile, ChallengeType, GameSession, ParentUser, Progress, ChallengeAttempt, StarEvent, ChallengeStatus, SessionCheckpoint } from "@shared/types";
+import { apiRequest, buildQueryString, isApiError } from "../helpers";
 
-/**
- * Global error response type
- */
-export interface ApiError {
-  success: false;
-  error: {
-    message: string;
-    status?: number;
-  };
-}
 
-/**
- * Type guard to check if response is an ApiError
- */
-function isApiError(response: any): response is ApiError {
-  return response && 'error' in response && response.success === false;
-}
+
+
 
 export interface PaginationParams {
   limit?: number;
@@ -78,107 +64,6 @@ export interface SubmitChallengeAnswerResponse {
 }
 
 
-/**
- * Get the gateway URL for server-side requests
- * Defaults to localhost:3001 for development
- */
-function getGatewayUrl(): string {
-  // In production, use internal service URL
-  // In development, use localhost
-  if (process.env.NODE_ENV === "production") {
-    return process.env.INTERNAL_GATEWAY_URL || "http://localhost:3001";
-  }
-  return process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:3001";
-}
-
-/**
- * Build query string from object
- */
-function buildQueryString(params: Record<string, any>): string {
-  const filtered = Object.entries(params)
-    .filter(([, value]) => value !== undefined && value !== null)
-    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-    .join("&");
-
-  return filtered ? `?${filtered}` : "";
-}
-
-/**
- * Make a server-side API request to Gateway
- * This function is RSC-safe and extracts JWT from NextAuth session
- */
-async function apiRequest<T = any>(
-  endpoint: string,
-  options?: RequestInit,
-): Promise<T | ApiError> {
-  const url = `${getGatewayUrl()}${endpoint}`;
-
-  // Get JWT token from NextAuth session
-  const session = await auth();
-  const token = (session?.user as any)?.token;
-
-  if (!token) {
-    console.warn("[Progress Service API] No JWT token found - user may not be authenticated", {
-      hasSession: !!session,
-      hasUser: !!session?.user,
-    });
-  }
-
-  const defaultHeaders: HeadersInit = {
-    "Content-Type": "application/json",
-  };
-
-  // Add Authorization header if token exists
-  if (token) {
-    defaultHeaders["Authorization"] = `Bearer ${token}`;
-  }
-
-  const config: RequestInit = {
-    ...options,
-    headers: {
-      ...defaultHeaders,
-      ...options?.headers,
-    },
-    // Disable caching for data endpoints
-    cache: options?.cache || "no-store",
-  };
-
-  try {
-    const response = await fetch(url, config);
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({
-        error: `HTTP ${response.status}`,
-        message: response.statusText,
-      }));
-
-      console.error(`[Progress Service API] Request failed: ${endpoint}`, {
-        status: response.status,
-        error,
-      });
-
-      return {
-        success: false,
-        error: {
-          message: `${error.error || error.message || "Unknown error"}`,
-          status: response.status,
-        },
-      } as ApiError;
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error(`[Progress Service API] Request error: ${endpoint}`, error);
-    
-    return {
-      success: false,
-      error: {
-        message: error instanceof Error ? error.message : "Unknown error occurred",
-      },
-    } as ApiError;
-  }
-}
 
 
 /**
@@ -196,7 +81,7 @@ export async function getAllChildren(params?: PaginationParams) {
   console.log("[Progress Service API] Fetching all children with params:", params);
 
   const response = await apiRequest<ApiResponse<ChildProfile[]>>(
-    `/api/children${queryString}`,
+    `/children${queryString}`,
   );
 
   if (isApiError(response)) {
@@ -248,7 +133,7 @@ export async function getChildById(childId: string) {
   console.log("[Progress Service API] Fetching child by ID:", childId);
 
   const response = await apiRequest<ApiResponse<ChildProfile>>(
-    `/api/children/${childId}`,
+    `/children/${childId}`,
   );
 
   if (isApiError(response)) {
@@ -278,7 +163,7 @@ export async function getChildProgress(childId: string, storyId: string) {
   console.log("[Progress Service API] Fetching child progress:", { childId, storyId });
 
   const response = await apiRequest<ApiResponse<Progress>>(
-    `/api/progress/${childId}/stories/${storyId}`,
+    `/progress/${childId}/stories/${storyId}`,
   );
 
   if (isApiError(response)) {
@@ -308,7 +193,7 @@ export async function getParentWithProfiles(parentId: string) {
   console.log("[Progress Service API] Fetching parent with profiles:", parentId);
 
   const response = await apiRequest<ApiResponse<ParentUser>>(
-    `/api/parent-data/${parentId}`,
+    `/parent-data/${parentId}`,
   );
 
   if (isApiError(response)) {
@@ -340,7 +225,7 @@ export async function startStory(childId: string, storyId: string) {
   console.log("[Progress Service API] Starting new story:", { childId, storyId });
 
   const response = await apiRequest<ApiResponse<Progress | null>>(
-    `/api/progress/${childId}/stories/${storyId}/start`,
+    `/progress/${childId}/stories/${storyId}/start`,
     {
       method: "POST",
       body: JSON.stringify({
@@ -384,7 +269,7 @@ export async function saveCheckpoint(
   });
 
   const response = await apiRequest<ApiResponse<GameSession | null>>(
-    `/api/progress/checkpoint`,
+    `/progress/checkpoint`,
     {
       method: "POST",
       body: JSON.stringify({
@@ -449,7 +334,7 @@ export async function submitChallengeAnswer(
       starEvent: StarEvent;
       totalStars: number;
     }>
-  >(`/api/progress/challenge/submit`, {
+  >(`/progress/challenge/submit`, {
     method: "POST",
     body: JSON.stringify({
       gameSessionId: request.gameSessionId,
@@ -517,7 +402,7 @@ export async function completeStory(
   console.log("[Progress Service API] Completing story:", { gameSessionId });
 
   const response = await apiRequest<ApiResponse<GameSession>>(
-    `/api/progress/${gameSessionId}/complete`,
+    `/progress/${gameSessionId}/complete`,
     {
       method: "POST",
     },
@@ -558,7 +443,7 @@ export async function updateChildLevel(
   console.log("[Progress Service API] Updating child level:", { childId, newLevel });
 
   const response = await apiRequest<ApiResponse<ChildProfile>>(
-    `/api/children/${childId}/level`,
+    `/children/${childId}/level`,
     {
       method: "PATCH",
       body: JSON.stringify({
@@ -603,7 +488,7 @@ export async function assignBadgeToChild(
   console.log("[Progress Service API] Assigning badge to child:", { childId, badgeId });
 
   const response = await apiRequest<ApiResponse<ChildProfile>>(
-    `/api/children/${childId}/badges`,
+    `/children/${childId}/badges`,
     {
       method: "POST",
       body: JSON.stringify({
@@ -639,7 +524,7 @@ export async function createNewCheckpointSession(gameSessionId: string): Promise
   console.log("[Progress Service API] Creating new checkpoint for game session:", { gameSessionId });
 
   const response = await apiRequest<ApiResponse<SessionCheckpoint>>(
-    `/api/progress/create-new-checkpoint/${gameSessionId}`,
+    `/progress/create-new-checkpoint/${gameSessionId}`,
     {
       method: "POST",
       body: JSON.stringify({}),
@@ -661,78 +546,6 @@ export async function createNewCheckpointSession(gameSessionId: string): Promise
   return response.data;
 }
 
-/**
- * Aggregate session time - stores total time spent reading
- * @param gameSessionId - The game session ID
- * @param totalTimeSpentSeconds - Total seconds spent reading
- * @returns Updated GameSession
- */
-export async function aggregateSessionTime(
-  gameSessionId: string,
-  totalTimeSpentSeconds: number,
-): Promise<any> {
-  console.log("[Progress Service API] Aggregating session time:", {
-    gameSessionId,
-    totalTimeSpentSeconds,
-  });
-
-  const response = await apiRequest<ApiResponse<any>>(
-    `/api/progress/${gameSessionId}/aggregate-time`,
-    {
-      method: "POST",
-      body: JSON.stringify({
-        totalTimeSpentSeconds,
-      }),
-    },
-  );
-
-  if (isApiError(response)) {
-    throw new Error(response.error.message);
-  }
-
-  if (!response.success) {
-    throw new Error("Failed to aggregate session time");
-  }
-
-  console.log("[Progress Service API] Session time aggregated successfully", {
-    gameSessionId,
-    totalTimeSpentSeconds,
-  });
-
-  return response.data;
-}
-
-/**
- * Get session analytics - retrieves detailed time tracking data
- * @param gameSessionId - The game session ID
- * @returns SessionAnalyticsDTO with time breakdown
- */
-export async function getSessionAnalytics(gameSessionId: string): Promise<any> {
-  console.log("[Progress Service API] Getting session analytics:", {
-    gameSessionId,
-  });
-
-  const response = await apiRequest<ApiResponse<any>>(
-    `/api/progress/${gameSessionId}/analytics`,
-    {
-      method: "GET",
-    },
-  );
-
-  if (isApiError(response)) {
-    throw new Error(response.error.message);
-  }
-
-  if (!response.success) {
-    throw new Error("Failed to get session analytics");
-  }
-
-  console.log("[Progress Service API] Session analytics retrieved successfully", {
-    gameSessionId,
-  });
-
-  return response.data;
-}
 
 /**
  * Pause a game session - saves state when user exits the story
@@ -745,7 +558,7 @@ export async function pauseGameSession(
   console.log("[Progress Service API] Pausing game session:", { gameSessionId });
 
   const response = await apiRequest<ApiResponse<SessionCheckpoint>>(
-    `/api/progress/pause/${gameSessionId}`,
+    `/progress/pause/${gameSessionId}`,
     {
       method: "POST",
       body: JSON.stringify({}),

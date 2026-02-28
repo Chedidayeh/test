@@ -1,10 +1,19 @@
 import { Request, Response } from "express";
 import { ChildrenService } from "../services/children.service";
-import { ApiResponse, ChildProfile, GameSession, Progress, ChallengeAttempt, StarEvent, ChallengeStatus, ChallengeType, SessionCheckpoint } from "@shared/types";
+import {
+  ApiResponse,
+  ChildProfile,
+  GameSession,
+  Progress,
+  ChallengeAttempt,
+  StarEvent,
+  ChallengeStatus,
+  ChallengeType,
+  SessionCheckpoint,
+} from "@shared/types";
 
 export class ChildrenController {
   /**
-   * POST /api/children
    * Create a new child profile
    */
   static async createChild(
@@ -73,7 +82,6 @@ export class ChildrenController {
   }
 
   /**
-   * GET /api/children
    * Fetch all children with stats
    * Query params: limit, offset, childIds (filter by specific child IDs)
    */
@@ -135,7 +143,6 @@ export class ChildrenController {
   }
 
   /**
-   * GET /api/progress/children/:id
    * Fetch a single child by ID
    */
   static async getChildById(
@@ -179,7 +186,6 @@ export class ChildrenController {
   }
 
   /**
-   * GET /api/progress/children/parent/:parentId
    * Fetch all children for a specific parent
    */
   static async getChildrenByParentId(
@@ -229,7 +235,6 @@ export class ChildrenController {
   }
 
   /**
-   * POST /api/progress/:childId/stories/:storyId/start
    * Create a new story progress record for a child
    */
   static async startStoryProgress(
@@ -238,7 +243,7 @@ export class ChildrenController {
   ): Promise<void> {
     try {
       const { childId, storyId } = req.params;
-      const { firstChapterId, worldId, roadmapId , challengeIds } = req.body;
+      const { firstChapterId, worldId, roadmapId, challengeIds } = req.body;
 
       // Validation
       if (!childId || !storyId) {
@@ -258,8 +263,7 @@ export class ChildrenController {
           success: false,
           error: {
             code: "BAD_REQUEST",
-            message:
-              "Missing required fields: worldId, roadmapId",
+            message: "Missing required fields: worldId, roadmapId",
           },
           timestamp: new Date(),
         });
@@ -295,7 +299,6 @@ export class ChildrenController {
   }
 
   /**
-   * GET /api/progress/:childId/stories/:storyId
    * Fetch child progress for a specific story
    */
   static async getChildProgress(
@@ -352,7 +355,6 @@ export class ChildrenController {
   }
 
   /**
-   * POST /api/progress/checkpoint
    * Save checkpoint for a game session
    * Body: { gameSessionId, chapterId }
    */
@@ -393,7 +395,9 @@ export class ChildrenController {
         error: {
           code: "SAVE_ERROR",
           message:
-            error instanceof Error ? error.message : "Failed to save checkpoint",
+            error instanceof Error
+              ? error.message
+              : "Failed to save checkpoint",
         },
         timestamp: new Date(),
       });
@@ -401,16 +405,13 @@ export class ChildrenController {
   }
 
   /**
-   * POST /api/progress/resume/:checkpointId
    * Resume from a checkpoint
    * Records resume timestamp and calculates idle time
    * Params: checkpointId, Body: { gameSessionId }
    */
   static async createNewCheckpoint(
     req: Request,
-    res: Response<
-      ApiResponse<SessionCheckpoint>
-    >,
+    res: Response<ApiResponse<SessionCheckpoint>>,
   ): Promise<void> {
     try {
       const { gameSessionId } = req.params;
@@ -428,9 +429,7 @@ export class ChildrenController {
         return;
       }
 
-      const result = await ChildrenService.createNewCheckpoint(
-        gameSessionId,
-      );
+      const result = await ChildrenService.createNewCheckpoint(gameSessionId);
 
       res.status(200).json({
         success: true,
@@ -444,7 +443,9 @@ export class ChildrenController {
         error: {
           code: "RESUME_ERROR",
           message:
-            error instanceof Error ? error.message : "Failed to resume checkpoint",
+            error instanceof Error
+              ? error.message
+              : "Failed to resume checkpoint",
         },
         timestamp: new Date(),
       });
@@ -452,15 +453,12 @@ export class ChildrenController {
   }
 
   /**
-   * POST /api/progress/pause/:gameSessionId
    * Pause a game session - saves state when user exits the story
    * Updates the most recent incomplete checkpoint with the pause timestamp
    */
   static async pauseCheckpoint(
     req: Request,
-    res: Response<
-      ApiResponse<SessionCheckpoint | null>
-    >,
+    res: Response<ApiResponse<SessionCheckpoint | null>>,
   ): Promise<void> {
     try {
       const { gameSessionId } = req.params;
@@ -478,9 +476,7 @@ export class ChildrenController {
         return;
       }
 
-      const result = await ChildrenService.pauseCheckpoint(
-        gameSessionId,
-      );
+      const result = await ChildrenService.pauseCheckpoint(gameSessionId);
 
       res.status(200).json({
         success: true,
@@ -494,175 +490,14 @@ export class ChildrenController {
         error: {
           code: "PAUSE_ERROR",
           message:
-            error instanceof Error ? error.message : "Failed to pause game session",
-        },
-        timestamp: new Date(),
-      });
-    }
-  }
-
-  /**
-   * GET /api/progress/:gameSessionId/time
-   * Calculate total active time spent in a game session
-   * Returns total time in seconds from all challenge attempts
-   */
-  static async calculateSessionTime(
-    req: Request,
-    res: Response<ApiResponse<{ totalTimeSpent: number }>>,
-  ): Promise<void> {
-    try {
-      const { gameSessionId } = req.params;
-
-      // Validation
-      if (!gameSessionId) {
-        res.status(400).json({
-          success: false,
-          error: {
-            code: "BAD_REQUEST",
-            message: "Missing required parameter: gameSessionId",
-          },
-          timestamp: new Date(),
-        });
-        return;
-      }
-
-      const totalTimeSpent =
-        await ChildrenService.calculateSessionTime(gameSessionId);
-
-      res.status(200).json({
-        success: true,
-        data: { totalTimeSpent },
-        timestamp: new Date(),
-      });
-    } catch (error) {
-      console.error("Error calculating session time:", error);
-      res.status(500).json({
-        success: false,
-        error: {
-          code: "CALCULATE_ERROR",
-          message:
             error instanceof Error
               ? error.message
-              : "Failed to calculate session time",
+              : "Failed to pause game session",
         },
         timestamp: new Date(),
       });
     }
   }
-
-  /**
-   * POST /api/progress/:gameSessionId/aggregate-time
-   * Aggregate and store total time spent in a game session
-   * Body: { totalChallengeTimeSeconds }
-   */
-  static async aggregateSessionTime(
-    req: Request,
-    res: Response<ApiResponse<GameSession | null>>,
-  ): Promise<void> {
-    try {
-      const { gameSessionId } = req.params;
-      const { totalChallengeTimeSeconds } = req.body;
-
-      // Validation
-      if (!gameSessionId) {
-        res.status(400).json({
-          success: false,
-          error: {
-            code: "BAD_REQUEST",
-            message: "Missing required parameter: gameSessionId",
-          },
-          timestamp: new Date(),
-        });
-        return;
-      }
-
-      if (totalChallengeTimeSeconds === undefined || totalChallengeTimeSeconds === null) {
-        res.status(400).json({
-          success: false,
-          error: {
-            code: "BAD_REQUEST",
-            message: "Missing required field: totalChallengeTimeSeconds",
-          },
-          timestamp: new Date(),
-        });
-        return;
-      }
-
-      const updatedSession = await ChildrenService.aggregateSessionTime(
-        gameSessionId,
-        totalChallengeTimeSeconds,
-      );
-
-      res.status(200).json({
-        success: true,
-        data: updatedSession,
-        timestamp: new Date(),
-      });
-    } catch (error) {
-      console.error("Error aggregating session time:", error);
-      res.status(500).json({
-        success: false,
-        error: {
-          code: "AGGREGATE_ERROR",
-          message:
-            error instanceof Error
-              ? error.message
-              : "Failed to aggregate session time",
-        },
-        timestamp: new Date(),
-      });
-    }
-  }
-
-  /**
-   * POST /api/progress/:progressId/aggregate-progress-time
-   * Aggregate and sync progress total time from game session
-   */
-  static async aggregateProgressTime(
-    req: Request,
-    res: Response<ApiResponse<Progress | null>>,
-  ): Promise<void> {
-    try {
-      const { progressId } = req.params;
-
-      // Validation
-      if (!progressId) {
-        res.status(400).json({
-          success: false,
-          error: {
-            code: "BAD_REQUEST",
-            message: "Missing required parameter: progressId",
-          },
-          timestamp: new Date(),
-        });
-        return;
-      }
-
-      const updatedProgress = await ChildrenService.aggregateProgressTime(
-        progressId,
-      );
-
-      res.status(200).json({
-        success: true,
-        data: updatedProgress,
-        timestamp: new Date(),
-      });
-    } catch (error) {
-      console.error("Error aggregating progress time:", error);
-      res.status(500).json({
-        success: false,
-        error: {
-          code: "AGGREGATE_ERROR",
-          message:
-            error instanceof Error
-              ? error.message
-              : "Failed to aggregate progress time",
-        },
-        timestamp: new Date(),
-      });
-    }
-  }
-
 
   static async submitChallengeAnswer(
     req: Request,
@@ -709,8 +544,7 @@ export class ChildrenController {
           success: false,
           error: {
             code: "BAD_REQUEST",
-            message:
-              "Missing required fields: baseStars and status",
+            message: "Missing required fields: baseStars and status",
           },
           timestamp: new Date(),
         });
@@ -755,7 +589,6 @@ export class ChildrenController {
   }
 
   /**
-   * POST /api/progress/:gameSessionId/complete
    * Complete a story for a game session
    * Marks the story as completed and triggers completion rewards
    */
@@ -779,9 +612,8 @@ export class ChildrenController {
         return;
       }
 
-      const completedSession = await ChildrenService.completeStory(
-        gameSessionId,
-      );
+      const completedSession =
+        await ChildrenService.completeStory(gameSessionId);
 
       res.status(200).json({
         success: true,
@@ -803,7 +635,6 @@ export class ChildrenController {
   }
 
   /**
-   * PATCH /api/children/:childId/level
    * Update a child's current level
    * Body: { currentLevel }
    */
@@ -869,7 +700,9 @@ export class ChildrenController {
         error: {
           code: "UPDATE_ERROR",
           message:
-            error instanceof Error ? error.message : "Failed to update child level",
+            error instanceof Error
+              ? error.message
+              : "Failed to update child level",
         },
         timestamp: new Date(),
       });
@@ -877,7 +710,6 @@ export class ChildrenController {
   }
 
   /**
-   * POST /api/children/:childId/badges
    * Assign a badge to a child
    * Body: { badgeId }
    */
@@ -949,5 +781,4 @@ export class ChildrenController {
       });
     }
   }
-
 }

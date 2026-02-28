@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import axios from "axios";
 import { logger } from "../utils/logger";
-import { ApiResponse, User, Child } from "@shared/types";
+import { ApiResponse, User, Child, API_BASE_URL_V1 } from "@shared/types";
 
 const router = Router();
 
@@ -18,7 +18,7 @@ const PROGRESS_SERVICE_URL =
 router.get("/parent/:parentId", async (req: Request, res: Response<ApiResponse<User>>) => {
   try {
     const { parentId } = req.params;
-    const authUrl = `${AUTH_SERVICE_URL}/parent/${parentId}`;
+    const authUrl = `${AUTH_SERVICE_URL}${API_BASE_URL_V1}/parent/${parentId}`;
 
     logger.debug("Forwarding get parent by ID request to service", {
       method: req.method,
@@ -60,7 +60,7 @@ router.get("/parent/:parentId", async (req: Request, res: Response<ApiResponse<U
  */
 router.post("/children", async (req: Request, res: Response<ApiResponse<Child>>) => {
   try {
-    const authUrl = `${AUTH_SERVICE_URL}/create-child-profile`;
+    const authUrl = `${AUTH_SERVICE_URL}${API_BASE_URL_V1}/create-child-profile`;
 
     logger.debug("Forwarding create child profile request to auth service", {
       method: req.method,
@@ -107,7 +107,7 @@ router.post("/children", async (req: Request, res: Response<ApiResponse<Child>>)
     }
 
     // Step 2: Call progress service with child ID and original payload
-    const progressUrl = `${PROGRESS_SERVICE_URL}/api/create-child-profile`;
+    const progressUrl = `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/create-child-profile`;
     // Extract badgeId from the original request (if provided) and include it
     const { badgeId } = req.body || {};
 
@@ -158,7 +158,7 @@ router.post("/children", async (req: Request, res: Response<ApiResponse<Child>>)
 router.use("/", async (req: Request, res: Response) => {
   try {
     const authPath = req.path; // e.g., "/register", "/login"
-    const authUrl = `${AUTH_SERVICE_URL}${authPath}`;
+    const authUrl = `${AUTH_SERVICE_URL}${API_BASE_URL_V1}${authPath}`;
 
     logger.debug("Forwarding auth request to service", {
       method: req.method,

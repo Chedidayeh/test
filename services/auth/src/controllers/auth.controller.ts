@@ -13,7 +13,7 @@ export class AuthController {
   /**
    * Register a new user with email and password
    */
-  async register(req: Request, res: Response): Promise<void> {
+  async register(req: Request, res: Response<ApiResponse<User>>): Promise<void> {
     try {
       console.log("Register request body:", req.body); // Debug log for request body
       const { email, password, name } = req.body;
@@ -32,8 +32,13 @@ export class AuthController {
           hasName: !!name,
         });
         res.status(400).json({
-          error: "Missing required fields: email, password, name",
-        });
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required fields: email, password, name",
+          },
+          timestamp: new Date(),
+        } as ApiResponse<User>);
         return;
       }
 
@@ -42,8 +47,13 @@ export class AuthController {
           email,
         });
         res.status(400).json({
-          error: "Password must be at least 8 characters",
-        });
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Password must be at least 8 characters",
+          },
+          timestamp: new Date(),
+        } as ApiResponse<User>);
         return;
       }
 
@@ -54,43 +64,56 @@ export class AuthController {
       if (!user) {
         logger.warn("User creation failed - user already exists", { email });
         res.status(409).json({
-          error: "User already exists with this email",
-        });
+          success: false,
+          error: {
+            code: "CONFLICT",
+            message: "User already exists with this email",
+          },
+          timestamp: new Date(),
+        } as ApiResponse<User>);
         return;
       }
 
       logger.info("User created successfully", { userId: user.id, email });
 
       res.status(201).json({
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          newUser: user.newUser,
-        },
-      });
+        success: true,
+        data: user,
+        timestamp: new Date(),
+      } as ApiResponse<User>);
     } catch (error) {
       logger.error("Register error", {
         error: String(error),
         stack: error instanceof Error ? error.stack : "N/A",
       });
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Internal server error",
+        },
+        timestamp: new Date(),
+      } as ApiResponse<User>);
     }
   }
 
   /**
    * Login with email and password
    */
-  async login(req: Request, res: Response): Promise<void> {
+  async login(req: Request, res: Response<ApiResponse<{ token: string; user: User }>>): Promise<void> {
     try {
       const { email, password } = req.body;
 
       // Validation
       if (!email || !password) {
         res.status(400).json({
-          error: "Missing required fields: email, password",
-        });
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required fields: email, password",
+          },
+          timestamp: new Date(),
+        } as ApiResponse<{ token: string; user: User }>);
         return;
       }
 
@@ -99,8 +122,13 @@ export class AuthController {
 
       if (!user) {
         res.status(401).json({
-          error: "No account found with this email",
-        });
+          success: false,
+          error: {
+            code: "UNAUTHORIZED",
+            message: "No account found with this email",
+          },
+          timestamp: new Date(),
+        } as ApiResponse<{ token: string; user: User }>);
         return;
       }
 
@@ -109,8 +137,13 @@ export class AuthController {
 
       if (!isValid) {
         res.status(401).json({
-          error: "Password is incorrect, please try again",
-        });
+          success: false,
+          error: {
+            code: "UNAUTHORIZED",
+            message: "Password is incorrect, please try again",
+          },
+          timestamp: new Date(),
+        } as ApiResponse<{ token: string; user: User }>);
         return;
       }
 
@@ -138,19 +171,30 @@ export class AuthController {
 
       logger.info("User logged in", { userId: user.id });
 
-      res.json({
-        token,
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          newUser: user.newUser,
+      res.status(200).json({
+        success: true,
+        data: {
+          token,
+          user: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            newUser: user.newUser,
+          },
         },
-      });
+        timestamp: new Date(),
+      } as ApiResponse<{ token: string; user: User }>);
     } catch (error) {
       logger.error("Login error", { error: String(error) });
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Internal server error",
+        },
+        timestamp: new Date(),
+      } as ApiResponse<{ token: string; user: User }>);
     }
   }
 

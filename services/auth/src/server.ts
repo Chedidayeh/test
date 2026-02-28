@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.routes";
 import { logger } from "./utils/logger";
+import { API_BASE_URL_V1 } from "@shared/types";
 
 // Load environment variables
 dotenv.config();
@@ -36,8 +37,8 @@ app.get("/health", (req, res) => {
   });
 });
 
-// Auth routes (mounted at root since gateway proxy strips /api/auth path)
-app.use("/", authRoutes);
+// Auth routes (mounted at root since gateway proxy strips /api/v1/auth path)
+app.use(API_BASE_URL_V1, authRoutes);
 
 // 404 handler
 app.use((req, res) => {

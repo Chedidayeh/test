@@ -1,17 +1,12 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Server-Side API Utility for RSCs (React Server Components)
  * Makes direct fetch calls from the server with JWT authentication
  * Used in Next.js Server Components and Server Actions
  */
 
-import { auth } from "@/src/auth";
 import type {
   ApiResponse,
   Story,
-  Chapter,
-  Challenge,
-  Answer,
   Roadmap,
   World,
   AgeGroup,
@@ -21,24 +16,7 @@ import type {
   CreateStoryWithChaptersInput,
   AgeGroupContentValidationResult,
 } from "@shared/types";
-
-/**
- * Global error response type
- */
-export interface ApiError {
-  success: false;
-  error: {
-    message: string;
-    status?: number;
-  };
-}
-
-/**
- * Type guard to check if response is an ApiError
- */
-function isApiError(response: any): response is ApiError {
-  return response && 'error' in response && response.success === false;
-}
+import { apiRequest, buildQueryString, isApiError } from "../helpers";
 
 interface PaginationParams {
   limit?: number;
@@ -51,114 +29,6 @@ export interface StoryQueryParams extends PaginationParams {
   isMandatory?: boolean;
 }
 
-interface ChallengeQueryParams extends PaginationParams {
-  chapterId?: string;
-  storyId?: string;
-  type?: string;
-}
-
-/**
- * Get the gateway URL for server-side requests
- * Defaults to localhost:3001 for development
- */
-function getGatewayUrl(): string {
-  // In production, use internal service URL
-  // In development, use localhost
-  if (process.env.NODE_ENV === "production") {
-    return process.env.INTERNAL_GATEWAY_URL || "http://localhost:3001";
-  }
-  return process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:3001";
-}
-
-/**
- * Build query string from object
- */
-function buildQueryString(params: Record<string, any>): string {
-  const filtered = Object.entries(params)
-    .filter(([, value]) => value !== undefined && value !== null)
-    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-    .join("&");
-
-  return filtered ? `?${filtered}` : "";
-}
-
-/**
- * Make a server-side API request
- * This function is RSC-safe and extracts JWT from NextAuth session
- */
-async function apiRequest<T = any>(
-  endpoint: string,
-  options?: RequestInit
-): Promise<T | ApiError> {
-  const url = `${getGatewayUrl()}${endpoint}`;
-
-  // Get JWT token from NextAuth session
-  const session = await auth();
-  const token = (session?.user as any)?.token;
-  
-  if (!token) {
-    console.warn(
-      "[Content Server API] No JWT token found - user may not be authenticated",
-      { hasSession: !!session, hasUser: !!session?.user }
-    );
-  }
-
-  const defaultHeaders: HeadersInit = {
-    "Content-Type": "application/json",
-  };
-
-  // Add Authorization header if token exists
-  if (token) {
-    defaultHeaders["Authorization"] = `Bearer ${token}`;
-  }
-
-  const config: RequestInit = {
-    ...options,
-    headers: {
-      ...defaultHeaders,
-      ...options?.headers,
-    },
-    // Disable caching for data endpoints
-    cache: options?.cache || "no-store",
-  };
-
-  try {
-    const response = await fetch(url, config);
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({
-        error: `HTTP ${response.status}`,
-        message: response.statusText,
-      }));
-
-      console.error(`[Content Server API] Request failed: ${endpoint}`, {
-        status: response.status,
-        error,
-      });
-
-      return {
-        success: false,
-        error: {
-          message: `${error.error || error.message || "Unknown error"}`,
-          status: response.status,
-        },
-      } as ApiError;
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error(`[Content Server API] Request error: ${endpoint}`, error);
-    
-    return {
-      success: false,
-      error: {
-        message: error instanceof Error ? error.message : "Unknown error occurred",
-      },
-    } as ApiError;
-  }
-}
-
 /**
  * ============================================
  * STORY ENDPOINTS
@@ -169,11 +39,14 @@ export async function getStories(params?: StoryQueryParams) {
   const queryString = buildQueryString(params || {});
   console.log("[Content Server API] Fetching stories with params:", params);
   const response = await apiRequest<ApiResponse<Story[]>>(
-    `/api/stories${queryString}`
+    `/stories${queryString}`,
   );
 
   if (isApiError(response)) {
-    console.warn("[Content Server API] Failed to fetch stories:", response.error.message);
+    console.warn(
+      "[Content Server API] Failed to fetch stories:",
+      response.error.message,
+    );
     return {
       stories: [],
       pagination: undefined,
@@ -181,7 +54,9 @@ export async function getStories(params?: StoryQueryParams) {
   }
 
   if (!response.success) {
-    console.warn("[Content Server API] Failed to fetch stories: API returned success=false");
+    console.warn(
+      "[Content Server API] Failed to fetch stories: API returned success=false",
+    );
     return {
       stories: [],
       pagination: undefined,
@@ -203,16 +78,21 @@ export async function getStories(params?: StoryQueryParams) {
 
 export async function getStoryById(storyId: string) {
   const response = await apiRequest<ApiResponse<Story>>(
-    `/api/stories/${storyId}`
+    `/stories/${storyId}`,
   );
 
   if (isApiError(response)) {
-    console.warn("[Content Server API] Failed to fetch story:", response.error.message);
+    console.warn(
+      "[Content Server API] Failed to fetch story:",
+      response.error.message,
+    );
     return null;
   }
 
   if (!response.success) {
-    console.warn("[Content Server API] Failed to fetch story: API returned success=false");
+    console.warn(
+      "[Content Server API] Failed to fetch story: API returned success=false",
+    );
     return null;
   }
 
@@ -221,16 +101,21 @@ export async function getStoryById(storyId: string) {
 
 export async function getStoriesByWorld(worldId: string) {
   const response = await apiRequest<ApiResponse<Story[]>>(
-    `/api/stories/world/${worldId}`
+    `/stories/world/${worldId}`,
   );
 
   if (isApiError(response)) {
-    console.warn("[Content Server API] Failed to fetch stories by world:", response.error.message);
+    console.warn(
+      "[Content Server API] Failed to fetch stories by world:",
+      response.error.message,
+    );
     return [];
   }
 
   if (!response.success) {
-    console.warn("[Content Server API] Failed to fetch stories by world: API returned success=false");
+    console.warn(
+      "[Content Server API] Failed to fetch stories by world: API returned success=false",
+    );
     return [];
   }
 
@@ -239,16 +124,21 @@ export async function getStoriesByWorld(worldId: string) {
 
 export async function getStoriesCount() {
   const response = await apiRequest<ApiResponse<{ count: number }>>(
-    `/api/stories/count`
+    `/stories/count`,
   );
 
   if (isApiError(response)) {
-    console.warn("[Content Server API] Failed to fetch stories count:", response.error.message);
+    console.warn(
+      "[Content Server API] Failed to fetch stories count:",
+      response.error.message,
+    );
     return 0;
   }
 
   if (!response.success) {
-    console.warn("[Content Server API] Failed to fetch stories count: API returned success=false");
+    console.warn(
+      "[Content Server API] Failed to fetch stories count: API returned success=false",
+    );
     return 0;
   }
 
@@ -262,15 +152,20 @@ export async function getStoriesCount() {
  */
 
 export async function getRoadmaps() {
-  const response = await apiRequest<ApiResponse<Roadmap[]>>("/api/roadmaps");
+  const response = await apiRequest<ApiResponse<Roadmap[]>>("/roadmaps");
 
   if (isApiError(response)) {
-    console.warn("[Content Server API] Failed to fetch roadmaps:", response.error.message);
+    console.warn(
+      "[Content Server API] Failed to fetch roadmaps:",
+      response.error.message,
+    );
     return [];
   }
 
   if (!response.success) {
-    console.warn("[Content Server API] Failed to fetch roadmaps: API returned success=false");
+    console.warn(
+      "[Content Server API] Failed to fetch roadmaps: API returned success=false",
+    );
     return [];
   }
 
@@ -279,16 +174,21 @@ export async function getRoadmaps() {
 
 export async function getRoadmapById(roadmapId: string) {
   const response = await apiRequest<ApiResponse<Roadmap>>(
-    `/api/roadmaps/${roadmapId}`
+    `/roadmaps/${roadmapId}`,
   );
 
   if (isApiError(response)) {
-    console.warn("[Content Server API] Failed to fetch roadmap:", response.error.message);
+    console.warn(
+      "[Content Server API] Failed to fetch roadmap:",
+      response.error.message,
+    );
     return null;
   }
 
   if (!response.success) {
-    console.warn("[Content Server API] Failed to fetch roadmap: API returned success=false");
+    console.warn(
+      "[Content Server API] Failed to fetch roadmap: API returned success=false",
+    );
     return null;
   }
 
@@ -297,16 +197,21 @@ export async function getRoadmapById(roadmapId: string) {
 
 export async function getRoadmapsByAgeGroup(ageGroupId: string) {
   const response = await apiRequest<ApiResponse<Roadmap[]>>(
-    `/api/roadmaps/age-group/${ageGroupId}`
+    `/roadmaps/age-group/${ageGroupId}`,
   );
 
   if (isApiError(response)) {
-    console.warn("[Content Server API] Failed to fetch roadmaps by age group:", response.error.message);
+    console.warn(
+      "[Content Server API] Failed to fetch roadmaps by age group:",
+      response.error.message,
+    );
     return [];
   }
 
   if (!response.success) {
-    console.warn("[Content Server API] Failed to fetch roadmaps by age group: API returned success=false");
+    console.warn(
+      "[Content Server API] Failed to fetch roadmaps by age group: API returned success=false",
+    );
     return [];
   }
 
@@ -320,15 +225,20 @@ export async function getRoadmapsByAgeGroup(ageGroupId: string) {
  */
 
 export async function getWorlds() {
-  const response = await apiRequest<ApiResponse<World[]>>("/api/worlds");
+  const response = await apiRequest<ApiResponse<World[]>>("/worlds");
 
   if (isApiError(response)) {
-    console.warn("[Content Server API] Failed to fetch worlds:", response.error.message);
+    console.warn(
+      "[Content Server API] Failed to fetch worlds:",
+      response.error.message,
+    );
     return [];
   }
 
   if (!response.success) {
-    console.warn("[Content Server API] Failed to fetch worlds: API returned success=false");
+    console.warn(
+      "[Content Server API] Failed to fetch worlds: API returned success=false",
+    );
     return [];
   }
 
@@ -337,16 +247,21 @@ export async function getWorlds() {
 
 export async function getWorldById(worldId: string) {
   const response = await apiRequest<ApiResponse<World>>(
-    `/api/worlds/${worldId}`
+    `/worlds/${worldId}`,
   );
 
   if (isApiError(response)) {
-    console.warn("[Content Server API] Failed to fetch world:", response.error.message);
+    console.warn(
+      "[Content Server API] Failed to fetch world:",
+      response.error.message,
+    );
     return null;
   }
 
   if (!response.success) {
-    console.warn("[Content Server API] Failed to fetch world: API returned success=false");
+    console.warn(
+      "[Content Server API] Failed to fetch world: API returned success=false",
+    );
     return null;
   }
 
@@ -355,16 +270,21 @@ export async function getWorldById(worldId: string) {
 
 export async function getWorldsByRoadmap(roadmapId: string) {
   const response = await apiRequest<ApiResponse<World[]>>(
-    `/api/worlds/roadmap/${roadmapId}`
+    `/worlds/roadmap/${roadmapId}`,
   );
 
   if (isApiError(response)) {
-    console.warn("[Content Server API] Failed to fetch worlds by roadmap:", response.error.message);
+    console.warn(
+      "[Content Server API] Failed to fetch worlds by roadmap:",
+      response.error.message,
+    );
     return [];
   }
 
   if (!response.success) {
-    console.warn("[Content Server API] Failed to fetch worlds by roadmap: API returned success=false");
+    console.warn(
+      "[Content Server API] Failed to fetch worlds by roadmap: API returned success=false",
+    );
     return [];
   }
 
@@ -376,33 +296,46 @@ export async function getWorldsByRoadmap(roadmapId: string) {
  * AGE GROUP ENDPOINTS
  * ============================================
  */
-
+// active age groups
 export async function getAgeGroups() {
-  const response = await apiRequest<ApiResponse<AgeGroup[]>>("/api/age-groups");
+  const response =
+    await apiRequest<ApiResponse<AgeGroup[]>>("/age-groups");
 
   if (isApiError(response)) {
-    console.warn("[Content Server API] Failed to fetch age groups:", response.error.message);
+    console.warn(
+      "[Content Server API] Failed to fetch age groups:",
+      response.error.message,
+    );
     return [];
   }
 
   if (!response.success) {
-    console.warn("[Content Server API] Failed to fetch age groups: API returned success=false");
+    console.warn(
+      "[Content Server API] Failed to fetch age groups: API returned success=false",
+    );
     return [];
   }
 
   return response.data || [];
 }
-
+// all age groups for admin (including inactive)
 export async function getAgeGroupsForAdmin() {
-  const response = await apiRequest<ApiResponse<AgeGroup[]>>("/api/age-groups/admin/all");
+  const response = await apiRequest<ApiResponse<AgeGroup[]>>(
+    "/age-groups/admin/all",
+  );
 
   if (isApiError(response)) {
-    console.warn("[Content Server API] Failed to fetch age groups for admin:", response.error.message);
+    console.warn(
+      "[Content Server API] Failed to fetch age groups for admin:",
+      response.error.message,
+    );
     return [];
   }
 
   if (!response.success) {
-    console.warn("[Content Server API] Failed to fetch age groups for admin: API returned success=false");
+    console.warn(
+      "[Content Server API] Failed to fetch age groups for admin: API returned success=false",
+    );
     return [];
   }
 
@@ -411,16 +344,21 @@ export async function getAgeGroupsForAdmin() {
 
 export async function getAgeGroupById(ageGroupId: string) {
   const response = await apiRequest<ApiResponse<AgeGroup>>(
-    `/api/age-groups/${ageGroupId}`
+    `/age-groups/${ageGroupId}`,
   );
 
   if (isApiError(response)) {
-    console.warn("[Content Server API] Failed to fetch age group:", response.error.message);
+    console.warn(
+      "[Content Server API] Failed to fetch age group:",
+      response.error.message,
+    );
     return null;
   }
 
   if (!response.success) {
-    console.warn("[Content Server API] Failed to fetch age group: API returned success=false");
+    console.warn(
+      "[Content Server API] Failed to fetch age group: API returned success=false",
+    );
     return null;
   }
 
@@ -434,15 +372,20 @@ export async function getAgeGroupById(ageGroupId: string) {
  */
 
 export async function getThemes() {
-  const response = await apiRequest<ApiResponse<Theme[]>>("/api/themes");
+  const response = await apiRequest<ApiResponse<Theme[]>>("/themes");
 
   if (isApiError(response)) {
-    console.warn("[Content Server API] Failed to fetch themes:", response.error.message);
+    console.warn(
+      "[Content Server API] Failed to fetch themes:",
+      response.error.message,
+    );
     return [];
   }
 
   if (!response.success) {
-    console.warn("[Content Server API] Failed to fetch themes: API returned success=false");
+    console.warn(
+      "[Content Server API] Failed to fetch themes: API returned success=false",
+    );
     return [];
   }
 
@@ -451,100 +394,26 @@ export async function getThemes() {
 
 export async function getThemeById(themeId: string) {
   const response = await apiRequest<ApiResponse<Theme>>(
-    `/api/themes/${themeId}`
+    `/themes/${themeId}`,
   );
 
   if (isApiError(response)) {
-    console.warn("[Content Server API] Failed to fetch theme:", response.error.message);
+    console.warn(
+      "[Content Server API] Failed to fetch theme:",
+      response.error.message,
+    );
     return null;
   }
 
   if (!response.success) {
-    console.warn("[Content Server API] Failed to fetch theme: API returned success=false");
-    return null;
-  }
-
-  return response.data || null;
-}
-
-
-/**
- * ============================================
- * CHALLENGE ENDPOINTS
- * ============================================
- */
-
-export async function getChallenges(params?: ChallengeQueryParams) {
-  const queryString = buildQueryString(params || {});
-  const response = await apiRequest<ApiResponse<Challenge[]>>(
-    `/api/challenges${queryString}`
-  );
-
-  if (isApiError(response)) {
-    console.warn("[Content Server API] Failed to fetch challenges:", response.error.message);
-    return {
-      challenges: [],
-      pagination: undefined,
-    };
-  }
-
-  if (!response.success) {
-    console.warn("[Content Server API] Failed to fetch challenges: API returned success=false");
-    return {
-      challenges: [],
-      pagination: undefined,
-    };
-  }
-
-  return {
-    challenges: response.data || [],
-    pagination: response.pagination
-      ? {
-          total: response.pagination.total,
-          page: response.pagination.page,
-          pageSize: response.pagination.pageSize,
-          hasMore: response.pagination.hasMore,
-        }
-      : undefined,
-  };
-}
-
-export async function getChallengeById(challengeId: string) {
-  const response = await apiRequest<ApiResponse<Challenge>>(
-    `/api/challenges/${challengeId}`
-  );
-
-  if (isApiError(response)) {
-    console.warn("[Content Server API] Failed to fetch challenge:", response.error.message);
-    return null;
-  }
-
-  if (!response.success) {
-    console.warn("[Content Server API] Failed to fetch challenge: API returned success=false");
+    console.warn(
+      "[Content Server API] Failed to fetch theme: API returned success=false",
+    );
     return null;
   }
 
   return response.data || null;
 }
-
-export async function getChallengesByChapter(chapterId: string) {
-  const response = await apiRequest<ApiResponse<Challenge[]>>(
-    `/api/challenges/chapter/${chapterId}`
-  );
-
-  if (isApiError(response)) {
-    console.warn("[Content Server API] Failed to fetch challenges by chapter:", response.error.message);
-    return [];
-  }
-
-  if (!response.success) {
-    console.warn("[Content Server API] Failed to fetch challenges by chapter: API returned success=false");
-    return [];
-  }
-
-  return response.data || [];
-}
-
 
 /**
  * ============================================
@@ -553,15 +422,20 @@ export async function getChallengesByChapter(chapterId: string) {
  */
 
 export async function getLevels() {
-  const response = await apiRequest<ApiResponse<Level[]>>("/api/levels");
+  const response = await apiRequest<ApiResponse<Level[]>>("/levels");
 
   if (isApiError(response)) {
-    console.warn("[Content Server API] Failed to fetch levels:", response.error.message);
+    console.warn(
+      "[Content Server API] Failed to fetch levels:",
+      response.error.message,
+    );
     return [];
   }
 
   if (!response.success) {
-    console.warn("[Content Server API] Failed to fetch levels: API returned success=false");
+    console.warn(
+      "[Content Server API] Failed to fetch levels: API returned success=false",
+    );
     return [];
   }
 
@@ -570,16 +444,21 @@ export async function getLevels() {
 
 export async function getLevelById(levelId: string) {
   const response = await apiRequest<ApiResponse<Level>>(
-    `/api/levels/${levelId}`
+    `/levels/${levelId}`,
   );
 
   if (isApiError(response)) {
-    console.warn("[Content Server API] Failed to fetch level:", response.error.message);
+    console.warn(
+      "[Content Server API] Failed to fetch level:",
+      response.error.message,
+    );
     return null;
   }
 
   if (!response.success) {
-    console.warn("[Content Server API] Failed to fetch level: API returned success=false");
+    console.warn(
+      "[Content Server API] Failed to fetch level: API returned success=false",
+    );
     return null;
   }
 
@@ -588,22 +467,26 @@ export async function getLevelById(levelId: string) {
 
 export async function getLevelByNumber(levelNumber: number) {
   const response = await apiRequest<ApiResponse<Level>>(
-    `/api/levels/number/${levelNumber}`
+    `/levels/number/${levelNumber}`,
   );
 
   if (isApiError(response)) {
-    console.warn("[Content Server API] Failed to fetch level by number:", response.error.message);
+    console.warn(
+      "[Content Server API] Failed to fetch level by number:",
+      response.error.message,
+    );
     return null;
   }
 
   if (!response.success) {
-    console.warn("[Content Server API] Failed to fetch level by number: API returned success=false");
+    console.warn(
+      "[Content Server API] Failed to fetch level by number: API returned success=false",
+    );
     return null;
   }
 
   return response.data || null;
 }
-
 
 /**
  * ============================================
@@ -612,15 +495,20 @@ export async function getLevelByNumber(levelNumber: number) {
  */
 
 export async function getBadges() {
-  const response = await apiRequest<ApiResponse<Badge[]>>("/api/badges");
+  const response = await apiRequest<ApiResponse<Badge[]>>("/badges");
 
   if (isApiError(response)) {
-    console.warn("[Content Server API] Failed to fetch badges:", response.error.message);
+    console.warn(
+      "[Content Server API] Failed to fetch badges:",
+      response.error.message,
+    );
     return [];
   }
 
   if (!response.success) {
-    console.warn("[Content Server API] Failed to fetch badges: API returned success=false");
+    console.warn(
+      "[Content Server API] Failed to fetch badges: API returned success=false",
+    );
     return [];
   }
 
@@ -629,16 +517,21 @@ export async function getBadges() {
 
 export async function getBadgeById(badgeId: string) {
   const response = await apiRequest<ApiResponse<Badge>>(
-    `/api/badges/${badgeId}`
+    `/badges/${badgeId}`,
   );
 
   if (isApiError(response)) {
-    console.warn("[Content Server API] Failed to fetch badge:", response.error.message);
+    console.warn(
+      "[Content Server API] Failed to fetch badge:",
+      response.error.message,
+    );
     return null;
   }
 
   if (!response.success) {
-    console.warn("[Content Server API] Failed to fetch badge: API returned success=false");
+    console.warn(
+      "[Content Server API] Failed to fetch badge: API returned success=false",
+    );
     return null;
   }
 
@@ -647,47 +540,61 @@ export async function getBadgeById(badgeId: string) {
 
 export async function getBadgeByLevel(levelNumber: number) {
   const response = await apiRequest<ApiResponse<Badge>>(
-    `/api/badges/level/${levelNumber}`
+    `/badges/level/${levelNumber}`,
   );
 
   if (isApiError(response)) {
-    console.warn("[Content Server API] Failed to fetch badge by level:", response.error.message);
+    console.warn(
+      "[Content Server API] Failed to fetch badge by level:",
+      response.error.message,
+    );
     return null;
   }
 
   if (!response.success) {
-    console.warn("[Content Server API] Failed to fetch badge by level: API returned success=false");
+    console.warn(
+      "[Content Server API] Failed to fetch badge by level: API returned success=false",
+    );
     return null;
   }
 
   return response.data || null;
 }
 
-
 /**
  * ============================================
- * CREATE/UPDATE/DELETE ENDPOINTS (CRUD)
+ * CREATE/UPDATE/DELETE ENDPOINTS
  * ============================================
  */
 
 // Age Group CRUD
-export async function createAgeGroup(data: Omit<AgeGroup, "id" | "createdAt" | "updatedAt" | "roadmaps">) {
+export async function createAgeGroup(
+  data: Omit<AgeGroup, "id" | "createdAt" | "updatedAt" | "roadmaps">,
+) {
   const response = await apiRequest<ApiResponse<AgeGroup>>(
-    "/api/age-groups",
+    "/age-groups",
     {
       method: "POST",
       body: JSON.stringify(data),
-    }
+    },
   );
 
   if (isApiError(response)) {
-    console.error("[Content Server API] Failed to create age group:", response.error.message);
+    console.error(
+      "[Content Server API] Failed to create age group:",
+      response.error.message,
+    );
     return { success: false as const, error: response.error.message };
   }
 
   if (!response.success) {
-    console.error("[Content Server API] Failed to create age group: API returned success=false");
-    return { success: false as const, error: response.error?.message || "Failed to create age group" };
+    console.error(
+      "[Content Server API] Failed to create age group: API returned success=false",
+    );
+    return {
+      success: false as const,
+      error: response.error?.message || "Failed to create age group",
+    };
   }
 
   return { success: true as const, data: response.data };
@@ -695,43 +602,58 @@ export async function createAgeGroup(data: Omit<AgeGroup, "id" | "createdAt" | "
 
 export async function updateAgeGroup(
   id: string,
-  data: Partial<Omit<AgeGroup, "id" | "createdAt" | "updatedAt" | "roadmaps">>
+  data: Partial<Omit<AgeGroup, "id" | "createdAt" | "updatedAt" | "roadmaps">>,
 ) {
   const response = await apiRequest<ApiResponse<AgeGroup>>(
-    `/api/age-groups/${id}`,
+    `/age-groups/${id}`,
     {
       method: "PUT",
       body: JSON.stringify(data),
-    }
+    },
   );
 
   if (isApiError(response)) {
-    console.error("[Content Server API] Failed to update age group:", response.error.message);
+    console.error(
+      "[Content Server API] Failed to update age group:",
+      response.error.message,
+    );
     return { success: false as const, error: response.error.message };
   }
 
   if (!response.success) {
-    console.error("[Content Server API] Failed to update age group: API returned success=false");
-    return { success: false as const, error: response.error?.message || "Failed to update age group" };
+    console.error(
+      "[Content Server API] Failed to update age group: API returned success=false",
+    );
+    return {
+      success: false as const,
+      error: response.error?.message || "Failed to update age group",
+    };
   }
 
   return { success: true as const, data: response.data };
 }
 
 export async function deleteAgeGroup(id: string) {
-  const response = await apiRequest<ApiResponse<{ id: string }>>(
-    `/api/age-groups/${id}`,
-    { method: "DELETE" }
-  );
+  const response = await apiRequest<
+    ApiResponse<{ success: boolean; deletedId: string; name: string }>
+  >(`/age-groups/${id}`, { method: "DELETE" });
 
   if (isApiError(response)) {
-    console.error("[Content Server API] Failed to delete age group:", response.error.message);
+    console.error(
+      "[Content Server API] Failed to delete age group:",
+      response.error.message,
+    );
     return { success: false as const, error: response.error.message };
   }
 
   if (!response.success) {
-    console.error("[Content Server API] Failed to delete age group: API returned success=false");
-    return { success: false as const, error: response.error?.message || "Failed to delete age group" };
+    console.error(
+      "[Content Server API] Failed to delete age group: API returned success=false",
+    );
+    return {
+      success: false as const,
+      error: response.error?.message || "Failed to delete age group",
+    };
   }
 
   return { success: true as const, data: response.data };
@@ -742,42 +664,56 @@ export async function deleteAgeGroup(id: string) {
  * Returns details about missing content if validation fails
  */
 export async function validateAgeGroupReadiness(ageGroupId: string) {
-  const response = await apiRequest<ApiResponse<AgeGroupContentValidationResult>>(
-    `/api/age-groups/${ageGroupId}/validate-readiness`,
-    { method: "GET" }
-  );
+  const response = await apiRequest<
+    ApiResponse<AgeGroupContentValidationResult>
+  >(`/age-groups/${ageGroupId}/validate-readiness`, { method: "GET" });
 
   if (isApiError(response)) {
-    console.error("[Content Server API] Failed to validate age group readiness:", response.error.message);
+    console.error(
+      "[Content Server API] Failed to validate age group readiness:",
+      response.error.message,
+    );
     return { success: false as const, error: response.error.message };
   }
 
   if (!response.success) {
-    console.error("[Content Server API] Failed to validate age group readiness: API returned success=false");
-    return { success: false as const, error: response.error?.message || "Failed to validate age group" };
+    console.error(
+      "[Content Server API] Failed to validate age group readiness: API returned success=false",
+    );
+    return {
+      success: false as const,
+      error: response.error?.message || "Failed to validate age group",
+    };
   }
 
   return { success: true as const, data: response.data };
 }
 
 // Theme CRUD
-export async function createTheme(data: Omit<Theme, "id" | "createdAt" | "updatedAt" | "roadmap">) {
-  const response = await apiRequest<ApiResponse<Theme>>(
-    "/api/themes",
-    {
-      method: "POST",
-      body: JSON.stringify(data),
-    }
-  );
+export async function createTheme(
+  data: Omit<Theme, "id" | "createdAt" | "updatedAt" | "roadmap">,
+) {
+  const response = await apiRequest<ApiResponse<Theme>>("/themes", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
 
   if (isApiError(response)) {
-    console.error("[Content Server API] Failed to create theme:", response.error.message);
+    console.error(
+      "[Content Server API] Failed to create theme:",
+      response.error.message,
+    );
     return { success: false as const, error: response.error.message };
   }
 
   if (!response.success) {
-    console.error("[Content Server API] Failed to create theme: API returned success=false");
-    return { success: false as const, error: response.error?.message || "Failed to create theme" };
+    console.error(
+      "[Content Server API] Failed to create theme: API returned success=false",
+    );
+    return {
+      success: false as const,
+      error: response.error?.message || "Failed to create theme",
+    };
   }
 
   return { success: true as const, data: response.data };
@@ -785,24 +721,32 @@ export async function createTheme(data: Omit<Theme, "id" | "createdAt" | "update
 
 export async function updateTheme(
   id: string,
-  data: Partial<Omit<Theme, "id" | "createdAt" | "updatedAt" | "roadmap">>
+  data: Partial<Omit<Theme, "id" | "createdAt" | "updatedAt" | "roadmap">>,
 ) {
   const response = await apiRequest<ApiResponse<Theme>>(
-    `/api/themes/${id}`,
+    `/themes/${id}`,
     {
       method: "PUT",
       body: JSON.stringify(data),
-    }
+    },
   );
 
   if (isApiError(response)) {
-    console.error("[Content Server API] Failed to update theme:", response.error.message);
+    console.error(
+      "[Content Server API] Failed to update theme:",
+      response.error.message,
+    );
     return { success: false as const, error: response.error.message };
   }
 
   if (!response.success) {
-    console.error("[Content Server API] Failed to update theme: API returned success=false");
-    return { success: false as const, error: response.error?.message || "Failed to update theme" };
+    console.error(
+      "[Content Server API] Failed to update theme: API returned success=false",
+    );
+    return {
+      success: false as const,
+      error: response.error?.message || "Failed to update theme",
+    };
   }
 
   return { success: true as const, data: response.data };
@@ -810,41 +754,59 @@ export async function updateTheme(
 
 export async function deleteTheme(id: string) {
   const response = await apiRequest<ApiResponse<{ id: string }>>(
-    `/api/themes/${id}`,
-    { method: "DELETE" }
+    `/themes/${id}`,
+    { method: "DELETE" },
   );
 
   if (isApiError(response)) {
-    console.error("[Content Server API] Failed to delete theme:", response.error.message);
+    console.error(
+      "[Content Server API] Failed to delete theme:",
+      response.error.message,
+    );
     return { success: false as const, error: response.error.message };
   }
 
   if (!response.success) {
-    console.error("[Content Server API] Failed to delete theme: API returned success=false");
-    return { success: false as const, error: response.error?.message || "Failed to delete theme" };
+    console.error(
+      "[Content Server API] Failed to delete theme: API returned success=false",
+    );
+    return {
+      success: false as const,
+      error: response.error?.message || "Failed to delete theme",
+    };
   }
 
   return { success: true as const, data: response.data };
 }
 
 // Roadmap CRUD
-export async function createRoadmap(data: Omit<Roadmap, "id" | "createdAt" | "updatedAt" | "ageGroup" | "theme" | "worlds">) {
-  const response = await apiRequest<ApiResponse<Roadmap>>(
-    "/api/roadmaps",
-    {
-      method: "POST",
-      body: JSON.stringify(data),
-    }
-  );
+export async function createRoadmap(
+  data: Omit<
+    Roadmap,
+    "id" | "createdAt" | "updatedAt" | "ageGroup" | "theme" | "worlds"
+  >,
+) {
+  const response = await apiRequest<ApiResponse<Roadmap>>("/roadmaps", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
 
   if (isApiError(response)) {
-    console.error("[Content Server API] Failed to create roadmap:", response.error.message);
+    console.error(
+      "[Content Server API] Failed to create roadmap:",
+      response.error.message,
+    );
     return { success: false as const, error: response.error.message };
   }
 
   if (!response.success) {
-    console.error("[Content Server API] Failed to create roadmap: API returned success=false");
-    return { success: false as const, error: response.error?.message || "Failed to create roadmap" };
+    console.error(
+      "[Content Server API] Failed to create roadmap: API returned success=false",
+    );
+    return {
+      success: false as const,
+      error: response.error?.message || "Failed to create roadmap",
+    };
   }
 
   return { success: true as const, data: response.data };
@@ -852,24 +814,37 @@ export async function createRoadmap(data: Omit<Roadmap, "id" | "createdAt" | "up
 
 export async function updateRoadmap(
   id: string,
-  data: Partial<Omit<Roadmap, "id" | "createdAt" | "updatedAt" | "ageGroup" | "theme" | "worlds">>
+  data: Partial<
+    Omit<
+      Roadmap,
+      "id" | "createdAt" | "updatedAt" | "ageGroup" | "theme" | "worlds"
+    >
+  >,
 ) {
   const response = await apiRequest<ApiResponse<Roadmap>>(
-    `/api/roadmaps/${id}`,
+    `/roadmaps/${id}`,
     {
       method: "PUT",
       body: JSON.stringify(data),
-    }
+    },
   );
 
   if (isApiError(response)) {
-    console.error("[Content Server API] Failed to update roadmap:", response.error.message);
+    console.error(
+      "[Content Server API] Failed to update roadmap:",
+      response.error.message,
+    );
     return { success: false as const, error: response.error.message };
   }
 
   if (!response.success) {
-    console.error("[Content Server API] Failed to update roadmap: API returned success=false");
-    return { success: false as const, error: response.error?.message || "Failed to update roadmap" };
+    console.error(
+      "[Content Server API] Failed to update roadmap: API returned success=false",
+    );
+    return {
+      success: false as const,
+      error: response.error?.message || "Failed to update roadmap",
+    };
   }
 
   return { success: true as const, data: response.data };
@@ -877,41 +852,56 @@ export async function updateRoadmap(
 
 export async function deleteRoadmap(id: string) {
   const response = await apiRequest<ApiResponse<{ id: string }>>(
-    `/api/roadmaps/${id}`,
-    { method: "DELETE" }
+    `/roadmaps/${id}`,
+    { method: "DELETE" },
   );
 
   if (isApiError(response)) {
-    console.error("[Content Server API] Failed to delete roadmap:", response.error.message);
+    console.error(
+      "[Content Server API] Failed to delete roadmap:",
+      response.error.message,
+    );
     return { success: false as const, error: response.error.message };
   }
 
   if (!response.success) {
-    console.error("[Content Server API] Failed to delete roadmap: API returned success=false");
-    return { success: false as const, error: response.error?.message || "Failed to delete roadmap" };
+    console.error(
+      "[Content Server API] Failed to delete roadmap: API returned success=false",
+    );
+    return {
+      success: false as const,
+      error: response.error?.message || "Failed to delete roadmap",
+    };
   }
 
   return { success: true as const, data: response.data };
 }
 
 // World CRUD
-export async function createWorld(data: Omit<World, "id" | "createdAt" | "updatedAt" | "roadmap" | "stories">) {
-  const response = await apiRequest<ApiResponse<World>>(
-    "/api/worlds",
-    {
-      method: "POST",
-      body: JSON.stringify(data),
-    }
-  );
+export async function createWorld(
+  data: Omit<World, "id" | "createdAt" | "updatedAt" | "roadmap" | "stories">,
+) {
+  const response = await apiRequest<ApiResponse<World>>("/worlds", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
 
   if (isApiError(response)) {
-    console.error("[Content Server API] Failed to create world:", response.error.message);
+    console.error(
+      "[Content Server API] Failed to create world:",
+      response.error.message,
+    );
     return { success: false as const, error: response.error.message };
   }
 
   if (!response.success) {
-    console.error("[Content Server API] Failed to create world: API returned success=false");
-    return { success: false as const, error: response.error?.message || "Failed to create world" };
+    console.error(
+      "[Content Server API] Failed to create world: API returned success=false",
+    );
+    return {
+      success: false as const,
+      error: response.error?.message || "Failed to create world",
+    };
   }
 
   return { success: true as const, data: response.data };
@@ -919,24 +909,34 @@ export async function createWorld(data: Omit<World, "id" | "createdAt" | "update
 
 export async function updateWorld(
   id: string,
-  data: Partial<Omit<World, "id" | "createdAt" | "updatedAt" | "roadmap" | "stories">>
+  data: Partial<
+    Omit<World, "id" | "createdAt" | "updatedAt" | "roadmap" | "stories">
+  >,
 ) {
   const response = await apiRequest<ApiResponse<World>>(
-    `/api/worlds/${id}`,
+    `/worlds/${id}`,
     {
       method: "PUT",
       body: JSON.stringify(data),
-    }
+    },
   );
 
   if (isApiError(response)) {
-    console.error("[Content Server API] Failed to update world:", response.error.message);
+    console.error(
+      "[Content Server API] Failed to update world:",
+      response.error.message,
+    );
     return { success: false as const, error: response.error.message };
   }
 
   if (!response.success) {
-    console.error("[Content Server API] Failed to update world: API returned success=false");
-    return { success: false as const, error: response.error?.message || "Failed to update world" };
+    console.error(
+      "[Content Server API] Failed to update world: API returned success=false",
+    );
+    return {
+      success: false as const,
+      error: response.error?.message || "Failed to update world",
+    };
   }
 
   return { success: true as const, data: response.data };
@@ -944,111 +944,64 @@ export async function updateWorld(
 
 export async function deleteWorld(id: string) {
   const response = await apiRequest<ApiResponse<{ id: string }>>(
-    `/api/worlds/${id}`,
-    { method: "DELETE" }
+    `/worlds/${id}`,
+    { method: "DELETE" },
   );
 
   if (isApiError(response)) {
-    console.error("[Content Server API] Failed to delete world:", response.error.message);
+    console.error(
+      "[Content Server API] Failed to delete world:",
+      response.error.message,
+    );
     return { success: false as const, error: response.error.message };
   }
 
   if (!response.success) {
-    console.error("[Content Server API] Failed to delete world: API returned success=false");
-    return { success: false as const, error: response.error?.message || "Failed to delete world" };
+    console.error(
+      "[Content Server API] Failed to delete world: API returned success=false",
+    );
+    return {
+      success: false as const,
+      error: response.error?.message || "Failed to delete world",
+    };
   }
 
   return { success: true as const, data: response.data };
 }
 
 // Story CRUD
-export async function createStory(data: Omit<Story, "id" | "createdAt" | "updatedAt" | "world" | "chapters">) {
-  const response = await apiRequest<ApiResponse<Story>>(
-    "/api/stories",
-    {
-      method: "POST",
-      body: JSON.stringify(data),
-    }
-  );
-
-  if (isApiError(response)) {
-    console.error("[Content Server API] Failed to create story:", response.error.message);
-    return { success: false as const, error: response.error.message };
-  }
-
-  if (!response.success) {
-    console.error("[Content Server API] Failed to create story: API returned success=false");
-    return { success: false as const, error: response.error?.message || "Failed to create story" };
-  }
-
-  return { success: true as const, data: response.data };
-}
-
-export async function updateStory(
-  id: string,
-  data: Partial<Omit<Story, "id" | "createdAt" | "updatedAt" | "world" | "chapters">>
-) {
-  const response = await apiRequest<ApiResponse<Story>>(
-    `/api/stories/${id}`,
-    {
-      method: "PUT",
-      body: JSON.stringify(data),
-    }
-  );
-
-  if (isApiError(response)) {
-    console.error("[Content Server API] Failed to update story:", response.error.message);
-    return { success: false as const, error: response.error.message };
-  }
-
-  if (!response.success) {
-    console.error("[Content Server API] Failed to update story: API returned success=false");
-    return { success: false as const, error: response.error?.message || "Failed to update story" };
-  }
-
-  return { success: true as const, data: response.data };
-}
-
-export async function deleteStory(id: string) {
-  const response = await apiRequest<ApiResponse<{ id: string }>>(
-    `/api/stories/${id}`,
-    { method: "DELETE" }
-  );
-
-  if (isApiError(response)) {
-    console.error("[Content Server API] Failed to delete story:", response.error.message);
-    return { success: false as const, error: response.error.message };
-  }
-
-  if (!response.success) {
-    console.error("[Content Server API] Failed to delete story: API returned success=false");
-    return { success: false as const, error: response.error?.message || "Failed to delete story" };
-  }
-
-  return { success: true as const, data: response.data };
-}
 
 /**
  * Create a story with chapters, challenges, and answers atomically
  * All nested data is created in a single transaction or rolled back entirely on error
  */
-export async function createStoryWithChapters(data: CreateStoryWithChaptersInput) {
+export async function createStoryWithChapters(
+  data: CreateStoryWithChaptersInput,
+) {
   const response = await apiRequest<ApiResponse<Story>>(
-    "/api/stories/batch/create",
+    "/stories/batch/create",
     {
       method: "POST",
       body: JSON.stringify(data),
-    }
+    },
   );
 
   if (isApiError(response)) {
-    console.error("[Content Server API] Failed to create story with chapters:", response.error.message);
+    console.error(
+      "[Content Server API] Failed to create story with chapters:",
+      response.error.message,
+    );
     return { success: false as const, error: response.error.message };
   }
 
   if (!response.success) {
-    console.error("[Content Server API] Failed to create story with chapters: API returned success=false");
-    return { success: false as const, error: response.error?.message || "Failed to create story with chapters" };
+    console.error(
+      "[Content Server API] Failed to create story with chapters: API returned success=false",
+    );
+    return {
+      success: false as const,
+      error: response.error?.message || "Failed to create story with chapters",
+    };
   }
 
   return { success: true as const, data: response.data };
@@ -1058,224 +1011,61 @@ export async function createStoryWithChapters(data: CreateStoryWithChaptersInput
  * Edit a story with chapters, challenges, and answers atomically
  * Updates story and all nested data in a single transaction or rolled back entirely on error
  */
-export async function editStoryWithChapters(storyId: string, data: CreateStoryWithChaptersInput) {
+export async function editStoryWithChapters(
+  storyId: string,
+  data: CreateStoryWithChaptersInput,
+) {
   const response = await apiRequest<ApiResponse<Story>>(
-    `/api/stories/${storyId}/batch/edit`,
+    `/stories/${storyId}/batch/edit`,
     {
       method: "PUT",
       body: JSON.stringify(data),
-    }
+    },
   );
 
   if (isApiError(response)) {
-    console.error("[Content Server API] Failed to edit story with chapters:", response.error.message);
+    console.error(
+      "[Content Server API] Failed to edit story with chapters:",
+      response.error.message,
+    );
     return { success: false as const, error: response.error.message };
   }
 
   if (!response.success) {
-    console.error("[Content Server API] Failed to edit story with chapters: API returned success=false");
-    return { success: false as const, error: response.error?.message || "Failed to edit story with chapters" };
+    console.error(
+      "[Content Server API] Failed to edit story with chapters: API returned success=false",
+    );
+    return {
+      success: false as const,
+      error: response.error?.message || "Failed to edit story with chapters",
+    };
   }
 
   return { success: true as const, data: response.data };
 }
 
-// Chapter CRUD
-export async function createChapter(data: Omit<Chapter, "id" | "createdAt" | "updatedAt" | "story">) {
-  const response = await apiRequest<ApiResponse<Chapter>>(
-    "/api/chapters",
-    {
-      method: "POST",
-      body: JSON.stringify(data),
-    }
-  );
-
-  if (isApiError(response)) {
-    console.error("[Content Server API] Failed to create chapter:", response.error.message);
-    return { success: false as const, error: response.error.message };
-  }
-
-  if (!response.success) {
-    console.error("[Content Server API] Failed to create chapter: API returned success=false");
-    return { success: false as const, error: response.error?.message || "Failed to create chapter" };
-  }
-
-  return { success: true as const, data: response.data };
-}
-
-export async function updateChapter(
-  id: string,
-  data: Partial<Omit<Chapter, "id" | "createdAt" | "updatedAt" | "story">>
-) {
-  const response = await apiRequest<ApiResponse<Chapter>>(
-    `/api/chapters/${id}`,
-    {
-      method: "PUT",
-      body: JSON.stringify(data),
-    }
-  );
-
-  if (isApiError(response)) {
-    console.error("[Content Server API] Failed to update chapter:", response.error.message);
-    return { success: false as const, error: response.error.message };
-  }
-
-  if (!response.success) {
-    console.error("[Content Server API] Failed to update chapter: API returned success=false");
-    return { success: false as const, error: response.error?.message || "Failed to update chapter" };
-  }
-
-  return { success: true as const, data: response.data };
-}
-
-export async function deleteChapter(id: string) {
+export async function deleteStory(id: string) {
   const response = await apiRequest<ApiResponse<{ id: string }>>(
-    `/api/chapters/${id}`,
-    { method: "DELETE" }
+    `/stories/${id}`,
+    { method: "DELETE" },
   );
 
   if (isApiError(response)) {
-    console.error("[Content Server API] Failed to delete chapter:", response.error.message);
+    console.error(
+      "[Content Server API] Failed to delete story:",
+      response.error.message,
+    );
     return { success: false as const, error: response.error.message };
   }
 
   if (!response.success) {
-    console.error("[Content Server API] Failed to delete chapter: API returned success=false");
-    return { success: false as const, error: response.error?.message || "Failed to delete chapter" };
-  }
-
-  return { success: true as const, data: response.data };
-}
-
-// Challenge CRUD
-export async function createChallenge(data: Omit<Challenge, "id" | "createdAt" | "updatedAt" | "chapter" | "answers">) {
-  const response = await apiRequest<ApiResponse<Challenge>>(
-    "/api/challenges",
-    {
-      method: "POST",
-      body: JSON.stringify(data),
-    }
-  );
-
-  if (isApiError(response)) {
-    console.error("[Content Server API] Failed to create challenge:", response.error.message);
-    return { success: false as const, error: response.error.message };
-  }
-
-  if (!response.success) {
-    console.error("[Content Server API] Failed to create challenge: API returned success=false");
-    return { success: false as const, error: response.error?.message || "Failed to create challenge" };
-  }
-
-  return { success: true as const, data: response.data };
-}
-
-export async function updateChallenge(
-  id: string,
-  data: Partial<Omit<Challenge, "id" | "createdAt" | "updatedAt" | "chapter" | "answers">>
-) {
-  const response = await apiRequest<ApiResponse<Challenge>>(
-    `/api/challenges/${id}`,
-    {
-      method: "PUT",
-      body: JSON.stringify(data),
-    }
-  );
-
-  if (isApiError(response)) {
-    console.error("[Content Server API] Failed to update challenge:", response.error.message);
-    return { success: false as const, error: response.error.message };
-  }
-
-  if (!response.success) {
-    console.error("[Content Server API] Failed to update challenge: API returned success=false");
-    return { success: false as const, error: response.error?.message || "Failed to update challenge" };
-  }
-
-  return { success: true as const, data: response.data };
-}
-
-export async function deleteChallenge(id: string) {
-  const response = await apiRequest<ApiResponse<{ id: string }>>(
-    `/api/challenges/${id}`,
-    { method: "DELETE" }
-  );
-
-  if (isApiError(response)) {
-    console.error("[Content Server API] Failed to delete challenge:", response.error.message);
-    return { success: false as const, error: response.error.message };
-  }
-
-  if (!response.success) {
-    console.error("[Content Server API] Failed to delete challenge: API returned success=false");
-    return { success: false as const, error: response.error?.message || "Failed to delete challenge" };
-  }
-
-  return { success: true as const, data: response.data };
-}
-
-// Answer CRUD
-export async function createAnswer(data: Omit<Answer, "id" | "createdAt" | "updatedAt">) {
-  const response = await apiRequest<ApiResponse<Answer>>(
-    "/api/answers",
-    {
-      method: "POST",
-      body: JSON.stringify(data),
-    }
-  );
-
-  if (isApiError(response)) {
-    console.error("[Content Server API] Failed to create answer:", response.error.message);
-    return { success: false as const, error: response.error.message };
-  }
-
-  if (!response.success) {
-    console.error("[Content Server API] Failed to create answer: API returned success=false");
-    return { success: false as const, error: response.error?.message || "Failed to create answer" };
-  }
-
-  return { success: true as const, data: response.data };
-}
-
-export async function updateAnswer(
-  id: string,
-  data: Partial<Omit<Answer, "id" | "createdAt" | "updatedAt">>
-) {
-  const response = await apiRequest<ApiResponse<Answer>>(
-    `/api/answers/${id}`,
-    {
-      method: "PUT",
-      body: JSON.stringify(data),
-    }
-  );
-
-  if (isApiError(response)) {
-    console.error("[Content Server API] Failed to update answer:", response.error.message);
-    return { success: false as const, error: response.error.message };
-  }
-
-  if (!response.success) {
-    console.error("[Content Server API] Failed to update answer: API returned success=false");
-    return { success: false as const, error: response.error?.message || "Failed to update answer" };
-  }
-
-  return { success: true as const, data: response.data };
-}
-
-export async function deleteAnswer(id: string) {
-  const response = await apiRequest<ApiResponse<{ id: string }>>(
-    `/api/answers/${id}`,
-    { method: "DELETE" }
-  );
-
-  if (isApiError(response)) {
-    console.error("[Content Server API] Failed to delete answer:", response.error.message);
-    return { success: false as const, error: response.error.message };
-  }
-
-  if (!response.success) {
-    console.error("[Content Server API] Failed to delete answer: API returned success=false");
-    return { success: false as const, error: response.error?.message || "Failed to delete answer" };
+    console.error(
+      "[Content Server API] Failed to delete story: API returned success=false",
+    );
+    return {
+      success: false as const,
+      error: response.error?.message || "Failed to delete story",
+    };
   }
 
   return { success: true as const, data: response.data };

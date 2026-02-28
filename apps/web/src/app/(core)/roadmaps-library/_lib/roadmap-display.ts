@@ -37,11 +37,3 @@ export function transformRoadmapForDisplay(roadmap: Roadmap): RoadmapDisplay {
   };
 }
 
-/**
- * Transforms multiple roadmaps for display
- */
-export function transformRoadmapsForDisplay(
-  roadmaps: Roadmap[]
-): RoadmapDisplay[] {
-  return roadmaps.map(transformRoadmapForDisplay);
-}

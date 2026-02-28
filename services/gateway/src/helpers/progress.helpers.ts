@@ -16,6 +16,7 @@ import {
   ChallengeAttempt,
   StarEvent,
   SessionCheckpoint,
+  API_BASE_URL_V1,
 } from "@shared/types";
 
 
@@ -54,7 +55,7 @@ export async function forwardGetChildById(
 
     // Step 1: Fetch child profile from Progress Service
     const profileResponse = await axios.get<ApiResponse<ChildProfile>>(
-      `${PROGRESS_SERVICE_URL}/api/children/${childId}`,
+      `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/children/${childId}`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -119,7 +120,7 @@ export async function forwardGetChildById(
     // Step 2: Fetch child data from Auth Service to match with profile
     try {
       const childResponse = await axios.get<ApiResponse<Child>>(
-        `${AUTH_SERVICE_URL}/children/${profile.childId}`,
+        `${AUTH_SERVICE_URL}${API_BASE_URL_V1}/children/${profile.childId}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -192,7 +193,7 @@ export async function forwardGetChildById(
  */
 export async function forwardToProgressService(
   req: Request,
-  res: Response,
+  res: Response<ApiResponse<ChildProfile[]>>,
   basePath: string,
 ): Promise<void> {
   try {
@@ -222,8 +223,8 @@ export async function forwardToProgressService(
       dataLength: profileResponse.data?.data?.length,
     });
 
-    // If requesting /api/children endpoints, enhance with Auth Service data
-    if (basePath.includes("/api/children") && profileResponse.status === 200) {
+    // If requesting /children endpoints, enhance with Auth Service data
+    if (basePath.includes(`${API_BASE_URL_V1}/children`) && profileResponse.status === 200) {
       try {
         // Get profiles and extract child IDs
         const profiles = profileResponse.data?.data || [];
@@ -249,7 +250,7 @@ export async function forwardToProgressService(
 
         // Fetch only the children referenced by profiles
         const childrenResponse = await axios.get<ApiResponse<Child[]>>(
-          `${AUTH_SERVICE_URL}/children`,
+          `${AUTH_SERVICE_URL}${API_BASE_URL_V1}/children`,
           {
             params: {
               childIds: childIds.join(","),
@@ -320,7 +321,14 @@ export async function forwardToProgressService(
       error: String(error),
       path: req.path,
     });
-    res.status(503).json({ error: "Progress service unavailable" });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "SERVICE_UNAVAILABLE",
+        message: "Progress service unavailable",
+      },
+      timestamp: new Date(),
+    });
   }
 }
 
@@ -352,7 +360,7 @@ export async function forwardParentWithProfiles(
 
     // Step A: Fetch parent from Auth Service
     const parentResponse = await axios.get<ApiResponse<User>>(
-      `${AUTH_SERVICE_URL}/parent/${parentId}`,
+      `${AUTH_SERVICE_URL}${API_BASE_URL_V1}/parent/${parentId}`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -423,7 +431,7 @@ export async function forwardParentWithProfiles(
 
     // Step B: Fetch child profiles from Progress Service
     const profilesResponse = await axios.get<ApiResponse<ChildProfile[]>>(
-      `${PROGRESS_SERVICE_URL}/api/children/parent/${parentId}`,
+      `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/children/parent/${parentId}`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -514,7 +522,7 @@ export async function forwardStartStory(
 
     // Step 1: Fetch story details from Content Service
     const storyResponse = await axios.get<ApiResponse<Story>>(
-      `${CONTENT_SERVICE_URL}/api/stories/${storyId}`,
+      `${CONTENT_SERVICE_URL}${API_BASE_URL_V1}/stories/${storyId}`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -625,7 +633,7 @@ export async function forwardStartStory(
 
     // Step 3: Create new progress record in Progress Service
     const progressResponse = await axios.post<ApiResponse<Progress | null>>(
-      `${PROGRESS_SERVICE_URL}/api/progress/${childId}/stories/${storyId}/start`,
+      `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/progress/${childId}/stories/${storyId}/start`,
       {
         firstChapterId,
         worldId,
@@ -743,7 +751,7 @@ export async function forwardGetChildProgress(
 
     // Forward request to Progress Service
     const progressResponse = await axios.get<ApiResponse<Progress | null>>(
-      `${PROGRESS_SERVICE_URL}/api/progress/${childId}/stories/${storyId}`,
+      `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/progress/${childId}/stories/${storyId}`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -888,7 +896,7 @@ export async function forwardSubmitChallengeAnswer(
         totalStars: number;
       }>
     >(
-      `${PROGRESS_SERVICE_URL}/api/progress/challenge/submit`,
+      `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/progress/challenge/submit`,
       {
         gameSessionId,
         challengeId,
@@ -1029,7 +1037,7 @@ export async function forwardSaveCheckpoint(
 
     // Forward to Progress Service
     const checkpointResponse = await axios.post<ApiResponse<GameSession>>(
-      `${PROGRESS_SERVICE_URL}/api/progress/checkpoint`,
+      `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/progress/checkpoint`,
       {
         gameSessionId,
         chapterId,
@@ -1142,7 +1150,7 @@ export async function forwardCreateNewCheckpoint(
     const resumeResponse = await axios.post<
       ApiResponse<SessionCheckpoint>
     >(
-      `${PROGRESS_SERVICE_URL}/api/progress/create-new-checkpoint/${gameSessionId}`,
+      `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/progress/create-new-checkpoint/${gameSessionId}`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -1245,7 +1253,7 @@ export async function forwardPauseGameSession(
     const pauseResponse = await axios.post<
       ApiResponse<SessionCheckpoint>
     >(
-      `${PROGRESS_SERVICE_URL}/api/progress/pause/${gameSessionId}`,
+      `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/progress/pause/${gameSessionId}`,
       {},
       {
         headers: {
@@ -1316,401 +1324,6 @@ export async function forwardPauseGameSession(
   }
 }
 
-/**
- * Calculate total active time spent in a game session
- * Gets total time from all challenge attempts
- */
-export async function forwardCalculateSessionTime(
-  req: Request,
-  res: Response<ApiResponse<{ totalTimeSpent: number }>>,
-): Promise<void> {
-  try {
-    const { gameSessionId } = req.params;
-
-    if (!gameSessionId) {
-      res.status(400).json({
-        success: false,
-        error: {
-          code: "BAD_REQUEST",
-          message: "Missing required parameter: gameSessionId",
-        },
-        timestamp: new Date(),
-      });
-      return;
-    }
-
-    logger.info("Calculating session time", { gameSessionId });
-
-    // Forward to Progress Service
-    const timeResponse = await axios.get<ApiResponse<{ totalTimeSpent: number }>>(
-      `${PROGRESS_SERVICE_URL}/api/progress/${gameSessionId}/time`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          ...(req.headers.authorization && {
-            Authorization: req.headers.authorization,
-          }),
-        },
-        validateStatus: () => true,
-      },
-    );
-
-    logger.debug("Progress service calculate session time response received", {
-      status: timeResponse.status,
-      hasData: !!timeResponse.data?.data,
-    });
-
-    // Handle progress service error
-    if (timeResponse.status !== 200) {
-      logger.error("Progress service calculate session time error", {
-        status: timeResponse.status,
-        message: timeResponse.data?.error?.message,
-      });
-      res.status(timeResponse.status).json(timeResponse.data);
-      return;
-    }
-
-    res.status(200).json({
-      success: true,
-      data: timeResponse.data?.data || { totalTimeSpent: 0 },
-      timestamp: new Date(),
-    });
-  } catch (error) {
-    logger.error("Calculate session time forward error", {
-      error: String(error),
-      stack: error instanceof Error ? error.stack : "N/A",
-    });
-    res.status(503).json({
-      success: false,
-      error: {
-        code: "INTERNAL_ERROR",
-        message: "Failed to calculate session time",
-      },
-      timestamp: new Date(),
-    });
-  }
-}
-
-/**
- * Aggregate and store total time spent in a game session
- * Updates GameSession with frontend-calculated total time
- */
-export async function forwardAggregateSessionTime(
-  req: Request,
-  res: Response<ApiResponse<GameSession | null>>,
-): Promise<void> {
-  try {
-    const { gameSessionId } = req.params;
-    const { totalChallengeTimeSeconds } = req.body;
-
-    if (!gameSessionId) {
-      res.status(400).json({
-        success: false,
-        error: {
-          code: "BAD_REQUEST",
-          message: "Missing required parameter: gameSessionId",
-        },
-        timestamp: new Date(),
-      });
-      return;
-    }
-
-    if (
-      totalChallengeTimeSeconds === undefined ||
-      totalChallengeTimeSeconds === null
-    ) {
-      res.status(400).json({
-        success: false,
-        error: {
-          code: "BAD_REQUEST",
-          message: "Missing required field: totalChallengeTimeSeconds",
-        },
-        timestamp: new Date(),
-      });
-      return;
-    }
-
-    logger.info("Aggregating session time", {
-      gameSessionId,
-      totalChallengeTimeSeconds,
-    });
-
-    // Forward to Progress Service
-    const aggregateResponse = await axios.post<ApiResponse<GameSession>>(
-      `${PROGRESS_SERVICE_URL}/api/progress/${gameSessionId}/aggregate-time`,
-      {
-        totalChallengeTimeSeconds,
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          ...(req.headers.authorization && {
-            Authorization: req.headers.authorization,
-          }),
-        },
-        validateStatus: () => true,
-      },
-    );
-
-    logger.debug("Progress service aggregate session time response received", {
-      status: aggregateResponse.status,
-      hasGameSession: !!aggregateResponse.data?.data,
-    });
-
-    // Handle progress service error
-    if (aggregateResponse.status !== 200) {
-      logger.error("Progress service aggregate session time error", {
-        status: aggregateResponse.status,
-        message: aggregateResponse.data?.error?.message,
-      });
-      res.status(aggregateResponse.status).json(aggregateResponse.data);
-      return;
-    }
-
-    const updatedSession = aggregateResponse.data?.data;
-
-    if (!updatedSession) {
-      logger.error("Aggregate session time returned no data", { gameSessionId });
-      res.status(500).json({
-        success: false,
-        error: {
-          code: "NO_DATA_ERROR",
-          message: "Failed to aggregate session time: no data returned",
-        },
-        timestamp: new Date(),
-      });
-      return;
-    }
-
-    logger.info("Session time aggregated successfully", {
-      gameSessionId,
-      totalTimeSpent: updatedSession.totalTimeSpent,
-    });
-
-    res.status(200).json({
-      success: true,
-      data: updatedSession,
-      timestamp: new Date(),
-    });
-  } catch (error) {
-    logger.error("Aggregate session time forward error", {
-      error: String(error),
-      stack: error instanceof Error ? error.stack : "N/A",
-    });
-    res.status(503).json({
-      success: false,
-      error: {
-        code: "INTERNAL_ERROR",
-        message: "Failed to aggregate session time",
-      },
-      timestamp: new Date(),
-    });
-  }
-}
-
-/**
- * Aggregate and sync progress total time from game session
- * Updates Progress.totalTimeSpent with GameSession time
- */
-export async function forwardAggregateProgressTime(
-  req: Request,
-  res: Response<ApiResponse<Progress | null>>,
-): Promise<void> {
-  try {
-    const { progressId } = req.params;
-
-    if (!progressId) {
-      res.status(400).json({
-        success: false,
-        error: {
-          code: "BAD_REQUEST",
-          message: "Missing required parameter: progressId",
-        },
-        timestamp: new Date(),
-      });
-      return;
-    }
-
-    logger.info("Aggregating progress time", { progressId });
-
-    // Forward to Progress Service
-    const aggregateResponse = await axios.post<ApiResponse<Progress>>(
-      `${PROGRESS_SERVICE_URL}/api/progress/${progressId}/aggregate-progress-time`,
-      {},
-      {
-        headers: {
-          "Content-Type": "application/json",
-          ...(req.headers.authorization && {
-            Authorization: req.headers.authorization,
-          }),
-        },
-        validateStatus: () => true,
-      },
-    );
-
-    logger.debug(
-      "Progress service aggregate progress time response received",
-      {
-        status: aggregateResponse.status,
-        hasProgress: !!aggregateResponse.data?.data,
-      },
-    );
-
-    // Handle progress service error
-    if (aggregateResponse.status !== 200) {
-      logger.error("Progress service aggregate progress time error", {
-        status: aggregateResponse.status,
-        message: aggregateResponse.data?.error?.message,
-      });
-      res.status(aggregateResponse.status).json(aggregateResponse.data);
-      return;
-    }
-
-    const updatedProgress = aggregateResponse.data?.data;
-
-    if (!updatedProgress) {
-      logger.error("Aggregate progress time returned no data", { progressId });
-      res.status(500).json({
-        success: false,
-        error: {
-          code: "NO_DATA_ERROR",
-          message: "Failed to aggregate progress time: no data returned",
-        },
-        timestamp: new Date(),
-      });
-      return;
-    }
-
-    logger.info("Progress time aggregated successfully", {
-      progressId,
-      totalTimeSpent: updatedProgress.totalTimeSpent,
-    });
-
-    res.status(200).json({
-      success: true,
-      data: updatedProgress,
-      timestamp: new Date(),
-    });
-  } catch (error) {
-    logger.error("Aggregate progress time forward error", {
-      error: String(error),
-      stack: error instanceof Error ? error.stack : "N/A",
-    });
-    res.status(503).json({
-      success: false,
-      error: {
-        code: "INTERNAL_ERROR",
-        message: "Failed to aggregate progress time",
-      },
-      timestamp: new Date(),
-    });
-  }
-}
-
-/**
- * Get detailed time analytics for a game session
- * Returns: totalTimeSpent, sessionCount, totalIdleTime, activeTimePercentage, checkpoints
- */
-export async function forwardGetSessionAnalytics(
-  req: Request,
-  res: Response<
-    ApiResponse<{
-      gameSessionId: string;
-      totalTimeSpent: number;
-      sessionCount: number;
-      totalIdleTime: number;
-      activeTimePercentage: number;
-      checkpoints: Array<{
-        id: string;
-        chapterId: string;
-        pausedAt: Date;
-        resumedAt: Date | null;
-        sessionDurationSeconds: number | null;
-      }>;
-    }>
-  >,
-): Promise<void> {
-  try {
-    const { gameSessionId } = req.params;
-
-    if (!gameSessionId) {
-      res.status(400).json({
-        success: false,
-        error: {
-          code: "BAD_REQUEST",
-          message: "Missing required parameter: gameSessionId",
-        },
-        timestamp: new Date(),
-      });
-      return;
-    }
-
-    logger.info("Fetching session analytics", { gameSessionId });
-
-    // Forward to Progress Service
-    const analyticsResponse = await axios.get<
-      ApiResponse<{
-        gameSessionId: string;
-        totalTimeSpent: number;
-        sessionCount: number;
-        totalIdleTime: number;
-        activeTimePercentage: number;
-        checkpoints: Array<{
-          id: string;
-          chapterId: string;
-          pausedAt: Date;
-          resumedAt: Date | null;
-          sessionDurationSeconds: number | null;
-        }>;
-      }>
-    >(
-      `${PROGRESS_SERVICE_URL}/api/progress/${gameSessionId}/analytics`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          ...(req.headers.authorization && {
-            Authorization: req.headers.authorization,
-          }),
-        },
-        validateStatus: () => true,
-      },
-    );
-
-    logger.debug("Progress service session analytics response received", {
-      status: analyticsResponse.status,
-      hasAnalytics: !!analyticsResponse.data?.data,
-    });
-
-    // Handle progress service error
-    if (analyticsResponse.status !== 200) {
-      logger.error("Progress service session analytics error", {
-        status: analyticsResponse.status,
-        message: analyticsResponse.data?.error?.message,
-      });
-      res.status(analyticsResponse.status).json(analyticsResponse.data);
-      return;
-    }
-
-    res.status(200).json({
-      success: true,
-      data: analyticsResponse.data?.data,
-      timestamp: new Date(),
-    });
-  } catch (error) {
-    logger.error("Get session analytics forward error", {
-      error: String(error),
-      stack: error instanceof Error ? error.stack : "N/A",
-    });
-    res.status(503).json({
-      success: false,
-      error: {
-        code: "INTERNAL_ERROR",
-        message: "Failed to fetch session analytics",
-      },
-      timestamp: new Date(),
-    });
-  }
-}
 
 /**
  * Complete a story for a game session
@@ -1742,7 +1355,7 @@ export async function forwardCompleteStory(
 
     // Forward to Progress Service
     const completeResponse = await axios.post<ApiResponse<GameSession>>(
-      `${PROGRESS_SERVICE_URL}/api/progress/${gameSessionId}/complete`,
+      `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/progress/${gameSessionId}/complete`,
       {},
       {
         headers: {
@@ -1853,7 +1466,7 @@ export async function forwardUpdateChildLevel(
 
     // Forward to Progress Service
     const updateResponse = await axios.patch<ApiResponse<ChildProfile>>(
-      `${PROGRESS_SERVICE_URL}/api/children/${childId}/level`,
+      `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/children/${childId}/level`,
       {
         currentLevel,
       },
@@ -1965,7 +1578,7 @@ export async function forwardAssignBadgeToChild(
 
     // Forward to Progress Service
     const assignResponse = await axios.post<ApiResponse<ChildProfile>>(
-      `${PROGRESS_SERVICE_URL}/api/children/${childId}/badges`,
+      `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/children/${childId}/badges`,
       {
         badgeId,
       },

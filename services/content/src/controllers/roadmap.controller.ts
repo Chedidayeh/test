@@ -3,6 +3,7 @@ import { RoadmapService } from "../services/roadmap.service";
 import { sendSuccess, sendError } from "../utils/response";
 import { logger } from "../utils/logger";
 import { PrismaClient } from "@prisma/client";
+import { ApiResponse, Roadmap } from "@shared/types";
 
 const prisma = new PrismaClient();
 const roadmapService = new RoadmapService(prisma);
@@ -10,9 +11,8 @@ const roadmapService = new RoadmapService(prisma);
 export class RoadmapController {
   /**
    * Get all roadmaps
-   * GET /api/roadmaps
    */
-  async getRoadmaps(req: Request, res: Response): Promise<void> {
+  async getRoadmaps(req: Request, res: Response<ApiResponse<Roadmap[]>>): Promise<void> {
     try {
       logger.info("Get roadmaps request");
 
@@ -27,9 +27,8 @@ export class RoadmapController {
 
   /**
    * Get a single roadmap by ID
-   * GET /api/roadmaps/:id
    */
-  async getRoadmapById(req: Request, res: Response): Promise<void> {
+  async getRoadmapById(req: Request, res: Response<ApiResponse<Roadmap>>): Promise<void> {
     try {
       const { id } = req.params;
 
@@ -56,9 +55,8 @@ export class RoadmapController {
 
   /**
    * Get roadmaps by age group
-   * GET /api/roadmaps/age-group/:ageGroupId
    */
-  async getRoadmapsByAgeGroup(req: Request, res: Response): Promise<void> {
+  async getRoadmapsByAgeGroup(req: Request, res: Response<ApiResponse<Roadmap[]>>): Promise<void> {
     try {
       const { ageGroupId } = req.params;
 
@@ -82,9 +80,8 @@ export class RoadmapController {
 
   /**
    * Create a new roadmap
-   * POST /api/roadmaps
    */
-  async createRoadmap(req: Request, res: Response): Promise<void> {
+  async createRoadmap(req: Request, res: Response<ApiResponse<Roadmap>>): Promise<void> {
     try {
       const { ageGroupId, themeId, readingLevel } = req.body;
 
@@ -160,9 +157,8 @@ export class RoadmapController {
 
   /**
    * Update a roadmap
-   * PUT /api/roadmaps/:id
    */
-  async updateRoadmap(req: Request, res: Response): Promise<void> {
+  async updateRoadmap(req: Request, res: Response<ApiResponse<Roadmap>>): Promise<void> {
     try {
       const { id } = req.params;
       const { ageGroupId, readingLevel } = req.body;
@@ -242,9 +238,8 @@ export class RoadmapController {
 
   /**
    * Delete a roadmap
-   * DELETE /api/roadmaps/:id
    */
-  async deleteRoadmap(req: Request, res: Response): Promise<void> {
+  async deleteRoadmap(req: Request, res: Response<ApiResponse<{id: string}>>): Promise<void> {
     try {
       const { id } = req.params;
 
@@ -266,12 +261,7 @@ export class RoadmapController {
 
       sendSuccess(
         res,
-        {
-          success: true,
-          deletedId: deletedRoadmap.id,
-          ageGroupId: deletedRoadmap.ageGroupId,
-          themeId: deletedRoadmap.themeId,
-        },
+        { id: deletedRoadmap.id },
         200
       );
     } catch (error) {

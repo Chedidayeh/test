@@ -1,12 +1,13 @@
 import axios from "axios";
 import { logger } from "./logger";
+import { API_BASE_URL_V1, RoleType } from "@shared/types";
 
 export interface VerifyTokenResponse {
   valid: boolean;
   payload: {
     id: string;
     email: string;
-    role: "CHILD" | "PARENT" | "ADMIN";
+    role: RoleType
     childId?: string;
     parentId?: string;
     iat?: number;
@@ -28,7 +29,7 @@ export class AuthServiceClient {
   async verifyToken(token: string): Promise<VerifyTokenResponse | null> {
     try {
       const response = await axios.post<VerifyTokenResponse>(
-        `${this.serviceUrl}/verify-token`,
+        `${this.serviceUrl}${API_BASE_URL_V1}/verify-token`,
         {},
         {
           headers: {
@@ -71,22 +72,6 @@ export class AuthServiceClient {
       }
 
       return null;
-    }
-  }
-
-  /**
-   * Health check for Auth Service
-   */
-  async healthCheck(): Promise<boolean> {
-    try {
-      const response = await axios.get(`${this.serviceUrl}/health`);
-
-      return response.status === 200;
-    } catch (error) {
-      logger.warn("Auth Service health check failed", {
-        error: String(error),
-      });
-      return false;
     }
   }
 }

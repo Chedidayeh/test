@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
 import { cn } from "@/src/lib/utils";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
@@ -9,11 +8,7 @@ import {
   Dialog,
   DialogTrigger,
   DialogContent,
-  DialogHeader,
   DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
 } from "@/src/components/ui/dialog";
 import {
   Card,
@@ -31,6 +26,7 @@ import {
 import { Input } from "@/src/components/ui/input";
 import { signIn } from "next-auth/react";
 import { toast } from "sonner";
+import { loginAction, registerAction } from "@/src/lib/auth-service/server-actions";
 
 interface LoginFormProps extends React.ComponentProps<"div"> {
   /** If true, don't render the built-in Dialog trigger button (use when controlling via provider) */
@@ -70,25 +66,23 @@ export function LoginForm({ className, hideTrigger = false, open, onOpenChange }
           throw new Error("Passwords do not match");
         }
 
-        // Call internal register API route (server-side forwards to gateway)
-        const registerResponse = await fetch(`/api/auth/register`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email,
-            password,
-            name,
-          }),
-        });
+        // Step 1: Call server action for registration
+        const registerResult = await registerAction({ email, password, name });
 
-        if (!registerResponse.ok) {
-          const errorData = await registerResponse
-            .json()
-            .catch(() => ({ message: "Registration failed" }));
-          setError(errorData.error || "Registration failed");
+        if (!registerResult.success) {
+          setError(registerResult.error?.message || "Registration failed");
           return;
         }
 
+        // Step 2: Call loginAction to get token
+        const loginResult = await loginAction({ email, password });
+
+        if (!loginResult.success) {
+          setError(loginResult.error?.message || "Login failed after registration");
+          return;
+        }
+
+        // Step 3: Sign in with credentials to establish NextAuth session
         await signIn("credentials", {
           redirect: true,
           email,
@@ -98,21 +92,15 @@ export function LoginForm({ className, hideTrigger = false, open, onOpenChange }
 
         toast.success("Account created and logged in successfully!");
       } else {
-        // Login flow: validate credentials first via server-side route
-        const validateResp = await fetch(`/api/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        });
+        // Login flow: validate credentials first via server action
+        const loginResult = await loginAction({ email, password });
 
-        if (!validateResp.ok) {
-          const errData = await validateResp
-            .json()
-            .catch(() => ({ message: "Invalidd credentialss" }));
-          setError(errData.error || "Login failed");
+        if (!loginResult.success) {
+          setError(loginResult.error?.message || "Login failed");
           return;
         }
 
+        // Sign in with credentials to establish NextAuth session
         await signIn("credentials", {
           redirect: true,
           email,

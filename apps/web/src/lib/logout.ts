@@ -4,13 +4,14 @@
  */
 
 import { signOut } from "@/src/auth";
+import { API_BASE_URL_V1 } from "@shared/types";
 
 export async function handleLogout() {
   try {
     // Call Gateway logout endpoint to delete session
     const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:3001";
     try {
-      await fetch(`${gatewayUrl}/api/auth/logout`, {
+      await fetch(`${gatewayUrl}${API_BASE_URL_V1}/auth/logout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
@@ -21,13 +22,13 @@ export async function handleLogout() {
     // Clear frontend session (removes httpOnly cookie)
     await signOut({
       redirect: true,
-      redirectTo: "/loggedOut=true",
+      redirectTo: "/",
     });
   } catch (error) {
     console.error("[Logout] Error during logout:", error);
     // Force redirect even if error occurs
     if (typeof window !== "undefined") {
-      window.location.href = "/loggedOut=true";
+      window.location.href = "/";
     }
   }
 }

@@ -1,8 +1,8 @@
 import { getBadges, getLevels, getStoryById } from "@/src/lib/content-service/server-api";
 import { getChildById, getChildProgress, updateChildLevel, assignBadgeToChild } from "@/src/lib/progress-service/server-api";
-import { analyzeLevelProgress } from "@/src/lib/progress-analysis";
 import React from "react";
 import StoryCompetion from "./StoryCompetion";
+import { analyzeLevelProgress } from "../_lib/progress-analysis";
 
 export default async function page({
   params,

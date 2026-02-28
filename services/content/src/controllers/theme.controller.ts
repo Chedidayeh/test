@@ -3,6 +3,7 @@ import { ThemeService } from "../services/theme.service";
 import { sendSuccess, sendError } from "../utils/response";
 import { logger } from "../utils/logger";
 import { PrismaClient } from "@prisma/client";
+import { ApiResponse, Theme } from "@shared/types";
 
 const prisma = new PrismaClient();
 const themeService = new ThemeService(prisma);
@@ -10,9 +11,11 @@ const themeService = new ThemeService(prisma);
 export class ThemeController {
   /**
    * Get all themes
-   * GET /api/themes
    */
-  async getThemes(req: Request, res: Response): Promise<void> {
+  async getThemes(
+    req: Request,
+    res: Response<ApiResponse<Theme[]>>,
+  ): Promise<void> {
     try {
       logger.info("Get themes request");
 
@@ -27,9 +30,11 @@ export class ThemeController {
 
   /**
    * Get a single theme by ID
-   * GET /api/themes/:id
    */
-  async getThemeById(req: Request, res: Response): Promise<void> {
+  async getThemeById(
+    req: Request,
+    res: Response<ApiResponse<Theme>>,
+  ): Promise<void> {
     try {
       const { id } = req.params;
 
@@ -58,9 +63,11 @@ export class ThemeController {
 
   /**
    * Create a new theme
-   * POST /api/themes
    */
-  async createTheme(req: Request, res: Response): Promise<void> {
+  async createTheme(
+    req: Request,
+    res: Response<ApiResponse<Theme>>,
+  ): Promise<void> {
     try {
       const { name, description, imageUrl } = req.body;
 
@@ -73,12 +80,20 @@ export class ThemeController {
       }
 
       if (!description || description.trim() === "") {
-        sendError(res, "Theme description is required and cannot be empty", 400);
+        sendError(
+          res,
+          "Theme description is required and cannot be empty",
+          400,
+        );
         return;
       }
 
       if (description.trim().length < 5) {
-        sendError(res, "Theme description must be at least 5 characters long", 400);
+        sendError(
+          res,
+          "Theme description must be at least 5 characters long",
+          400,
+        );
         return;
       }
 
@@ -95,7 +110,12 @@ export class ThemeController {
       // Check for duplicate name
       const existingTheme = await themeService.getThemeByName(name.trim());
       if (existingTheme) {
-        sendError(res, `Theme name '${name}' already exists`, 409, "DUPLICATE_NAME");
+        sendError(
+          res,
+          `Theme name '${name}' already exists`,
+          409,
+          "DUPLICATE_NAME",
+        );
         return;
       }
 
@@ -114,9 +134,11 @@ export class ThemeController {
 
   /**
    * Update a theme
-   * PUT /api/themes/:id
    */
-  async updateTheme(req: Request, res: Response): Promise<void> {
+  async updateTheme(
+    req: Request,
+    res: Response<ApiResponse<Theme>>,
+  ): Promise<void> {
     try {
       const { id } = req.params;
       const { name, description, imageUrl } = req.body;
@@ -130,7 +152,11 @@ export class ThemeController {
 
       // Validate at least one field is provided
       if (!name && !description && imageUrl === undefined) {
-        sendError(res, "At least one field (name, description, imageUrl) must be provided", 400);
+        sendError(
+          res,
+          "At least one field (name, description, imageUrl) must be provided",
+          400,
+        );
         return;
       }
 
@@ -155,7 +181,12 @@ export class ThemeController {
         if (name.trim() !== existingTheme.name) {
           const duplicateTheme = await themeService.getThemeByName(name.trim());
           if (duplicateTheme) {
-            sendError(res, `Theme name '${name}' already exists`, 409, "DUPLICATE_NAME");
+            sendError(
+              res,
+              `Theme name '${name}' already exists`,
+              409,
+              "DUPLICATE_NAME",
+            );
             return;
           }
         }
@@ -167,7 +198,11 @@ export class ThemeController {
           return;
         }
         if (description.trim().length < 5) {
-          sendError(res, "Theme description must be at least 5 characters long", 400);
+          sendError(
+            res,
+            "Theme description must be at least 5 characters long",
+            400,
+          );
           return;
         }
         updateData.description = description.trim();
@@ -198,9 +233,11 @@ export class ThemeController {
 
   /**
    * Delete a theme
-   * DELETE /api/themes/:id
    */
-  async deleteTheme(req: Request, res: Response): Promise<void> {
+  async deleteTheme(
+    req: Request,
+    res: Response<ApiResponse<{ id: string }>>,
+  ): Promise<void> {
     try {
       const { id } = req.params;
 
@@ -220,15 +257,7 @@ export class ThemeController {
 
       const deletedTheme = await themeService.deleteTheme(id);
 
-      sendSuccess(
-        res,
-        {
-          success: true,
-          deletedId: deletedTheme.id,
-          name: deletedTheme.name,
-        },
-        200
-      );
+      sendSuccess(res, { id: deletedTheme.id }, 200);
     } catch (error) {
       logger.error("Error in deleteTheme controller", { error: String(error) });
       sendError(res, String(error), 500, "Failed to delete theme");

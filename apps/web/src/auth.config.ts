@@ -1,3 +1,4 @@
+import { API_BASE_URL_V1, RoleType } from "@shared/types";
 import type { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
@@ -6,7 +7,7 @@ declare module "next-auth" {
     id: string;
     email: string;
     name: string;
-    role: "PARENT" | "ADMIN";
+    role: RoleType;
     newUser: boolean;
     childId?: string;
     parentId?: string;
@@ -43,7 +44,7 @@ export default {
         try {
           // Call Gateway which proxies to Auth Service
           // Gateway is the single entry point for all API calls
-          const response = await fetch(`${GATEWAY_URL}/api/auth/login`, {
+          const response = await fetch(`${GATEWAY_URL}${API_BASE_URL_V1}/auth/login`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -62,24 +63,30 @@ export default {
           }
 
           // Parse successful login response
-          const data = await response.json();
+          const apiResponse = await response.json();
 
-          // Expected response structure from Auth Service:
-          // { token: "jwt...", user: { id, email, role, childId?, parentId? } }
-          if (!data.token || !data.user) {
+          // Auth Service returns wrapped ApiResponse<{ token, user }>
+          // Structure: { success: true, data: { token, user }, timestamp }
+          if (!apiResponse.success || !apiResponse.data) {
+            throw new Error("Invalid response from authentication service");
+          }
+
+          const { token, user } = apiResponse.data;
+
+          if (!token || !user) {
             throw new Error("Invalid response from authentication service");
           }
 
           // Return user object with token and all fields needed for session
           return {
-            id: data.user.id,
-            email: data.user.email,
-            name: data.user.name, // Include name from auth service
-            role: data.user.role,
-            newUser: data.user.newUser, // Include newUser flag from auth service
-            childId: data.user.childId,
-            parentId: data.user.parentId,
-            token: data.token, // Store token for jwt callback
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            newUser: user.newUser,
+            childId: user.childId,
+            parentId: user.parentId,
+            token: token,
           };
         } catch (error) {
           const message =

@@ -49,21 +49,6 @@ router.post("/progress/pause/:gameSessionId", (req, res) =>
   ChildrenController.pauseCheckpoint(req, res),
 );
 
-// Calculate total active time spent in a game session
-router.get("/progress/:gameSessionId/time", (req, res) =>
-  ChildrenController.calculateSessionTime(req, res),
-);
-
-// Aggregate and store total time spent in a game session
-router.post("/progress/:gameSessionId/aggregate-time", (req, res) =>
-  ChildrenController.aggregateSessionTime(req, res),
-);
-
-// Aggregate and sync progress total time from game session
-router.post("/progress/:progressId/aggregate-progress-time", (req, res) =>
-  ChildrenController.aggregateProgressTime(req, res),
-);
-
 
 // Submit challenge answer and record attempt with star rewards
 router.post("/progress/challenge/submit", (req, res) =>

@@ -19,7 +19,7 @@ import {
   CardTitle,
 } from "@/src/components/ui/card";
 import { ChallengeStatus, ChildProfile, Progress, Story } from "@shared/types";
-import { LevelProgressAnalysis } from "@/src/lib/progress-analysis";
+import { LevelProgressAnalysis } from "../_lib/progress-analysis";
 
 interface StoryCompletionProps {
   child: ChildProfile;

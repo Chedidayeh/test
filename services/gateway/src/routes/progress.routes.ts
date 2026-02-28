@@ -12,11 +12,8 @@ import {
   forwardUpdateChildLevel,
   forwardCreateNewCheckpoint,
   forwardPauseGameSession,
-  forwardCalculateSessionTime,
-  forwardAggregateSessionTime,
-  forwardAggregateProgressTime,
-  forwardGetSessionAnalytics,
 } from "../helpers/progress.helpers";
+import { API_BASE_URL_V1 } from "@shared/types";
 
 const router = Router();
 
@@ -37,7 +34,7 @@ router.post("/children/:childId/badges", (req: Request, res: Response) => {
 
 // Generic children middleware (must be after specific routes)
 router.use("/children", (req: Request, res: Response) => {
-  forwardToProgressService(req, res, `/api/children${req.path}`);
+  forwardToProgressService(req, res, `${API_BASE_URL_V1}/children${req.path}`);
 });
 
 // Get parent with child profiles
@@ -68,34 +65,6 @@ router.post("/progress/pause/:gameSessionId", (req: Request, res: Response) => {
   forwardPauseGameSession(req, res);
 });
 
-// Calculate total active time spent in a game session
-router.get("/progress/:gameSessionId/time", (req: Request, res: Response) => {
-  forwardCalculateSessionTime(req, res);
-});
-
-// Aggregate and store total time spent in a game session
-router.post(
-  "/progress/:gameSessionId/aggregate-time",
-  (req: Request, res: Response) => {
-    forwardAggregateSessionTime(req, res);
-  },
-);
-
-// Aggregate and sync progress total time from game session
-router.post(
-  "/progress/:progressId/aggregate-progress-time",
-  (req: Request, res: Response) => {
-    forwardAggregateProgressTime(req, res);
-  },
-);
-
-// Get detailed time analytics for a game session
-router.get(
-  "/progress/:gameSessionId/analytics",
-  (req: Request, res: Response) => {
-    forwardGetSessionAnalytics(req, res);
-  },
-);
 
 // Submit challenge answer and record attempt with star rewards
 router.post("/progress/challenge/submit", (req: Request, res: Response) => {

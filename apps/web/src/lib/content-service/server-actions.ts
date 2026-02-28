@@ -2,9 +2,6 @@
 
 import {
   Story,
-  Chapter,
-  Challenge,
-  Answer,
   AgeGroup,
   Theme,
   Roadmap,
@@ -30,20 +27,10 @@ import {
   createWorld,
   updateWorld,
   deleteWorld,
-  createStory,
-  updateStory,
   deleteStory,
   createStoryWithChapters,
   editStoryWithChapters,
-  createChapter,
-  updateChapter,
-  deleteChapter,
-  createChallenge,
-  updateChallenge,
-  deleteChallenge,
-  createAnswer,
-  updateAnswer,
-  deleteAnswer,
+
 } from "./server-api";
 
 type FetchStoriesResult =
@@ -481,86 +468,6 @@ export async function deleteWorldAction(
  * ============================================
  */
 
-export async function createStoryAction(
-  data: Omit<Story, "id" | "createdAt" | "updatedAt" | "world" | "chapters">,
-): Promise<ServiceResponse<Story>> {
-  try {
-    const result = await createStory(data);
-
-    if (!result.success) {
-      return {
-        success: false,
-        error: result.error,
-      };
-    }
-
-    return {
-      success: true,
-      data: result.data!,
-    };
-  } catch (error) {
-    console.error("Server action error creating story:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to create story",
-    };
-  }
-}
-
-export async function updateStoryAction(
-  id: string,
-  data: Partial<
-    Omit<Story, "id" | "createdAt" | "updatedAt" | "world" | "chapters">
-  >,
-): Promise<ServiceResponse<Story>> {
-  try {
-    const result = await updateStory(id, data);
-
-    if (!result.success) {
-      return {
-        success: false,
-        error: result.error,
-      };
-    }
-
-    return {
-      success: true,
-      data: result.data!,
-    };
-  } catch (error) {
-    console.error("Server action error updating story:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to update story",
-    };
-  }
-}
-
-export async function deleteStoryAction(
-  id: string,
-): Promise<ServiceResponse<void>> {
-  try {
-    const result = await deleteStory(id);
-
-    if (!result.success) {
-      return {
-        success: false,
-        error: result.error,
-      };
-    }
-
-    return {
-      success: true,
-      data: undefined,
-    };
-  } catch (error) {
-    console.error("Server action error deleting story:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to delete story",
-    };
-  }
-}
 
 /**
  * Create a story with chapters, challenges, and answers in a single atomic transaction
@@ -597,7 +504,6 @@ export async function createStoryWithChaptersAction(
     };
   }
 }
-
 
 /**
  * Edit a story with chapters, challenges, and answers in a single atomic transaction
@@ -636,72 +542,12 @@ export async function editStoryWithChaptersAction(
   }
 }
 
-/**
- * ============================================
- * CHAPTER ACTIONS
- * ============================================
- */
 
-export async function createChapterAction(
-  data: Omit<Chapter, "id" | "createdAt" | "updatedAt" | "story">,
-): Promise<ServiceResponse<Chapter>> {
-  try {
-    const result = await createChapter(data);
-
-    if (!result.success) {
-      return {
-        success: false,
-        error: result.error,
-      };
-    }
-
-    return {
-      success: true,
-      data: result.data!,
-    };
-  } catch (error) {
-    console.error("Server action error creating chapter:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Failed to create chapter",
-    };
-  }
-}
-
-export async function updateChapterAction(
-  id: string,
-  data: Partial<Omit<Chapter, "id" | "createdAt" | "updatedAt" | "story">>,
-): Promise<ServiceResponse<Chapter>> {
-  try {
-    const result = await updateChapter(id, data);
-
-    if (!result.success) {
-      return {
-        success: false,
-        error: result.error,
-      };
-    }
-
-    return {
-      success: true,
-      data: result.data!,
-    };
-  } catch (error) {
-    console.error("Server action error updating chapter:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Failed to update chapter",
-    };
-  }
-}
-
-export async function deleteChapterAction(
+export async function deleteStoryAction(
   id: string,
 ): Promise<ServiceResponse<void>> {
   try {
-    const result = await deleteChapter(id);
+    const result = await deleteStory(id);
 
     if (!result.success) {
       return {
@@ -715,189 +561,11 @@ export async function deleteChapterAction(
       data: undefined,
     };
   } catch (error) {
-    console.error("Server action error deleting chapter:", error);
+    console.error("Server action error deleting story:", error);
     return {
       success: false,
-      error:
-        error instanceof Error ? error.message : "Failed to delete chapter",
+      error: error instanceof Error ? error.message : "Failed to delete story",
     };
   }
 }
 
-/**
- * ============================================
- * CHALLENGE ACTIONS
- * ============================================
- */
-
-export async function createChallengeAction(
-  data: Omit<
-    Challenge,
-    "id" | "createdAt" | "updatedAt" | "chapter" | "answers"
-  >,
-): Promise<ServiceResponse<Challenge>> {
-  try {
-    const result = await createChallenge(data);
-
-    if (!result.success) {
-      return {
-        success: false,
-        error: result.error,
-      };
-    }
-
-    return {
-      success: true,
-      data: result.data!,
-    };
-  } catch (error) {
-    console.error("Server action error creating challenge:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Failed to create challenge",
-    };
-  }
-}
-
-export async function updateChallengeAction(
-  id: string,
-  data: Partial<
-    Omit<Challenge, "id" | "createdAt" | "updatedAt" | "chapter" | "answers">
-  >,
-): Promise<ServiceResponse<Challenge>> {
-  try {
-    const result = await updateChallenge(id, data);
-
-    if (!result.success) {
-      return {
-        success: false,
-        error: result.error,
-      };
-    }
-
-    return {
-      success: true,
-      data: result.data!,
-    };
-  } catch (error) {
-    console.error("Server action error updating challenge:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Failed to update challenge",
-    };
-  }
-}
-
-export async function deleteChallengeAction(
-  id: string,
-): Promise<ServiceResponse<void>> {
-  try {
-    const result = await deleteChallenge(id);
-
-    if (!result.success) {
-      return {
-        success: false,
-        error: result.error,
-      };
-    }
-
-    return {
-      success: true,
-      data: undefined,
-    };
-  } catch (error) {
-    console.error("Server action error deleting challenge:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Failed to delete challenge",
-    };
-  }
-}
-
-/**
- * ============================================
- * ANSWER ACTIONS
- * ============================================
- */
-
-export async function createAnswerAction(
-  data: Omit<Answer, "id" | "createdAt" | "updatedAt">,
-): Promise<ServiceResponse<Answer>> {
-  try {
-    const result = await createAnswer(data);
-
-    if (!result.success) {
-      return {
-        success: false,
-        error: result.error,
-      };
-    }
-
-    return {
-      success: true,
-      data: result.data!,
-    };
-  } catch (error) {
-    console.error("Server action error creating answer:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to create answer",
-    };
-  }
-}
-
-export async function updateAnswerAction(
-  id: string,
-  data: Partial<Omit<Answer, "id" | "createdAt" | "updatedAt">>,
-): Promise<ServiceResponse<Answer>> {
-  try {
-    const result = await updateAnswer(id, data);
-
-    if (!result.success) {
-      return {
-        success: false,
-        error: result.error,
-      };
-    }
-
-    return {
-      success: true,
-      data: result.data!,
-    };
-  } catch (error) {
-    console.error("Server action error updating answer:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to update answer",
-    };
-  }
-}
-
-export async function deleteAnswerAction(
-  id: string,
-): Promise<ServiceResponse<void>> {
-  try {
-    const result = await deleteAnswer(id);
-
-    if (!result.success) {
-      return {
-        success: false,
-        error: result.error,
-      };
-    }
-
-    return {
-      success: true,
-      data: undefined,
-    };
-  } catch (error) {
-    console.error("Server action error deleting answer:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to delete answer",
-    };
-  }
-}

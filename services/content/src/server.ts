@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import contentRoutes from "./routes";
 import { logger } from "./utils/logger";
+import { API_BASE_URL_V1 } from "@shared/types";
 
 // Load environment variables defined in .env file
 dotenv.config();
@@ -45,7 +46,7 @@ app.get("/health", (req: Request, res: Response) => {
 /**
  * API Routes (mounted at /api)
  */
-app.use("/api", contentRoutes);
+app.use(API_BASE_URL_V1, contentRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {

@@ -2,9 +2,9 @@
  * Auth Service API request/response types
  */
 
-export type UserRole = "PARENT" | "ADMIN" | "CHILD";
+ type UserRole = "PARENT" | "ADMIN" | "CHILD";
 
-export interface AuthUser {
+ interface AuthUser {
   id: string;
   email: string;
   role: UserRole;
@@ -12,33 +12,33 @@ export interface AuthUser {
   parentId?: string;
 }
 
-export interface LoginRequest {
+ interface LoginRequest {
   email: string;
   password: string;
 }
 
-export interface LoginResponse {
+ interface LoginResponse {
   token: string;
   user: AuthUser;
 }
 
-export interface RegisterRequest {
+ interface RegisterRequest {
   email: string;
   password: string;
   name?: string;
 }
 
-export interface RegisterResponse {
+ interface RegisterResponse {
   token: string;
   user: AuthUser;
 }
 
-export interface CreateChildProfileRequest {
+ interface CreateChildProfileRequest {
   parentEmail: string;
   name: string;
 }
 
-export interface CreateChildProfileResponse {
+ interface CreateChildProfileResponse {
   loginCode: string;
   child: {
     id: string;
@@ -47,20 +47,20 @@ export interface CreateChildProfileResponse {
   };
 }
 
-export interface LoginChildRequest {
+ interface LoginChildRequest {
   loginCode: string;
 }
 
-export interface LoginChildResponse {
+ interface LoginChildResponse {
   token: string;
   user: AuthUser;
 }
 
-export interface VerifyTokenRequest {
+ interface VerifyTokenRequest {
   token: string;
 }
 
-export interface VerifyTokenResponse {
+ interface VerifyTokenResponse {
   valid: boolean;
   payload?: {
     id: string;
@@ -73,23 +73,23 @@ export interface VerifyTokenResponse {
   };
 }
 
-// export interface LogoutRequest {
+//  interface LogoutRequest {
 //   // Empty body, token in Authorization header
 // }
 
-export interface LogoutResponse {
+ interface LogoutResponse {
   message: string;
 }
 
 // Error response from API
-export interface ApiError {
+ interface ApiError {
   error: string;
   message?: string;
   status?: number;
 }
 
 // Auth context types
-export interface UseAuthReturn {
+ interface UseAuthReturn {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;

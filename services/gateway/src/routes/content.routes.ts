@@ -2,129 +2,93 @@ import { Router, Request, Response } from "express";
 import axios from "axios";
 import { logger } from "../utils/logger";
 import { forwardToContentService } from "../helpers/content.helpers";
+import { API_BASE_URL_V1 } from "@shared/types";
 
 const router = Router();
 
 
 /**
  * Stories Routes
- * GET /api/stories - fetch all stories
- * GET /api/stories/:id - fetch single story
+ * GET /api/v1/stories - fetch all stories
+ * GET /api/v1/stories/:id - fetch single story
  */
 router.use("/stories", (req: Request, res: Response) => {
-  forwardToContentService(req, res, `/api/stories${req.path}`);
+  forwardToContentService(req, res, `${API_BASE_URL_V1}/stories${req.path}`);
 });
 
-/**
- * Chapters Routes - CRUD Operations
- * GET /api/chapters - fetch all chapters
- * GET /api/chapters/:id - fetch single chapter
- * GET /api/chapters/story/:storyId - fetch chapters by story
- * POST /api/chapters - create new chapter
- * PUT /api/chapters/:id - update chapter
- * DELETE /api/chapters/:id - delete chapter
- */
-router.use("/chapters", (req: Request, res: Response) => {
-  forwardToContentService(req, res, `/api/chapters${req.path}`);
-});
 
-/**
- * Challenges Routes
- * GET /api/challenges - fetch all challenges
- * GET /api/challenges/:id - fetch single challenge
- * GET /api/challenges/chapter/:chapterId - fetch challenges by chapter
- * POST /api/challenges - create new challenge
- * PUT /api/challenges/:id - update challenge
- * DELETE /api/challenges/:id - delete challenge
- */
-router.use("/challenges", (req: Request, res: Response) => {
-  forwardToContentService(req, res, `/api/challenges${req.path}`);
-});
-
-/**
- * Answers Routes - CRUD Operations
- * GET /api/answers - fetch all answers
- * GET /api/answers/:id - fetch single answer
- * GET /api/answers/challenge/:challengeId - fetch answers by challenge
- * POST /api/answers - create new answer
- * PUT /api/answers/:id - update answer
- * DELETE /api/answers/:id - delete answer
- */
-router.use("/answers", (req: Request, res: Response) => {
-  forwardToContentService(req, res, `/api/answers${req.path}`);
-});
 
 /**
  * Age Groups Routes - CRUD Operations
- * GET /api/age-groups - fetch all active age groups
- * GET /api/age-groups/admin/all - fetch all age groups (including inactive) - admin only
- * GET /api/age-groups/:id - fetch single age group
- * POST /api/age-groups - create new age group
- * PUT /api/age-groups/:id - update age group
- * DELETE /api/age-groups/:id - delete age group
+ * GET /api/v1/age-groups - fetch all active age groups
+ * GET /api/v1/age-groups/admin/all - fetch all age groups (including inactive) - admin only
+ * GET /api/v1/age-groups/:id - fetch single age group
+ * POST /api/v1/age-groups - create new age group
+ * PUT /api/v1/age-groups/:id - update age group
+ * DELETE /api/v1/age-groups/:id - delete age group
  */
 router.use("/age-groups", (req: Request, res: Response) => {
-  forwardToContentService(req, res, `/api/age-groups${req.path}`);
+  forwardToContentService(req, res, `${API_BASE_URL_V1}/age-groups${req.path}`);
 });
 
 /**
  * Themes Routes - CRUD Operations
- * GET /api/themes - fetch all themes
- * GET /api/themes/:id - fetch single theme
- * POST /api/themes - create new theme
- * PUT /api/themes/:id - update theme
- * DELETE /api/themes/:id - delete theme
+ * GET /api/v1/themes - fetch all themes
+ * GET /api/v1/themes/:id - fetch single theme
+ * POST /api/v1/themes - create new theme
+ * PUT /api/v1/themes/:id - update theme
+ * DELETE /api/v1/themes/:id - delete theme
  */
 router.use("/themes", (req: Request, res: Response) => {
-  forwardToContentService(req, res, `/api/themes${req.path}`);
+  forwardToContentService(req, res, `${API_BASE_URL_V1}/themes${req.path}`);
 });
 
 /**
  * Roadmaps Routes - CRUD Operations
- * GET /api/roadmaps - fetch all roadmaps
- * GET /api/roadmaps/:id - fetch single roadmap
- * GET /api/roadmaps/age-group/:ageGroupId - fetch roadmaps by age group
- * POST /api/roadmaps - create new roadmap
- * PUT /api/roadmaps/:id - update roadmap
- * DELETE /api/roadmaps/:id - delete roadmap
+ * GET /api/v1/roadmaps - fetch all roadmaps
+ * GET /api/v1/roadmaps/:id - fetch single roadmap
+ * GET /api/v1/roadmaps/age-group/:ageGroupId - fetch roadmaps by age group
+ * POST /api/v1/roadmaps - create new roadmap
+ * PUT /api/v1/roadmaps/:id - update roadmap
+ * DELETE /api/v1/roadmaps/:id - delete roadmap
  */
 router.use("/roadmaps", (req: Request, res: Response) => {
-  forwardToContentService(req, res, `/api/roadmaps${req.path}`);
+  forwardToContentService(req, res, `${API_BASE_URL_V1}/roadmaps${req.path}`);
 });
 
 /**
  * Worlds Routes - CRUD Operations
- * GET /api/worlds - fetch all worlds
- * GET /api/worlds/:id - fetch single world
- * GET /api/worlds/roadmap/:roadmapId - fetch worlds by roadmap
- * POST /api/worlds - create new world
- * PUT /api/worlds/:id - update world
- * DELETE /api/worlds/:id - delete world
+ * GET /api/v1/worlds - fetch all worlds
+ * GET /api/v1/worlds/:id - fetch single world
+ * GET /api/v1/worlds/roadmap/:roadmapId - fetch worlds by roadmap
+ * POST /api/v1/worlds - create new world
+ * PUT /api/v1/worlds/:id - update world
+ * DELETE /api/v1/worlds/:id - delete world
  */
 router.use("/worlds", (req: Request, res: Response) => {
-  forwardToContentService(req, res, `/api/worlds${req.path}`);
+  forwardToContentService(req, res, `${API_BASE_URL_V1}/worlds${req.path}`);
 });
 
 
 
 /**
  * Levels Routes
- * GET /api/levels - fetch all levels
- * GET /api/levels/:id - fetch single level
- * GET /api/levels/number/:levelNumber - fetch level by number
+ * GET /api/v1/levels - fetch all levels
+ * GET /api/v1/levels/:id - fetch single level
+ * GET /api/v1/levels/number/:levelNumber - fetch level by number
  */
 router.use("/levels", (req: Request, res: Response) => {
-  forwardToContentService(req, res, `/api/levels${req.path}`);
+  forwardToContentService(req, res, `${API_BASE_URL_V1}/levels${req.path}`);
 });
 
 /**
  * Badges Routes
- * GET /api/badges - fetch all badges
- * GET /api/badges/:id - fetch single badge
- * GET /api/badges/level/:levelId - fetch badge by level
+ * GET /api/v1/badges - fetch all badges
+ * GET /api/v1/badges/:id - fetch single badge
+ * GET /api/v1/badges/level/:levelId - fetch badge by level
  */
 router.use("/badges", (req: Request, res: Response) => {
-  forwardToContentService(req, res, `/api/badges${req.path}`);
+  forwardToContentService(req, res, `${API_BASE_URL_V1}/badges${req.path}`);
 });
 
 export default router;

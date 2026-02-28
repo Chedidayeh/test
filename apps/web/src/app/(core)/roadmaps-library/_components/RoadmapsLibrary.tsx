@@ -6,11 +6,8 @@ import SearchBar from "./SearchBar";
 import FilterPanel from "./FilterPanel";
 import FeaturedCarousel from "./FeaturedCarousel";
 import RoadmapCard from "./RoadmapCard";
-import {
-  transformRoadmapForDisplay,
-  RoadmapDisplay,
-} from "@/src/lib/utils/roadmap-display";
 import { Roadmap } from "@shared/types";
+import { transformRoadmapForDisplay } from "../_lib/roadmap-display";
 
 
 interface Filters {

@@ -3,6 +3,7 @@ import { WorldService } from "../services/world.service";
 import { sendSuccess, sendError } from "../utils/response";
 import { logger } from "../utils/logger";
 import { PrismaClient } from "@prisma/client";
+import { ApiResponse, World } from "@shared/types";
 
 const prisma = new PrismaClient();
 const worldService = new WorldService(prisma);
@@ -10,9 +11,8 @@ const worldService = new WorldService(prisma);
 export class WorldController {
   /**
    * Get all worlds
-   * GET /api/worlds
    */
-  async getWorlds(req: Request, res: Response): Promise<void> {
+  async getWorlds(req: Request, res: Response<ApiResponse<World[]>>): Promise<void> {
     try {
       logger.info("Get worlds request");
 
@@ -27,9 +27,8 @@ export class WorldController {
 
   /**
    * Get a single world by ID
-   * GET /api/worlds/:id
    */
-  async getWorldById(req: Request, res: Response): Promise<void> {
+  async getWorldById(req: Request, res: Response<ApiResponse<World>>): Promise<void> {
     try {
       const { id } = req.params;
 
@@ -56,9 +55,8 @@ export class WorldController {
 
   /**
    * Get worlds by roadmap
-   * GET /api/worlds/roadmap/:roadmapId
    */
-  async getWorldsByRoadmap(req: Request, res: Response): Promise<void> {
+  async getWorldsByRoadmap(req: Request, res: Response<ApiResponse<World[]>>): Promise<void> {
     try {
       const { roadmapId } = req.params;
 
@@ -82,9 +80,8 @@ export class WorldController {
 
   /**
    * Create a new world
-   * POST /api/worlds
    */
-  async createWorld(req: Request, res: Response): Promise<void> {
+  async createWorld(req: Request, res: Response<ApiResponse<World>>): Promise<void> {
     try {
       const { roadmapId, name, description, imageUrl, order } = req.body;
 
@@ -157,9 +154,8 @@ export class WorldController {
 
   /**
    * Update a world
-   * PUT /api/worlds/:id
    */
-  async updateWorld(req: Request, res: Response): Promise<void> {
+  async updateWorld(req: Request, res: Response<ApiResponse<World>>): Promise<void> {
     try {
       const { id } = req.params;
       const { name, description, imageUrl, order } = req.body;
@@ -247,9 +243,8 @@ export class WorldController {
 
   /**
    * Delete a world
-   * DELETE /api/worlds/:id
    */
-  async deleteWorld(req: Request, res: Response): Promise<void> {
+  async deleteWorld(req: Request, res: Response<ApiResponse<{ id: string }>>): Promise<void> {
     try {
       const { id } = req.params;
 
@@ -271,12 +266,7 @@ export class WorldController {
 
       sendSuccess(
         res,
-        {
-          success: true,
-          deletedId: deletedWorld.id,
-          name: deletedWorld.name,
-          roadmapId: deletedWorld.roadmapId,
-        },
+        { id: deletedWorld.id },
         200
       );
     } catch (error) {

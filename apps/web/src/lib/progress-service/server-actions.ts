@@ -302,60 +302,6 @@ export async function aggregateSessionTimeAction(
   }
 }
 
-export interface GetSessionAnalyticsResult {
-  success: boolean;
-  data?: any;
-  error?: string;
-}
-
-/**
- * Server action to get detailed session analytics
- * Returns comprehensive time tracking data including breakdowns by checkpoint
- *
- * @param gameSessionId - The game session ID
- * @returns Result object with success status and analytics data
- *
- * @example
- * const result = await getSessionAnalyticsAction("session-123");
- * if (result.success) {
- *   const { totalTimeSpent, sessionCount, activeTimePercentage } = result.data;
- *   console.log("Total time:", totalTimeSpent, "seconds");
- *   console.log("Session count:", sessionCount);
- * }
- */
-export async function getSessionAnalyticsAction(
-  gameSessionId: string,
-): Promise<GetSessionAnalyticsResult> {
-  try {
-    console.log(
-      "[Progress Service] Getting session analytics via server action",
-      {
-        gameSessionId,
-      },
-    );
-
-    const result = await getSessionAnalytics(gameSessionId);
-
-    return {
-      success: true,
-      data: result,
-    };
-  } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-
-    console.error("[Progress Service] Error getting session analytics:", {
-      gameSessionId,
-      error: errorMessage,
-    });
-
-    return {
-      success: false,
-      error: errorMessage,
-    };
-  }
-}
-
 export interface PauseGameSessionResult {
   success: boolean;
   data?: SessionCheckpoint | null;

@@ -17,9 +17,8 @@ const storyService = new StoryService(prisma);
 export class StoryController {
   /**
    * Get all stories with pagination and filters
-   * GET /api/stories?limit=20&offset=0&worldId=xxx&difficulty=3
    */
-  async getStories(req: Request, res: Response): Promise<void> {
+  async getStories(req: Request, res: Response<ApiResponse<Story[]>>): Promise<void> {
     try {
       const query: StoryQuery = {
         limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
@@ -47,9 +46,8 @@ export class StoryController {
 
   /**
    * Get a single story by ID with all details
-   * GET /api/stories/:id
    */
-  async getStoryById(req: Request, res: Response): Promise<void> {
+  async getStoryById(req: Request, res: Response<ApiResponse<Story>>): Promise<void> {
     try {
       const { id } = req.params;
 
@@ -76,9 +74,8 @@ export class StoryController {
 
   /**
    * Get stories by world ID
-   * GET /api/stories/world/:worldId
    */
-  async getStoriesByWorld(req: Request, res: Response): Promise<void> {
+  async getStoriesByWorld(req: Request, res: Response<ApiResponse<Story[]>>): Promise<void> {
     try {
       const { worldId } = req.params;
 
@@ -100,217 +97,10 @@ export class StoryController {
     }
   }
 
-  /**
-   * Get total stories count
-   * GET /api/stories/count
-   */
-  async getStoriesCount(req: Request, res: Response): Promise<void> {
-    try {
-      logger.info("Get stories count request");
-
-      const count = await storyService.countStories();
-
-      sendSuccess(res, { count }, 200);
-    } catch (error) {
-      logger.error("Error in getStoriesCount controller", {
-        error: String(error),
-      });
-      sendError(res, String(error), 500, "Failed to count stories");
-    }
-  }
-
-  /**
-   * Create a new story
-   * POST /api/stories
-   */
-  async createStory(req: Request, res: Response): Promise<void> {
-    try {
-      const { worldId, title, description, difficulty, order } = req.body;
-
-      logger.info("Create story request", { title, worldId });
-
-      // Validate required fields
-      if (!worldId || worldId.trim() === "") {
-        sendError(res, "World ID is required", 400);
-        return;
-      }
-
-      if (!title || title.trim() === "") {
-        sendError(res, "Story title is required", 400);
-        return;
-      }
-
-      // Validate difficulty (1-5)
-      if (difficulty === undefined || difficulty === null) {
-        sendError(res, "Difficulty is required", 400);
-        return;
-      }
-
-      if (typeof difficulty !== "number" || difficulty < 1 || difficulty > 5) {
-        sendError(
-          res,
-          "Difficulty must be a number between 1 and 5",
-          400
-        );
-        return;
-      }
-
-      // Validate order if provided
-      if (order !== undefined && order !== null) {
-        if (typeof order !== "number" || order < 0) {
-          sendError(res, "Order must be a non-negative number", 400);
-          return;
-        }
-      }
-
-      // Check if world exists
-      const world = await prisma.world.findUnique({
-        where: { id: worldId },
-      });
-      if (!world) {
-        sendError(
-          res,
-          `World with ID '${worldId}' not found`,
-          404,
-          "INVALID_WORLD"
-        );
-        return;
-      }
-
-      // Check if order is already used in this world
-      if (order !== undefined && order !== null) {
-        const orderExists = await storyService.isOrderUsedInWorld(
-          worldId,
-          order
-        );
-        if (orderExists) {
-          sendError(
-            res,
-            `Order ${order} is already used in this world`,
-            409,
-            "DUPLICATE_ORDER"
-          );
-          return;
-        }
-      }
-
-      const story = await storyService.createStory({
-        worldId: worldId.trim(),
-        title: title.trim(),
-        description: description?.trim() || null,
-        difficulty,
-        order: order ?? 0,
-      });
-
-      sendSuccess(res, story, 201);
-    } catch (error) {
-      logger.error("Error in createStory controller", { error: String(error) });
-      sendError(res, String(error), 500, "Failed to create story");
-    }
-  }
-
-  /**
-   * Update a story
-   * PUT /api/stories/:id
-   */
-  async updateStory(req: Request, res: Response): Promise<void> {
-    try {
-      const { id } = req.params;
-      const { title, description, difficulty, order } = req.body;
-
-      logger.info("Update story request", { storyId: id });
-
-      if (!id) {
-        sendError(res, "Story ID is required", 400);
-        return;
-      }
-
-      // Validate at least one field is provided
-      if (
-        title === undefined &&
-        description === undefined &&
-        difficulty === undefined &&
-        order === undefined
-      ) {
-        sendError(
-          res,
-          "At least one field to update is required",
-          400
-        );
-        return;
-      }
-
-      // Check if story exists
-      const story = await storyService.getStoryById(id);
-      if (!story) {
-        sendError(res, `Story with ID '${id}' not found`, 404);
-        return;
-      }
-
-      const updateData: any = {};
-
-      if (title !== undefined) {
-        if (!title || title.trim() === "") {
-          sendError(res, "Story title cannot be empty", 400);
-          return;
-        }
-        updateData.title = title.trim();
-      }
-
-      if (description !== undefined) {
-        updateData.description = description?.trim() || null;
-      }
-
-      if (difficulty !== undefined && difficulty !== null) {
-        if (typeof difficulty !== "number" || difficulty < 1 || difficulty > 5) {
-          sendError(
-            res,
-            "Difficulty must be a number between 1 and 5",
-            400
-          );
-          return;
-        }
-        updateData.difficulty = difficulty;
-      }
-
-      if (order !== undefined && order !== null) {
-        if (typeof order !== "number" || order < 0) {
-          sendError(res, "Order must be a non-negative number", 400);
-          return;
-        }
-
-        // Check if new order is already used in this world
-        const orderExists = await storyService.isOrderUsedInWorld(
-          story.worldId,
-          order,
-          id
-        );
-        if (orderExists) {
-          sendError(
-            res,
-            `Order ${order} is already used in this world`,
-            409,
-            "DUPLICATE_ORDER"
-          );
-          return;
-        }
-
-        updateData.order = order;
-      }
-
-      const updatedStory = await storyService.updateStory(id, updateData);
-
-      sendSuccess(res, updatedStory, 200);
-    } catch (error) {
-      logger.error("Error in updateStory controller", { error: String(error) });
-      sendError(res, String(error), 500, "Failed to update story");
-    }
-  }
 
   /**
    * Create a story with chapters, challenges, and answers atomically
    * All nested data created together or entire transaction rolls back on error
-   * POST /api/stories/batch/create
    */
   async createStoryWithChapters(
     req: Request,
@@ -397,11 +187,10 @@ export class StoryController {
   /**
    * Edit a story with chapters, challenges, and answers atomically
    * All nested data updated together or entire transaction rolls back on error
-   * PUT /api/stories/:id/batch/edit
    */
   async editStoryWithChapters(
     req: Request,
-    res: Response
+    res: Response<ApiResponse<Story>>
   ): Promise<void> {
     try {
       const { id } = req.params;
@@ -450,6 +239,44 @@ export class StoryController {
         error instanceof Error ? error.message : String(error),
         500,
         "Failed to edit story"
+      );
+    }
+  }
+
+  /**
+   * Delete a story by ID
+   */
+  async deleteStory(req: Request, res: Response<ApiResponse<{id: string}>>): Promise<void> {
+    try {
+      const { id } = req.params;
+
+      logger.info("Delete story request", { storyId: id });
+
+      if (!id) {
+        sendError(res, "Story ID is required", 400);
+        return;
+      }
+
+      // Validate story exists
+      const story = await storyService.getStoryById(id);
+      if (!story) {
+        sendError(res, `Story with ID '${id}' not found`, 404);
+        return;
+      }
+
+      // Delete the story using service
+      await storyService.deleteStory(id);
+
+      logger.info("Story deleted successfully", { storyId: id });
+
+      sendSuccess(res, { id }, 200);
+    } catch (error) {
+      logger.error("Error in deleteStory controller", { error: String(error) });
+      sendError(
+        res,
+        error instanceof Error ? error.message : String(error),
+        500,
+        "Failed to delete story"
       );
     }
   }

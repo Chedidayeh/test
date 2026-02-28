@@ -3,12 +3,13 @@ import jwt from "jsonwebtoken";
 import { logger } from "../utils/logger";
 import { authServiceClient, VerifyTokenResponse } from "../utils/auth-service";
 import { requiresAuth } from "../config/routes.config";
+import { RoleType } from "@shared/types";
 
 export interface AuthenticatedRequest extends Request {
   user?: {
     id: string;
     email: string;
-    role: "CHILD" | "PARENT" | "ADMIN";
+    role: RoleType
   };
   token?: string;
 }
@@ -153,7 +154,7 @@ export async function jwtMiddleware(
  * Middleware to check if user has a specific role
  * Use after jwtMiddleware
  */
-export function requireRole(...allowedRoles: Array<"CHILD" | "PARENT" | "ADMIN">) {
+export function requireRole(...allowedRoles: Array<RoleType>) {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     if (!req.user) {
       logger.warn("User not authenticated in role check", {

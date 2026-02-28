@@ -4,6 +4,7 @@ import { sendSuccess, sendError } from "../utils/response";
 import { logger } from "../utils/logger";
 import { PrismaClient, AgeGroupStatus } from "@prisma/client";
 import { validateAgeGroupContentCompleteness } from "../utils/validation";
+import { ApiResponse, AgeGroup, AgeGroupContentValidationResult } from "@shared/types";
 
 const prisma = new PrismaClient();
 const ageGroupService = new AgeGroupService(prisma);
@@ -11,9 +12,8 @@ const ageGroupService = new AgeGroupService(prisma);
 export class AgeGroupController {
   /**
    * Get all age groups (including inactive ones) - for admin dashboard
-   * GET /api/age-groups/admin/all
    */
-  async getAgeGroupsForAdmin(req: Request, res: Response): Promise<void> {
+  async getAgeGroupsForAdmin(req: Request, res: Response<ApiResponse<AgeGroup[]>>): Promise<void> {
     try {
       logger.info("Get all age groups for admin request");
 
@@ -30,9 +30,8 @@ export class AgeGroupController {
 
   /**
    * Get all age groups (only active ones)
-   * GET /api/age-groups
    */
-  async getAgeGroups(req: Request, res: Response): Promise<void> {
+  async getAgeGroups(req: Request, res: Response<ApiResponse<AgeGroup[]>>): Promise<void> {
     try {
       logger.info("Get age groups request");
 
@@ -49,9 +48,8 @@ export class AgeGroupController {
 
   /**
    * Get a single age group by ID
-   * GET /api/age-groups/:id
    */
-  async getAgeGroupById(req: Request, res: Response): Promise<void> {
+  async getAgeGroupById(req: Request, res: Response<ApiResponse<AgeGroup>>): Promise<void> {
     try {
       const { id } = req.params;
 
@@ -85,9 +83,8 @@ export class AgeGroupController {
 
   /**
    * Create a new age group
-   * POST /api/age-groups
    */
-  async createAgeGroup(req: Request, res: Response): Promise<void> {
+  async createAgeGroup(req: Request, res: Response<ApiResponse<AgeGroup>>): Promise<void> {
     try {
       const { name, minAge, maxAge, status } = req.body;
 
@@ -164,9 +161,8 @@ export class AgeGroupController {
 
   /**
    * Update an age group
-   * PUT /api/age-groups/:id
    */
-  async updateAgeGroup(req: Request, res: Response): Promise<void> {
+  async updateAgeGroup(req: Request, res: Response<ApiResponse<AgeGroup>>): Promise<void> {
     try {
       const { id } = req.params;
       const { name, minAge, maxAge, status } = req.body;
@@ -329,9 +325,8 @@ export class AgeGroupController {
 
   /**
    * Delete an age group
-   * DELETE /api/age-groups/:id
    */
-  async deleteAgeGroup(req: Request, res: Response): Promise<void> {
+  async deleteAgeGroup(req: Request, res: Response<ApiResponse<{ success: boolean; deletedId: string; name: string }>>): Promise<void> {
     try {
       const { id } = req.params;
 
@@ -375,9 +370,8 @@ export class AgeGroupController {
 
   /**
    * Validate age group content completeness
-   * GET /api/age-groups/:id/validate-readiness
    */
-  async validateAgeGroupReadiness(req: Request, res: Response): Promise<void> {
+  async validateAgeGroupReadiness(req: Request, res: Response<ApiResponse<AgeGroupContentValidationResult>>): Promise<void> {
     try {
       const { id } = req.params;
 
