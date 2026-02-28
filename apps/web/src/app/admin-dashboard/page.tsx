@@ -9,6 +9,7 @@ import {
   Globe2,
   MapPin,
   BookMarked,
+  Map,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Card } from "@/src/components/ui/card";
@@ -16,102 +17,81 @@ import { StatCard } from "./_components/StatCard";
 import { ChartContainer } from "./_components/ChartContainer";
 import Link from "next/link";
 import {
-  mockStories,
-  mockChildProfiles,
-  mockParents,
-  mockApprovalQueue,
-  mockAnalyticsMetrics,
-  mockAgeGroups,
-  mockWorlds,
-} from "./_data/mockData";
+  getAgeGroups,
+  getRoadmaps,
+  getStories,
+  getWorlds,
+} from "@/src/lib/content-service/server-api";
+import { getAllChildren } from "@/src/lib/progress-service/server-api";
 
-export default function AdminDashboard() {
-  // Calculate metrics based on new hierarchy
-  const totalChildren = mockChildProfiles.length;
-  const totalParents = mockParents.length;
-  const totalAgeGroups = mockAgeGroups.length;
-  const totalStories = mockStories.length;
-  const totalWorlds = mockWorlds.length;
-  const totalChapters = mockStories.reduce((acc, s) => acc + s.chapters.length, 0);
-  const totalChallenges = mockStories.reduce(
-    (acc, s) => acc + s.chapters.reduce((c, ch) => c + ch.challenges.length, 0),
-    0
-  );
-  
-  const publishedStories = mockStories.filter(
-    (s) => s.status === "published",
-  ).length;
-  const pendingApprovals = mockApprovalQueue.filter(
-    (a) => a.status === "pending",
-  ).length;
-  const totalChildrenActive = mockChildProfiles.filter(
-    (c) => c.status === "active",
-  ).length;
-  const totalStoriesCompleted = mockChildProfiles.reduce(
-    (acc, child) => acc + child.totalStoriesCompleted,
-    0
-  );
-  const totalChallengesSolved = mockChildProfiles.reduce(
-    (acc, child) => acc + child.totalChallengesSolved,
-    0
-  );
-  const latestMetric = mockAnalyticsMetrics[mockAnalyticsMetrics.length - 1];
+export default async function AdminDashboard() {
+  // Fetch real data from server APIs in parallel
+  const [ageGroupsData, roadmapsData, storiesData, worldsData, childrenData] =
+    await Promise.all([
+      getAgeGroups(),
+      getRoadmaps(),
+      getStories(),
+      getWorlds(),
+      getAllChildren(),
+    ]);
 
-  // Recent activity
-  const recentActivity = [
-    {
-      id: 1,
-      action: "New world created",
-      details: "Future Cities - Science Fiction",
-      timestamp: "2 hours ago",
-      type: "story",
-    },
-    {
-      id: 2,
-      action: "Parent account created",
-      details: "Maria Garcia",
-      timestamp: "4 hours ago",
-      type: "user",
-    },
-    {
-      id: 3,
-      action: "Story submitted for review",
-      details: "Space Explorer's Quest",
-      timestamp: "1 day ago",
-      type: "approval",
-    },
-    {
-      id: 4,
-      action: "Child completed story",
-      details: "Emma - The Lost Treasure of Pirate's Cove",
-      timestamp: "1 day ago",
-      type: "activity",
-    },
-    {
-      id: 5,
-      action: "Challenge added to chapter",
-      details: "What has cities but no houses...",
-      timestamp: "2 days ago",
-      type: "content",
-    },
-  ];
+  // Extract data from API responses
+  const ageGroups = ageGroupsData || [];
+  const roadmaps = roadmapsData || [];
+  const stories = storiesData || [];
+  const worlds = worldsData || [];
+  const childProfiles = childrenData || [];
+
+  // Calculate metrics based on real data
+  const totalChildren = childProfiles.children.length;
+  const totalAgeGroups = ageGroups.length;
+  const totalStories = stories.stories.length;
+  const totalWorlds = worlds.length;
+  const totalRoadmaps = roadmaps.length;
+
+  // Calculate chapters and challenges
+  const totalChapters = stories.stories.reduce(
+    (acc, s) => acc + (s.chapters?.length || 0),
+    0,
+  );
+  const totalChallenges = stories.stories.reduce(
+    (acc, s) =>
+      acc + (s.chapters?.reduce((c, ch) => c + (ch.challenge ? 1 : 0), 0) || 0),
+    0,
+  );
+
+  // Stories completed by all children
+  const totalStoriesCompleted = childProfiles.children.reduce((acc, child) => {
+    const completedCount =
+      child.progress?.filter((p) => p.status === "COMPLETED").length || 0;
+    return acc + completedCount;
+  }, 0);
+
+  // Challenges solved by all children
+  const totalChallengesSolved = childProfiles.children.reduce((acc, child) => {
+    const attemptCount =
+      child.progress?.reduce(
+        (count, prog) =>
+          count + (prog.gameSession?.challengeAttempts?.length || 0),
+        0,
+      ) || 0;
+    return acc + attemptCount;
+  }, 0);
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold">Welcome to Readly Admin</h1>
-        <p className="text-slate-500 mt-2">
-          Manage content hierarchy, monitor users, and track platform performance
-        </p>
-      </div>
-
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Active Children"
-          value={totalChildrenActive}
+          value={totalChildren}
           icon={<Users className="w-6 h-6" />}
+          trend={{ value: 12, isPositive: true }}
+        />
+        <StatCard
+          label="Total roadmaps"
+          value={totalRoadmaps ?? 0}
+          icon={<Map className="w-6 h-6" />}
           trend={{ value: 12, isPositive: true }}
         />
         <StatCard
@@ -121,22 +101,10 @@ export default function AdminDashboard() {
           trend={{ value: 2, isPositive: true }}
         />
         <StatCard
-          label="Published Stories"
-          value={publishedStories}
+          label="Total Stories"
+          value={totalStories}
           icon={<BookOpen className="w-6 h-6" />}
           trend={{ value: 5, isPositive: true }}
-        />
-        <StatCard
-          label="Total Chapters"
-          value={totalChapters}
-          icon={<BookMarked className="w-6 h-6" />}
-          trend={{ value: 8, isPositive: true }}
-        />
-        <StatCard
-          label="Total Challenges"
-          value={totalChallenges}
-          icon={<HelpCircle className="w-6 h-6" />}
-          trend={{ value: 12, isPositive: true }}
         />
       </div>
 
@@ -148,7 +116,9 @@ export default function AdminDashboard() {
             <Card className="p-4">
               <p className="text-sm text-slate-500 mb-1">Total Age Groups</p>
               <p className="text-2xl font-bold">{totalAgeGroups}</p>
-              <p className="text-xs text-slate-500 mt-2">Defined content paths</p>
+              <p className="text-xs text-slate-500 mt-2">
+                Defined content paths
+              </p>
             </Card>
             <Card className="p-4">
               <p className="text-sm text-slate-500 mb-1">Stories Completed</p>
@@ -161,79 +131,17 @@ export default function AdminDashboard() {
               <p className="text-xs text-slate-500 mt-2">Total attempts</p>
             </Card>
             <Card className="p-4">
-              <p className="text-sm text-slate-500 mb-1">Pending Approvals</p>
-              <p className="text-2xl font-bold">{pendingApprovals}</p>
-              <p className="text-xs text-slate-500 mt-2">Awaiting review</p>
+              <p className="text-sm text-slate-500 mb-1">
+                Total parent accounts
+              </p>
+              <p className="text-2xl font-bold">0</p>
+              <p className="text-xs text-slate-500 mt-2"></p>
             </Card>
           </div>
-
-          {/* Recent Activity Feed */}
-          <ChartContainer
-            title="Recent Activity"
-            description="Latest updates across the platform"
-          >
-            <div className="space-y-3">
-              {recentActivity.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="flex items-start gap-3 pb-3 border-b border-slate-100 last:border-0"
-                >
-                  <div className="mt-1">
-                    {activity.type === "story" && (
-                      <div className="w-2 h-2 rounded-full bg-blue-500" />
-                    )}
-                    {activity.type === "user" && (
-                      <div className="w-2 h-2 rounded-full bg-green-500" />
-                    )}
-                    {activity.type === "approval" && (
-                      <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                    )}
-                    {activity.type === "activity" && (
-                      <div className="w-2 h-2 rounded-full bg-purple-500" />
-                    )}
-                    {activity.type === "content" && (
-                      <div className="w-2 h-2 rounded-full bg-pink-500" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{activity.action}</p>
-                    <p className="text-sm text-slate-500">{activity.details}</p>
-                    <p className="text-xs text-slate-500 mt-1">
-                      {activity.timestamp}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </ChartContainer>
         </div>
 
         {/* Right Column - Quick Actions & Important Info */}
         <div className="space-y-6">
-          {/* Quick Actions */}
-          <ChartContainer title="Quick Actions">
-            <div className="space-y-2">
-              <Link href="/admin-dashboard/stories">
-                <Button variant="outline" className="w-full justify-start">
-                  <BookOpen className="w-4 h-4 mr-2" />
-                  Manage Stories
-                </Button>
-              </Link>
-              <Link href="/admin-dashboard/stories/new">
-                <Button variant="outline" className="w-full justify-start">
-                  <BookMarked className="w-4 h-4 mr-2" />
-                  Create Story
-                </Button>
-              </Link>
-              <Link href="/admin-dashboard/approval-queue">
-                <Button variant="outline" className="w-full justify-start">
-                  <CheckSquare className="w-4 h-4 mr-2" />
-                  Review Queue ({pendingApprovals})
-                </Button>
-              </Link>
-            </div>
-          </ChartContainer>
-
           {/* Content Overview */}
           <ChartContainer title="Content Overview">
             <div className="space-y-3 text-sm">

@@ -10,10 +10,12 @@ import {
 
 import { Button } from "../ui/button";
 import { signOut } from "next-auth/react";
-import { LogOut, User, Settings } from "lucide-react";
+import { LogOut, User, Settings, Layout } from "lucide-react";
 import { Checkbox } from "../ui/checkbox";
 import { toast } from "sonner";
 import { Session } from "next-auth";
+import Link from "next/link";
+import { RoleType } from "@shared/types";
 
 export default function Profile({ session }: { session: Session }) {
   const user = session?.user;
@@ -69,6 +71,20 @@ export default function Profile({ session }: { session: Session }) {
                 <Settings className="w-4 h-4" />
                 <span>Settings</span>
               </button>
+              {user.role === RoleType.ADMIN && (
+                <Link href="/admin-dashboard">
+                  <button
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${
+                      activeTab === "settings"
+                        ? "bg-primary text-white shadow-sm"
+                        : "text-gray-700 bg-background/30 hover:bg-primary hover:text-white dark:text-white"
+                    }`}
+                  >
+                    <Layout className="w-4 h-4" />
+                    <span>Dashboard</span>
+                  </button>
+                </Link>
+              )}
             </nav>
 
             <div className="mt-6 pt-6 border-t">

@@ -5,13 +5,15 @@ import { useState, useEffect } from "react";
 import { AdminSidebar } from "./_components/AdminSidebar";
 import { AdminHeader } from "./_components/AdminHeader";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import { RoleType } from "@shared/types";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(true);
-
-
+  const { data: session, status } = useSession();
+  if(!session) {
+    redirect("/");
+  }
   return (
     <div className="flex h-screen">
       {/* Fixed Sidebar */}
@@ -32,6 +34,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           style={{ left: isOpen ? "16rem" : "var(--sidebar-width, 5.5rem)" }}
         >
           <AdminHeader
+          session={session}
             isOpen={isOpen}
             onToggleSidebar={() => setIsOpen(!isOpen)}
           />
