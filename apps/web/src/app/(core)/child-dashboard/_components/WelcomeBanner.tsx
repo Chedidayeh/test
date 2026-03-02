@@ -59,7 +59,7 @@ const WelcomeBanner = ({
 
           {/* Welcome Message */}
           <div className="flex-1 text-center md:text-left">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-center gap-4">
               <h1 className="font-heading text-3xl md:text-4xl text-foreground mb-2">
                 Welcome
                 {currentLevel === 1 ? " on board, " : " back, "}

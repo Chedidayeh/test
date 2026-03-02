@@ -121,6 +121,12 @@ export default function ParentOnboarding({
       // Extract age group ID and theme IDs
       const ageGroupId = formData.childBasic.childAge;
       const themeIds = formData.childPreferences.favoriteThemes || [];
+      
+      // Extract roadmap IDs from selected themes
+      const selectedAgeGroupData = ageGroups.find((ag) => ag.id === ageGroupId);
+      const allocatedRoadmaps = selectedAgeGroupData?.roadmaps
+        ?.filter((roadmap) => themeIds.includes(roadmap.themeId))
+        .map((roadmap) => roadmap.id) || [];
 
       // Prepare request payload
       const payload = {
@@ -130,6 +136,7 @@ export default function ParentOnboarding({
         name: formData.childBasic.childName,
         ageGroupId,
         themeIds,
+        allocatedRoadmaps,
       };
 
       const result = await createChildProfileAction(payload);

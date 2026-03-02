@@ -3,7 +3,7 @@ import { roadmapController } from "../controllers/roadmap.controller";
 
 const router = Router();
 
-// GET all roadmaps
+// GET all roadmaps or by IDs (query parameter)
 router.get("/", (req, res) => roadmapController.getRoadmaps(req, res));
 
 // POST - create new roadmap

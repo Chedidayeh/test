@@ -23,8 +23,19 @@ import {
   getWorlds,
 } from "@/src/lib/content-service/server-api";
 import { getAllChildren } from "@/src/lib/progress-service/server-api";
+import { RoleType } from "@shared/types";
+import { auth } from "@/src/auth";
+import { redirect } from "next/navigation";
 
 export default async function AdminDashboard() {
+  const session = await auth();
+  if (!session) {
+    redirect("/");
+  }
+  const userRole = session?.user?.role;
+  if (userRole !== RoleType.ADMIN) {
+    redirect("/");
+  }
   // Fetch real data from server APIs in parallel
   const [ageGroupsData, roadmapsData, storiesData, worldsData, childrenData] =
     await Promise.all([

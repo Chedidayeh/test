@@ -148,6 +148,7 @@ export async function createChildProfile(payload: {
   name: string;
   ageGroupId: string;
   themeIds: string[];
+  allocatedRoadmaps: string[];
 }) {
   console.log("[Auth Service API] Creating child profile:", payload);
 

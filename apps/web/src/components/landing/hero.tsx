@@ -39,9 +39,11 @@ export default function Hero(
           <Button
             className="px-8 py-3 sm:py-4"
             onClick={() => {
-              if (session?.user) {
+              if (session?.user.newUser) {
                 router.push("/onboarding");
-              } else {
+              } else if (session?.user.newUser === false) {
+                router.push("/parent-dashboard");
+              }else {
                 loginModal.open();
               }
             }}

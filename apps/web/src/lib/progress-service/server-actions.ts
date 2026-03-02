@@ -1,6 +1,6 @@
 "use server";
 
-import { ChildProfile, GameSession, SessionCheckpoint } from "@shared/types";
+import { ChildProfile, GameSession, SessionCheckpoint, ParentUser } from "@shared/types";
 import {
   getAllChildren,
   PaginationParams,
@@ -10,6 +10,8 @@ import {
   SubmitChallengeAnswerRequest,
   SubmitChallengeAnswerResponse,
   pauseGameSession,
+  allocateRoadmapToChild,
+  getParentWithProfiles,
 } from "./server-api";
 
 type FetchChildrenResult =
@@ -152,6 +154,7 @@ export async function submitChallengeAnswerAction(
         challengeId: request.challengeId,
         challengeType: request.challengeType,
         isCorrect: request.isCorrect,
+        actions: request.actions,
       },
     );
 
@@ -293,6 +296,120 @@ export async function pauseGameSessionAction(
 
     console.error("[Progress Service] Error pausing game session:", {
       gameSessionId,
+      error: errorMessage,
+    });
+
+    return {
+      success: false,
+      error: errorMessage,
+    };
+  }
+}
+
+export interface AllocateRoadmapResult {
+  success: boolean;
+  data?: ChildProfile;
+  error?: string;
+}
+
+/**
+ * Server action to allocate a roadmap to a child
+ * Adds a roadmap ID to the child's allocatedRoadmaps array
+ *
+ * @param childId - The child's ID
+ * @param roadmapId - The roadmap ID to allocate
+ * @returns Result object with success status and updated child data
+ *
+ * @example
+ * const result = await allocateRoadmapToChildAction("child-123", "roadmap-456");
+ * if (result.success) {
+ *   console.log("Roadmap allocated to child:", result.data?.name);
+ * } else {
+ *   console.error("Failed to allocate:", result.error);
+ * }
+ */
+export async function allocateRoadmapToChildAction(
+  childId: string,
+  roadmapId: string,
+): Promise<AllocateRoadmapResult> {
+  try {
+    console.log("[Progress Service] Allocating roadmap via server action", {
+      childId,
+      roadmapId,
+    });
+
+    const updatedChild = await allocateRoadmapToChild(childId, roadmapId);
+
+    console.log("[Progress Service] Roadmap allocated successfully", {
+      childId,
+      roadmapId,
+      childName: updatedChild.name,
+    });
+
+    return {
+      success: true,
+      data: updatedChild,
+    };
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred";
+
+    console.error("[Progress Service] Error allocating roadmap:", {
+      childId,
+      roadmapId,
+      error: errorMessage,
+    });
+
+    return {
+      success: false,
+      error: errorMessage,
+    };
+  }
+}
+export interface RefetchParentDataResult {
+  success: boolean;
+  data?: ParentUser | null;
+  error?: string;
+}
+
+/**
+ * Server action to refetch parent data with updated children list
+ * Called after creating a new child to refresh the dashboard
+ *
+ * @param parentId - The parent's ID
+ * @returns Result object with updated parent data including new child
+ *
+ * @example
+ * const result = await refetchParentDataAction("parent-123");
+ * if (result.success) {
+ *   console.log("Updated children:", result.data?.children);
+ * }
+ */
+export async function refetchParentDataAction(
+  parentId: string,
+): Promise<RefetchParentDataResult> {
+  try {
+    console.log("[Progress Service] Refetching parent data via server action", {
+      parentId,
+    });
+
+    const parentData = await getParentWithProfiles(parentId);
+
+    console.log("[Progress Service] Parent data refetched successfully", {
+      parentId,
+      childrenCount: parentData?.children?.length || 0,
+    });
+
+    return {
+      success: true,
+      data: parentData,
+    };
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred";
+
+    console.error("[Progress Service] Error refetching parent data:", {
+      parentId,
       error: errorMessage,
     });
 

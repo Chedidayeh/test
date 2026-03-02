@@ -7,7 +7,7 @@ import { Session } from "next-auth";
 import Profile from "@/src/components/shared/Profile";
 
 interface AdminHeaderProps {
-  session: Session;
+  session: Session | null;
   isOpen: boolean;
   onToggleSidebar: () => void;
 }
@@ -40,7 +40,7 @@ export function AdminHeader({ session, isOpen, onToggleSidebar }: AdminHeaderPro
           </Button> */}
 
           {/* User Menu */}
-          <Profile session={session} />
+          <Profile session={session!} />
 
           <ModeToggle />
         </div>

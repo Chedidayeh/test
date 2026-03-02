@@ -110,6 +110,52 @@ export class RoadmapService {
   }
 
   /**
+   * Get multiple roadmaps by their IDs
+   * Efficiently fetches multiple roadmaps in a single database query
+   */
+  async getRoadmapsByIds(roadmapIds: string[]): Promise<Roadmap[]> {
+    try {
+      if (!roadmapIds || roadmapIds.length === 0) {
+        logger.info("Empty roadmap IDs provided");
+        return [];
+      }
+
+      const roadmaps = await this.prisma.roadmap.findMany({
+        where: {
+          id: {
+            in: roadmapIds,
+          },
+        },
+        include: {
+          theme: true,
+          ageGroup: true,
+          worlds: {
+            include: {
+              stories: {
+                include: { chapters: { include: { challenge: true } } },
+              },
+            },
+            orderBy: { order: "asc" },
+          },
+        },
+      });
+
+      logger.info("Roadmaps by IDs retrieved successfully", {
+        requestedCount: roadmapIds.length,
+        foundCount: roadmaps.length,
+      });
+
+      return roadmaps as Roadmap[];
+    } catch (error) {
+      logger.error("Error fetching roadmaps by IDs", {
+        roadmapIds,
+        error: String(error),
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Get roadmap by theme ID (for uniqueness validation)
    */
   async getRoadmapByThemeId(themeId: string): Promise<Roadmap[]> {

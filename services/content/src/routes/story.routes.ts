@@ -3,8 +3,14 @@ import { storyController } from "../controllers/story.controller";
 
 const router = Router();
 
-// GET all stories with pagination and filters
-router.get("/", (req, res) => storyController.getStories(req, res));
+// GET all stories with pagination and filters, or by IDs if ?ids=id1,id2,id3
+router.get("/", (req, res) => {
+  if (req.query.ids) {
+    storyController.getStoriesByIds(req, res);
+  } else {
+    storyController.getStories(req, res);
+  }
+});
 
 // POST - create story with chapters atomically
 router.post("/batch/create", (req, res) =>

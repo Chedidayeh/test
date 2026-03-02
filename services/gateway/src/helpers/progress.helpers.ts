@@ -858,6 +858,7 @@ export async function forwardSubmitChallengeAnswer(
       baseStars,
       skipped,
       status,
+      actions,
     } = req.body;
 
     // Validation
@@ -911,6 +912,7 @@ export async function forwardSubmitChallengeAnswer(
         baseStars,
         skipped,
         status,
+        actions,
       },
       {
         headers: {
@@ -1655,6 +1657,122 @@ export async function forwardAssignBadgeToChild(
       error: {
         code: "INTERNAL_ERROR",
         message: "Failed to assign badge",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+/**
+ * Helper function to allocate a roadmap to a child
+ * Forwards the request to Progress Service
+ */
+export async function forwardAllocateRoadmapToChild(
+  req: Request,
+  res: Response<ApiResponse<ChildProfile>>,
+): Promise<void> {
+  try {
+    const { childId } = req.params;
+    const { roadmapId } = req.body;
+
+    if (!childId || !roadmapId) {
+      logger.warn("Invalid parameters for allocate roadmap", {
+        childId,
+        roadmapId,
+      });
+      res.status(400).json({
+        success: false,
+        error: {
+          code: "INVALID_PARAMS",
+          message: "childId and roadmapId are required",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Allocating roadmap to child", { childId, roadmapId });
+
+    // Forward to Progress Service
+    const allocateResponse = await axios.post<ApiResponse<ChildProfile>>(
+      `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/children/${childId}/allocate-roadmap`,
+      {
+        roadmapId,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
+          }),
+        },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug("Progress service allocate roadmap response received", {
+      status: allocateResponse.status,
+      hasChildProfile: !!allocateResponse.data?.data,
+    });
+
+    // Handle progress service error
+    if (allocateResponse.status !== 200 && allocateResponse.status !== 201) {
+      logger.error("Progress service allocate roadmap failed", {
+        status: allocateResponse.status,
+        error: allocateResponse.data?.error,
+      });
+      res.status(allocateResponse.status || 503).json({
+        success: false,
+        error: {
+          code: "PROGRESS_SERVICE_ERROR",
+          message:
+            allocateResponse.data?.error?.message ||
+            "Failed to allocate roadmap",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    const updatedChild = allocateResponse.data?.data;
+
+    if (!updatedChild) {
+      logger.warn("Progress service returned no child data", {
+        childId,
+        roadmapId,
+      });
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "NO_DATA",
+          message: "No child data returned from progress service",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Roadmap allocated successfully", {
+      childId,
+      roadmapId,
+      allocatedRoadmapCount:
+        updatedChild.allocatedRoadmaps?.length || 0,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: updatedChild,
+      timestamp: new Date(),
+    });
+  } catch (error) {
+    logger.error("Allocate roadmap forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Failed to allocate roadmap",
       },
       timestamp: new Date(),
     });

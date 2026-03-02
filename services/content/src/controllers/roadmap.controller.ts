@@ -10,13 +10,36 @@ const roadmapService = new RoadmapService(prisma);
 
 export class RoadmapController {
   /**
-   * Get all roadmaps
+   * Get all roadmaps or roadmaps by IDs (via query parameter)
    */
   async getRoadmaps(req: Request, res: Response<ApiResponse<Roadmap[]>>): Promise<void> {
     try {
-      logger.info("Get roadmaps request");
+      logger.info("Get roadmaps request", { query: req.query });
 
-      const roadmaps = await roadmapService.getRoadmaps();
+      // Check if IDs are provided in query params
+      const { ids } = req.query;
+
+      let roadmaps: Roadmap[];
+
+      if (ids && typeof ids === "string") {
+        // Parse comma-separated IDs
+        const roadmapIds = ids
+          .split(",")
+          .map((id) => id.trim())
+          .filter((id) => id.length > 0);
+
+        if (roadmapIds.length === 0) {
+          sendError(res, "Invalid IDs provided", 400);
+          return;
+        }
+
+        logger.info("Fetching roadmaps by IDs", { roadmapIds });
+
+        roadmaps = await roadmapService.getRoadmapsByIds(roadmapIds);
+      } else {
+        // Fetch all roadmaps
+        roadmaps = await roadmapService.getRoadmaps();
+      }
 
       sendSuccess(res, roadmaps, 200);
     } catch (error) {

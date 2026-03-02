@@ -71,7 +71,7 @@ const Roadmaps = ({
             {/* Story Info */}
             <div className="p-4">
               <h3 className="font-heading text-xl text-foreground mb-2 line-clamp-1">
-                {roadmap.theme.name}
+                {roadmap.theme.name} - {roadmap.title || "Untitled Roadmap"}
               </h3>
               <p className="font-body text-sm text-muted-foreground mb-4 line-clamp-2">
                 {roadmap.theme.description}

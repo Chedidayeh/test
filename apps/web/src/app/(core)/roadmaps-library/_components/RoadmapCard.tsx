@@ -3,13 +3,22 @@
 import { Button } from "@/src/components/ui/button";
 import { RoadmapDisplay } from "@/src/app/(core)/roadmaps-library/_lib/roadmap-display";
 import { useState } from "react";
+import { ChildProfile, Roadmap } from "@shared/types";
+import AllocateRoadmapDialog from "./AllocateRoadmapDialog";
 
 interface RoadmapCardProps {
   roadmap: RoadmapDisplay;
+  originalRoadmap: Roadmap;
+  childrenList?: ChildProfile[];
 }
 
-const RoadmapCard = ({ roadmap }: RoadmapCardProps) => {
+const RoadmapCard = ({
+  roadmap,
+  originalRoadmap,
+  childrenList = [],
+}: RoadmapCardProps) => {
   const [imageError, setImageError] = useState(false);
+  const [allocateDialogOpen, setAllocateDialogOpen] = useState(false);
 
   return (
     <div className="bg-card rounded-lg border border-foreground/10 shadow-sm hover:shadow-md hover:border-foreground/20 transition-all duration-300 overflow-hidden group">
@@ -42,30 +51,40 @@ const RoadmapCard = ({ roadmap }: RoadmapCardProps) => {
         {/* World & Story Count */}
         <div className="flex items-center gap-4 text-foreground/60 mb-4">
           <div className="flex items-center gap-1">
-            <span className="font-body">
-              {roadmap.worldCount > 1 ? "Worlds" : "World"}
-            </span>
             <span className="font-data font-medium text-foreground/80">
               {roadmap.worldCount}
             </span>
-          </div>
-          <div className="flex items-center gap-1">
             <span className="font-body">
-              {roadmap.storyCount > 1 ? "Stories" : "Story"}
-            </span>
-            <span className="font-data font-medium text-foreground/80">
-              {roadmap.storyCount}
+              {roadmap.worldCount > 1 ? "Worlds" : "World"}
             </span>
           </div>
         </div>
 
-        {/* Action Button */}
-        <Button
-          className={`w-full py-3 rounded-xl font-heading font-bold transition-smooth`}
-        >
-          Explore Roadmap
-        </Button>
+        {/* Action Buttons */}
+        <div className="flex gap-2 flex-col">
+          {/* <Button
+            className={`w-full py-3 rounded-xl font-heading font-bold transition-smooth`}
+          >
+            Explore Roadmap
+          </Button> */}
+          {childrenList.length > 0 && (
+            <Button
+              variant="outline"
+              className="w-full py-3 rounded-xl font-heading font-medium transition-smooth"
+              onClick={() => setAllocateDialogOpen(true)}
+            >
+              Allocate to Child
+            </Button>
+          )}
+        </div>
       </div>
+
+      <AllocateRoadmapDialog
+        open={allocateDialogOpen}
+        onOpenChange={setAllocateDialogOpen}
+        roadmap={originalRoadmap}
+        childrenList={childrenList}
+      />
     </div>
   );
 };

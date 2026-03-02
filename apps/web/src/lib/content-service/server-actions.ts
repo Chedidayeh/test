@@ -14,6 +14,7 @@ import {
 import {
   getStories,
   StoryQueryParams,
+  getStoriesByIds,
   createAgeGroup,
   updateAgeGroup,
   deleteAgeGroup,
@@ -71,6 +72,35 @@ export async function fetchStoriesAction(
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to fetch stories",
+    };
+  }
+}
+
+/**
+ * Server Action for fetching multiple stories by IDs
+ * Batch fetch is more efficient than individual requests
+ * Returns stories as a serializable array instead of Map
+ */
+export async function fetchStoriesByIdsAction(
+  storyIds: string[],
+): Promise<{
+  success: boolean;
+  stories: Story[];
+  error?: string;
+}> {
+  try {
+    const storyMap = await getStoriesByIds(storyIds);
+    const stories = Array.from(storyMap.values());
+    return {
+      success: true,
+      stories,
+    };
+  } catch (error) {
+    console.error("Server action error fetching stories by IDs:", error);
+    return {
+      success: false,
+      stories: [],
+      error: error instanceof Error ? error.message : "Failed to fetch stories by IDs",
     };
   }
 }

@@ -6,6 +6,7 @@ import {
   getBadges,
   getLevels,
   getRoadmapsByAgeGroup,
+  getRoadmapsByIds,
 } from "@/src/lib/content-service/server-api";
 import { redirect } from "next/navigation";
 import { ProgressStatus } from "@shared/types";
@@ -16,28 +17,27 @@ export const metadata: Metadata = {
     "Track your reading progress, discover new stories, and celebrate your achievements in your personalized learning hub.",
 };
 
-
-
-
 export default async function ChildDashboardPage({
   params,
 }: {
   params: Promise<{ childId: string }>;
 }) {
-  
   const { childId } = await params;
   const childData = await getChildById(childId);
   if (!childData) {
     return (
-      <div className="p-4 text-red-500">Child not found for childId: {childId}</div>
-    )
+      <div className="p-4 text-red-500">
+        Child not found for childId: {childId}
+      </div>
+    );
   }
   const levels = await getLevels().catch(() => []);
   const badges = await getBadges().catch(() => []);
 
-  const roadmaps = await getRoadmapsByAgeGroup(childData.ageGroupId);
-  // stories in progress
-  const currentProgresses = childData.progress.filter((progress) => progress.status === ProgressStatus.IN_PROGRESS);
+  const roadmaps = await getRoadmapsByIds(childData.allocatedRoadmaps); // stories in progress
+  const currentProgresses = childData.progress.filter(
+    (progress) => progress.status === ProgressStatus.IN_PROGRESS,
+  );
   return (
     <>
       <div className="min-h-screen p-4 ">

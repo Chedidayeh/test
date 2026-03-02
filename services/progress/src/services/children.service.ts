@@ -8,6 +8,7 @@ import {
   StarEvent,
   ChallengeType,
   SessionCheckpoint,
+  AttemptAction,
 } from "@shared/types";
 
 const prisma = new PrismaClient();
@@ -23,6 +24,7 @@ export class ChildrenService {
     childId: string;
     ageGroupId: string;
     themeIds: string[];
+    allocatedRoadmaps: string[];
     badgeId: string;
   }): Promise<ChildProfile> {
     const childProfile = await prisma.childProfile.create({
@@ -31,6 +33,7 @@ export class ChildrenService {
         name: payload.name,
         ageGroupId: payload.ageGroupId,
         favoriteThemes: payload.themeIds,
+        allocatedRoadmaps: payload.allocatedRoadmaps,
         childId: payload.childId,
         badges: {
           create: { badgeId: payload.badgeId },
@@ -168,6 +171,7 @@ export class ChildrenService {
                 challengeAttempts: {
                   include: {
                     starEvent: true,
+                    actions: true,
                   },
                 },
                 checkpoints: true,
@@ -199,6 +203,7 @@ export class ChildrenService {
                 challengeAttempts: {
                   include: {
                     starEvent: true,
+                    actions: true,
                   },
                 },
                 checkpoints: true,
@@ -246,7 +251,9 @@ export class ChildrenService {
             challengeAttempts: {
               include: {
                 starEvent: true,
+                actions: true,
               },
+              
             },
             checkpoints: true,
           },
@@ -479,6 +486,7 @@ export class ChildrenService {
     baseStars: number;
     skipped: boolean;
     status: ChallengeStatus;
+    actions : AttemptAction[];
   }): Promise<{
     attempt: ChallengeAttempt;
     starEvent: StarEvent;
@@ -529,6 +537,21 @@ export class ChildrenService {
         timeSpentSeconds: payload.elapsedTime,
       },
     });
+
+    // Create all attempt actions from the payload
+    // Always create new actions - accumulates all actions taken during this attempt
+    if (payload.actions && payload.actions.length > 0) {
+      await prisma.attemptAction.createMany({
+        data: payload.actions.map((action) => ({
+          attemptId: updatedAttempt.id,
+          selectedAnswerId: action.selectedAnswerId || null,
+          selectedAnswerText: action.selectedAnswerText || null,
+          answerText: action.answerText || null,
+          isCorrect: action.isCorrect !== undefined ? action.isCorrect : null,
+          attemptNumberAtAction: action.attemptNumberAtAction,
+        })),
+      });
+    }
 
     // Calculate star rewards based on attempt result
     let totalStars = 0;
@@ -812,6 +835,64 @@ export class ChildrenService {
     }
 
     // Fetch and return updated child profile with all badges
+    const updatedChild = await prisma.childProfile.findUnique({
+      where: { id: childProfile.id },
+      include: {
+        progress: {
+          include: {
+            gameSession: {
+              include: {
+                challengeAttempts: {
+                  include: {
+                    starEvent: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        badges: true,
+      },
+    });
+
+    return updatedChild as unknown as ChildProfile;
+  }
+
+  /**
+   * Allocate a roadmap to a child
+   * Adds roadmapId to child's allocatedRoadmaps array
+   */
+  static async allocateRoadmapToChild(
+    childId: string,
+    roadmapId: string,
+  ): Promise<ChildProfile | null> {
+    // Validate inputs
+    if (!childId || !roadmapId) {
+      throw new Error("Missing required fields: childId and roadmapId");
+    }
+
+    // Check if child profile exists
+    const childProfile = await prisma.childProfile.findUnique({
+      where: { childId },
+    });
+
+    if (!childProfile) {
+      return null;
+    }
+
+    // Check if roadmap is already allocated
+    const allocatedRoadmaps = childProfile.allocatedRoadmaps || [];
+    if (!allocatedRoadmaps.includes(roadmapId)) {
+      // Add roadmap to allocatedRoadmaps
+      await prisma.childProfile.update({
+        where: { id: childProfile.id },
+        data: {
+          allocatedRoadmaps: [...allocatedRoadmaps, roadmapId],
+        },
+      });
+    }
+
+    // Fetch and return updated child profile
     const updatedChild = await prisma.childProfile.findUnique({
       where: { id: childProfile.id },
       include: {

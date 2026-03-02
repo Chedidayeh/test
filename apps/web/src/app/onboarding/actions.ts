@@ -11,6 +11,7 @@ export async function createChildProfileAction(payload: {
   name: string;
   ageGroupId: string;
   themeIds: string[];
+  allocatedRoadmaps: string[];
 }) {
   try {
     const child = await createChildProfileAPI(payload);

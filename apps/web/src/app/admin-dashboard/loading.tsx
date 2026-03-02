@@ -1,15 +1,6 @@
-import { auth } from "@/src/auth";
-import { RoleType } from "@shared/types";
-import { redirect } from "next/navigation";
 
-export default async function Loading() {
-  const session = await auth();
-  if (!session) {
-    redirect("/");
-  }
-  if (session.user.role !== RoleType.ADMIN) {
-    redirect("/");
-  }
+export default  function Loading() {
+
   // Or a custom loading skeleton component
   return (
     <>

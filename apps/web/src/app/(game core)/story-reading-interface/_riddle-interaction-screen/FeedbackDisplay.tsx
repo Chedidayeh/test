@@ -96,7 +96,7 @@ const FeedbackDisplay2 = ({
           {/* Stars Earned (for correct answers) */}
           {type === "solved" && starsEarned > 0 && (
             <div className="flex items-center justify-center gap-3 mb-6 p-4 bg-secondary/20 rounded-xl">
-              <Star />
+              <Star className="fill-amber-500 text-amber-500" />
               <span className="font-heading text-2xl text-foreground">
                 +{starsEarned} Stars Earned!
               </span>

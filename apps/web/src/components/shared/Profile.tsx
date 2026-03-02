@@ -18,7 +18,6 @@ import Link from "next/link";
 import { RoleType } from "@shared/types";
 
 export default function Profile({ session }: { session: Session }) {
-  const user = session?.user;
   const [closeDialog, setCloseDialog] = React.useState(false);
   const [activeTab, setActiveTab] = useState<"profile" | "settings">("profile");
 
@@ -31,7 +30,7 @@ export default function Profile({ session }: { session: Session }) {
     <Dialog open={closeDialog} onOpenChange={setCloseDialog}>
       <DialogTrigger asChild>
         <div className="w-9 h-9 cursor-pointer rounded-full border border-black/30 flex items-center justify-center bg-primary text-white text-lg">
-          {user?.name?.charAt(0).toUpperCase()}
+          {session?.user?.name?.charAt(0).toUpperCase()}
         </div>
       </DialogTrigger>
       <DialogTitle></DialogTitle>
@@ -43,7 +42,7 @@ export default function Profile({ session }: { session: Session }) {
             <div className="mb-6 flex flex-col items-center">
               <div className="flex items-center justify-center">
                 <div className="w-12 h-12 rounded-full border flex items-center justify-center text-white bg-primary text-lg">
-                  {user?.name?.charAt(0).toUpperCase()}
+                  {session?.user?.name?.charAt(0).toUpperCase()}
                 </div>
               </div>
             </div>
@@ -71,7 +70,7 @@ export default function Profile({ session }: { session: Session }) {
                 <Settings className="w-4 h-4" />
                 <span>Settings</span>
               </button>
-              {user.role === RoleType.ADMIN && (
+              {session?.user?.role === RoleType.ADMIN && (
                 <Link href="/admin-dashboard">
                   <button
                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${
@@ -110,7 +109,7 @@ export default function Profile({ session }: { session: Session }) {
                         <label className="text-sm font-medium text-gray-500">
                           Full Name
                         </label>
-                        <p className="text-base ">{user?.name}</p>
+                        <p className="text-base ">{session?.user?.name}</p>
                       </div>
                     </div>
 
@@ -120,7 +119,7 @@ export default function Profile({ session }: { session: Session }) {
                         <label className="text-sm font-medium text-gray-500">
                           Email Address
                         </label>
-                        <p className="text-base ">{user?.email}</p>
+                        <p className="text-base ">{session?.user?.email}</p>
                       </div>
                     </div>
 
@@ -132,7 +131,7 @@ export default function Profile({ session }: { session: Session }) {
                         </label>
                         <div className="flex items-center gap-2 mt-1">
                           <span className="inline-block px-3 py-1 rounded-full text-xs bg-primary text-white">
-                            {user?.role || "Parent"}
+                            {session?.user?.role}
                           </span>
                         </div>
                       </div>

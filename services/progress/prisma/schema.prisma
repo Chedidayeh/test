@@ -15,15 +15,15 @@ datasource db {
 
 // Child Profile: Game state for each child
 model ChildProfile {
-  id             String   @id @default(cuid())
-  name           String
-  parentId       String // Reference to auth service Parent.id
-  childId        String   @unique // Reference to auth service Child.id
-  ageGroupId     String // Reference to content service AgeGroup.id
-  favoriteThemes String[] // Reference to content service Theme.id
-
-  currentLevel Int @default(1)
-  totalStars   Int @default(0)
+  id                String   @id @default(cuid())
+  name              String
+  parentId          String // Reference to auth service Parent.id
+  childId           String   @unique // Reference to auth service Child.id
+  ageGroupId        String // Reference to content service AgeGroup.id
+  favoriteThemes    String[] // Reference to content service Theme.id
+  allocatedRoadmaps String[] // List of Roadmap IDs allocated to this child
+  currentLevel      Int      @default(1)
+  totalStars        Int      @default(0)
 
   progress Progress[]
   badges   ChildBadge[]
@@ -147,9 +147,9 @@ model ChallengeAttempt {
 
   // References to content service
   challengeId String // Reference to content service Challenge.id
-  answerId    String? // For multiple choice / riddle - reference to content Answer.id
 
-  // Answer data
+  // Final answer data (what they ultimately submitted)
+  answerId   String? // Final answer selected
   textAnswer String? // For short answer challenges - user's free text input
   isCorrect  Boolean? // null for unanswered attempts or subjective questions
   status     ChallengeStatus @default(NOT_ATTEMPTED)
@@ -159,15 +159,40 @@ model ChallengeAttempt {
   usedHints     Int // Number of hints used (0 = no hints, 1 = 1 hint, etc.)
 
   // Time tracking (in seconds)
-  timeSpentSeconds Int        @default(0)
-  starEvent        StarEvent?
+  timeSpentSeconds Int @default(0)
+
+  // Detailed action history during this attempt
+  actions AttemptAction[]
+
+  starEvent StarEvent?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([sessionId])
   @@index([challengeId])
-  @@index([answerId])
+}
+
+// Store every action a child takes during a challenge attempt
+// Provides detailed audit trail of their decision-making process
+model AttemptAction {
+  id        String           @id @default(cuid())
+  attemptId String
+  attempt   ChallengeAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  // What was selected/used in this action
+  selectedAnswerId      String? // If action is ANSWER_SUBMITTED
+  selectedAnswerText    String? // Capture the full text of the answer they selected
+  answerText            String? // For open-ended questions, capture the text they entered
+  isCorrect             Boolean? // Whether this action resulted in a correct answer (null for non-answer actions)
+  // Context about this action
+  attemptNumberAtAction Int // Which attempt number they were on
+
+  createdAt DateTime @default(now())
+
+  @@index([attemptId])
+  @@index([selectedAnswerId])
+  @@index([createdAt])
 }
 
 // StarEvent represents the outcome of a challenge attempt that results in star rewards, tracking details of the attempt and rewards earned

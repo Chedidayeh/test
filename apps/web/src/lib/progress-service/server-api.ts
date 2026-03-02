@@ -13,12 +13,19 @@
  * Pattern follows auth-service/server-api.ts for consistency.
  */
 
-import type { ApiResponse, ChildProfile, ChallengeType, GameSession, ParentUser, Progress, ChallengeAttempt, StarEvent, ChallengeStatus, SessionCheckpoint } from "@shared/types";
+import type {
+  ApiResponse,
+  ChildProfile,
+  ChallengeType,
+  GameSession,
+  ParentUser,
+  Progress,
+  ChallengeAttempt,
+  StarEvent,
+  ChallengeStatus,
+  SessionCheckpoint,
+} from "@shared/types";
 import { apiRequest, buildQueryString, isApiError } from "../helpers";
-
-
-
-
 
 export interface PaginationParams {
   limit?: number;
@@ -33,22 +40,31 @@ export interface SubmitChallengeAnswerRequest {
   gameSessionId: string;
   challengeId: string;
   challengeType: ChallengeType;
-  
+
   // Answer data
-  answerId?: string;        // For multiple choice
-  textAnswer?: string;      // For text input
-  isCorrect: boolean;       // Whether the answer was correct
-  
+  answerId?: string; // For multiple choice
+  textAnswer?: string; // For text input
+  isCorrect: boolean; // Whether the answer was correct
+
   // Attempt data
-  elapsedTime: number;      // seconds spent on this challenge
-  attemptNumber: number;    // Which attempt is this (1st, 2nd, etc)
-  usedHints: number;        // Number of hints used (0 = no hints, 1 = 1 hint, etc.)
-  maxAttempts?: number;     // Max allowed attempts for this challenge
-  skipped?: boolean;        // Whether the challenge was skipped
-  status: ChallengeStatus;  // The status of the challenge attempt
-  
+  elapsedTime: number; // seconds spent on this challenge
+  attemptNumber: number; // Which attempt is this (1st, 2nd, etc)
+  usedHints: number; // Number of hints used (0 = no hints, 1 = 1 hint, etc.)
+  maxAttempts?: number; // Max allowed attempts for this challenge
+  skipped?: boolean; // Whether the challenge was skipped
+  status: ChallengeStatus; // The status of the challenge attempt
+
   // Challenge metadata for star calculation
-  baseStars: number;        // Base stars for this challenge
+  baseStars: number; // Base stars for this challenge
+
+  // attemt actions:
+  actions: {
+    selectedAnswerId?: string; // If action is ANSWER_SUBMITTED
+    selectedAnswerText?: string; // Capture the full text of the answer they selected
+    answerText?: string; // For open-ended questions, capture the text they entered
+    attemptNumberAtAction: number; // Which attempt number they were on
+    isCorrect?: boolean; // Whether the submitted answer was correct (for ANSWER_SUBMITTED)
+  }[];
 }
 
 /**
@@ -63,9 +79,6 @@ export interface SubmitChallengeAnswerResponse {
   error?: string;
 }
 
-
-
-
 /**
  * Fetch all children for admin dashboard
  * Combines data from Auth Service (child profiles) and Progress Service (stats)
@@ -78,28 +91,39 @@ export interface SubmitChallengeAnswerResponse {
  */
 export async function getAllChildren(params?: PaginationParams) {
   const queryString = buildQueryString(params || {});
-  console.log("[Progress Service API] Fetching all children with params:", params);
+  console.log(
+    "[Progress Service API] Fetching all children with params:",
+    params,
+  );
 
   const response = await apiRequest<ApiResponse<ChildProfile[]>>(
     `/children${queryString}`,
   );
 
   if (isApiError(response)) {
-    console.warn("[Progress Service API] Failed to fetch children:", response.error.message);
+    console.warn(
+      "[Progress Service API] Failed to fetch children:",
+      response.error.message,
+    );
     return {
       children: [],
       pagination: undefined,
     };
   }
 
-  console.log("[Progress Service API] Received response for progress service:", {
-    success: response.success,
-    dataLength: response.data?.length,
-    pagination: response.pagination,
-  });
+  console.log(
+    "[Progress Service API] Received response for progress service:",
+    {
+      success: response.success,
+      dataLength: response.data?.length,
+      pagination: response.pagination,
+    },
+  );
 
   if (!response.success) {
-    console.warn("[Progress Service API] Failed to fetch children: API returned success=false");
+    console.warn(
+      "[Progress Service API] Failed to fetch children: API returned success=false",
+    );
     return {
       children: [],
       pagination: undefined,
@@ -137,12 +161,17 @@ export async function getChildById(childId: string) {
   );
 
   if (isApiError(response)) {
-    console.warn("[Progress Service API] Failed to fetch child:", response.error.message);
+    console.warn(
+      "[Progress Service API] Failed to fetch child:",
+      response.error.message,
+    );
     return null;
   }
 
   if (!response.success) {
-    console.warn("[Progress Service API] Failed to fetch child: API returned success=false");
+    console.warn(
+      "[Progress Service API] Failed to fetch child: API returned success=false",
+    );
     return null;
   }
 
@@ -151,28 +180,36 @@ export async function getChildById(childId: string) {
 
 /**
  * Fetch progress for a specific child and story
- * 
+ *
  * @param childId - The child ID
  * @param storyId - The story ID
  * @returns Progress data for the story or null if not started
- * 
+ *
  * @example
  * const progress = await getChildProgress("child-123", "story-001");
  */
 export async function getChildProgress(childId: string, storyId: string) {
-  console.log("[Progress Service API] Fetching child progress:", { childId, storyId });
+  console.log("[Progress Service API] Fetching child progress:", {
+    childId,
+    storyId,
+  });
 
   const response = await apiRequest<ApiResponse<Progress>>(
     `/progress/${childId}/stories/${storyId}`,
   );
 
   if (isApiError(response)) {
-    console.warn("[Progress Service API] Failed to fetch progress:", response.error.message);
+    console.warn(
+      "[Progress Service API] Failed to fetch progress:",
+      response.error.message,
+    );
     return null;
   }
 
   if (!response.success) {
-    console.warn("[Progress Service API] Failed to fetch progress: API returned success=false");
+    console.warn(
+      "[Progress Service API] Failed to fetch progress: API returned success=false",
+    );
     return null;
   }
 
@@ -190,19 +227,27 @@ export async function getChildProgress(childId: string, storyId: string) {
  * const parentData = await getParentWithProfiles("parent-123");
  */
 export async function getParentWithProfiles(parentId: string) {
-  console.log("[Progress Service API] Fetching parent with profiles:", parentId);
+  console.log(
+    "[Progress Service API] Fetching parent with profiles:",
+    parentId,
+  );
 
   const response = await apiRequest<ApiResponse<ParentUser>>(
     `/parent-data/${parentId}`,
   );
 
   if (isApiError(response)) {
-    console.warn("[Progress Service API] Failed to fetch parent with profiles:", response.error.message);
+    console.warn(
+      "[Progress Service API] Failed to fetch parent with profiles:",
+      response.error.message,
+    );
     return null;
   }
 
   if (!response.success) {
-    console.warn("[Progress Service API] Failed to fetch parent with profiles: API returned success=false");
+    console.warn(
+      "[Progress Service API] Failed to fetch parent with profiles: API returned success=false",
+    );
     return null;
   }
 
@@ -222,7 +267,10 @@ export async function getParentWithProfiles(parentId: string) {
  * const progress = await startStory("child-123", "story-001");
  */
 export async function startStory(childId: string, storyId: string) {
-  console.log("[Progress Service API] Starting new story:", { childId, storyId });
+  console.log("[Progress Service API] Starting new story:", {
+    childId,
+    storyId,
+  });
 
   const response = await apiRequest<ApiResponse<Progress | null>>(
     `/progress/${childId}/stories/${storyId}/start`,
@@ -235,12 +283,17 @@ export async function startStory(childId: string, storyId: string) {
   );
 
   if (isApiError(response)) {
-    console.warn("[Progress Service API] Failed to start story:", response.error.message);
+    console.warn(
+      "[Progress Service API] Failed to start story:",
+      response.error.message,
+    );
     return null;
   }
 
   if (!response.success) {
-    console.warn("[Progress Service API] Failed to start story: API returned success=false");
+    console.warn(
+      "[Progress Service API] Failed to start story: API returned success=false",
+    );
     return null;
   }
 
@@ -259,10 +312,7 @@ export async function startStory(childId: string, storyId: string) {
  * @example
  * const session = await saveCheckpoint("session-123", "chapter-456");
  */
-export async function saveCheckpoint(
-  gameSessionId: string,
-  chapterId: string,
-) {
+export async function saveCheckpoint(gameSessionId: string, chapterId: string) {
   console.log("[Progress Service API] Saving checkpoint:", {
     gameSessionId,
     chapterId,
@@ -280,12 +330,17 @@ export async function saveCheckpoint(
   );
 
   if (isApiError(response)) {
-    console.warn("[Progress Service API] Failed to save checkpoint:", response.error.message);
+    console.warn(
+      "[Progress Service API] Failed to save checkpoint:",
+      response.error.message,
+    );
     return null;
   }
 
   if (!response.success) {
-    console.warn("[Progress Service API] Failed to save checkpoint: API returned success=false");
+    console.warn(
+      "[Progress Service API] Failed to save checkpoint: API returned success=false",
+    );
     return null;
   }
 
@@ -350,11 +405,15 @@ export async function submitChallengeAnswer(
       baseStars: request.baseStars,
       skipped: request.skipped,
       status: request.status,
+      actions: request.actions,
     }),
   });
 
   if (isApiError(response)) {
-    console.warn("[Progress Service API] Failed to submit challenge answer:", response.error.message);
+    console.warn(
+      "[Progress Service API] Failed to submit challenge answer:",
+      response.error.message,
+    );
     return {
       success: false,
       error: response.error.message,
@@ -362,7 +421,9 @@ export async function submitChallengeAnswer(
   }
 
   if (!response.success) {
-    console.warn("[Progress Service API] Failed to submit challenge answer: API returned success=false");
+    console.warn(
+      "[Progress Service API] Failed to submit challenge answer: API returned success=false",
+    );
     return {
       success: false,
       error: response.error?.message || "Failed to submit challenge answer",
@@ -371,12 +432,15 @@ export async function submitChallengeAnswer(
 
   const data = response.data!;
 
-  console.log("[Progress Service API] Challenge answer submitted successfully", {
-    challengeId: request.challengeId,
-    totalStars: data.totalStars,
-    attemptId: data.attempt.id,
-    skipped: request.skipped,
-  });
+  console.log(
+    "[Progress Service API] Challenge answer submitted successfully",
+    {
+      challengeId: request.challengeId,
+      totalStars: data.totalStars,
+      attemptId: data.attempt.id,
+      skipped: request.skipped,
+    },
+  );
 
   return {
     success: true,
@@ -409,12 +473,17 @@ export async function completeStory(
   );
 
   if (isApiError(response)) {
-    console.warn("[Progress Service API] Failed to complete story:", response.error.message);
+    console.warn(
+      "[Progress Service API] Failed to complete story:",
+      response.error.message,
+    );
     return null;
   }
 
   if (!response.success) {
-    console.warn("[Progress Service API] Failed to complete story: API returned success=false");
+    console.warn(
+      "[Progress Service API] Failed to complete story: API returned success=false",
+    );
     return null;
   }
 
@@ -440,7 +509,10 @@ export async function updateChildLevel(
   childId: string,
   newLevel: number,
 ): Promise<ChildProfile | null> {
-  console.log("[Progress Service API] Updating child level:", { childId, newLevel });
+  console.log("[Progress Service API] Updating child level:", {
+    childId,
+    newLevel,
+  });
 
   const response = await apiRequest<ApiResponse<ChildProfile>>(
     `/children/${childId}/level`,
@@ -453,12 +525,17 @@ export async function updateChildLevel(
   );
 
   if (isApiError(response)) {
-    console.warn("[Progress Service API] Failed to update child level:", response.error.message);
+    console.warn(
+      "[Progress Service API] Failed to update child level:",
+      response.error.message,
+    );
     return null;
   }
 
   if (!response.success) {
-    console.warn("[Progress Service API] Failed to update child level: API returned success=false");
+    console.warn(
+      "[Progress Service API] Failed to update child level: API returned success=false",
+    );
     return null;
   }
 
@@ -485,7 +562,10 @@ export async function assignBadgeToChild(
   childId: string,
   badgeId: string,
 ): Promise<ChildProfile | null> {
-  console.log("[Progress Service API] Assigning badge to child:", { childId, badgeId });
+  console.log("[Progress Service API] Assigning badge to child:", {
+    childId,
+    badgeId,
+  });
 
   const response = await apiRequest<ApiResponse<ChildProfile>>(
     `/children/${childId}/badges`,
@@ -498,12 +578,17 @@ export async function assignBadgeToChild(
   );
 
   if (isApiError(response)) {
-    console.warn("[Progress Service API] Failed to assign badge:", response.error.message);
+    console.warn(
+      "[Progress Service API] Failed to assign badge:",
+      response.error.message,
+    );
     return null;
   }
 
   if (!response.success) {
-    console.warn("[Progress Service API] Failed to assign badge: API returned success=false");
+    console.warn(
+      "[Progress Service API] Failed to assign badge: API returned success=false",
+    );
     return null;
   }
 
@@ -520,8 +605,13 @@ export async function assignBadgeToChild(
  * @param gameSessionId - The game session ID to resume
  * @returns SessionCheckpoint response with resumedAt and idle time
  */
-export async function createNewCheckpointSession(gameSessionId: string): Promise<SessionCheckpoint | undefined> {
-  console.log("[Progress Service API] Creating new checkpoint for game session:", { gameSessionId });
+export async function createNewCheckpointSession(
+  gameSessionId: string,
+): Promise<SessionCheckpoint | undefined> {
+  console.log(
+    "[Progress Service API] Creating new checkpoint for game session:",
+    { gameSessionId },
+  );
 
   const response = await apiRequest<ApiResponse<SessionCheckpoint>>(
     `/progress/create-new-checkpoint/${gameSessionId}`,
@@ -546,7 +636,6 @@ export async function createNewCheckpointSession(gameSessionId: string): Promise
   return response.data;
 }
 
-
 /**
  * Pause a game session - saves state when user exits the story
  * @param gameSessionId - The game session ID to pause
@@ -555,7 +644,9 @@ export async function createNewCheckpointSession(gameSessionId: string): Promise
 export async function pauseGameSession(
   gameSessionId: string,
 ): Promise<SessionCheckpoint | null> {
-  console.log("[Progress Service API] Pausing game session:", { gameSessionId });
+  console.log("[Progress Service API] Pausing game session:", {
+    gameSessionId,
+  });
 
   const response = await apiRequest<ApiResponse<SessionCheckpoint>>(
     `/progress/pause/${gameSessionId}`,
@@ -566,12 +657,17 @@ export async function pauseGameSession(
   );
 
   if (isApiError(response)) {
-    console.warn("[Progress Service API] Failed to pause game session:", response.error.message);
+    console.warn(
+      "[Progress Service API] Failed to pause game session:",
+      response.error.message,
+    );
     return null;
   }
 
   if (!response.success) {
-    console.warn("[Progress Service API] Failed to pause game session: API returned success=false");
+    console.warn(
+      "[Progress Service API] Failed to pause game session: API returned success=false",
+    );
     return null;
   }
 
@@ -580,4 +676,63 @@ export async function pauseGameSession(
   });
 
   return response.data || null;
+}
+/**
+ * Allocate a roadmap to a child
+ * Adds the roadmap ID to the child's allocatedRoadmaps array
+ *
+ * @param childId - The child's ID
+ * @param roadmapId - The roadmap ID to allocate
+ * @returns Updated ChildProfile with the roadmap allocated
+ *
+ * @example
+ * const updatedChild = await allocateRoadmapToChild("child-123", "roadmap-456");
+ * console.log("Roadmap allocated to:", updatedChild.name);
+ *
+ * @throws Throws error if the allocation fails
+ */
+export async function allocateRoadmapToChild(
+  childId: string,
+  roadmapId: string,
+): Promise<ChildProfile> {
+  console.log("[Progress Service API] Allocating roadmap to child", {
+    childId,
+    roadmapId,
+  });
+
+  const response = await apiRequest<ApiResponse<ChildProfile>>(
+    `/children/${childId}/allocate-roadmap`,
+    {
+      method: "POST",
+      body: JSON.stringify({ roadmapId }),
+    },
+  );
+
+  if (isApiError(response)) {
+    const errorMessage =
+      response.error.message || "Failed to allocate roadmap";
+    console.error(
+      "[Progress Service API] Error allocating roadmap:",
+      errorMessage,
+    );
+    throw new Error(errorMessage);
+  }
+
+  if (!response.success) {
+    console.error(
+      "[Progress Service API] Roadmap allocation failed: API returned success=false",
+    );
+    throw new Error(response.error?.message || "Failed to allocate roadmap");
+  }
+
+  console.log(
+    "[Progress Service API] Roadmap allocated successfully",
+    {
+      childId,
+      roadmapId,
+      childName: response.data?.name,
+    },
+  );
+
+  return response.data as ChildProfile;
 }

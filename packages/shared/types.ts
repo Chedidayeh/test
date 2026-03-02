@@ -152,7 +152,7 @@ export interface Roadmap {
   id: string;
   ageGroupId: string;
   themeId: string;
-  title? : string | null;
+  title?: string | null;
   createdAt: Date;
   updatedAt: Date;
   ageGroup: AgeGroup;
@@ -272,6 +272,7 @@ export interface ChildProfile {
   child: Child;
   ageGroupId: string; // References Content.AgeGroup.id
   favoriteThemes: string[]; // References Content.Theme.id
+  allocatedRoadmaps: string[]; // List of Roadmap IDs allocated to this child
   currentLevel: number;
   totalStars: number;
   createdAt: Date;
@@ -323,9 +324,9 @@ export interface SessionCheckpoint {
   gameSession?: GameSession;
   firstChapterId: string; // Which chapter was the child reading when they started this session
   lastChapterId: string | null; // Which chapter was the child reading when they paused (null if not paused yet)
-  pausedAt: Date | null; 
-  startedAt: Date
-  sessionDurationSeconds?: number | null; 
+  pausedAt: Date | null;
+  startedAt: Date;
+  sessionDurationSeconds?: number | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -343,10 +344,24 @@ export interface ChallengeAttempt {
   attemptNumber: number;
   usedHints: number;
   timeSpentSeconds: number;
+  actions: AttemptAction[]; // Detailed log of user actions during this attempt
   starEventId?: string; // References StarEvent.id - rewards earned from this attempt
   starEvent: StarEvent;
   createdAt: Date;
   updatedAt: Date;
+}
+export interface AttemptAction {
+  id: string;
+  attemptId?: string;
+  attempt?: ChallengeAttempt;
+  // What was selected/used in this action
+  selectedAnswerId?: string; 
+  selectedAnswerText?: string; // Capture the full text of the answer they selected
+  answerText?: string; // For open-ended questions, capture the text they entered
+  // Context about this action
+  attemptNumberAtAction: number; // Which attempt number they were on
+  isCorrect: boolean; // Whether this action resulted in a correct answer (null for non-answer actions)
+  createdAt: Date;
 }
 
 // StarEvent represents the outcome of a challenge attempt that results in star rewards, tracking details of the attempt and rewards earned
@@ -374,8 +389,6 @@ export interface ChildBadge {
   createdAt: Date;
   updatedAt: Date;
 }
-
-
 
 // ============================================================================
 // Create/Update Input Types
@@ -427,7 +440,6 @@ export interface CreateStoryWithChaptersInput {
   chapters: CreateChapterInput[];
 }
 
-
 // =============================================================================
 // Age Group Content Validation Types
 // =============================================================================
@@ -456,8 +468,6 @@ export interface AgeGroupContentValidationResult {
   missingContent: MissingContent[];
   errors: string[];
 }
-
-
 
 // ============================================================================
 // API REQUEST/RESPONSE TYPES
@@ -532,9 +542,6 @@ export interface TokenVerificationResponse {
   error?: string;
 }
 
-
-
-
 // ============================================================================
 // HELPER TYPES
 // ============================================================================
@@ -545,4 +552,3 @@ export interface TokenVerificationResponse {
 export type ServiceResponse<T> =
   | { success: true; data: T }
   | { success: false; error: string; code?: string };
-

@@ -149,6 +149,57 @@ export class StoryService {
   }
 
   /**
+   * Get multiple stories by their IDs
+   * More efficient than making multiple individual getStoryById() calls
+   */
+  async getStoriesByIds(storyIds: string[]): Promise<Story[]> {
+    try {
+      if (!storyIds || storyIds.length === 0) {
+        return [];
+      }
+
+      // Remove duplicates
+      const uniqueIds = Array.from(new Set(storyIds));
+
+      const stories = await this.prisma.story.findMany({
+        where: {
+          id: { in: uniqueIds },
+        },
+        include: {
+          world: {
+            include:{roadmap: true}
+          },
+          chapters: {
+            include: {
+              challenge: {
+                include: {
+                  answers: {
+                    orderBy: { order: "asc" },
+                  },
+                },
+              },
+            },
+            orderBy: { order: "asc" },
+          },
+        },
+        orderBy: { order: "asc" },
+      });
+
+      logger.info("Stories by IDs retrieved", {
+        requestedCount: uniqueIds.length,
+        foundCount: stories.length,
+      });
+
+      return stories as Story[];
+    } catch (error) {
+      logger.error("Error fetching stories by IDs", {
+        error: String(error),
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Count total stories
    */
   async countStories(): Promise<number> {

@@ -89,32 +89,39 @@ const HintPanel = ({
               Previous Hints:
             </h3>
             <div className="space-y-3">
-              {hints
-                .slice(0, currentHintLevel - 1)
-                .map((hint, index) => (
-                  <div
-                    key={index}
-                    className="p-4 rounded-lg bg-muted border border-border"
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <CheckCircle size={16} className="text-success" />
-                      <span className="font-caption text-xs text-muted-foreground">
-                        Hint {index + 1}
-                      </span>
-                    </div>
-                    <p className="font-body text-sm text-foreground opacity-70">
-                      {hint.text}
-                    </p>
+              {hints.slice(0, currentHintLevel - 1).map((hint, index) => (
+                <div
+                  key={index}
+                  className="p-4 rounded-lg bg-muted border border-border"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle size={16} className="text-success" />
+                    <span className="font-caption text-xs text-muted-foreground">
+                      Hint {index + 1}
+                    </span>
                   </div>
-                ))}
+                  <p className="font-body text-sm text-foreground opacity-70">
+                    {hint.text}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         )}
 
         {/* Actions */}
-        <div className="p-4 border-border space-y-3">
+        <div className="p-4 flex items-center justify-between gap-3 border-border">
+          <div className="flex items-center justify-center">
+            <Button variant={"outline"} onClick={onClose}>
+              Close
+            </Button>
+          </div>
           {hasMoreHints && availableHints > 0 ? (
-            <Button variant={"secondary"} className="w-full" onClick={onRequestHint}>
+            <Button
+              variant={"secondary"}
+              className="w-full"
+              onClick={onRequestHint}
+            >
               Get Another Hint ({availableHints} left)
             </Button>
           ) : (
@@ -126,11 +133,6 @@ const HintPanel = ({
               </p>
             </div>
           )}
-          <div className="flex items-center justify-center">
-            <Button variant={"outline"} onClick={onClose}>
-              Close
-            </Button>
-          </div>
         </div>
       </div>
     </div>

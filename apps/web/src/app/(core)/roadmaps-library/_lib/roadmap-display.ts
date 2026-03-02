@@ -7,6 +7,7 @@ import { Roadmap } from '@shared/types';
 export interface RoadmapDisplay {
   id: string;
   title: string;
+  category: string;
   description: string;
   coverImage: string;
   readingLevel: string;
@@ -27,7 +28,8 @@ export function transformRoadmapForDisplay(roadmap: Roadmap): RoadmapDisplay {
 
   return {
     id: roadmap.id,
-    title: roadmap.theme.name,
+    title: roadmap.theme.name + " - " + (roadmap.title || "Untitled Roadmap"),
+    category: roadmap.theme.name, 
     description: roadmap.theme.description || '',
     coverImage: roadmap.theme.imageUrl || '/images/placeholder-roadmap.jpg',
     readingLevel: roadmap.readingLevel,

@@ -97,6 +97,38 @@ export class StoryController {
     }
   }
 
+  /**
+   * Get multiple stories by their IDs (query param: ?ids=id1,id2,id3)
+   */
+  async getStoriesByIds(req: Request, res: Response<ApiResponse<Story[]>>): Promise<void> {
+    try {
+      const { ids } = req.query;
+
+      logger.info("Get stories by IDs request", { ids });
+
+      if (!ids || typeof ids !== "string") {
+        sendError(res, "IDs query parameter is required (comma-separated)", 400);
+        return;
+      }
+
+      const storyIds = ids.split(",").filter((id) => id.trim());
+
+      if (storyIds.length === 0) {
+        sendError(res, "At least one story ID is required", 400);
+        return;
+      }
+
+      const stories = await storyService.getStoriesByIds(storyIds);
+
+      sendSuccess(res, stories, 200);
+    } catch (error) {
+      logger.error("Error in getStoriesByIds controller", {
+        error: String(error),
+      });
+      sendError(res, String(error), 500, "Failed to fetch stories");
+    }
+  }
+
 
   /**
    * Create a story with chapters, challenges, and answers atomically

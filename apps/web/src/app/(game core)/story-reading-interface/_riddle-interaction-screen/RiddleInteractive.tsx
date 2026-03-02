@@ -12,6 +12,7 @@ import { Button } from "@/src/components/ui/button";
 import FloatingItems from "./FloatingItems";
 import { Challenge, ChallengeStatus, ChallengeType, ChallengeAttempt } from "@shared/types";
 import { submitChallengeAnswerAction } from "@/src/lib/progress-service/server-actions";
+import type { SubmitChallengeAnswerRequest } from "@/src/lib/progress-service/server-api";
 
 interface Choice {
   id: string;
@@ -96,6 +97,7 @@ const RiddleInteractive = ({
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(true);
+  const [actions, setActions] = useState<SubmitChallengeAnswerRequest['actions']>([]);
 
   const totalHints = currentRiddle.hints.length;
   const availableHints = totalHints - hintsUsed;
@@ -133,7 +135,8 @@ const RiddleInteractive = ({
     isCorrect: boolean,
     isSkipped: boolean = false,
     status : ChallengeStatus,
-    attemptNum: number = attempts
+    attemptNum: number = attempts,
+    attemptActions: SubmitChallengeAnswerRequest['actions'] = actions
   ) => {
     if (!gameSessionId) {
       console.error("[Riddle] No game session ID provided");
@@ -146,7 +149,9 @@ const RiddleInteractive = ({
         challengeId: currentRiddle.id,
         attemptNumber: attemptNum,
         isSkipped,
+        actionsCount: attemptActions.length,
       });
+      console.log("[Riddle] Attempt actions being submitted:", attemptActions);
 
       const result = await submitChallengeAnswerAction({
         gameSessionId,
@@ -160,7 +165,8 @@ const RiddleInteractive = ({
         usedHints: hintsUsed,
         baseStars: currentRiddle.starsReward,
         skipped: isSkipped,
-        status: status
+        status: status,
+        actions: attemptActions
       });
 
       if (result.success) {
@@ -209,6 +215,7 @@ const RiddleInteractive = ({
     let isAlmost = false;
     let selectedAnswerId: string | undefined;
     let answerText: string | undefined;
+    let selectedAnswerText: string | undefined;
 
     // Type-specific validation logic
     switch (currentRiddle.type) {
@@ -243,6 +250,7 @@ const RiddleInteractive = ({
         }
         // Get the answer ID from selected choice
         selectedAnswerId = selectedChoice || undefined;
+        selectedAnswerText = currentRiddle.choices?.find((c) => c.id === selectedChoice)?.text;
         answerText = answer;
         break;
 
@@ -252,14 +260,35 @@ const RiddleInteractive = ({
         isCorrect = true;
         // Get the answer ID from selected choice
         selectedAnswerId = selectedChoice || undefined;
+        selectedAnswerText = currentRiddle.choices?.find((c) => c.id === selectedChoice)?.text;
         answerText = answer;
         break;
     }
 
+    // Capture action for this answer submission
+    const actionData: SubmitChallengeAnswerRequest['actions'][0] = {
+      selectedAnswerId,
+      selectedAnswerText,
+      answerText,
+      attemptNumberAtAction: currentAttempt,
+      isCorrect: isCorrect,
+    };
+    
+    // Build new actions array synchronously before submitting
+    const updatedActions = [...actions, actionData];
+    setActions(updatedActions);
+
+    console.log("[Riddle] Answer submitted", {
+      challengeType: currentRiddle.type,
+      attemptNumber: currentAttempt,
+      action: actionData,
+      totalActionsAfterSubmit: updatedActions.length,
+    });
+
     if (isCorrect) {
       stopTimerAndLog("solved");
-      // Submit the challenge attempt to backend
-      submitChallengeAttempt(selectedAnswerId, answerText, true, false , ChallengeStatus.SOLVED, currentAttempt);
+      // Submit the challenge attempt to backend with all accumulated actions
+      submitChallengeAttempt(selectedAnswerId, answerText, true, false , ChallengeStatus.SOLVED, currentAttempt, updatedActions);
       
       const messages = {
         RIDDLE: "Fantastic! You solved the riddle! Your reading skills are amazing!",
@@ -275,8 +304,8 @@ const RiddleInteractive = ({
       });
     } else if (isAlmost) {
       stopTimerAndLog("almost");
-      // Submit the challenge attempt to backend (incorrect answer)
-      submitChallengeAttempt(selectedAnswerId, answerText, false, false, ChallengeStatus.INCORRECT, currentAttempt);
+      // Submit the challenge attempt to backend (incorrect answer) with all accumulated actions
+      submitChallengeAttempt(selectedAnswerId, answerText, false, false, ChallengeStatus.INCORRECT, currentAttempt, updatedActions);
       
       setFeedbackState({
         type: "almost",
@@ -286,8 +315,8 @@ const RiddleInteractive = ({
       });
     } else {
       stopTimerAndLog("incorrect");
-      // Submit the challenge attempt to backend (incorrect answer)
-      submitChallengeAttempt(selectedAnswerId, answerText, false, false, ChallengeStatus.INCORRECT, currentAttempt);
+      // Submit the challenge attempt to backend (incorrect answer) with all accumulated actions
+      submitChallengeAttempt(selectedAnswerId, answerText, false, false, ChallengeStatus.INCORRECT, currentAttempt, updatedActions);
       
       setFeedbackState({
         type: "incorrect",
@@ -302,9 +331,23 @@ const RiddleInteractive = ({
 
   const handleRequestHint = () => {
     if (currentHintLevel < totalHints) {
-      setCurrentHintLevel((prev) => prev + 1);
+      const newHintLevel = currentHintLevel + 1;
+      setCurrentHintLevel(newHintLevel);
       setHintsUsed((prev) => prev + 1);
       setIsHintPanelVisible(true);
+      
+      // Capture hint action
+      setActions((prev) => [
+        ...prev,
+        { 
+          attemptNumberAtAction: attempts,
+        },
+      ]);
+      
+      console.log("[Riddle] Hint requested", {
+        hintIndex: newHintLevel - 1,
+        attemptNumber: attempts,
+      });
     }
   };
 
@@ -320,14 +363,17 @@ const RiddleInteractive = ({
     setFeedbackState({ type: null, message: "", isVisible: false });
     // Resume timer when user tries again
     setIsTimerRunning(true);
+    // Clear actions for retry - fresh attempt with new action history
+    setActions([]);
+    console.log("[Riddle] Retrying challenge - actions cleared");
   };
 
   const handleContinue = (action: "solved" | "skipped") => {
     stopTimerAndLog(action === "solved" ? "solved" : "skipped");
     
-    // If skipped, record the attempt as skipped to the backend
+    // If skipped, record the attempt as skipped to the backend with all accumulated actions
     if (action === "skipped") {
-      submitChallengeAttempt(undefined, undefined, false, true, ChallengeStatus.SKIPPED, attempts);
+      submitChallengeAttempt(undefined, undefined, false, true, ChallengeStatus.SKIPPED, attempts, actions);
     }
     
     onClose?.();

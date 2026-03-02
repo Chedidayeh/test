@@ -70,4 +70,9 @@ router.post("/children/:childId/badges", (req, res) =>
   ChildrenController.assignBadgeToChild(req, res),
 );
 
+// Allocate roadmap to child
+router.post("/children/:childId/allocate-roadmap", (req, res) =>
+  ChildrenController.allocateRoadmapToChild(req, res),
+);
+
 export default router;

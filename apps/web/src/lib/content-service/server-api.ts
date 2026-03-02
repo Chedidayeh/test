@@ -146,6 +146,54 @@ export async function getStoriesCount() {
 }
 
 /**
+ * Fetch multiple stories by their IDs in a single batch request
+ * More efficient than making multiple individual getStoryById() calls
+ * @param storyIds - Array of story IDs to fetch
+ * @returns Map of storyId -> Story for efficient lookup
+ */
+export async function getStoriesByIds(storyIds: string[]): Promise<Map<string, Story>> {
+  if (!storyIds || storyIds.length === 0) {
+    return new Map();
+  }
+
+  // Remove duplicates
+  const uniqueIds = Array.from(new Set(storyIds));
+
+  // Build query string with comma-separated IDs
+  const queryString = buildQueryString({ ids: uniqueIds.join(",") });
+
+  console.log("[Content Server API] Fetching stories by IDs:", uniqueIds);
+  const response = await apiRequest<ApiResponse<Story[]>>(
+    `/stories${queryString}`,
+  );
+
+  if (isApiError(response)) {
+    console.warn(
+      "[Content Server API] Failed to fetch stories by IDs:",
+      response.error.message,
+    );
+    return new Map();
+  }
+
+  if (!response.success) {
+    console.warn(
+      "[Content Server API] Failed to fetch stories by IDs: API returned success=false",
+    );
+    return new Map();
+  }
+
+  // Convert array to Map for O(1) lookup
+  const storyMap = new Map<string, Story>();
+  if (response.data) {
+    for (const story of response.data) {
+      storyMap.set(story.id, story);
+    }
+  }
+
+  return storyMap;
+}
+
+/**
  * ============================================
  * ROADMAP ENDPOINTS
  * ============================================
@@ -214,6 +262,47 @@ export async function getRoadmapsByAgeGroup(ageGroupId: string) {
     );
     return [];
   }
+
+  return response.data || [];
+}
+
+/**
+ * Fetch multiple roadmaps by their IDs in a single batch request
+ * More efficient than making multiple individual getRoadmapById() calls
+ * @param roadmapIds - Array of roadmap IDs to fetch
+ * @returns Map of roadmapId -> Roadmap for efficient lookup
+ */
+export async function getRoadmapsByIds(roadmapIds: string[]) {
+  if (!roadmapIds || roadmapIds.length === 0) {
+    return []
+  }
+
+  // Remove duplicates
+  const uniqueIds = Array.from(new Set(roadmapIds));
+
+  // Build query string with comma-separated IDs
+  const queryString = buildQueryString({ ids: uniqueIds.join(",") });
+
+  console.log("[Content Server API] Fetching roadmaps by IDs:", uniqueIds);
+  const response = await apiRequest<ApiResponse<Roadmap[]>>(
+    `/roadmaps${queryString}`,
+  );
+
+  if (isApiError(response)) {
+    console.warn(
+      "[Content Server API] Failed to fetch roadmaps by IDs:",
+      response.error.message,
+    );
+    return []
+  }
+
+  if (!response.success) {
+    console.warn(
+      "[Content Server API] Failed to fetch roadmaps by IDs: API returned success=false",
+    );
+    return [];
+  }
+
 
   return response.data || [];
 }

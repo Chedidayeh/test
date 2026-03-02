@@ -14,20 +14,19 @@ export default function DashboardTabs({
   children,
 }: DashboardTabsProps) {
   return (
-    <Tabs
-      value={activeTab}
-      onValueChange={onTabChange}
-      className="w-full"
-    >
-      <TabsList className="grid w-full grid-cols-3 mb-6">
+    <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
+      <TabsList className="grid w-full grid-cols-4 mb-6">
         <TabsTrigger value="overview" className="font-medium">
           Overview
         </TabsTrigger>
         <TabsTrigger value="achievements" className="font-medium">
           Achievements
         </TabsTrigger>
-        <TabsTrigger value="analytics" className="font-medium">
-          Analytics
+        <TabsTrigger value="riddle-analytics" className="font-medium">
+          Riddle Statistics
+        </TabsTrigger>
+        <TabsTrigger value="time-analytics" className="font-medium">
+          Time Analytics
         </TabsTrigger>
       </TabsList>
       {children}

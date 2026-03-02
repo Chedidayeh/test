@@ -11,9 +11,6 @@ import { RoleType } from "@shared/types";
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(true);
   const { data: session, status } = useSession();
-  if(!session) {
-    redirect("/");
-  }
   return (
     <div className="flex h-screen">
       {/* Fixed Sidebar */}

@@ -6,7 +6,7 @@ import SearchBar from "./SearchBar";
 import FilterPanel from "./FilterPanel";
 import FeaturedCarousel from "./FeaturedCarousel";
 import RoadmapCard from "./RoadmapCard";
-import { Roadmap } from "@shared/types";
+import { Roadmap, ChildProfile } from "@shared/types";
 import { transformRoadmapForDisplay } from "../_lib/roadmap-display";
 
 
@@ -18,9 +18,10 @@ interface Filters {
 
 interface RoadmapsLibraryProps {
   roadmaps: Roadmap[];
+  childrenList?: ChildProfile[];
 }
 
-const RoadmapsLibrary = ({ roadmaps }: RoadmapsLibraryProps) => {
+const RoadmapsLibrary = ({ roadmaps, childrenList = [] }: RoadmapsLibraryProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<Filters>({
     categories: [],
@@ -30,11 +31,15 @@ const RoadmapsLibrary = ({ roadmaps }: RoadmapsLibraryProps) => {
 
   // Transform real roadmap data for display
   const displayRoadmaps = roadmaps.map(transformRoadmapForDisplay);
+  
+  // Create a map for quick lookup of original roadmaps
+  const roadmapMap = new Map(roadmaps.map((r) => [r.id, r]));
+
 
 
   // Get unique themes/categories from roadmaps
   const uniqueThemes = Array.from(
-    new Set(displayRoadmaps.map((r) => r.title))
+    new Set(displayRoadmaps.map((r) => r.category))
   );
 
   // Get unique age groups from roadmaps
@@ -146,12 +151,17 @@ const RoadmapsLibrary = ({ roadmaps }: RoadmapsLibraryProps) => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredRoadmaps.map((roadmap) => (
-                  <RoadmapCard
-                    key={roadmap.id}
-                    roadmap={roadmap}
-                  />
-                ))}
+                {filteredRoadmaps.map((roadmap) => {
+                  const originalRoadmap = roadmapMap.get(roadmap.id);
+                  return originalRoadmap ? (
+                    <RoadmapCard
+                      key={roadmap.id}
+                      roadmap={roadmap}
+                      originalRoadmap={originalRoadmap}
+                      childrenList={childrenList}
+                    />
+                  ) : null;
+                })}
               </div>
             )}
           </div>

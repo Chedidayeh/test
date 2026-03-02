@@ -52,7 +52,12 @@ export function WorldsDialog({
   const [view, setView] = useState<"list" | "create" | "edit">("list");
 
   const getRoadmapName = (roadmapId: string) => {
-    return roadmaps.find((r) => r.id === roadmapId)?.theme?.name || "Unknown";
+    const roadmap = roadmaps.find((r) => r.id === roadmapId);
+    if (!roadmap) return "Unknown";
+    const ageGroupName = roadmap.ageGroup?.name || "Unknown Age Group";
+    const title = roadmap.title || "";
+    const themeName = roadmap.theme?.name || "Unknown Theme";
+    return `${ageGroupName} - ${title} - ${themeName}`;
   };
 
   const handleCreate = async (data: WorldFormData) => {
@@ -146,7 +151,7 @@ export function WorldsDialog({
                 <div className="space-y-6">
                   {worldsByRoadmap.map(({ roadmap, worlds: roadmapWorlds }) => (
                     <div key={roadmap.id}>
-                      <h3 className="font-semibold text-sm mb-2">
+                      <h3 className="font-medium text-sm mb-2">
                         {getRoadmapName(roadmap.id)} Roadmap
                       </h3>
                       <div className="border rounded-lg overflow-x-auto">

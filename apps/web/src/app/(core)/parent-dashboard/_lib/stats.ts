@@ -7,7 +7,6 @@ import {
   ProgressStatus,
   type ChildProfile,
   type Progress,
-  type GameSession,
   type SessionCheckpoint,
   type ChallengeAttempt,
   ChallengeStatus,
@@ -20,9 +19,12 @@ import {
 /**
  * Challenge statistics derived from ChallengeAttempt data
  * Used for displaying challenge/riddle performance metrics
+ * Includes story and chapter information for identifying context
  */
 export interface ChallengeStats {
   id: string; // Challenge ID
+  storyId: string; // Story ID (for fetching story name)
+  chapterId: string | null; // Chapter ID (for identifying which chapter the challenge is in)
   totalAttempts: number; // Total number of attempts at this challenge
   solvedAttempts: number; // Number of successful attempts
   successRate: number; // Percentage (0-100)
@@ -44,7 +46,116 @@ export interface TimeEntry {
 }
 
 // ============================================================================
-// UTILITY FUNCTIONS
+// UTILITY FUNCTIONS - DATE HELPERS
+// ============================================================================
+
+/**
+ * Convert a Date to YYYY-MM-DD string using LOCAL date components
+ * (avoids timezone issues with toISOString which uses UTC)
+ * @param date - Date to convert
+ * @returns Date string in YYYY-MM-DD format
+ */
+function formatDateLocal(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Split a checkpoint's duration across multiple calendar days
+ * Handles checkpoints that span midnight (e.g., Feb 27 10 PM → Feb 28 1 AM)
+ * Distributes sessionDurationSeconds proportionally across all calendar days touched
+ *
+ * Example:
+ *   startedAt: Feb 27 22:00, pausedAt: Feb 28 01:00, duration: 10,800 sec
+ *   Result: [{date: "2026-02-27", seconds: 7200}, {date: "2026-02-28", seconds: 3600}]
+ *
+ * @param checkpoint - SessionCheckpoint with startedAt, pausedAt, and sessionDurationSeconds
+ * @returns Array of {date, seconds} allocations, one per calendar day
+ */
+function splitCheckpointAcrossDays(checkpoint: SessionCheckpoint): { date: string; seconds: number }[] {
+  // If no pausedAt, skip this checkpoint (session still in progress)
+  if (!checkpoint.pausedAt) {
+    return [];
+  }
+
+  // Determine the total duration in seconds
+  let totalSeconds = 0;
+  if (checkpoint.sessionDurationSeconds !== null && checkpoint.sessionDurationSeconds !== undefined) {
+    totalSeconds = checkpoint.sessionDurationSeconds;
+  } else {
+    // Fallback: calculate from timestamps
+    const startMs = new Date(checkpoint.startedAt).getTime();
+    const pauseMs = new Date(checkpoint.pausedAt).getTime();
+    totalSeconds = Math.floor((pauseMs - startMs) / 1000);
+  }
+
+  // Handle zero-duration sessions
+  if (totalSeconds <= 0) {
+    return [];
+  }
+
+  // Get start and end dates at midnight UTC
+  const startDate = new Date(checkpoint.startedAt);
+  startDate.setUTCHours(0, 0, 0, 0);
+
+  const endDate = new Date(checkpoint.pausedAt);
+  endDate.setUTCHours(0, 0, 0, 0);
+
+  // If same day, return single allocation
+  if (startDate.getTime() === endDate.getTime()) {
+    return [{
+      date: formatDateLocal(startDate),
+      seconds: totalSeconds,
+    }];
+  }
+
+  const allocations: { date: string; seconds: number }[] = [];
+  const startTime = new Date(checkpoint.startedAt);
+  const endTime = new Date(checkpoint.pausedAt);
+
+  // Allocate time for the START day: from startTime to end of that day (23:59:59)
+  const endOfStartDay = new Date(startDate);
+  endOfStartDay.setUTCDate(endOfStartDay.getUTCDate() + 1);
+  endOfStartDay.setUTCMilliseconds(-1); // 23:59:59.999
+
+  const startDaySeconds = Math.floor((endOfStartDay.getTime() - startTime.getTime()) / 1000);
+  allocations.push({
+    date: formatDateLocal(startDate),
+    seconds: Math.max(0, Math.round(startDaySeconds)),
+  });
+
+  // Allocate time for FULL days in between
+  let dayOffset = 1;
+  while (true) {
+    const currentDay = new Date(startDate);
+    currentDay.setUTCDate(currentDay.getUTCDate() + dayOffset);
+
+    if (currentDay.getTime() >= endDate.getTime()) {
+      break;
+    }
+
+    allocations.push({
+      date: formatDateLocal(currentDay),
+      seconds: 86400, // Full day in seconds
+    });
+    dayOffset += 1;
+  }
+
+  // Allocate time for the END day: from start of that day to endTime
+  const startOfEndDay = new Date(endDate);
+  const endDaySeconds = Math.floor((endTime.getTime() - startOfEndDay.getTime()) / 1000);
+  allocations.push({
+    date: formatDateLocal(endDate),
+    seconds: Math.max(0, Math.round(endDaySeconds)),
+  });
+
+  return allocations;
+}
+
+// ============================================================================
+// UTILITY FUNCTIONS - READING STATS
 // ============================================================================
 
 /**
@@ -60,8 +171,10 @@ export function calculateTimeEntries(progressArray: Progress[] | undefined): Tim
     return [];
   }
 
-  // Group checkpoints by date (using pausedAt as the checkpoint completion date)
-  const checkpointsByDate = new Map<string, SessionCheckpoint[]>();
+  // Group time allocations and session counts by date
+  // Each checkpoint may span multiple days, so we need to track allocations separately
+  const timeByDate = new Map<string, number>(); // date -> total seconds
+  const sessionsByDate = new Map<string, Set<string>>(); // date -> Set of gameSessionIds
 
   for (const progress of progressArray) {
     if (!progress.gameSession?.checkpoints || !Array.isArray(progress.gameSession.checkpoints)) {
@@ -74,49 +187,36 @@ export function calculateTimeEntries(progressArray: Progress[] | undefined): Tim
         continue;
       }
 
-      // Extract date from pausedAt in YYYY-MM-DD format
-      const date = new Date(checkpoint.pausedAt).toISOString().split("T")[0];
+      // Split checkpoint duration across multiple calendar days if it spans midnight
+      const allocations = splitCheckpointAcrossDays(checkpoint);
 
-      if (!checkpointsByDate.has(date)) {
-        checkpointsByDate.set(date, []);
+      // Distribute checkpoint's time and session across the allocated dates
+      for (const allocation of allocations) {
+        const { date, seconds } = allocation;
+
+        // Add seconds to this date
+        timeByDate.set(date, (timeByDate.get(date) || 0) + seconds);
+
+        // Track unique sessions for this date
+        if (!sessionsByDate.has(date)) {
+          sessionsByDate.set(date, new Set());
+        }
+        sessionsByDate.get(date)!.add(checkpoint.gameSessionId);
       }
-      checkpointsByDate.get(date)!.push(checkpoint);
     }
   }
 
   // Convert to TimeEntry array
-  const timeEntries: TimeEntry[] = Array.from(checkpointsByDate.entries()).map(
-    ([date, checkpoints]) => {
-      // Calculate total reading time from checkpoints
-      const totalSeconds = checkpoints.reduce((sum: number, checkpoint: SessionCheckpoint) => {
-        let duration = 0;
+  const timeEntries: TimeEntry[] = Array.from(timeByDate.entries()).map(([date, totalSeconds]) => {
+    const minutes = Math.round(totalSeconds / 60);
+    const storiesRead = sessionsByDate.get(date)?.size || 0;
 
-        // Use sessionDurationSeconds if available, otherwise calculate from times
-        if (checkpoint.sessionDurationSeconds !== null && checkpoint.sessionDurationSeconds !== undefined) {
-          duration = checkpoint.sessionDurationSeconds;
-        } else if (checkpoint.pausedAt) {
-          // Calculate duration from startedAt to pausedAt
-          const startMs = new Date(checkpoint.startedAt).getTime();
-          const pauseMs = new Date(checkpoint.pausedAt).getTime();
-          duration = Math.floor((pauseMs - startMs) / 1000);
-        }
-
-        return sum + Math.max(0, duration); // Ensure non-negative duration
-      }, 0);
-
-      const minutes = Math.round(totalSeconds / 60);
-
-      // Count unique game sessions (stories) from checkpoints on this date
-      const uniqueSessions = new Set(checkpoints.map((cp) => cp.gameSessionId));
-      const storiesRead = uniqueSessions.size;
-
-      return {
-        date,
-        minutes,
-        storiesRead,
-      };
-    }
-  );
+    return {
+      date,
+      minutes,
+      storiesRead,
+    };
+  });
 
   // Sort by date (ascending - oldest first)
   return timeEntries.sort((a, b) => a.date.localeCompare(b.date));
@@ -171,8 +271,9 @@ export function calculateDailyTimeStats(timeEntries: TimeEntry[] | undefined) {
 }
 
 /**
- * Calculate per-challenge statistics from child progress data
+ * Challenge statistics derived from ChallengeAttempt data
  * Groups all challenge attempts by challengeId and calculates metrics for each
+ * Preserves story and chapter context for each challenge
  * Filters out challenges with zero attempts
  *
  * @param progressArray - Array of Progress records (from ChildProfile)
@@ -185,11 +286,21 @@ export function calculateChallengeStats(
     return [];
   }
 
-  // Collect all challenge attempts from all game sessions
-  const allAttempts: ChallengeAttempt[] = [];
+  // Collect all challenge attempts with their story and chapter context
+  interface AttemptWithContext extends ChallengeAttempt {
+    _storyId: string;
+    _chapterId: string | null;
+  }
+  const allAttempts: AttemptWithContext[] = [];
+
   for (const progress of progressArray) {
     if (progress.gameSession?.challengeAttempts && Array.isArray(progress.gameSession.challengeAttempts)) {
-      allAttempts.push(...progress.gameSession.challengeAttempts);
+      // Attach story and chapter info from parent Progress and GameSession
+      for (const attempt of progress.gameSession.challengeAttempts) {
+        (attempt as unknown as AttemptWithContext)._storyId = progress.storyId;
+        (attempt as unknown as AttemptWithContext)._chapterId = progress.gameSession.chapterId || null;
+        allAttempts.push(attempt as unknown as AttemptWithContext);
+      }
     }
   }
 
@@ -197,19 +308,30 @@ export function calculateChallengeStats(
     return [];
   }
 
-  // Group attempts by challengeId
-  const challengeMap = new Map<string, ChallengeAttempt[]>();
+  // Group attempts by challengeId, preserving story/chapter context
+  interface ChallengeGrouping {
+    storyId: string;
+    chapterId: string | null;
+    attempts: AttemptWithContext[];
+  }
+  const challengeMap = new Map<string, ChallengeGrouping>();
   for (const attempt of allAttempts) {
     const { challengeId } = attempt;
     if (!challengeMap.has(challengeId)) {
-      challengeMap.set(challengeId, []);
+      challengeMap.set(challengeId, {
+        storyId: attempt._storyId,
+        chapterId: attempt._chapterId,
+        attempts: [],
+      });
     }
-    challengeMap.get(challengeId)!.push(attempt);
+    challengeMap.get(challengeId)!.attempts.push(attempt);
   }
 
   // Calculate stats for each challenge
   const stats: ChallengeStats[] = [];
-  for (const [challengeId, attempts] of challengeMap.entries()) {
+  for (const [challengeId, grouping] of challengeMap.entries()) {
+    const { storyId, chapterId, attempts } = grouping;
+    
     // Get the highest attempt number to determine total attempts
     const totalAttempts = attempts.length > 0 ? Math.max(...attempts.map((a) => a.attemptNumber)) : 0;
     const solvedAttempts = attempts.filter((a) => a.isCorrect === true).length;
@@ -235,6 +357,8 @@ export function calculateChallengeStats(
 
     stats.push({
       id: challengeId,
+      storyId,
+      chapterId,
       totalAttempts,
       solvedAttempts,
       successRate,
@@ -526,6 +650,83 @@ export function getCurrentStreak(profile: ChildProfile | undefined): number {
 }
 
 /**
+ * Get total number of unique calendar days child has been reading since joining platform
+ * Counts days where child had at least 1 second of reading time (sessionDurationSeconds > 0)
+ * Includes all historical data across entire profile
+ * @param profile - ChildProfile data
+ * @returns Number of days with reading activity (all-time)
+ */
+export function getTotalDaysReadAllTime(profile: ChildProfile | undefined): number {
+  if (!profile?.progress || !Array.isArray(profile.progress) || profile.progress.length === 0) {
+    return 0;
+  }
+
+  // Calculate all time entries across entire history
+  const timeEntries = calculateTimeEntries(profile.progress);
+
+  if (timeEntries.length === 0) {
+    return 0;
+  }
+
+  // Count days where child had at least 1 minute of reading (minutes > 0)
+  const daysWithReading = timeEntries.filter((entry) => entry.minutes > 0).length;
+
+  return daysWithReading;
+}
+
+/**
+ * Get total number of calendar days since child joined platform (inclusive)
+ * Calculates from profile.createdAt to today
+ * Example: If joined 100 days ago, returns 100 (inclusive)
+ * @param profile - ChildProfile data
+ * @returns Total calendar days since joining (including today)
+ */
+export function getTotalDaysSinceJoining(profile: ChildProfile | undefined): number {
+  if (!profile?.createdAt) {
+    return 0;
+  }
+
+  // Get creation date and set to start of day (00:00:00)
+  const createdDate = new Date(profile.createdAt);
+  createdDate.setHours(0, 0, 0, 0);
+
+  // Get today's date at start of day (00:00:00)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Calculate days difference in milliseconds, convert to days, add 1 for inclusive count
+  const daysDifference = Math.floor((today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+
+  // Add 1 to make inclusive (if joined today, it's day 1, not day 0)
+  return daysDifference + 1;
+}
+
+/**
+ * Get reading activity rate as ratio and percentage
+ * Shows how many days child has read out of total days since joining platform
+ * Useful metric for engagement tracking
+ * @param profile - ChildProfile data
+ * @returns Object with daysRead, totalDays, and percentage
+ */
+export function getReadingActivityRate(profile: ChildProfile | undefined): {
+  daysRead: number;
+  totalDays: number;
+  percentage: number;
+} {
+  const daysRead = getTotalDaysReadAllTime(profile);
+  const totalDays = getTotalDaysSinceJoining(profile);
+
+  // Avoid division by zero
+  const percentage = totalDays > 0 ? Math.round((daysRead / totalDays) * 100) : 0;
+
+  return {
+    daysRead,
+    totalDays,
+    percentage,
+  };
+}
+
+/**
  * Format reading time from minutes to human-readable format
  * Examples: "30 mins", "1 hr 33 mins", "2 hrs 15 mins"
  * @param minutes - Total reading time in minutes
@@ -548,6 +749,133 @@ export function formatReadingTime(minutes: number): string {
   return `${hours} ${hourLabel} ${remainingMins} mins`;
 }
 
+// ============================================================================
+// DATE RANGE FILTERING
+// ============================================================================
+
+/**
+ * Time range selection type
+ * Used for filtering daily reading time entries
+ */
+export interface TimeRange {
+  startDate: Date;
+  endDate: Date;
+  label?: string;
+}
+
+/**
+ * Preset date range options for quick selection
+ * All ranges include TODAY as the end date
+ * Examples (if today is March 1, 2026):
+ *   - Last 3 Days:  Feb 27 → Mar 1 (3 days including today)
+ *   - Last 7 Days:  Feb 23 → Mar 1 (7 days including today)
+ *   - Last 30 Days: Feb 1 → Mar 1 (30 days including today)
+ * @returns Object with preset ranges keyed by label
+ */
+export function getDateRangePresets(): Record<string, TimeRange> {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Last 3 Days: Today and 2 days before = 3 days total
+  const last3Days = new Date(today);
+  last3Days.setDate(today.getDate() - 2);
+
+  // Last 7 Days: Today and 6 days before = 7 days total
+  const last7Days = new Date(today);
+  last7Days.setDate(today.getDate() - 6);
+
+  // Last 30 Days: Today and 29 days before = 30 days total
+  const last30Days = new Date(today);
+  last30Days.setDate(today.getDate() - 29);
+
+  return {
+    last3Days: {
+      startDate: last3Days,
+      endDate: today,
+      label: "Last 3 Days",
+    },
+    last7Days: {
+      startDate: last7Days,
+      endDate: today,
+      label: "Last 7 Days",
+    },
+    last30Days: {
+      startDate: last30Days,
+      endDate: today,
+      label: "Last 30 Days",
+    },
+  };
+}
+
+/**
+ * Filter time entries by date range (inclusive)
+ * @param timeEntries - Array of TimeEntry records
+ * @param startDate - Range start date (inclusive)
+ * @param endDate - Range end date (inclusive)
+ * @returns Filtered TimeEntry array
+ */
+export function filterTimeEntriesByRange(
+  timeEntries: TimeEntry[],
+  startDate: Date,
+  endDate: Date
+): TimeEntry[] {
+  const startStr = formatDateLocal(startDate);
+  const endStr = formatDateLocal(endDate);
+
+  return timeEntries.filter((entry) => entry.date >= startStr && entry.date <= endStr);
+}
+
+/**
+ * Generate array of all dates in a range (YYYY-MM-DD format)
+ * Used to fill gaps in the daily reading table
+ * Uses LOCAL date components to avoid timezone issues
+ * @param startDate - Range start date
+ * @param endDate - Range end date
+ * @returns Array of date strings in YYYY-MM-DD format
+ */
+export function generateDateRangeArray(startDate: Date, endDate: Date): string[] {
+  const dates: string[] = [];
+  const current = new Date(startDate);
+  current.setHours(0, 0, 0, 0);
+
+  const end = new Date(endDate);
+  end.setHours(0, 0, 0, 0);
+
+  while (current <= end) {
+    dates.push(formatDateLocal(current));
+    current.setDate(current.getDate() + 1);
+  }
+
+  return dates;
+}
+
+/**
+ * Fill time entries with all dates in range, using "-" for data-less days
+ * @param timeEntries - Array of actual TimeEntry records
+ * @param startDate - Range start date
+ * @param endDate - Range end date
+ * @returns Array of TimeEntry with all dates in range (gaps filled)
+ */
+export function fillTimeEntriesGaps(
+  timeEntries: TimeEntry[],
+  startDate: Date,
+  endDate: Date
+): TimeEntry[] {
+  const allDates = generateDateRangeArray(startDate, endDate);
+  const entriesByDate = new Map(timeEntries.map((entry) => [entry.date, entry]));
+
+  return allDates.map((date) => {
+    if (entriesByDate.has(date)) {
+      return entriesByDate.get(date)!;
+    }
+    return {
+      date,
+      minutes: 0, // 0 represents no data for this day
+      storiesRead: 0,
+    };
+  });
+}
+
 /**
  * Get all dashboard stats in one call
  * @param profile - ChildProfile data
@@ -563,5 +891,85 @@ export function getAllStats(profile: ChildProfile | undefined) {
     riddlesSolved: getRiddlesSolved(profile),
     currentLevel: getCurrentLevel(profile),
     badgesCount: getBadgesCount(profile),
+    readingActivityRate: getReadingActivityRate(profile),
   };
 }
+
+// ============================================================================
+// TESTING & VALIDATION - Multi-day checkpoint splitting
+// ============================================================================
+
+/**
+ * Test function to validate splitCheckpointAcrossDays logic
+ * Example scenario: Child reads from Feb 27 10 PM to Feb 28 1 AM (10,800 seconds = 3 hours)
+ * Expected result:
+ *   - Feb 27: 2 hours (7,200 seconds)
+ *   - Feb 28: 1 hour (3,600 seconds)
+ *
+ * Usage: Call testMultiDayCheckpointSplit() in browser console to verify
+ */
+export function testMultiDayCheckpointSplit(): void {
+  // Create a test checkpoint spanning Feb 27 10 PM to Feb 28 1 AM
+  const testCheckpoint: SessionCheckpoint = {
+    id: "test-1",
+    gameSessionId: "session-1",
+    firstChapterId: "ch-1",
+    lastChapterId: "ch-2",
+    pausedAt: new Date("2026-02-28T01:00:00Z"),
+    startedAt: new Date("2026-02-27T22:00:00Z"),
+    sessionDurationSeconds: 10800, // 3 hours
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  const allocations = splitCheckpointAcrossDays(testCheckpoint);
+
+  console.log("=== Multi-Day Checkpoint Split Test ===");
+  console.log("Input checkpoint:");
+  console.log(`  startedAt: ${testCheckpoint.startedAt.toISOString()}`);
+  console.log(`  pausedAt: ${testCheckpoint.pausedAt!.toISOString()}`);
+  console.log(`  duration: ${testCheckpoint.sessionDurationSeconds} seconds (3 hours)`);
+  console.log("\nExpected output:");
+  console.log(`  2026-02-27: 7200 seconds (2 hours)`);
+  console.log(`  2026-02-28: 3600 seconds (1 hour)`);
+  console.log("\nActual output:");
+  allocations.forEach((alloc) => {
+    console.log(`  ${alloc.date}: ${alloc.seconds} seconds`);
+  });
+
+  // Validate the results
+  const totalSeconds = allocations.reduce((sum, alloc) => sum + alloc.seconds, 0);
+  const isValid =
+    allocations.length === 2 &&
+    allocations[0].date === "2026-02-27" &&
+    allocations[0].seconds === 7200 &&
+    allocations[1].date === "2026-02-28" &&
+    allocations[1].seconds === 3600 &&
+    totalSeconds === 10800;
+
+  console.log(`\nValidation: ${isValid ? "✓ PASS" : "✗ FAIL"}`);
+  console.log(`Total seconds preserved: ${totalSeconds === 10800 ? "✓ Yes" : "✗ No"}`);
+}
+
+// Optional: Test same-day checkpoint
+export function testSameDayCheckpointSplit(): void {
+  const testCheckpoint: SessionCheckpoint = {
+    id: "test-2",
+    gameSessionId: "session-2",
+    firstChapterId: "ch-1",
+    lastChapterId: "ch-2",
+    pausedAt: new Date("2026-02-27T15:30:00Z"),
+    startedAt: new Date("2026-02-27T14:00:00Z"),
+    sessionDurationSeconds: 5400, // 1.5 hours
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  const allocations = splitCheckpointAcrossDays(testCheckpoint);
+
+  console.log("\n=== Same-Day Checkpoint Split Test ===");
+  console.log(`Single allocation on 2026-02-27: ${allocations[0].seconds} seconds (expected: 5400)`);
+  const isValid = allocations.length === 1 && allocations[0].seconds === 5400;
+  console.log(`Validation: ${isValid ? "✓ PASS" : "✗ FAIL"}`);
+}
+

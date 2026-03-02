@@ -28,6 +28,7 @@ export class ChildrenController {
         childId,
         ageGroupId,
         themeIds,
+        allocatedRoadmaps,
         badgeId,
       } = req.body;
 
@@ -59,6 +60,7 @@ export class ChildrenController {
         childId,
         ageGroupId,
         themeIds: themeIds || [],
+        allocatedRoadmaps: allocatedRoadmaps || [],
         badgeId,
       });
 
@@ -524,6 +526,7 @@ export class ChildrenController {
         baseStars,
         skipped,
         status,
+        actions,
       } = req.body;
 
       // Validation
@@ -551,6 +554,8 @@ export class ChildrenController {
         return;
       }
 
+      console.log("actions received in controller:", actions);
+
       const result = await ChildrenService.submitChallengeAnswer({
         gameSessionId,
         challengeId,
@@ -565,6 +570,7 @@ export class ChildrenController {
         baseStars,
         skipped: skipped || false,
         status: status as ChallengeStatus,
+        actions,
       });
 
       res.status(200).json({
@@ -776,6 +782,80 @@ export class ChildrenController {
           code: "ASSIGN_ERROR",
           message:
             error instanceof Error ? error.message : "Failed to assign badge",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  /**
+   * Allocate a roadmap to a child
+   */
+  static async allocateRoadmapToChild(
+    req: Request,
+    res: Response<ApiResponse<ChildProfile>>,
+  ): Promise<void> {
+    try {
+      const { childId } = req.params;
+      const { roadmapId } = req.body;
+
+      // Validation
+      if (!childId) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required parameter: childId",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      if (!roadmapId) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required field: roadmapId",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      const updatedChild = await ChildrenService.allocateRoadmapToChild(
+        childId,
+        roadmapId,
+      );
+
+      if (!updatedChild) {
+        res.status(404).json({
+          success: false,
+          error: {
+            code: "NOT_FOUND",
+            message: "Child profile not found",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: updatedChild,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error allocating roadmap:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "ALLOCATE_ERROR",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to allocate roadmap",
         },
         timestamp: new Date(),
       });

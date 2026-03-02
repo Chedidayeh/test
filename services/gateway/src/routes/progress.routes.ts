@@ -12,6 +12,7 @@ import {
   forwardUpdateChildLevel,
   forwardCreateNewCheckpoint,
   forwardPauseGameSession,
+  forwardAllocateRoadmapToChild,
 } from "../helpers/progress.helpers";
 import { API_BASE_URL_V1 } from "@shared/types";
 
@@ -30,6 +31,11 @@ router.patch("/children/:childId/level", (req: Request, res: Response) => {
 // Assign badge to child (must be before the generic /children middleware)
 router.post("/children/:childId/badges", (req: Request, res: Response) => {
   forwardAssignBadgeToChild(req, res);
+});
+
+// Allocate roadmap to child (must be before the generic /children middleware)
+router.post("/children/:childId/allocate-roadmap", (req: Request, res: Response) => {
+  forwardAllocateRoadmapToChild(req, res);
 });
 
 // Generic children middleware (must be after specific routes)
