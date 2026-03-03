@@ -1,3 +1,5 @@
+"use client";
+import { useLocale } from "@/src/contexts/LocaleContext";
 import { cn } from "@/src/lib/utils";
 import { Shield, Eye } from "lucide-react";
 
@@ -6,15 +8,16 @@ interface RoleIndicatorProps {
 }
 
 export default function RoleIndicator({ role }: RoleIndicatorProps) {
+  const {isRTL} = useLocale();
   const roleConfig: Record<string, { label: string; bgColor: string; textColor: string }> = {
     PARENT: {
       label: "Parent",
-      bgColor: "bg-amber-100 dark:bg-amber-900/30",
+      bgColor: "bg-amber-100 dark:bg-amber-900/50",
       textColor: "text-amber-800 dark:text-amber-200",
     },
     ADMIN: {
       label: "Admin",
-      bgColor: "bg-blue-100 dark:bg-blue-900/30",
+      bgColor: "bg-blue-100 dark:bg-blue-900/50",
       textColor: "text-blue-800 dark:text-blue-200",
     },
   };
@@ -24,7 +27,9 @@ export default function RoleIndicator({ role }: RoleIndicatorProps) {
   return (
     <div
       className={cn(
-        "fixed top-30 right-4 z-99",
+        "fixed top-3",
+        isRTL ? "left-50" : "right-50",
+        "z-99",
         "flex items-center gap-2 px-3 py-1.5 rounded-full",
         "border border-current/30",
         "text-sm font-medium",

@@ -1,0 +1,399 @@
+{
+	"Hero": {
+		"headline": "Stories That Make Your Child",
+		"subline": "Journey through magical tales and solve mind-bending riddles",
+		"details": "Perfect for young readers (6-14 years old) • Build reading skills • Develop critical thinking",
+		"cta": {
+			"getStarted": "Get Started",
+			"startAdventure": "Start Your Child's Adventure",
+			"parentDashboard": "Parent Dashboard"
+		},
+		"trust": "✨ Trusted by parents and educators • Safe & educational • AI-powered learning",
+		"words": [
+			"Think",
+			"Imagine",
+			"Explore",
+			"Learn"
+		]
+	},
+	"CoreHeader": {
+		"nav": {
+			"parentDashboard": "Parent Dashboard",
+			"adminDashboard": "Admin Dashboard",
+			"roadmapsLibrary": "Roadmaps Library"
+		},
+		"menu": {
+			"open": "Open menu",
+			"close": "Close menu"
+		},
+		"themeToggle": "Toggle theme"
+	},
+	"CommonComponents": {
+		"language": "Language",
+		"loading": "Loading..."
+	},
+	"ParentDashboard": {
+		"yourChildren": "Your Children",
+		"unknown": "Unknown",
+		"stars": "{count} stars",
+		"addChild": "Add Child",
+		"addChildDialog": {
+			"title": "Add New Child",
+			"step1": {
+				"title": "Child's Basic Information",
+				"description": "Tell us about your child",
+				"childNameLabel": "Child's Name",
+				"childNamePlaceholder": "e.g., Emma",
+				"ageGroupLabel": "Age Group",
+				"ageGroupPlaceholder": "Select age group"
+			},
+			"step2": {
+				"title": "Favorite Themes",
+				"description": "What does {name} enjoy?",
+				"noThemes": "No themes available",
+				"favoriteThemesLabel": "Favorite Themes",
+				"selectAtLeastOneTheme": "Select at least one theme"
+			},
+			"step3": {
+				"title": "Review Child Profile",
+				"nameLabel": "Name",
+				"ageGroupLabel": "Age Group",
+				"favoriteThemesLabel": "Favorite Themes",
+				"createButton": "Create Child",
+				"creating": "Creating..."
+			},
+			"errors": {
+				"childNameRequired": "Child name is required",
+				"selectAgeGroup": "Please select an age group for your child",
+				"invalidAgeGroup": "Selected age group is invalid",
+				"selectAtLeastOneTheme": "Select at least one theme"
+			},
+			"messages": {
+				"createdSuccess": "Child profile created successfully!",
+				"createError": "Failed to create child profile"
+			},
+			"buttons": {
+				"cancel": "Cancel",
+				"next": "Next",
+				"previous": "Previous"
+			}
+		},
+		"tabs": {
+			"overview": "Overview",
+			"achievements": "Achievements",
+			"riddleStatistics": "Riddle Statistics",
+			"timeAnalytics": "Time Analytics"
+		},
+		"overview": {
+			"welcome": "Welcome back, {name}! 👋",
+			"description": "Here's a quick overview of {childName}'s reading journey and achievements.",
+			"childDashboardButton": "{childName}'s dashboard →"
+		},
+		"stats": {
+			"totalStars": "Total Stars",
+			"storiesCompleted": "Stories Completed",
+			"riddlesSolved": "Riddles Solved",
+			"totalReadingTime": "Total Reading Time",
+			"averagePerDay": "Average Per Day",
+			"currentStreak": "Current Streak"
+		},
+		"achievements": {
+			"title": "Badges & Achievements",
+			"unlockedSummary": "Unlocked {unlocked} of {total} badges for {childName}",
+			"dashboardButton": "{childName} dashboard →",
+			"emptyTitle": "🏆",
+			"emptyMessage": "No badges yet. Check back later for more achievements!",
+			"locked": {
+				"title": "Badge Locked",
+				"message": "Complete more challenges to unlock this badge!",
+				"required": "Required: Level {level}"
+			},
+			"levelLabel": "Level {level}"
+		},
+		"riddleStatistics": {
+			"title": "Riddle Statistics",
+			"description": "In-depth insights into {childName}'s reading and problem-solving journey",
+			"dashboardButton": "{childName}'s dashboard →",
+			"stats": {
+				"totalChallenges": "Total Challenges",
+				"solved": "Solved",
+				"successRate": "Success Rate",
+				"avgAttempts": "Avg Attempts",
+				"detailedTitle": "Detailed Challenge Statistics"
+			},
+			"noAttempts": "No challenge attempts yet. Start playing to see statistics!",
+			"tableHeaders": {
+				"storyChapter": "Story - Chapter",
+				"status": "Status",
+				"attempts": "Attempts",
+				"successRate": "Success Rate",
+				"hintsUsed": "Hints Used",
+				"timeSec": "Time (sec)"
+			},
+			"status": {
+				"solved": "✓ Solved",
+				"skipped": "⊘ Skipped",
+				"notAttempted": "Not attempted yet (story in progress)"
+			},
+			"na": "N/A",
+			"multipleAnswers": "Multiple valid answers (choice-based)",
+			"noCorrectAnswer": "No correct answer defined",
+			"tipPrefix": "Tip:",
+			"tip": "Click on any challenge row to view detailed information including the correct answer, all available hints, and your child's action attempts with their selections and responses.",
+			"loading": "Loading...",
+			"modal": {
+				"title": "Challenge Details",
+				"description": "Detailed view of the selected challenge",
+				"questionLabel": "Question:",
+				"correctAnswerLabel": "Correct Answer is:",
+				"optionsLabel": "Options:",
+				"hintsLabel": "Hints:",
+				"hintNumber": "Hint {n}:",
+				"childAttemptsTitle": "Child Attempts:",
+				"attempts": "Attempts : {n}",
+				"attemptLabel": "Attempt {n}",
+				"hintsUsed": "Hints Used",
+				"timeSpent": "Time Spent",
+				"selected": "Selected:",
+				"typedAnswer": "Typed Answer:",
+				"finalAnswerLabel": "Final Answer:",
+				"noAttemptsRecorded": "No attempts recorded for this challenge."
+			},
+			"action": {
+				"correct": "✓ Correct",
+				"incorrect": "✗ Incorrect"
+			}
+		},
+		"timeAnalytics": {
+			"title": "Time Analytics",
+			"description": "In-depth insights into {childName}'s reading through the lens of time spent and consistency",
+			"dashboardButton": "{childName}'s dashboard →",
+			"presets": {
+				"last3Days": "Last 3 Days",
+				"last7Days": "Last 7 Days",
+				"last30Days": "Last 30 Days"
+			},
+			"stats": {
+				"totalReadingTime": "Total Reading Time",
+				"averagePerDay": "Average Per Day",
+				"currentStreak": "Current Streak",
+				"consecutiveDays": "consecutive days",
+				"readingActivityRate": "Reading Activity Rate",
+				"sinceJoining": "since joining",
+				"totalStoriesRead": "Total Stories Read",
+				"dailyReadingTime": "Daily Reading Time"
+			},
+			"tableHeaders": {
+				"date": "Date",
+				"minutes": "Minutes"
+			},
+			"dateRangePicker": {
+				"selectTimePeriod": "Select Time Period",
+				"custom": "Custom",
+				"from": "From",
+				"selectStartDate": "select a start date",
+				"apply": "Apply",
+				"showing": "Showing"
+			},
+			"noActivityMessage": "No reading activity yet. Start playing to see reading statistics!"
+		}
+	},
+	"ChildDashboard": {
+		"progressTracker": {
+			"title": "Your Journey",
+			"levelsUnlocked": "{completed}/{total} levels unlocked",
+			"nextLevel": {
+				"firstBadge": "Start reading to unlock your first badge!",
+				"keepGoing": "Great work! Keep it up to reach the next level."
+			},
+			"totalStarsLabel": "Total Stars",
+			"progressTo": "Progress to Level {level}",
+			"starsToGo": "stars to go",
+			"levelsLabel": "Levels",
+			"levelLabel": "Level {level}",
+			"requiredStars": "{count} stars",
+			"badgeLabel": "Badge",
+			"motivation": {
+				"1": "Welcome to your reading adventure",
+				"2": "You're building momentum! Keep going 🚀",
+				"3": "Wow, you're doing amazing 🌟",
+				"4": "You're on fire! You're unstoppable 🔥",
+				"5": "You're a reading champion 👑",
+				"default": "Keep reading and you'll reach new heights! ⭐"
+			}
+		},
+		"welcomeBanner": {
+			"greetingNew": "Welcome on board, {childName}!",
+			"greetingBack": "Welcome back, {childName}!",
+			"subtitleNew": "Your reading adventure begins now! 🌟",
+			"subtitleBack": "Ready for another amazing reading adventure?",
+			"stats": {
+				"stars": "Stars earned:",
+				"stories": "Stories completed:",
+				"readingTime": "Minutes read:"
+			},
+			"avatarAlt": "Avatar of {name}"
+		},
+		"roadmaps": {
+			"title": "Roadmaps",
+			"seeAll": "See All",
+			"coverAlt": "Roadmap cover image for {name}",
+			"untitled": "Untitled Roadmap",
+			"viewButton": "View Roadmap"
+		},
+		"roadmapPage": {
+			"title": "Roadmap: {name}",
+			"proTip": "Pro Tip:",
+			"proTipMessage": "Hover over story cards to see details. Complete stories to earn stars and unlock new challenges!",
+			"worldTabs": {
+				"storiesLabel": "stories"
+			},
+			"storiesRoadmap": {
+				"noStories": "No stories available in this world.",
+				"status": {
+					"completed": "✓ Completed",
+					"inProgress": "In Progress ({percentage}%)",
+					"locked": "Locked",
+					"notStarted": "Start"
+				},
+				"chapters": "Chapters",
+				"challenges": "Challenges",
+				"buttons": {
+					"readAgain": "Read again",
+					"continueReading": "Continue Reading",
+					"startReading": "Start Reading"
+				}
+			}
+		}
+	},
+	"RoadmapsLibrary":{
+		"library": {
+			"title": "Roadmaps Library",
+			"description": "Discover amazing stories and start your child reading adventure!",
+			"allRoadmaps": "All Roadmaps ({count})",
+			"empty": {
+				"title": "No roadmaps found",
+				"hint": "Try adjusting your filters or search query"
+			}
+		},
+		"searchBar": {
+			"placeholder": "Search for stories...",
+			"noSuggestions": "No suggestions found"
+		},
+		"filterPanel": {
+			"title": "Filters",
+			"categoryLabel": "Category",
+			"ageGroupLabel": "Age Group",
+			"readingLevelLabel": "Reading Level",
+			"clearAllFilters": "Clear All Filters ({count})",
+			"activeCount": "{count} active"
+		},
+		"featuredCarousel": {
+			"startReading": "Start Reading",
+			"previousStory": "Previous story",
+			"nextStory": "Next story",
+			"goToRoadmap": "Go to roadmap {index}"
+		},
+		"roadmapCard": {
+			"worldLabel": "World",
+			"worldsLabel": "Worlds",
+			"coverImageAlt": "Cover image for {title}",
+			"allocateButton": "Allocate to Child"
+		},
+		"allocateDialog": {
+			"title": "Allocate Roadmap to Child",
+			"description": "Select which child should have access to \"{roadmapName}\"",
+			"empty": "No children available. Please add children first.",
+			"alreadyAllocated": "Already allocated",
+			"buttons": {
+				"cancel": "Cancel",
+				"allocate": "Allocate",
+				"allocating": "Allocating..."
+			},
+			"messages": {
+				"selectChild": "Please select a child",
+				"alreadyHasAccess": "{childName} already has access to this roadmap",
+				"allocatedSuccess": "Roadmap \"{roadmapName}\" allocated to {childName}",
+				"allocationFailed": "Failed to allocate roadmap",
+				"unexpectedError": "An unexpected error occurred"
+			}
+		}
+	},
+	"Profile": {
+		"profile": "Profile",
+		"settings": "Settings",
+		"dashboard": "Dashboard",
+		"logout": "Logout",
+		"loggedOut": "Logged out successfully!",
+		"profileInformation": "Profile Information",
+		"fullName": "Full Name",
+		"emailAddress": "Email Address",
+		"accountType": "Account Type",
+		"notificationPreferences": "Notification Preferences",
+		"emailNotifications": "Email notifications",
+		"learningProgressUpdates": "Learning progress updates",
+		"weeklySummary": "Weekly summary",
+		"dangerZone": "Danger Zone",
+		"deleteAccount": "Delete Account"
+	},
+	"LoginForm": {
+		"titleCreate": "Create an account",
+		"titleWelcome": "Welcome back",
+		"descriptionSignUp": "Sign up to get started",
+		"descriptionLogin": "Login with your email and password",
+		"fullNameLabel": "Full name",
+		"fullNamePlaceholder": "Your name",
+		"emailLabel": "Email",
+		"emailPlaceholder": "m@example.com",
+		"passwordLabel": "Password",
+		"passwordPlaceholder": "********",
+		"forgotPassword": "Forgot your password?",
+		"confirmPasswordLabel": "Confirm password",
+		"passwordsNotMatch": "Passwords do not match",
+		"passwordTooShort": "Password must be at least 8 characters",
+		"buttonLoading": "Loading...",
+		"buttonCreate": "Create account",
+		"buttonLogin": "Login",
+		"haveAccount": "Already have an account?",
+		"logIn": "Log in",
+		"noAccount": "Don't have an account?",
+		"signUp": "Sign up",
+		"tosAgreement": "By creating an account, you agree to our Terms of Service and Privacy Policy.",
+		"errors": {
+			"fullNameRequired": "Full name is required",
+			"registrationFailed": "Registration failed",
+			"loginFailedAfterRegistration": "Login failed after registration",
+			"loginFailed": "Login failed",
+			"accountCreatedAndLoggedIn": "Account created and logged in successfully!",
+			"loggedIn": "Logged in successfully!"
+		}
+	},
+	"Onboarding": {
+		"titleStep1": "Tell us about your child",
+		"titleStep2": "What does your child enjoy?",
+		"titleStep3": "All set!",
+		"descStep1": "Help us personalize the experience for your child.",
+		"descStep2": "Select themes to customize recommendations.",
+		"descStep3": "Your profile is ready. Let's start exploring!",
+		"childNameLabel": "Child's Name",
+		"childNamePlaceholder": "Emma",
+		"ageGroupLabel": "Age Group",
+		"ageGroupPlaceholder": "Select an age group",
+		"availableThemesEmpty": "Please select an age group first to see available themes",
+		"favoriteThemesLabel": "Favorite Themes",
+		"selectAllApply": "Select all that apply",
+		"cancel": "Cancel",
+		"next": "Next",
+		"previous": "Previous",
+		"settingUp": "Setting up...",
+		"startExploring": "Start Exploring",
+		"missingRequired": "Missing required information",
+		"childCreated": "Child profile created successfully!",
+		"onboardingError": "An error occurred during onboarding",
+		"childNameRequired": "Child name is required",
+		"selectAgeGroup": "Please select an age group for your child",
+		"invalidAgeGroup": "Selected age group is invalid",
+		"selectAtLeastOneTheme": "Select at least one theme",
+		"stepOf": "Step {step} of {total}"
+	}
+}

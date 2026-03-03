@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogTrigger,
@@ -20,10 +21,11 @@ import { RoleType } from "@shared/types";
 export default function Profile({ session }: { session: Session }) {
   const [closeDialog, setCloseDialog] = React.useState(false);
   const [activeTab, setActiveTab] = useState<"profile" | "settings">("profile");
+  const t = useTranslations("Profile");
 
   const handleLogout = async () => {
     await signOut({ redirect: true, callbackUrl: "/" });
-    toast.success("Logged out successfully!");
+    toast.success(t("loggedOut"));
   };
 
   return (
@@ -57,7 +59,7 @@ export default function Profile({ session }: { session: Session }) {
                 }`}
               >
                 <User className="w-4 h-4" />
-                <span>Profile</span>
+                <span>{t("profile")}</span>
               </button>
               <button
                 onClick={() => setActiveTab("settings")}
@@ -68,7 +70,7 @@ export default function Profile({ session }: { session: Session }) {
                 }`}
               >
                 <Settings className="w-4 h-4" />
-                <span>Settings</span>
+                <span>{t("settings")}</span>
               </button>
               {session?.user?.role === RoleType.ADMIN && (
                 <Link href="/admin-dashboard">
@@ -80,7 +82,7 @@ export default function Profile({ session }: { session: Session }) {
                     }`}
                   >
                     <Layout className="w-4 h-4" />
-                    <span>Dashboard</span>
+                    <span>{t("dashboard")}</span>
                   </button>
                 </Link>
               )}
@@ -89,7 +91,7 @@ export default function Profile({ session }: { session: Session }) {
             <div className="mt-6 pt-6 border-t">
               <Button onClick={handleLogout} variant="destructive">
                 <LogOut className="w-4 h-4" />
-                Logout
+                {t("logout")}
               </Button>
             </div>
           </div>
@@ -100,14 +102,14 @@ export default function Profile({ session }: { session: Session }) {
               <div className="space-y-6">
                 <div>
                   <h2 className="text-xl font-medium mb-4">
-                    Profile Information
+                    {t("profileInformation")}
                   </h2>
                   <div className="bg-card rounded-lg border border-primary/20 p-4 space-y-5">
                     {/* Name */}
                     <div className="flex items-center justify-between pb-4 border-b border-gray-200">
                       <div>
                         <label className="text-sm font-medium text-gray-500">
-                          Full Name
+                          {t("fullName")}
                         </label>
                         <p className="text-base ">{session?.user?.name}</p>
                       </div>
@@ -117,7 +119,7 @@ export default function Profile({ session }: { session: Session }) {
                     <div className="flex items-center justify-between pb-4 border-b border-gray-200">
                       <div>
                         <label className="text-sm font-medium text-gray-500">
-                          Email Address
+                          {t("emailAddress")}
                         </label>
                         <p className="text-base ">{session?.user?.email}</p>
                       </div>
@@ -127,7 +129,7 @@ export default function Profile({ session }: { session: Session }) {
                     <div className="flex items-center justify-between  border-gray-200">
                       <div>
                         <label className="text-sm font-medium text-gray-500">
-                          Account Type
+                          {t("accountType")}
                         </label>
                         <div className="flex items-center gap-2 mt-1">
                           <span className="inline-block px-3 py-1 rounded-full text-xs bg-primary text-white">
@@ -152,39 +154,33 @@ export default function Profile({ session }: { session: Session }) {
             {activeTab === "settings" && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-xl font-bold mb-4">Settings</h2>
+                  <h2 className="text-xl font-bold mb-4">{t("settings")}</h2>
 
                   {/* Notification Settings */}
                   <div className="bg-card rounded-lg border border-primary/20 p-6 space-y-4 mb-6">
-                    <h3 className="">Notification Preferences</h3>
+                    <h3 className="">{t("notificationPreferences")}</h3>
                     <div className="space-y-3">
                       <label className="flex items-center gap-3 cursor-pointer">
                         <Checkbox defaultChecked className="w-4 h-4" />
-                        <span className="text-sm text-gray-500">
-                          Email notifications
-                        </span>
+                        <span className="text-sm text-gray-500">{t("emailNotifications")}</span>
                       </label>
                       <label className="flex items-center gap-3 cursor-pointer">
                         <Checkbox defaultChecked className="w-4 h-4" />
 
-                        <span className="text-sm text-gray-500">
-                          Learning progress updates
-                        </span>
+                        <span className="text-sm text-gray-500">{t("learningProgressUpdates")}</span>
                       </label>
                       <label className="flex items-center gap-3 cursor-pointer">
                         <Checkbox defaultChecked className="w-4 h-4" />
 
-                        <span className="text-sm text-gray-500">
-                          Weekly summary
-                        </span>
+                        <span className="text-sm text-gray-500">{t("weeklySummary")}</span>
                       </label>
                     </div>
                   </div>
 
                   {/* Danger Zone */}
                   <div className="bg-red-50 rounded-lg border border-red-200 p-4">
-                    <h3 className="text-red-900 mb-4">Danger Zone</h3>
-                    <Button variant="destructive">Delete Account</Button>
+                    <h3 className="text-red-900 mb-4">{t("dangerZone")}</h3>
+                      <Button variant="destructive">{t("deleteAccount")}</Button>
                   </div>
                 </div>
               </div>

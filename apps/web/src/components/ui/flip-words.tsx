@@ -2,6 +2,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, LayoutGroup } from "motion/react";
 import { cn } from "@/src/lib/utils";
+import { useLocale } from "@/src/contexts/LocaleContext";
 
 export const FlipWords = ({
   words,

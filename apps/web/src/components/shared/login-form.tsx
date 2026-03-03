@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/src/lib/utils";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
@@ -38,6 +39,7 @@ interface LoginFormProps extends React.ComponentProps<"div"> {
 }
 
 export function LoginForm({ className, hideTrigger = false, open, onOpenChange }: LoginFormProps) {
+  const t = useTranslations("LoginForm");
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -57,20 +59,23 @@ export function LoginForm({ className, hideTrigger = false, open, onOpenChange }
       if (isSignUp) {
         // Signup validation
         if (!name.trim()) {
-          throw new Error("Full name is required");
+          setError(t("errors.fullNameRequired"));
+          return
         }
         if (password.length < 8) {
-          throw new Error("Password must be at least 8 characters");
+          setError(t("passwordTooShort"));
+          return;
         }
         if (password !== confirmPassword) {
-          throw new Error("Passwords do not match");
+          setError(t("passwordsNotMatch"));
+          return;
         }
 
         // Step 1: Call server action for registration
         const registerResult = await registerAction({ email, password, name });
 
         if (!registerResult.success) {
-          setError(registerResult.error?.message || "Registration failed");
+          setError(registerResult.error?.message || t("errors.registrationFailed"));
           return;
         }
 
@@ -78,7 +83,7 @@ export function LoginForm({ className, hideTrigger = false, open, onOpenChange }
         const loginResult = await loginAction({ email, password });
 
         if (!loginResult.success) {
-          setError(loginResult.error?.message || "Login failed after registration");
+          setError(loginResult.error?.message || t("errors.loginFailedAfterRegistration"));
           return;
         }
 
@@ -90,13 +95,13 @@ export function LoginForm({ className, hideTrigger = false, open, onOpenChange }
           callbackUrl: "/",
         });
 
-        toast.success("Account created and logged in successfully!");
+        toast.success(t("errors.accountCreatedAndLoggedIn"));
       } else {
         // Login flow: validate credentials first via server action
         const loginResult = await loginAction({ email, password });
 
         if (!loginResult.success) {
-          setError(loginResult.error?.message || "Login failed");
+          setError(loginResult.error?.message || t("errors.loginFailed"));
           return;
         }
 
@@ -108,7 +113,7 @@ export function LoginForm({ className, hideTrigger = false, open, onOpenChange }
           callbackUrl: "/",
         });
 
-        toast.success("Logged in successfully!");
+        toast.success(t("errors.loggedIn"));
       }
     } catch (err) {
       const message =
@@ -124,21 +129,19 @@ export function LoginForm({ className, hideTrigger = false, open, onOpenChange }
     <Dialog open={open} onOpenChange={onOpenChange}>
       {!hideTrigger && (
         <DialogTrigger asChild>
-          <Button id="about">Login</Button>
+          <Button id="about">{t("buttonLogin")}</Button>
         </DialogTrigger>
       )}
       <DialogTitle></DialogTitle>
       <DialogContent showCloseButton={false}>
         <div className={cn("flex flex-col space-y-1", className)}>
           <Card>
-            <CardHeader className="text-center">
+              <CardHeader className="text-center">
               <CardTitle className="text-xl">
-                {isSignUp ? "Create an account" : "Welcome back"}
+                {isSignUp ? t("titleCreate") : t("titleWelcome")}
               </CardTitle>
               <CardDescription>
-                {isSignUp
-                  ? "Sign up to get started"
-                  : "Login with your email and password"}
+                {isSignUp ? t("descriptionSignUp") : t("descriptionLogin")}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -169,11 +172,11 @@ export function LoginForm({ className, hideTrigger = false, open, onOpenChange }
 
                   {isSignUp && (
                     <Field>
-                      <FieldLabel htmlFor="name">Full name</FieldLabel>
+                      <FieldLabel htmlFor="name">{t("fullNameLabel")}</FieldLabel>
                       <Input
                         id="name"
                         type="text"
-                        placeholder="Your name"
+                        placeholder={t("fullNamePlaceholder")}
                         className="bg-background"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
@@ -183,11 +186,11 @@ export function LoginForm({ className, hideTrigger = false, open, onOpenChange }
                   )}
 
                   <Field>
-                    <FieldLabel htmlFor="email">Email</FieldLabel>
+                    <FieldLabel htmlFor="email">{t("emailLabel")}</FieldLabel>
                     <Input
                       id="email"
                       type="email"
-                      placeholder="m@example.com"
+                      placeholder={t("emailPlaceholder")}
                       className="bg-background"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -198,22 +201,14 @@ export function LoginForm({ className, hideTrigger = false, open, onOpenChange }
 
                   <Field>
                     <div className="flex items-center">
-                      <FieldLabel htmlFor="password">Password</FieldLabel>
-                      {!isSignUp && (
-                        <a
-                          href="#"
-                          className="ml-auto text-sm underline-offset-4 hover:underline"
-                        >
-                          Forgot your password?
-                        </a>
-                      )}
+                      <FieldLabel htmlFor="password">{t("passwordLabel")}</FieldLabel>
                     </div>
                     <div className="relative">
-                      <Input
+                        <Input
                         id="password"
                         type={showPassword ? "text" : "password"}
                         required
-                        placeholder="********"
+                        placeholder={t("passwordPlaceholder")}
                         className="pr-10 bg-background"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
@@ -235,19 +230,25 @@ export function LoginForm({ className, hideTrigger = false, open, onOpenChange }
                         )}
                       </button>
                     </div>
+                                      {!isSignUp && (
+                        <a
+                          href="#"
+                          className="ml-auto text-sm underline-offset-4 hover:underline"
+                        >
+                          {t("forgotPassword")}
+                        </a>
+                      )}
                   </Field>
 
-                  {isSignUp && (
+                      {isSignUp && (
                     <Field>
-                      <FieldLabel htmlFor="confirmPassword">
-                        Confirm password
-                      </FieldLabel>
+                      <FieldLabel htmlFor="confirmPassword">{t("confirmPasswordLabel")}</FieldLabel>
                       <div className="relative">
                         <Input
                           id="confirmPassword"
                           type={showConfirmPassword ? "text" : "password"}
                           required
-                          placeholder="********"
+                          placeholder={t("passwordPlaceholder")}
                           className="pr-10 bg-background"
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
@@ -272,14 +273,10 @@ export function LoginForm({ className, hideTrigger = false, open, onOpenChange }
                         </button>
                       </div>
                       {confirmPassword && password !== confirmPassword && (
-                        <p className="text-sm text-red-600 mt-1">
-                          Passwords do not match
-                        </p>
+                        <p className="text-sm text-red-600 mt-1">{t("passwordsNotMatch")}</p>
                       )}
                       {password && password.length < 8 && (
-                        <p className="text-sm text-yellow-600 mt-1">
-                          Password must be at least 8 characters
-                        </p>
+                        <p className="text-sm text-yellow-600 mt-1">{t("passwordTooShort")}</p>
                       )}
                     </Field>
                   )}
@@ -290,35 +287,31 @@ export function LoginForm({ className, hideTrigger = false, open, onOpenChange }
                       disabled={isLoading}
                       className="w-full"
                     >
-                      {isLoading
-                        ? "Loading..."
-                        : isSignUp
-                          ? "Create account"
-                          : "Login"}
+                      {isLoading ? t("buttonLoading") : isSignUp ? t("buttonCreate") : t("buttonLogin")}
                     </Button>
                     <FieldDescription className="text-center">
                       {isSignUp ? (
                         <>
-                          Already have an account?{" "}
+                          {t("haveAccount")} {" "}
                           <button
                             type="button"
                             className="underline-offset-4 hover:underline"
                             onClick={() => setIsSignUp(false)}
                             disabled={isLoading}
                           >
-                            Log in
+                            {t("logIn")}
                           </button>
                         </>
                       ) : (
                         <>
-                          Don&apos;t have an account?{" "}
+                          {t("noAccount")} {" "}
                           <button
                             type="button"
                             className="underline-offset-4 hover:underline"
                             onClick={() => setIsSignUp(true)}
                             disabled={isLoading}
                           >
-                            Sign up
+                            {t("signUp")}
                           </button>
                         </>
                       )}
@@ -329,8 +322,7 @@ export function LoginForm({ className, hideTrigger = false, open, onOpenChange }
             </CardContent>
           </Card>
           <FieldDescription className="px-6 text-center">
-            By clicking continue, you agree to our{" "}
-            <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+            {t("tosAgreement")}
           </FieldDescription>
         </div>
       </DialogContent>

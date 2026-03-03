@@ -1,5 +1,6 @@
 "use server";
 
+import { Session } from "next-auth";
 /**
  * Server Actions for Auth Service
  * 
@@ -7,8 +8,9 @@
  * Wraps server-api calls and returns structured responses
  */
 
-import { getParents, loginUser, registerUser } from "./server-api";
+import { createChildProfile, getParents, loginUser, registerUser } from "./server-api";
 import { ApiResponse, User } from "@shared/types";
+import { unstable_update } from "@/src/auth";
 
 interface PaginationParams {
   limit?: number;
@@ -149,3 +151,38 @@ export async function fetchParentsAction(
     };
   }
 }
+
+export async function createChildProfileAction(payload: {
+  session: Session | null;
+  parentEmail: string;
+  parentId: string;
+  name: string;
+  ageGroupId: string;
+  ageGroupName: string;
+  themeIds: string[];
+  allocatedRoadmaps: string[];
+}) {
+  try {
+    const child = await createChildProfile(payload);
+
+    await unstable_update({
+      user: {
+        ...payload.session!.user,
+        newUser: false,
+      },
+    });
+
+    return {
+      success: true,
+      data: child,
+    };
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to create child profile";
+    return {
+      success: false,
+      error: message,
+    };
+  }
+}
+

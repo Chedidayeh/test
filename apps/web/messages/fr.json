@@ -1,0 +1,399 @@
+{
+	"Hero": {
+		"headline": "Des histoires qui éveillent votre enfant",
+		"subline": "Parcourez des contes magiques et résolvez des énigmes stimulantes",
+		"details": "Idéal pour les jeunes lecteurs (6-14 ans) • Renforce les compétences en lecture • Développe la pensée critique",
+		"cta": {
+			"getStarted": "Commencer",
+			"startAdventure": "Démarrer l'aventure de votre enfant",
+			"parentDashboard": "Tableau de bord parent"
+		},
+		"trust": "✨ Approuvé par les parents et les éducateurs • Sûr et éducatif • Apprentissage assisté par IA",
+		"words": [
+			"Pensez",
+			"Imaginez",
+			"Explorez",
+			"Apprenez"
+		]
+	},
+	"CoreHeader": {
+		"nav": {
+			"parentDashboard": "Tableau de bord parent",
+			"adminDashboard": "Tableau de bord administrateur",
+			"roadmapsLibrary": "Bibliothèque de parcours"
+		},
+		"menu": {
+			"open": "Ouvrir le menu",
+			"close": "Fermer le menu"
+		},
+		"themeToggle": "Basculer le thème"
+	},
+	"CommonComponents": {
+		"language": "Langue",
+		"loading": "Chargement..."
+	},
+	"ParentDashboard": {
+		"yourChildren": "Vos enfants",
+		"unknown": "Inconnu",
+		"stars": "{count} étoiles",
+		"addChild": "Ajouter un enfant",
+		"addChildDialog": {
+			"title": "Ajouter un enfant",
+			"step1": {
+				"title": "Informations de base de l'enfant",
+				"description": "Parlez-nous de votre enfant",
+				"childNameLabel": "Nom de l'enfant",
+				"childNamePlaceholder": "ex. Emma",
+				"ageGroupLabel": "Tranche d'âge",
+				"ageGroupPlaceholder": "Sélectionnez une tranche d'âge"
+			},
+			"step2": {
+				"title": "Thèmes préférés",
+				"description": "Que préfère {name} ?",
+				"noThemes": "Aucun thème disponible",
+				"favoriteThemesLabel": "Thèmes préférés",
+				"selectAtLeastOneTheme": "Sélectionnez au moins un thème"
+			},
+			"step3": {
+				"title": "Vérifier le profil de l'enfant",
+				"nameLabel": "Nom",
+				"ageGroupLabel": "Tranche d'âge",
+				"favoriteThemesLabel": "Thèmes préférés",
+				"createButton": "Créer l'enfant",
+				"creating": "Création en cours..."
+			},
+			"errors": {
+				"childNameRequired": "Le nom de l'enfant est requis",
+				"selectAgeGroup": "Veuillez sélectionner une tranche d'âge pour votre enfant",
+				"invalidAgeGroup": "La tranche d'âge sélectionnée est invalide",
+				"selectAtLeastOneTheme": "Sélectionnez au moins un thème"
+			},
+			"messages": {
+				"createdSuccess": "Profil de l'enfant créé avec succès !",
+				"createError": "Échec de la création du profil de l'enfant"
+			},
+			"buttons": {
+				"cancel": "Annuler",
+				"next": "Suivant",
+				"previous": "Précédent"
+			}
+		},
+		"tabs": {
+			"overview": "Aperçu",
+			"achievements": "Réalisations",
+			"riddleStatistics": "Statistiques des énigmes",
+			"timeAnalytics": "Analyse du temps"
+		},
+		"overview": {
+			"welcome": "Bon retour, {name} ! 👋",
+			"description": "Voici un aperçu du parcours de lecture et des réalisations de {childName}.",
+			"childDashboardButton": "Tableau de bord de {childName} →"
+		},
+		"stats": {
+			"totalStars": "Total d'étoiles",
+			"storiesCompleted": "Histoires terminées",
+			"riddlesSolved": "Énigmes résolues",
+			"totalReadingTime": "Temps total de lecture",
+			"averagePerDay": "Moyenne par jour",
+			"currentStreak": "Série en cours"
+		},
+		"achievements": {
+			"title": "Badges et réalisations",
+			"unlockedSummary": "{unlocked} sur {total} badge{plural} débloqué(s) par {childName}",
+			"dashboardButton": "Tableau de bord de {childName} →",
+			"emptyTitle": "🏆",
+			"emptyMessage": "Aucun badge disponible. Revenez plus tard pour d'autres réalisations !",
+			"locked": {
+				"title": "Badge verrouillé",
+				"message": "Complétez plus de défis pour débloquer ce badge !",
+				"required": "Requis : Niveau {level}"
+			},
+			"levelLabel": "Niveau {level}"
+		},
+		"riddleStatistics": {
+			"title": "Statistiques des énigmes",
+			"description": "Aperçu approfondi du parcours de lecture et de résolution de problèmes de {childName}.",
+			"dashboardButton": "Tableau de bord de {childName} →",
+			"stats": {
+				"totalChallenges": "Total des défis",
+				"solved": "Résolus",
+				"successRate": "Taux de réussite",
+				"avgAttempts": "Moy. tentatives",
+				"detailedTitle": "Statistiques détaillées des défis"
+			},
+			"noAttempts": "Aucune tentative de défi pour le moment. Commencez à jouer pour voir les statistiques !",
+			"tableHeaders": {
+				"storyChapter": "Histoire - Chapitre",
+				"status": "Statut",
+				"attempts": "Tentatives",
+				"successRate": "Taux de réussite",
+				"hintsUsed": "تلميحات مستخدمة",
+				"timeSec": "الوقت (ث)"
+			},
+			"status": {
+				"solved": "✓ Résolu",
+				"skipped": "⊘ Ignoré",
+				"notAttempted": "Pas encore tenté (القصة قيد التقدم)"
+			},
+			"na": "N/A",
+			"multipleAnswers": "Plusieurs réponses valides (basé sur le choix)",
+			"noCorrectAnswer": "Aucune réponse correcte définie",
+			"tipPrefix": "Astuce:",
+			"tip": "Cliquez sur n'importe quelle ligne de défi pour voir des informations détaillées, y compris la réponse correcte, tous les indices disponibles et les tentatives d'action de votre enfant avec leurs sélections et réponses.",
+			"loading": "Chargement...",
+			"modal": {
+				"title": "Détails du défi",
+				"description": "Vue détaillée du défi sélectionné",
+				"questionLabel": "Question:",
+				"correctAnswerLabel": "La bonne réponse est :",
+				"optionsLabel": "Options:",
+				"hintsLabel": "Indices:",
+				"hintNumber": "Indice {n}:",
+				"childAttemptsTitle": "Tentatives de l'enfant:",
+				"attempts": "Tentatives : {n}",
+				"attemptLabel": "Tentative {n}",
+				"hintsUsed": "Indices utilisés",
+				"timeSpent": "Temps passé",
+				"selected": "Sélectionné:",
+				"typedAnswer": "Réponse tapée:",
+				"finalAnswerLabel": "Réponse finale:",
+				"noAttemptsRecorded": "Aucune tentative enregistrée pour ce défi."
+			},
+			"action": {
+				"correct": "✓ Correct",
+				"incorrect": "✗ Incorrect"
+			}
+		},
+		"timeAnalytics": {
+			"title": "Analyse du temps",
+			"description": "Aperçu approfondi du temps de lecture et de la régularité de {childName}.",
+			"dashboardButton": "Tableau de bord de {childName} →",
+			"presets": {
+				"last3Days": "3 derniers jours",
+				"last7Days": "7 derniers jours",
+				"last30Days": "30 derniers jours"
+			},
+			"stats": {
+				"totalReadingTime": "Temps total de lecture",
+				"averagePerDay": "Moyenne par jour",
+				"currentStreak": "Série en cours",
+				"consecutiveDays": "jours consécutifs",
+				"readingActivityRate": "Taux d'activité de lecture",
+				"sinceJoining": "depuis l'inscription",
+				"totalStoriesRead": "Total des histoires lues",
+				"dailyReadingTime": "Temps de lecture quotidien"
+			},
+			"tableHeaders": {
+				"date": "Date",
+				"minutes": "Minutes"
+			},
+			"dateRangePicker": {
+				"selectTimePeriod": "Sélectionner la période",
+				"custom": "Personnalisé",
+				"from": "Depuis",
+				"selectStartDate": "sélectionnez une date de début",
+				"apply": "Appliquer",
+				"showing": "Affichage"
+			},
+			"noActivityMessage": "Aucune activité de lecture pour le moment. Commencez à jouer pour voir les statistiques !"
+		}
+	},
+	"ChildDashboard": {
+		"progressTracker": {
+			"title": "Votre parcours",
+			"levelsUnlocked": "{completed}/{total} niveaux débloqués",
+			"nextLevel": {
+				"firstBadge": "Commencez à lire pour débloquer votre première médaille !",
+				"keepGoing": "Beau travail ! Continuez comme ça pour atteindre le niveau suivant."
+			},
+			"totalStarsLabel": "Total d'étoiles",
+			"progressTo": "Progression vers le niveau {level}",
+			"starsToGo": "étoiles restantes",
+			"levelsLabel": "Niveaux",
+			"levelLabel": "Niveau {level}",
+			"requiredStars": "{count} étoiles",
+			"badgeLabel": "Badge",
+			"motivation": {
+				"1": "Bienvenue dans votre aventure de lecture",
+				"2": "Vous prenez de l'élan ! Continuez 🚀",
+				"3": "Wow, vous faites un travail incroyable 🌟",
+				"4": "Vous êtes en feu ! Vous êtes inarrêtable 🔥",
+				"5": "Vous êtes un champion de la lecture 👑",
+				"default": "Continuez à lire et vous atteindrez de nouveaux sommets ! ⭐"
+			}
+		},
+		"welcomeBanner": {
+			"greetingNew": "Bienvenue à bord, {childName}!",
+			"greetingBack": "Bon retour, {childName}!",
+			"subtitleNew": "Votre aventure de lecture commence maintenant ! 🌟",
+			"subtitleBack": "Prêt pour une nouvelle aventure de lecture incroyable ?",
+			"stats": {
+				"stars": "Étoiles gagnées:",
+				"stories": "Histoires terminées:",
+				"readingTime": "Minutes lues:"
+			},
+			"avatarAlt": "Avatar de {name}"
+		},
+		"roadmaps": {
+			"title": "Parcours",
+			"seeAll": "Voir tout",
+			"coverAlt": "Image de couverture du parcours pour {name}",
+			"untitled": "Parcours sans titre",
+			"viewButton": "Voir le parcours"
+		},
+		"roadmapPage": {
+			"title": "Parcours : {name}",
+			"proTip": "Conseil utile :",
+			"proTipMessage": "Survolez les cartes d'histoire pour voir les détails. Complétez les histoires pour gagner des étoiles et débloquer de nouveaux défis !",
+			"worldTabs": {
+				"storiesLabel": "histoires"
+			},
+			"storiesRoadmap": {
+				"noStories": "Aucune histoire disponible dans ce monde.",
+				"status": {
+					"completed": "✓ Complété",
+					"inProgress": "En cours ({percentage}%)",
+					"locked": "Verrouillé",
+					"notStarted": "Commencer"
+				},
+				"chapters": "Chapitres",
+				"challenges": "Défis",
+				"buttons": {
+					"readAgain": "Relire",
+					"continueReading": "Continuer la lecture",
+					"startReading": "Commencer la lecture"
+				}
+			}
+		}
+	},
+		"RoadmapsLibrary":{
+		"library": {
+			"title": "Bibliothèque de parcours",
+			"description": "Découvrez des histoires étonnantes et commencez l'aventure de lecture de votre enfant !",
+			"allRoadmaps": "Tous les parcours ({count})",
+			"empty": {
+				"title": "Aucun parcours trouvé",
+				"hint": "Essayez d'ajuster vos filtres ou votre requête de recherche"
+			}
+		},
+		"searchBar": {
+			"placeholder": "Rechercher des histoires...",
+			"noSuggestions": "Aucune suggestion trouvée"
+		},
+		"filterPanel": {
+			"title": "Filtres",
+			"categoryLabel": "Catégorie",
+			"ageGroupLabel": "Groupe d'âge",
+			"readingLevelLabel": "Niveau de lecture",
+			"clearAllFilters": "Effacer tous les filtres ({count})",
+			"activeCount": "{count} actif"
+		},
+		"featuredCarousel": {
+			"startReading": "Commencer la lecture",
+			"previousStory": "Histoire précédente",
+			"nextStory": "Histoire suivante",
+			"goToRoadmap": "Aller au parcours {index}"
+		},
+		"roadmapCard": {
+			"worldLabel": "Monde",
+			"worldsLabel": "Mondes",
+			"coverImageAlt": "Image de couverture de {title}",
+			"allocateButton": "Allouer à l'enfant"
+		},
+		"allocateDialog": {
+			"title": "Allouer un parcours à l'enfant",
+			"description": "Sélectionnez quel enfant devrait avoir accès à \"{roadmapName}\"",
+			"empty": "Aucun enfant disponible. Veuillez d'abord ajouter des enfants.",
+			"alreadyAllocated": "Déjà alloué",
+			"buttons": {
+				"cancel": "Annuler",
+				"allocate": "Allouer",
+				"allocating": "Allocation en cours..."
+			},
+			"messages": {
+				"selectChild": "Veuillez sélectionner un enfant",
+				"alreadyHasAccess": "{childName} a déjà accès à ce parcours",
+				"allocatedSuccess": "Parcours \"{roadmapName}\" alloué à {childName}",
+				"allocationFailed": "Échec de l'allocation du parcours",
+				"unexpectedError": "Une erreur inattendue s'est produite"
+			}
+		}
+	},
+	"Profile": {
+		"profile": "Profil",
+		"settings": "Paramètres",
+		"dashboard": "Tableau de bord",
+		"logout": "Se déconnecter",
+		"loggedOut": "Déconnecté avec succès!",
+		"profileInformation": "Informations du profil",
+		"fullName": "Nom complet",
+		"emailAddress": "Adresse e-mail",
+		"accountType": "Type de compte",
+		"notificationPreferences": "Préférences de notification",
+		"emailNotifications": "Notifications par e-mail",
+		"learningProgressUpdates": "Mises à jour des progrès d'apprentissage",
+		"weeklySummary": "Résumé hebdomadaire",
+		"dangerZone": "Zone dangereuse",
+		"deleteAccount": "Supprimer le compte"
+	},
+	"LoginForm": {
+		"titleCreate": "Créer un compte",
+		"titleWelcome": "Bon retour",
+		"descriptionSignUp": "Inscrivez-vous pour commencer",
+		"descriptionLogin": "Connectez-vous avec votre e-mail et mot de passe",
+		"fullNameLabel": "Nom complet",
+		"fullNamePlaceholder": "Votre nom",
+		"emailLabel": "E-mail",
+		"emailPlaceholder": "m@example.com",
+		"passwordLabel": "Mot de passe",
+		"passwordPlaceholder": "********",
+		"forgotPassword": "Mot de passe oublié ?",
+		"confirmPasswordLabel": "Confirmer le mot de passe",
+		"passwordsNotMatch": "Les mots de passe ne correspondent pas",
+		"passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères",
+		"buttonLoading": "Chargement...",
+		"buttonCreate": "Créer un compte",
+		"buttonLogin": "Se connecter",
+		"haveAccount": "Vous avez déjà un compte ?",
+		"logIn": "Se connecter",
+		"noAccount": "Vous n'avez pas de compte ?",
+		"signUp": "S'inscrire",
+		"tosAgreement": "En créant un compte, vous acceptez nos Conditions d'utilisation et notre Politique de confidentialité.",
+		"errors": {
+			"fullNameRequired": "Le nom complet est requis",
+			"registrationFailed": "Échec de l'inscription",
+			"loginFailedAfterRegistration": "Échec de la connexion après l'inscription",
+			"loginFailed": "Échec de la connexion",
+			"accountCreatedAndLoggedIn": "Compte créé et connecté avec succès !",
+			"loggedIn": "Connecté avec succès !"
+		}
+	},
+	"Onboarding": {
+		"titleStep1": "Parlez-nous de votre enfant",
+		"titleStep2": "Que préfère votre enfant ?",
+		"titleStep3": "Tout est prêt !",
+		"descStep1": "Aidez-nous à personnaliser l'expérience pour votre enfant.",
+		"descStep2": "Sélectionnez des thèmes pour personnaliser les recommandations.",
+		"descStep3": "Le profil est prêt. Explorons de belles histoires !",
+		"childNameLabel": "Nom de l'enfant",
+		"childNamePlaceholder": "Emma",
+		"ageGroupLabel": "Tranche d'âge",
+		"ageGroupPlaceholder": "Sélectionnez une tranche d'âge",
+		"availableThemesEmpty": "Veuillez d'abord sélectionner une tranche d'âge pour voir les thèmes disponibles",
+		"favoriteThemesLabel": "Thèmes préférés",
+		"selectAllApply": "Sélectionnez tout ce qui s'applique",
+		"cancel": "Annuler",
+		"next": "Suivant",
+		"previous": "Précédent",
+		"settingUp": "Configuration...",
+		"startExploring": "Commencer à explorer",
+		"missingRequired": "Informations requises manquantes",
+		"childCreated": "Profil de l'enfant créé avec succès !",
+		"onboardingError": "Une erreur s'est produite lors de l'intégration",
+		"childNameRequired": "Le nom de l'enfant est requis",
+		"selectAgeGroup": "Veuillez sélectionner une tranche d'âge pour votre enfant",
+		"invalidAgeGroup": "La tranche d'âge sélectionnée est invalide",
+		"selectAtLeastOneTheme": "Sélectionnez au moins un thème",
+		"stepOf": "Étape {step} sur {total}"
+	}
+}

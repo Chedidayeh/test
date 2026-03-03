@@ -6,11 +6,14 @@ import { useLoginModal } from "@/src/providers/login-provider";
 import { Button } from "../ui/button";
 import { FlipWords } from "../ui/flip-words";
 import { Session } from "next-auth";
+import { useTranslations } from "next-intl";
+import { useLocale } from "@/src/contexts/LocaleContext";
 
-export default function Hero(
-  { session }: { session: Session | null }
-) {
-  const words = ["Think", "Imagine", "Explore", "Learn"];
+export default function Hero({ session }: { session: Session | null }) {
+  const t = useTranslations("Hero");
+  const { locale, isRTL } = useLocale();
+  console.log("Current locale in Hero component:", locale, "isRTL:", isRTL);
+  const words = [t("words.0"), t("words.1"), t("words.2"), t("words.3")];
 
   const router = useRouter();
   const loginModal = useLoginModal();
@@ -22,15 +25,14 @@ export default function Hero(
         {/* Main Headline */}
         <div className="space-y-3 sm:space-y-4">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white drop-shadow-lg">
-            Stories That Make Your Child <br/>
-            <FlipWords words={words} />
+            {t("headline")} <br />
+            {isRTL ? <span className="text-amber-400">{words[0]}</span> : <FlipWords words={words} />}
           </h1>
           <p className="text-lg sm:text-xl text-gray-100 drop-shadow-md font-medium">
-            Journey through magical tales and solve mind-bending riddles
+            {t("subline")}
           </p>
           <p className="text-sm sm:text-base text-gray-200 drop-shadow-md max-w-2xl mx-auto">
-            Perfect for young readers (6-14 years old) • Build reading skills •
-            Develop critical thinking
+            {t("details")}
           </p>
         </div>
 
@@ -43,31 +45,22 @@ export default function Hero(
                 router.push("/onboarding");
               } else if (session?.user.newUser === false) {
                 router.push("/parent-dashboard");
-              }else {
+              } else {
                 loginModal.open();
               }
             }}
           >
-            {!session ? "Get Started" : session.user.newUser ? "Start Your child Adventure" : "Parent Dashboard"}
-           
+            {!session
+              ? t("cta.getStarted")
+              : session.user.newUser
+                ? t("cta.startAdventure")
+                : t("cta.parentDashboard")}
           </Button>
-          {/* <Button
-            variant={"outline"}
-            className="px-8 py-3 sm:py-4"
-            onClick={() => {
-              window.location.href = "#about";
-            }}
-          >
-            Learn More
-          </Button> */}
         </div>
 
         {/* Trust Badge */}
         <div className="mt-10 sm:mt-20">
-          <p className="text-gray-200 text-sm drop-shadow-md">
-            ✨ Trusted by parents and educators • Safe & educational •
-            AI-powered learning
-          </p>
+          <p className="text-gray-200 drop-shadow-md">{t("trust")}</p>
         </div>
       </div>
     </div>
