@@ -20,6 +20,7 @@ model ChildProfile {
   parentId          String // Reference to auth service Parent.id
   childId           String   @unique // Reference to auth service Child.id
   ageGroupId        String // Reference to content service AgeGroup.id
+  ageGroupName      String? // Denormalized for easy access to age group name
   favoriteThemes    String[] // Reference to content service Theme.id
   allocatedRoadmaps String[] // List of Roadmap IDs allocated to this child
   currentLevel      Int      @default(1)

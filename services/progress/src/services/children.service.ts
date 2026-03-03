@@ -23,6 +23,7 @@ export class ChildrenService {
     name: string;
     childId: string;
     ageGroupId: string;
+    ageGroupName: string;
     themeIds: string[];
     allocatedRoadmaps: string[];
     badgeId: string;
@@ -32,6 +33,7 @@ export class ChildrenService {
         parentId: payload.parentId,
         name: payload.name,
         ageGroupId: payload.ageGroupId,
+        ageGroupName: payload.ageGroupName,
         favoriteThemes: payload.themeIds,
         allocatedRoadmaps: payload.allocatedRoadmaps,
         childId: payload.childId,
@@ -914,5 +916,73 @@ export class ChildrenService {
     });
 
     return updatedChild as unknown as ChildProfile;
+  }
+
+  /**
+   * Get aggregated statistics for children
+   * Calculates:
+   * - totalChildren: Total count of all child profiles
+   * - activeChildren: Children with game session activity (checkpoints) in the last 7 days
+   * - totalStoriesCompleted: Count of completed stories (Progress with status COMPLETED)
+   * - totalChallengesSolved: Count of solved challenges (ChallengeAttempts with isCorrect = true)
+   */
+  static async getChildrenStats(): Promise<{
+    totalChildren: number;
+    activeChildren: number;
+    totalStoriesCompleted: number;
+    totalChallengesSolved: number;
+  }> {
+    // Calculate date 7 days ago
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    // Use Promise.all for parallel queries
+    const [totalChildren, activeChildren, totalStoriesCompleted, totalChallengesSolved] =
+      await Promise.all([
+        // Count total children
+        prisma.childProfile.count(),
+
+        // Count children with game session checkpoint activity in last 7 days
+        // A child is active if they have a checkpoint (pause/resume) within the last 7 days
+        // This indicates recent engagement with a story
+        prisma.childProfile.count({
+          where: {
+            progress: {
+              some: {
+                gameSession: {
+                  checkpoints: {
+                    some: {
+                      startedAt: {
+                        gte: sevenDaysAgo,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        }),
+
+        // Count completed stories
+        prisma.progress.count({
+          where: {
+            status: "COMPLETED",
+          },
+        }),
+
+        // Count solved challenges (with correct answers)
+        prisma.challengeAttempt.count({
+          where: {
+            isCorrect: true,
+          },
+        }),
+      ]);
+
+    return {
+      totalChildren,
+      activeChildren,
+      totalStoriesCompleted,
+      totalChallengesSolved,
+    };
   }
 }

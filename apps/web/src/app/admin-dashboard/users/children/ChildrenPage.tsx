@@ -15,6 +15,7 @@ import { FilterBar } from "../../_components/FilterBar";
 import { ConfirmDialog } from "../../_components/ConfirmDialog";
 import { ChildProfile, ProgressStatus } from "@shared/types";
 import { fetchChildrenAction } from "@/src/lib/progress-service/server-actions";
+import Link from "next/link";
 
 /**
  * Helper function to calculate stories completed from progress
@@ -24,7 +25,7 @@ function getStoriesCompleted(profile: ChildProfile): number {
   return new Set(
     profile.progress
       .filter((p) => p.status === ProgressStatus.COMPLETED)
-      .map((p) => p.storyId)
+      .map((p) => p.storyId),
   ).size;
 }
 
@@ -47,7 +48,7 @@ function getCurrentStreak(profile: ChildProfile): number {
     allCheckpoints.map((checkpoint) => {
       const date = new Date(checkpoint.pausedAt!);
       return date.toISOString().split("T")[0]; // YYYY-MM-DD format
-    })
+    }),
   );
 
   // Sort dates in descending order
@@ -82,20 +83,31 @@ function getCurrentStreak(profile: ChildProfile): number {
   return streak;
 }
 
-
-export default function ChildrenPage(
-  {childrenData} : { childrenData: { children: ChildProfile[]; pagination: { total: number; page: number; pageSize: number; hasMore: boolean } } }
-) {
+export default function ChildrenPage({
+  childrenData,
+}: {
+  childrenData: {
+    children: ChildProfile[];
+    pagination: {
+      total: number;
+      page: number;
+      pageSize: number;
+      hasMore: boolean;
+    };
+  };
+}) {
   // Data state
-  const [children, setChildren] = useState<ChildProfile[]>(childrenData.children);
+  const [children, setChildren] = useState<ChildProfile[]>(
+    childrenData.children,
+  );
   const [pagination, setPagination] = useState(childrenData.pagination);
-  
+
   // UI state
   const [searchTerm, setSearchTerm] = useState("");
   const [ageGroupFilter, setAgeGroupFilter] = useState("all");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  
+
   // Loading state
   const [isLoading, setIsLoading] = useState(false);
 
@@ -103,8 +115,8 @@ export default function ChildrenPage(
   const availableAgeGroups = useMemo(() => {
     const ageGroups = new Set<string>();
     children.forEach((profile) => {
-      if (profile.child?.ageGroup) {
-        ageGroups.add(profile.child.ageGroup);
+      if (profile.ageGroupName) {
+        ageGroups.add(profile.ageGroupName);
       }
     });
     return Array.from(ageGroups).sort();
@@ -122,7 +134,7 @@ export default function ChildrenPage(
 
   const handleDelete = () => {
     if (deletingId) {
-      setChildren((prev) => prev.filter((c) => c.id !== deletingId));
+      // setChildren((prev) => prev.filter((c) => c.id !== deletingId));
       toast.success("Child profile deleted");
       setDeleteConfirmOpen(false);
       setDeletingId(null);
@@ -170,7 +182,7 @@ export default function ChildrenPage(
     {
       key: "child",
       label: "Age Group",
-      render: (_, row) => <span>{row.child?.ageGroup || "N/A"}</span>,
+      render: (_, row) => <span>{row.ageGroupName || "N/A"}</span>,
       width: "10%",
     },
     {
@@ -182,7 +194,9 @@ export default function ChildrenPage(
     {
       key: "child",
       label: "Parent Email",
-      render: (_, row) => <span className="text-sm">{row.child?.parent?.email || "N/A"}</span>,
+      render: (_, row) => (
+        <span className="text-sm">{row.child?.parent?.email || "N/A"}</span>
+      ),
       width: "20%",
     },
     {
@@ -222,8 +236,6 @@ export default function ChildrenPage(
         </p>
       </div>
 
-
-
       <FilterBar
         searchPlaceholder="Search by name..."
         searchValue={searchTerm}
@@ -259,42 +271,44 @@ export default function ChildrenPage(
           </p>
         </div>
       ) : (
-          <DataTable<ChildProfile>
-            columns={columns}
-            data={filteredChildren}
-            pagination={pagination}
-            onPageChange={handlePageChange}
-            isLoading={isLoading}
-            actions={(child) => (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">
-                    •••
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+        <DataTable<ChildProfile>
+          columns={columns}
+          data={filteredChildren}
+          pagination={pagination}
+          onPageChange={handlePageChange}
+          isLoading={isLoading}
+          actions={(child) => (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  •••
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <Link href={`/child-dashboard/${child.childId}`} target="_blank">
                   <DropdownMenuItem className="cursor-pointer gap-2">
                     <TrendingUp className="h-4 w-4" />
                     <span>View Progress</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer">
+                </Link>
+                {/* <DropdownMenuItem className="cursor-pointer">
                     <Edit2 className="mr-2 h-4 w-4" />
                     <span>Edit Profile</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="cursor-pointer text-red-600"
-                    onClick={() => {
-                      setDeletingId(child.id);
-                      setDeleteConfirmOpen(true);
-                    }}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    <span>Delete</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          />
+                  </DropdownMenuItem> */}
+                <DropdownMenuItem
+                  className="cursor-pointer text-red-600"
+                  onClick={() => {
+                    setDeletingId(child.id);
+                    setDeleteConfirmOpen(true);
+                  }}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  <span>Delete</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        />
       )}
 
       <ConfirmDialog

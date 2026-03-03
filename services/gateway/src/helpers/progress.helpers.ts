@@ -1,4 +1,3 @@
-
 import { Request, Response } from "express";
 
 import axios from "axios";
@@ -16,9 +15,9 @@ import {
   ChallengeAttempt,
   StarEvent,
   SessionCheckpoint,
+  AdminDashboardStats,
   API_BASE_URL_V1,
 } from "@shared/types";
-
 
 const PROGRESS_SERVICE_URL =
   process.env.PROGRESS_SERVICE_URL || "http://localhost:3004";
@@ -224,7 +223,10 @@ export async function forwardToProgressService(
     });
 
     // If requesting /children endpoints, enhance with Auth Service data
-    if (basePath.includes(`${API_BASE_URL_V1}/children`) && profileResponse.status === 200) {
+    if (
+      basePath.includes(`${API_BASE_URL_V1}/children`) &&
+      profileResponse.status === 200
+    ) {
       try {
         // Get profiles and extract child IDs
         const profiles = profileResponse.data?.data || [];
@@ -1125,14 +1127,12 @@ export async function forwardSaveCheckpoint(
  */
 export async function forwardCreateNewCheckpoint(
   req: Request,
-  res: Response<
-    ApiResponse<SessionCheckpoint>
-  >,
+  res: Response<ApiResponse<SessionCheckpoint>>,
 ): Promise<void> {
   try {
     const { gameSessionId } = req.params;
 
-    if ( !gameSessionId) {
+    if (!gameSessionId) {
       res.status(400).json({
         success: false,
         error: {
@@ -1149,9 +1149,7 @@ export async function forwardCreateNewCheckpoint(
     });
 
     // Forward to Progress Service
-    const resumeResponse = await axios.post<
-      ApiResponse<SessionCheckpoint>
-    >(
+    const resumeResponse = await axios.post<ApiResponse<SessionCheckpoint>>(
       `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/progress/create-new-checkpoint/${gameSessionId}`,
       {
         headers: {
@@ -1228,9 +1226,7 @@ export async function forwardCreateNewCheckpoint(
  */
 export async function forwardPauseGameSession(
   req: Request,
-  res: Response<
-    ApiResponse<SessionCheckpoint>
-  >,
+  res: Response<ApiResponse<SessionCheckpoint>>,
 ): Promise<void> {
   try {
     const { gameSessionId } = req.params;
@@ -1252,9 +1248,7 @@ export async function forwardPauseGameSession(
     });
 
     // Forward to Progress Service
-    const pauseResponse = await axios.post<
-      ApiResponse<SessionCheckpoint>
-    >(
+    const pauseResponse = await axios.post<ApiResponse<SessionCheckpoint>>(
       `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/progress/pause/${gameSessionId}`,
       {},
       {
@@ -1325,7 +1319,6 @@ export async function forwardPauseGameSession(
     });
   }
 }
-
 
 /**
  * Complete a story for a game session
@@ -1754,8 +1747,7 @@ export async function forwardAllocateRoadmapToChild(
     logger.info("Roadmap allocated successfully", {
       childId,
       roadmapId,
-      allocatedRoadmapCount:
-        updatedChild.allocatedRoadmaps?.length || 0,
+      allocatedRoadmapCount: updatedChild.allocatedRoadmaps?.length || 0,
     });
 
     res.status(200).json({
@@ -1773,6 +1765,189 @@ export async function forwardAllocateRoadmapToChild(
       error: {
         code: "INTERNAL_ERROR",
         message: "Failed to allocate roadmap",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+/**
+ * Get comprehensive admin dashboard statistics
+ * Orchestrates Content, Auth, and Progress services to aggregate metrics:
+ * - Content counts: age groups, roadmaps, worlds, stories, chapters, challenges
+ * - User counts: total parents
+ * - Child metrics: total children, active children, stories completed, challenges solved
+ */
+export async function forwardGetDashboardStats(
+  req: Request,
+  res: Response<ApiResponse<AdminDashboardStats>>,
+): Promise<void> {
+  try {
+    logger.info("Fetching admin dashboard statistics");
+
+    // Step 1: Fetch content service counts
+    // Get counts of age groups, roadmaps, worlds, stories, chapters, challenges
+    let contentCounts = {
+      totalAgeGroups: 0,
+      totalRoadmaps: 0,
+      totalWorlds: 0,
+      totalStories: 0,
+      totalChapters: 0,
+      totalChallenges: 0,
+    };
+
+    try {
+      logger.debug("Fetching content inventory counts from Content Service");
+
+      // Single endpoint call to get all content counts
+      const contentStatsRes = await axios.get<
+        ApiResponse<{
+          ageGroupsCount: number;
+          roadmapsCount: number;
+          worldsCount: number;
+          storiesCount: number;
+          chaptersCount: number;
+          challengesCount: number;
+        }>
+      >(`${CONTENT_SERVICE_URL}${API_BASE_URL_V1}/stats/content-overview`, {
+        headers: { "Content-Type": "application/json" },
+        validateStatus: () => true,
+      });
+
+      if (contentStatsRes.status === 200 && contentStatsRes.data?.data) {
+        const data = contentStatsRes.data.data;
+        contentCounts.totalAgeGroups = data.ageGroupsCount || 0;
+        contentCounts.totalRoadmaps = data.roadmapsCount || 0;
+        contentCounts.totalWorlds = data.worldsCount || 0;
+        contentCounts.totalStories = data.storiesCount || 0;
+        contentCounts.totalChapters = data.chaptersCount || 0;
+        contentCounts.totalChallenges = data.challengesCount || 0;
+      }
+
+      logger.debug("Content inventory counts retrieved", contentCounts);
+    } catch (contentError) {
+      logger.warn("Error fetching content counts from Content Service", {
+        error: String(contentError),
+      });
+      // Continue with 0 values
+    }
+
+    // Step 2: Fetch parent count from Auth Service
+    let totalParents = 0;
+
+    try {
+      logger.debug("Fetching total parents count from Auth Service");
+
+      const parentsRes = await axios.get<ApiResponse<{ count: number }>>(
+        `${AUTH_SERVICE_URL}${API_BASE_URL_V1}/parents/count`,
+        {
+          params: { limit: 1, offset: 0 },
+          headers: {
+            "Content-Type": "application/json",
+            ...(req.headers.authorization && {
+              Authorization: req.headers.authorization,
+            }),
+          },
+          validateStatus: () => true,
+        },
+      );
+
+      if (parentsRes.status === 200 && parentsRes.data?.data?.count !== undefined) {
+        totalParents = parentsRes.data.data.count;
+      }
+
+      logger.debug("Parent count retrieved", { totalParents });
+    } catch (authError) {
+      logger.warn("Error fetching parents count from Auth Service", {
+        error: String(authError),
+      });
+    }
+
+    // Step 3: Fetch child statistics from Progress Service
+    // Gets totalChildren, activeChildren, totalStoriesCompleted, totalChallengesSolved
+    let totalChildren = 0;
+    let activeChildren = 0;
+    let totalStoriesCompleted = 0;
+    let totalChallengesSolved = 0;
+
+    try {
+      logger.debug(
+        "Fetching child statistics from Progress Service",
+      );
+
+      // Fetch aggregated children stats
+      const statsRes = await axios.get<
+        ApiResponse<{
+          totalChildren: number;
+          activeChildren: number;
+          totalStoriesCompleted: number;
+          totalChallengesSolved: number;
+        }>
+      >(
+        `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/children/stats`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            ...(req.headers.authorization && {
+              Authorization: req.headers.authorization,
+            }),
+          },
+          validateStatus: () => true,
+        },
+      );
+
+      if (statsRes.status === 200 && statsRes.data?.data) {
+        const childStats = statsRes.data.data;
+        totalChildren = childStats.totalChildren || 0;
+        activeChildren = childStats.activeChildren || 0;
+        totalStoriesCompleted = childStats.totalStoriesCompleted || 0;
+        totalChallengesSolved = childStats.totalChallengesSolved || 0;
+      }
+
+      logger.debug("Child statistics retrieved", {
+        totalChildren,
+        activeChildren,
+        totalStoriesCompleted,
+        totalChallengesSolved,
+      });
+    } catch (progressError) {
+      logger.warn("Error fetching child statistics from Progress Service", {
+        error: String(progressError),
+      });
+    }
+
+    // Compile final statistics
+    const stats: AdminDashboardStats = {
+      activeChildren,
+      totalChildren,
+      totalParents,
+      totalAgeGroups: contentCounts.totalAgeGroups,
+      totalRoadmaps: contentCounts.totalRoadmaps,
+      totalWorlds: contentCounts.totalWorlds,
+      totalStories: contentCounts.totalStories,
+      totalChapters: contentCounts.totalChapters,
+      totalChallenges: contentCounts.totalChallenges,
+      totalStoriesCompleted,
+      totalChallengesSolved,
+    };
+
+    logger.info("Admin dashboard statistics compiled successfully", stats);
+
+    res.status(200).json({
+      success: true,
+      data: stats,
+      timestamp: new Date(),
+    });
+  } catch (error) {
+    logger.error("Get dashboard stats forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Failed to fetch dashboard statistics",
       },
       timestamp: new Date(),
     });

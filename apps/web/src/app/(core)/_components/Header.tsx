@@ -8,15 +8,18 @@ import { ModeToggle } from "@/src/components/shared/ModeToggle";
 import { useSession } from "next-auth/react";
 import Profile from "@/src/components/shared/Profile";
 import { LoginForm } from "@/src/components/shared/login-form";
+import { RoleType } from "@shared/types";
 
-const Header = () => {
+const Header = (
+  { userRole }: { userRole: RoleType | undefined }
+) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
   const navItems = [
     {
-      label: "Parent Dashboard",
-      href: "/parent-dashboard",
+      label: userRole === RoleType.PARENT ? "Parent Dashboard" : "Admin Dashboard",
+      href: userRole === RoleType.PARENT ? "/parent-dashboard" : "/admin-dashboard",
     },
     {
       label: "Roadmaps Library",

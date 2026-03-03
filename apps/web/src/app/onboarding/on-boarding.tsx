@@ -128,6 +128,9 @@ export default function ParentOnboarding({
         ?.filter((roadmap) => themeIds.includes(roadmap.themeId))
         .map((roadmap) => roadmap.id) || [];
 
+      // Extract the selected age group's name for payload
+      const ageGroupName = selectedAgeGroupData?.name || "";
+
       // Prepare request payload
       const payload = {
         session,
@@ -135,6 +138,7 @@ export default function ParentOnboarding({
         parentId: user.id,
         name: formData.childBasic.childName,
         ageGroupId,
+        ageGroupName,
         themeIds,
         allocatedRoadmaps,
       };

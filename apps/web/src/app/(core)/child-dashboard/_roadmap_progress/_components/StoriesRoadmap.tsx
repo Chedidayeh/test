@@ -5,16 +5,18 @@ import { motion } from "motion/react";
 import { BookOpen, Lock, Zap } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import Link from "next/link";
-import { World, ChildProfile, Roadmap } from "@shared/types";
+import { World, ChildProfile, Roadmap, RoleType } from "@shared/types";
 import { getEnrichedStoriesForWorld } from "../../_lib/helpers";
 
 interface StoriesRoadmapProps {
+  userRole: RoleType;
   selectedWorld: World;
   roadmap: Roadmap;
   childProfile: ChildProfile;
 }
 
 export default function StoriesRoadmap({
+  userRole,
   selectedWorld,
   roadmap,
   childProfile,
@@ -35,7 +37,9 @@ export default function StoriesRoadmap({
 
     // If this is not the first story in the world, check if previous story is completed
     if (story.order > 1) {
-      const previousStory = enrichedStories.find((s) => s.order === story.order - 1);
+      const previousStory = enrichedStories.find(
+        (s) => s.order === story.order - 1,
+      );
       if (previousStory && previousStory.status !== "completed") {
         // Lock this story if previous in same world is not completed
         return { ...story, status: "locked" as const };
@@ -82,9 +86,7 @@ export default function StoriesRoadmap({
             >
               {/* Background Image */}
               <img
-                src={
-                  roadmap.theme.imageUrl
-                }
+                src={roadmap.theme.imageUrl}
                 alt={story.name}
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
               />
@@ -137,30 +139,37 @@ export default function StoriesRoadmap({
                     </div>
                   </div>
                 </div>
-
                 {/* Centered Buttons (Hidden until hover) */}
-                <div className="max-w-max mx-auto opacity-0 scale-95 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200">
-                  {story.status === "completed" && (
-                    <Link href={`/story-replaying-interface/${story.id}?childId=${childProfile.child.id}`}>
-                      <Button variant={"accent"} className="w-max">
-                        Read again
-                      </Button>
-                    </Link>
-                  )}
 
-                  {story.status === "in_progress" && (
-                    <Link href={`/story-reading-interface/${story.id}?childId=${childProfile.child.id}`}>
-                      <Button className="w-max">Continue Reading</Button>
-                    </Link>
-                  )}
+                {userRole === RoleType.PARENT && (
+                  <div className="max-w-max mx-auto opacity-0 scale-95 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200">
+                    {story.status === "completed" && (
+                      <Link
+                        href={`/story-replaying-interface/${story.id}?childId=${childProfile.child.id}`}
+                      >
+                        <Button variant={"accent"} className="w-max">
+                          Read again
+                        </Button>
+                      </Link>
+                    )}
 
-                  {story.status === "not_started" && (
-                    <Link href={`/story-reading-interface/${story.id}?childId=${childProfile.child.id}`}>
-                      <Button className="w-max">Start Reading</Button>
-                    </Link>
-                  )}
+                    {story.status === "in_progress" && (
+                      <Link
+                        href={`/story-reading-interface/${story.id}?childId=${childProfile.child.id}`}
+                      >
+                        <Button className="w-max">Continue Reading</Button>
+                      </Link>
+                    )}
 
-                </div>
+                    {story.status === "not_started" && (
+                      <Link
+                        href={`/story-reading-interface/${story.id}?childId=${childProfile.child.id}`}
+                      >
+                        <Button className="w-max">Start Reading</Button>
+                      </Link>
+                    )}
+                  </div>
+                )}
 
                 {/* Bottom: Title and Description */}
                 <div>

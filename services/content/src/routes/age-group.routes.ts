@@ -3,6 +3,7 @@ import { ageGroupController } from "../controllers/age-group.controller";
 
 const router = Router();
 
+
 // GET all age groups (only active ones)
 router.get("/", (req, res) => ageGroupController.getAgeGroups(req, res));
 

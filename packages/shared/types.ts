@@ -271,6 +271,7 @@ export interface ChildProfile {
   childId: string; // References Auth.Child.id
   child: Child;
   ageGroupId: string; // References Content.AgeGroup.id
+  ageGroupName: string; // Denormalized for easy access
   favoriteThemes: string[]; // References Content.Theme.id
   allocatedRoadmaps: string[]; // List of Roadmap IDs allocated to this child
   currentLevel: number;
@@ -504,6 +505,24 @@ export interface PaginationMeta {
 export interface PaginatedResponse<T> {
   items: T[];
   pagination: PaginationMeta;
+}
+
+/**
+ * Admin Dashboard Statistics
+ * Aggregates key metrics from across all services for admin overview
+ */
+export interface AdminDashboardStats {
+  activeChildren: number; // Children with activity in the last 7 days
+  totalChildren: number; // Total child profiles in the system
+  totalParents: number; // Total parent users in the system
+  totalAgeGroups: number; // Total age groups configured
+  totalRoadmaps: number; // Total roadmaps across all age groups
+  totalWorlds: number; // Total worlds across all roadmaps
+  totalStories: number; // Total stories across all worlds
+  totalChapters: number; // Total chapters across all stories
+  totalChallenges: number; // Total challenges across all chapters
+  totalStoriesCompleted: number; // Total story completions across all children
+  totalChallengesSolved: number; // Total correctly solved challenges across all children
 }
 
 // ============================================================================

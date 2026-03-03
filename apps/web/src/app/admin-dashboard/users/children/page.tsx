@@ -19,6 +19,7 @@ export default async function page() {
       hasMore: false,
     },
   };
+  
 
   return <ChildrenPage childrenData={normalizedData} />;
 }

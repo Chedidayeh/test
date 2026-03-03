@@ -404,5 +404,62 @@ export class AgeGroupController {
       sendError(res, String(error), 500, "Failed to validate age group readiness");
     }
   }
+
+  /**
+   * Get content overview statistics
+   * Returns counts of all content entities: age groups, roadmaps, worlds, stories, chapters, challenges
+   */
+  async getContentOverviewStats(
+    req: Request,
+    res: Response<
+      ApiResponse<{
+        ageGroupsCount: number;
+        roadmapsCount: number;
+        worldsCount: number;
+        storiesCount: number;
+        chaptersCount: number;
+        challengesCount: number;
+      }>
+    >,
+  ): Promise<void> {
+    try {
+      logger.info("Get content overview stats request");
+
+      // Query counts from all content tables in parallel
+      const [
+        ageGroupsCount,
+        roadmapsCount,
+        worldsCount,
+        storiesCount,
+        chaptersCount,
+        challengesCount,
+      ] = await Promise.all([
+        prisma.ageGroup.count(),
+        prisma.roadmap.count(),
+        prisma.world.count(),
+        prisma.story.count(),
+        prisma.chapter.count(),
+        prisma.challenge.count(),
+      ]);
+
+      const stats = {
+        ageGroupsCount,
+        roadmapsCount,
+        worldsCount,
+        storiesCount,
+        chaptersCount,
+        challengesCount,
+      };
+
+      logger.debug("Content overview stats retrieved", stats);
+
+      sendSuccess(res, stats, 200);
+    } catch (error) {
+      logger.error("Error in getContentOverviewStats controller", {
+        error: String(error),
+      });
+      sendError(res, String(error), 500, "Failed to fetch content overview stats");
+    }
+  }
 }
 export const ageGroupController = new AgeGroupController();

@@ -7,7 +7,7 @@ import {
   AvatarImage,
 } from "@/src/components/ui/avatar";
 import { Button } from "@/src/components/ui/button";
-import type { ParentUser, AgeGroup } from "@shared/types";
+import { ParentUser, AgeGroup, RoleType } from "@shared/types";
 import type { ClassValue } from "clsx";
 import { clsx } from "clsx";
 import { Plus } from "lucide-react";
@@ -26,6 +26,7 @@ interface ChildSidebarProps {
   onChildSelect: (childId: string) => void;
   ageGroups: AgeGroup[];
   onChildAdded: () => void;
+  userRole: RoleType;
 }
 
 export default function ChildSidebar({
@@ -35,6 +36,7 @@ export default function ChildSidebar({
   onChildSelect,
   ageGroups,
   onChildAdded,
+  userRole,
 }: ChildSidebarProps) {
   const children = parentData?.children || [];
   const [addChildDialogOpen, setAddChildDialogOpen] = useState(false);
@@ -84,14 +86,13 @@ export default function ChildSidebar({
             </button>
           ))}
         </div>
+        {userRole === RoleType.PARENT && (
+          <Button variant="outline" onClick={() => setAddChildDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-1" />
+            Add Child
+          </Button>
+        )}
       </div>
-      <Button
-        variant="outline"
-        onClick={() => setAddChildDialogOpen(true)}
-      >
-        <Plus className="h-4 w-4 mr-1" />
-        Add Child
-      </Button>
 
       <AddChildDialog
         open={addChildDialogOpen}

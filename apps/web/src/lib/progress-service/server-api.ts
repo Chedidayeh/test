@@ -24,6 +24,7 @@ import type {
   StarEvent,
   ChallengeStatus,
   SessionCheckpoint,
+  AdminDashboardStats,
 } from "@shared/types";
 import { apiRequest, buildQueryString, isApiError } from "../helpers";
 
@@ -735,4 +736,73 @@ export async function allocateRoadmapToChild(
   );
 
   return response.data as ChildProfile;
+}
+
+/**
+ * Get comprehensive dashboard statistics for admin overview
+ * Gateway orchestrates Auth, Progress, and Content services to aggregate metrics
+ *
+ * Statistics include:
+ * - Active children (those with activity in past 7 days)
+ * - User counts (total children, parents)
+ * - Content inventory (age groups, worlds, stories, chapters, challenges)
+ * - Completion metrics (stories completed, challenges solved)
+ *
+ * @returns AdminDashboardStats with all dashboard metrics
+ *
+ * @example
+ * const stats = await getDashboardStats();
+ * console.log(`${stats.totalChildren} children, ${stats.activeChildren} active this week`);
+ */
+export async function getDashboardStats(): Promise<AdminDashboardStats> {
+  console.log("[Progress Service API] Fetching admin dashboard statistics");
+
+  const defaultStats: AdminDashboardStats = {
+    activeChildren: 0,
+    totalChildren: 0,
+    totalParents: 0,
+    totalAgeGroups: 0,
+    totalRoadmaps: 0,
+    totalWorlds: 0,
+    totalStories: 0,
+    totalChapters: 0,
+    totalChallenges: 0,
+    totalStoriesCompleted: 0,
+    totalChallengesSolved: 0,
+  };
+
+  try {
+    // Call consolidated gateway endpoint
+    // Gateway handles orchestration with Auth, Progress, and Content services
+    const response = await apiRequest<ApiResponse<AdminDashboardStats>>(
+      `/stats/admin-dashboard`,
+    );
+
+    if (isApiError(response)) {
+      console.warn(
+        "[Progress Service API] Failed to fetch dashboard stats:",
+        response.error.message,
+      );
+      return defaultStats;
+    }
+
+    if (!response.success) {
+      console.warn(
+        "[Progress Service API] Failed to fetch dashboard stats: API returned success=false",
+      );
+      return defaultStats;
+    }
+
+    console.log("[Progress Service API] Dashboard stats fetched successfully", {
+      totalChildren: response.data?.totalChildren,
+      activeChildren: response.data?.activeChildren,
+      totalRoadmaps: response.data?.totalRoadmaps,
+      totalChallenges: response.data?.totalChallenges,
+    });
+
+    return response.data || defaultStats;
+  } catch (error) {
+    console.error("[Progress Service API] Error fetching dashboard stats:", error);
+    return defaultStats;
+  }
 }

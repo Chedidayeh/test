@@ -1,23 +1,15 @@
 /**
  * Auth Service Server API
- * 
+ *
  * RSC (React Server Component) layer for frontend to communicate with Auth Service
  * through the Gateway. All requests are authenticated via JWT from NextAuth session.
- * 
+ *
  * Pattern follows content-service/server-api.ts for consistency.
  */
 
-import type {
-  ApiResponse,
-  Child,
-  User,
-} from "@shared/types";
+import type { ApiResponse, Child, User } from "@shared/types";
 import { getBadgeByLevel } from "../content-service/server-api";
 import { apiRequest, buildQueryString, isApiError } from "../helpers";
-
-
-
-
 
 interface PaginationParams {
   limit?: number;
@@ -38,7 +30,7 @@ export async function loginUser(payload: { email: string; password: string }) {
     {
       method: "POST",
       body: JSON.stringify(payload),
-    }
+    },
   );
 
   if (isApiError(response)) {
@@ -56,16 +48,16 @@ export async function registerUser(payload: {
 }) {
   console.log("[Auth Service API] Registering user:", payload.email);
 
-  const response = await apiRequest<ApiResponse<User>>(
-    `/auth/register`,
-    {
-      method: "POST",
-      body: JSON.stringify(payload),
-    }
-  );
+  const response = await apiRequest<ApiResponse<User>>(`/auth/register`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 
   if (isApiError(response)) {
-    console.warn("[Auth Service API] Registration failed:", response.error.message);
+    console.warn(
+      "[Auth Service API] Registration failed:",
+      response.error.message,
+    );
     return { success: false, error: response.error.message };
   }
 
@@ -83,11 +75,14 @@ export async function getParents(params?: PaginationParams) {
   console.log("[Auth Service API] Fetching parents with params:", params);
 
   const response = await apiRequest<ApiResponse<User[]>>(
-    `/auth/parents${queryString}`
+    `/auth/parents${queryString}`,
   );
 
   if (isApiError(response)) {
-    console.warn("[Auth Service API] Failed to fetch parents:", response.error.message);
+    console.warn(
+      "[Auth Service API] Failed to fetch parents:",
+      response.error.message,
+    );
     return {
       parents: [],
       pagination: undefined,
@@ -95,7 +90,9 @@ export async function getParents(params?: PaginationParams) {
   }
 
   if (!response.success) {
-    console.warn("[Auth Service API] Failed to fetch parents: API returned success=false");
+    console.warn(
+      "[Auth Service API] Failed to fetch parents: API returned success=false",
+    );
     return {
       parents: [],
       pagination: undefined,
@@ -115,21 +112,25 @@ export async function getParents(params?: PaginationParams) {
   };
 }
 
-
 export async function getParentById(parentId: string) {
   console.log("[Auth Service API] Fetching parent by ID:", parentId);
 
   const response = await apiRequest<ApiResponse<User>>(
-    `/auth/parent/${parentId}`
+    `/auth/parent/${parentId}`,
   );
 
   if (isApiError(response)) {
-    console.warn("[Auth Service API] Failed to fetch parent:", response.error.message);
+    console.warn(
+      "[Auth Service API] Failed to fetch parent:",
+      response.error.message,
+    );
     return null;
   }
 
   if (!response.success) {
-    console.warn("[Auth Service API] Failed to fetch parent: API returned success=false");
+    console.warn(
+      "[Auth Service API] Failed to fetch parent: API returned success=false",
+    );
     return null;
   }
 
@@ -147,6 +148,7 @@ export async function createChildProfile(payload: {
   parentId: string;
   name: string;
   ageGroupId: string;
+  ageGroupName: string;
   themeIds: string[];
   allocatedRoadmaps: string[];
 }) {
@@ -155,24 +157,25 @@ export async function createChildProfile(payload: {
   const badge = await getBadgeByLevel(1); // Get badge ID for level 1 (new child)
   console.log("[Auth Service API] Retrieved badge ID for new child:", badge);
 
-  const response = await apiRequest<ApiResponse<Child>>(
-    `/auth/children`,
-    {
-      method: "POST",
-      body: JSON.stringify({ ...payload, badgeId: badge?.id }),
-    }
-  );
+  const response = await apiRequest<ApiResponse<Child>>(`/auth/children`, {
+    method: "POST",
+    body: JSON.stringify({ ...payload, badgeId: badge?.id }),
+  });
 
   if (isApiError(response)) {
-    console.warn("[Auth Service API] Failed to create child profile:", response.error.message);
+    console.warn(
+      "[Auth Service API] Failed to create child profile:",
+      response.error.message,
+    );
     return null;
   }
 
   if (!response.success) {
-    console.warn("[Auth Service API] Failed to create child profile: API returned success=false");
+    console.warn(
+      "[Auth Service API] Failed to create child profile: API returned success=false",
+    );
     return null;
   }
 
   return response.data || null;
 }
-

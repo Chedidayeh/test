@@ -18,14 +18,7 @@ export default async function page() {
   const ageGroups = await getAgeGroups();
   const roadmaps = ageGroups.map((ageGroup) => ageGroup.roadmaps).flat();
   const session = await auth();
-  console.log("Session data in Roadmaps Library page:", session);
-  if (!session) {
-    redirect("/");
-  }
-  const parentId = session.user.id;
-  if (!parentId) {
-    redirect("/");
-  }
+  const parentId = session!.user.id;
   const parentData = await getParentWithProfiles(parentId).catch(() => null);
   const children = parentData?.children || [];
   

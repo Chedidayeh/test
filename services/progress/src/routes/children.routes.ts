@@ -13,6 +13,11 @@ router.get("/children", (req, res) =>
   ChildrenController.getAllChildren(req, res),
 );
 
+// Get children statistics (activeChildren, totalStoriesCompleted, totalChallengesSolved)
+router.get("/children/stats", (req, res) =>
+  ChildrenController.getChildrenStats(req, res),
+);
+
 // Get specific child by ID
 router.get("/children/:id", (req, res) =>
   ChildrenController.getChildById(req, res),

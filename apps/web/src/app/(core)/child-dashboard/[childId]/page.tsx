@@ -10,6 +10,7 @@ import {
 } from "@/src/lib/content-service/server-api";
 import { redirect } from "next/navigation";
 import { ProgressStatus } from "@shared/types";
+import { auth } from "@/src/auth";
 
 export const metadata: Metadata = {
   title: "My Dashboard - Readly",
@@ -22,6 +23,10 @@ export default async function ChildDashboardPage({
 }: {
   params: Promise<{ childId: string }>;
 }) {
+  const session = await auth()
+
+  const userRole = session?.user.role;
+
   const { childId } = await params;
   const childData = await getChildById(childId);
   if (!childData) {
@@ -47,6 +52,7 @@ export default async function ChildDashboardPage({
           child={childData}
           roadmaps={roadmaps}
           currentProgresses={currentProgresses}
+          userRole={userRole!}
         />
       </div>
     </>

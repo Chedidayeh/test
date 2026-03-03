@@ -5,7 +5,7 @@ import ChildSidebar from "./ChildSidebar";
 import DashboardTabs from "./DashboardTabs";
 import OverviewTab from "./OverviewTab";
 import AchievementsTab from "./AchievementsTab";
-import { Badge, ParentUser, AgeGroup } from "@shared/types";
+import { Badge, ParentUser, AgeGroup, RoleType } from "@shared/types";
 import TimeAnalyticsTab from "./TimeAnalyticsTab";
 import RiddleAnalyticsTab from "./RiddleAnalyticsTab";
 import { refetchParentDataAction } from "@/src/lib/progress-service/server-actions";
@@ -17,11 +17,13 @@ export default function ParentDashboardInteractive({
   badges,
   ageGroups,
   session,
+  userRole,
 }: {
   parentData: ParentUser | null | undefined;
   badges: Badge[];
   ageGroups: AgeGroup[];
   session: Session;
+  userRole : RoleType
 }) {
   const [parentData, setParentData] = useState(initialParentData);
   const children = parentData?.children || [];
@@ -72,6 +74,7 @@ export default function ParentDashboardInteractive({
           onChildSelect={setSelectedChildId}
           ageGroups={ageGroups}
           onChildAdded={handleChildAdded}
+          userRole={userRole}
         />
 
         {/* Main Content */}

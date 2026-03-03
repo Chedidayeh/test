@@ -5,6 +5,7 @@ import {
   Plus,
   Edit,
   Trash2,
+  Eye,
   Settings,
   Map,
   Palette,
@@ -80,6 +81,8 @@ export function RoadmapsContent({
   const [editingRoadmap, setEditingRoadmap] = useState<Roadmap | null>(null);
   const [roadmapToDelete, setRoadmapToDelete] = useState<Roadmap | null>(null);
   const [isRoadmapLoading, setIsRoadmapLoading] = useState(false);
+  // View roadmap details
+  const [viewRoadmap, setViewRoadmap] = useState<Roadmap | null>(null);
 
   // Management dialog state
   const [isAgeGroupsDialogOpen, setIsAgeGroupsDialogOpen] = useState(false);
@@ -373,7 +376,7 @@ export function RoadmapsContent({
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Roadmaps Management</h1>
+          <h1 className="text-3xl font-medium">Roadmaps Management</h1>
           <p className="text-slate-500 mt-1">
             Manage age groups, themes, worlds, and roadmaps
           </p>
@@ -425,22 +428,22 @@ export function RoadmapsContent({
                 className="overflow-hidden border bg-card rounded-xl flex flex-col shadow-sm hover:shadow-md transition-all "
               >
                 {/* Age Group Header */}
-                <div className="px-6 py-5 border-b ">
+                <div className="px-6 py-3 border-b ">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <h2 className="text-lg font-bold ">{ageGroup.name}</h2>
+                      <h2 className="text-lg font-medium ">{ageGroup.name}</h2>
                     </div>
                     <span
-                      className={`inline-block px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                      className={`inline-block px-3 py-1.5 rounded-full text-sm  font-medium transition-all ${
                         ageGroup.status === "ACTIVE"
-                          ? "bg-green-100 text-green-700 ring-1 ring-green-200"
-                          : "bg-slate-100 text-slate-700 ring-1 ring-slate-200"
+                          ? "bg-green-100 text-green-500 ring-1 ring-green-200"
+                          : "bg-slate-100 text-slate-500 ring-1 ring-slate-200"
                       }`}
                     >
                       {ageGroup.status === "ACTIVE" ? "● Active" : "○ Inactive"}
                     </span>
                   </div>
-                  <p className="text-sm text-slate-600 font-medium">
+                  <p className=" text-slate-500 font-medium">
                     {ageGroupRoadmaps.length} roadmap
                     {ageGroupRoadmaps.length !== 1 ? "s" : ""}
                   </p>
@@ -471,16 +474,14 @@ export function RoadmapsContent({
                                   />
                                 )}
                                 <div className="flex-1 min-w-0">
-                                  <p className="font-semibold  text-sm">
-                                    {theme?.name || "Unknown Theme"}
+                                  <p className="font-medium  ">
+                                    {roadmap.title ||
+                                      theme?.name ||
+                                      "Unknown Theme"}
                                   </p>
                                   <div className="flex items-center gap-2 mt-1.5">
-                                    <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                                    <span className="inline-block px-2 py-0.5 text-sm rounded-full  font-medium bg-purple-100 text-purple-500">
                                       {roadmap.readingLevel}
-                                    </span>
-                                    <span className="text-xs text-slate-500 font-medium">
-                                      {roadmapWorlds.length} world
-                                      {roadmapWorlds.length !== 1 ? "s" : ""}
                                     </span>
                                   </div>
                                 </div>
@@ -490,16 +491,26 @@ export function RoadmapsContent({
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 w-8 p-0 hover:bg-blue-100 hover:text-blue-600 transition-colors"
+                                className="h-8 w-8 p-0 hover:bg-slate-100 hover:text-slate-800 transition-colors"
+                                onClick={() => setViewRoadmap(roadmap)}
+                                title="View roadmap"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 hover:bg-blue-100 hover:text-blue-500 transition-colors"
                                 onClick={() => setEditingRoadmap(roadmap)}
                                 title="Edit roadmap"
                               >
                                 <Edit className="w-4 h-4" />
                               </Button>
+
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600 transition-colors"
+                                className="h-8 w-8 p-0 hover:bg-red-100 hover:text-red-500 transition-colors"
                                 onClick={() => setRoadmapToDelete(roadmap)}
                                 title="Delete roadmap"
                               >
@@ -507,10 +518,13 @@ export function RoadmapsContent({
                               </Button>
                             </div>
                           </div>
-
+                          <span className=" text-slate-500 font-medium">
+                            {roadmapWorlds.length} world
+                            {roadmapWorlds.length !== 1 ? "s" : ""}
+                          </span>
                           {/* Worlds List */}
                           {roadmapWorlds.length > 0 ? (
-                            <div className="space-y-1.5 text-xs mt-3 pt-3 border-t ">
+                            <div className="space-y-1.5  mt-3 pt-3 border-t ">
                               {roadmapWorlds.map((world) => (
                                 <div
                                   key={world.id}
@@ -526,7 +540,7 @@ export function RoadmapsContent({
                               ))}
                             </div>
                           ) : (
-                            <p className="text-xs text-slate-400 italic pt-2 mt-2 border-t ">
+                            <p className=" text-slate-400 italic pt-2 mt-2 border-t ">
                               No worlds yet
                             </p>
                           )}
@@ -540,7 +554,7 @@ export function RoadmapsContent({
                       <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
                         <Map className="w-8 h-8 text-slate-400" />
                       </div>
-                      <p className="text-slate-500 text-sm mb-4 font-medium">
+                      <p className="text-slate-500  mb-4 font-medium">
                         No roadmaps yet
                       </p>
                       <Button
@@ -563,12 +577,12 @@ export function RoadmapsContent({
           <div className="w-16 h-16 rounded-full  border-2  flex items-center justify-center mx-auto mb-4">
             <Users className="w-8 h-8 text-slate-400" />
           </div>
-          <p className="text-slate-600 font-medium mb-4">
+          <p className="text-slate-500 font-medium mb-4">
             No age groups available
           </p>
           <Button
             onClick={() => setIsAgeGroupsDialogOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
+            className="bg-blue-500 hover:bg-blue-500 text-white"
           >
             <Plus className="w-4 h-4 mr-2" /> Create Age Group
           </Button>
@@ -590,7 +604,7 @@ export function RoadmapsContent({
             <DialogTitle className="text-2xl">
               {editingRoadmap ? "Edit Roadmap" : "Create Roadmap"}
             </DialogTitle>
-            <DialogDescription className="text-base text-slate-600">
+            <DialogDescription className="text-base text-slate-500">
               {editingRoadmap
                 ? "Update the roadmap configuration (age group, theme, reading level)"
                 : "Create a new roadmap with age group, theme, and reading level"}
@@ -630,7 +644,7 @@ export function RoadmapsContent({
           <AlertDialogTitle className="text-xl">
             Delete Roadmap?
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-base text-slate-600">
+          <AlertDialogDescription className="text-base text-slate-500">
             Are you sure you want to delete this roadmap? This action cannot be
             undone and will remove all associated data.
           </AlertDialogDescription>
@@ -642,7 +656,7 @@ export function RoadmapsContent({
               onClick={() =>
                 roadmapToDelete && handleDeleteRoadmap(roadmapToDelete)
               }
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="bg-red-500 hover:bg-red-500 text-white"
               disabled={isRoadmapLoading}
             >
               {isRoadmapLoading ? "Deleting..." : "Delete"}
@@ -683,6 +697,88 @@ export function RoadmapsContent({
         onWorldUpdate={handleUpdateWorld}
         onWorldDelete={handleDeleteWorld}
       />
+
+      {/* View Roadmap Details Dialog */}
+      <Dialog
+        open={!!viewRoadmap}
+        onOpenChange={(open) => !open && setViewRoadmap(null)}
+      >
+        <DialogContent className="max-w-xl overflow-y-auto rounded-xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">Roadmap Details</DialogTitle>
+            <DialogDescription className="text-base text-slate-500">
+              Details for the selected roadmap
+            </DialogDescription>
+          </DialogHeader>
+
+          {viewRoadmap && (
+            <div className="space-y-4 py-2">
+              <div>
+                <h3 className="text-lg font-medium">{viewRoadmap.title}</h3>
+                <p className="text-sm text-slate-500">
+                  {viewRoadmap.ageGroup?.name || "No age group"} •{" "}
+                  {viewRoadmap.readingLevel}
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-medium text-sm text-slate-500 mb-2">
+                  Theme
+                </h4>
+                <div className="flex flex-col items-center gap-3">
+                  {viewRoadmap.theme?.imageUrl && (
+                    <img
+                      src={viewRoadmap.theme.imageUrl}
+                      alt={viewRoadmap.theme.name}
+                      className="w-72 rounded-md object-cover ring-1 ring-slate-200"
+                    />
+                  )}
+                  <div>
+                    <div className="font-medium">
+                      {viewRoadmap.theme?.name || "No theme"}
+                    </div>
+                    <div className="text-sm text-slate-500">
+                      {viewRoadmap.theme?.description}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-medium text-sm text-slate-500 mb-2">
+                  Worlds
+                </h4>
+                {worlds.filter((w) => w.roadmapId === viewRoadmap.id).length >
+                0 ? (
+                  <div className="space-y-2">
+                    {worlds
+                      .filter((w) => w.roadmapId === viewRoadmap.id)
+                      .map((w) => (
+                        <div
+                          key={w.id}
+                          className="flex items-center justify-between"
+                        >
+                          <div className="font-medium">{w.name}</div>
+                          <div className="text-sm text-slate-500">
+                            {w.stories?.length || 0} stories
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                ) : (
+                  <div className="text-slate-500 italic">
+                    No worlds added to this roadmap yet.
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end">
+                <Button onClick={() => setViewRoadmap(null)}>Close</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

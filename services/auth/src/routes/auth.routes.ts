@@ -14,6 +14,7 @@ router.post("/login-child", (req, res) => authController.loginChild(req, res));
 router.post("/verify-token", (req, res) => authController.verifyToken(req, res));
 
 // Admin/Protected endpoints (protected - require JWT, user context passed via headers)
+router.get("/parents/count", (req, res) => authController.getParentsCount(req, res));
 router.get("/parents", (req, res) => authController.getParents(req, res));
 router.get("/children", (req, res) => authController.getChildren(req, res));
 router.get("/children/:id", (req, res) => authController.getChildById(req, res));

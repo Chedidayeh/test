@@ -126,7 +126,7 @@ export default function AddChildDialog({
         ?.filter((roadmap) => themeIds.includes(roadmap.themeId))
         .map((roadmap) => roadmap.id) || [];
 
-
+      const ageGroupName = selectedAgeGroupData?.name || "N/A";
 
       const payload = {
         session,
@@ -134,6 +134,7 @@ export default function AddChildDialog({
         parentId,
         name: formData.childBasic.childName,
         ageGroupId,
+        ageGroupName,
         themeIds,
         allocatedRoadmaps,
       };
@@ -196,7 +197,7 @@ export default function AddChildDialog({
               {[1, 2, 3].map((s) => (
                 <motion.div
                   key={s}
-                  className={`h-8 w-8 rounded-full flex items-center justify-center font-semibold text-xs transition-all ${
+                  className={`h-8 w-8 rounded-full flex items-center justify-center font-medium text-sm transition-all ${
                     s < step
                       ? "bg-primary text-primary-foreground"
                       : s === step
@@ -232,10 +233,10 @@ export default function AddChildDialog({
                 onSubmit={childBasicForm.handleSubmit(handleStep1Submit)}
               >
                 <div className="mb-4">
-                  <h3 className="font-semibold text-sm mb-1">
+                  <h3 className="font-medium text-sm mb-1">
                     Child&apos;s Basic Information
                   </h3>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-sm text-muted-foreground">
                     Tell us about your child
                   </p>
                 </div>
@@ -314,10 +315,10 @@ export default function AddChildDialog({
                 onSubmit={childPreferencesForm.handleSubmit(handleStep2Submit)}
               >
                 <div className="mb-4">
-                  <h3 className="font-semibold text-sm mb-1">
+                  <h3 className="font-medium text-sm mb-1">
                     Favorite Themes
                   </h3>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-sm text-muted-foreground">
                     What does {formData.childBasic.childName} enjoy?
                   </p>
                 </div>
@@ -396,24 +397,24 @@ export default function AddChildDialog({
                 transition={{ duration: 0.3 }}
                 className="text-center"
               >
-                <h3 className="font-semibold text-sm mb-2">
+                <h3 className="font-medium text-sm mb-2">
                   Review Child Profile
                 </h3>
                 <div className="bg-muted/50 rounded-lg p-4 space-y-3 mt-4 text-left">
                   <div>
-                    <p className="text-xs text-muted-foreground">Name</p>
+                    <p className="text-sm text-muted-foreground">Name</p>
                     <p className="font-medium">
                       {formData.childBasic.childName}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Age Group</p>
+                    <p className="text-sm text-muted-foreground">Age Group</p>
                     <p className="font-medium">
                       {selectedAgeGroup?.name || "N/A"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-sm text-muted-foreground">
                       Favorite Themes
                     </p>
                     <div className="flex flex-wrap gap-1 mt-1">
@@ -425,7 +426,7 @@ export default function AddChildDialog({
                           return (
                             <span
                               key={themeId}
-                              className="text-xs bg-primary/10 text-primary px-2 py-1 rounded"
+                              className="text-sm bg-primary/10 text-primary px-2 py-1 rounded"
                             >
                               {theme?.name}
                             </span>

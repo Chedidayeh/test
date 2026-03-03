@@ -99,7 +99,7 @@ export default function Profile({ session }: { session: Session }) {
             {activeTab === "profile" && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-xl font-bold mb-4">
+                  <h2 className="text-xl font-medium mb-4">
                     Profile Information
                   </h2>
                   <div className="bg-card rounded-lg border border-primary/20 p-4 space-y-5">
@@ -140,12 +140,12 @@ export default function Profile({ session }: { session: Session }) {
                 </div>
 
                 {/* Edit Profile Button */}
-                <div className="flex gap-2">
+                {/* <div className="flex gap-2">
                   <Button size={"sm"}>Edit Profile</Button>
                   <Button size={"sm"} variant="outline">
                     Change Password
                   </Button>
-                </div>
+                </div> */}
               </div>
             )}
 

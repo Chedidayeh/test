@@ -499,6 +499,40 @@ export class AuthController {
   }
 
   /**
+   * Get count of all parents
+   */
+  async getParentsCount(req: Request, res: Response<ApiResponse<{ count: number }>>): Promise<void> {
+    try {
+      logger.info("Get parents count request");
+
+      // Count all parents in the database
+      const count = await prisma.user.count({
+        where: {
+          role: RoleType.PARENT,
+        },
+      });
+
+      logger.info("Parents count retrieved successfully", { count });
+
+      res.status(200).json({
+        success: true,
+        data: { count },
+        timestamp: new Date(),
+      } as ApiResponse<{ count: number }>);
+    } catch (error) {
+      logger.error("Get parents count error", { error: String(error) });
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch parents count",
+        },
+        timestamp: new Date(),
+      } as ApiResponse<{ count: number }>);
+    }
+  }
+
+  /**
    * Get all children with role-based access control
    * ADMIN: sees all children
    * PARENT: sees only their own children

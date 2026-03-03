@@ -13,10 +13,16 @@ import {
   forwardCreateNewCheckpoint,
   forwardPauseGameSession,
   forwardAllocateRoadmapToChild,
+  forwardGetDashboardStats,
 } from "../helpers/progress.helpers";
 import { API_BASE_URL_V1 } from "@shared/types";
 
 const router = Router();
+
+// Get admin dashboard statistics
+router.get("/stats/admin-dashboard", (req: Request, res: Response) => {
+  forwardGetDashboardStats(req, res);
+});
 
 // Get specific child by ID (must be before the generic /children middleware)
 router.get("/children/:id", (req: Request, res: Response) => {

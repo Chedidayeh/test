@@ -1,10 +1,17 @@
-
 "use client";
 
 import ActionCards from "./ActionCards";
 import WelcomeBanner from "./WelcomeBanner";
 import ProgressTracker from "./ProgressTracker";
-import { Badge, ChildProfile, Level, Progress, Roadmap, ProgressStatus } from "@shared/types";
+import {
+  Badge,
+  ChildProfile,
+  Level,
+  Progress,
+  Roadmap,
+  ProgressStatus,
+  RoleType,
+} from "@shared/types";
 import {
   getStoriesCompleted,
   getTotalReadingTime,
@@ -19,6 +26,7 @@ interface ChildDashboardInteractiveProps {
   child: ChildProfile;
   roadmaps: Roadmap[];
   currentProgresses: Progress[];
+  userRole: RoleType;
 }
 
 const ChildDashboardInteractive = ({
@@ -27,6 +35,7 @@ const ChildDashboardInteractive = ({
   child,
   roadmaps,
   currentProgresses,
+  userRole,
 }: ChildDashboardInteractiveProps) => {
   const childBadges =
     child.badges
@@ -42,7 +51,7 @@ const ChildDashboardInteractive = ({
 
   // Check if child has any in-progress stories
   const hasInProgressStories = currentProgresses.some(
-    (progress) => progress.status === ProgressStatus.IN_PROGRESS
+    (progress) => progress.status === ProgressStatus.IN_PROGRESS,
   );
 
   const hours = Math.floor(readingTimeMinutes / 60);
@@ -50,11 +59,15 @@ const ChildDashboardInteractive = ({
   const readingTimeSubtitle =
     minutes > 0 ? `(${hours}h ${minutes}m)` : `(${hours}h)`;
 
-
   return (
     <>
       {seeRoadmap ? (
-        <RoadmapPage child={child} roadmap={selectedRoadmap} setSeeRoadmap={setSeeRoadmap} />
+        <RoadmapPage
+          userRole={userRole}
+          child={child}
+          roadmap={selectedRoadmap}
+          setSeeRoadmap={setSeeRoadmap}
+        />
       ) : (
         <div className="hidden md:grid md:grid-cols-4 gap-6 container mx-auto px-4">
           {/* Left Sidebar - Progress Tracker */}
@@ -82,10 +95,18 @@ const ChildDashboardInteractive = ({
 
             {/* Action Cards */}
             {hasInProgressStories && (
-              <ActionCards currentProgresses={currentProgresses} roadmaps={roadmaps} childProfile={child} />
+              <ActionCards
+                currentProgresses={currentProgresses}
+                roadmaps={roadmaps}
+                childProfile={child}
+              />
             )}
 
-            <Roadmaps roadmaps={roadmaps} setSelectedRoadmap={setSelectedRoadmap} setSeeRoadmap={setSeeRoadmap} />
+            <Roadmaps
+              roadmaps={roadmaps}
+              setSelectedRoadmap={setSelectedRoadmap}
+              setSeeRoadmap={setSeeRoadmap}
+            />
           </div>
         </div>
       )}

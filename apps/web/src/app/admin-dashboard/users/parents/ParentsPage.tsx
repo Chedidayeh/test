@@ -16,6 +16,7 @@ import { DataTable, Column, PaginationData } from "../../_components/DataTable";
 import { FilterBar } from "../../_components/FilterBar";
 import { ConfirmDialog } from "../../_components/ConfirmDialog";
 import { fetchParentsAction } from "@/src/lib/auth-service/server-actions";
+import Link from "next/link";
 
 interface ParentsPageProps {
   initialData?: User[];
@@ -183,14 +184,12 @@ export default function ParentsPage({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem className="cursor-pointer">
-                <Eye className="mr-2 h-4 w-4" />
-                <span>View Details</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer">
-                <Edit2 className="mr-2 h-4 w-4" />
-                <span>Edit</span>
-              </DropdownMenuItem>
+              <Link href={`/parent-dashboard?parentId=${parent.id}`} target="_blank">
+                <DropdownMenuItem className="cursor-pointer">
+                  <Eye className="mr-2 h-4 w-4" />
+                  <span>View Details</span>
+                </DropdownMenuItem>
+              </Link>
 
               <DropdownMenuItem
                 className="cursor-pointer text-red-600"

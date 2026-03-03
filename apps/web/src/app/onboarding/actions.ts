@@ -10,6 +10,7 @@ export async function createChildProfileAction(payload: {
   parentId: string;
   name: string;
   ageGroupId: string;
+  ageGroupName: string;
   themeIds: string[];
   allocatedRoadmaps: string[];
 }) {

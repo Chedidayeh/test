@@ -5,17 +5,19 @@ import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { Button } from "@/src/components/ui/button";
 import { ChevronLeft } from "lucide-react";
-import { ChildProfile, Roadmap } from "@shared/types";
+import { ChildProfile, Roadmap, RoleType } from "@shared/types";
 import WorldTabs from "./_components/WorldTabs";
 import StoriesRoadmap from "./_components/StoriesRoadmap";
 
 interface RoadmapPageProps {
+  userRole: RoleType
   child: ChildProfile;
   roadmap: Roadmap;
   setSeeRoadmap: (see: boolean) => void;
 }
 
 export default function RoadmapPage({
+  userRole,
   child,
   roadmap,
   setSeeRoadmap,
@@ -96,6 +98,7 @@ export default function RoadmapPage({
             selectedWorld={selectedWorld}
             roadmap={roadmap}
             childProfile={child}
+            userRole={userRole}
           />
         </section>
 

@@ -27,6 +27,7 @@ export class ChildrenController {
         name,
         childId,
         ageGroupId,
+        ageGroupName,
         themeIds,
         allocatedRoadmaps,
         badgeId,
@@ -39,6 +40,7 @@ export class ChildrenController {
         !name ||
         !childId ||
         !ageGroupId ||
+        !ageGroupName ||
         !badgeId
       ) {
         res.status(400).json({
@@ -59,6 +61,7 @@ export class ChildrenController {
         name,
         childId,
         ageGroupId,
+        ageGroupName,
         themeIds: themeIds || [],
         allocatedRoadmaps: allocatedRoadmaps || [],
         badgeId,
@@ -856,6 +859,45 @@ export class ChildrenController {
             error instanceof Error
               ? error.message
               : "Failed to allocate roadmap",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  /**
+   * Get aggregated children statistics for admin dashboard
+   * Returns: totalChildren, activeChildren, totalStoriesCompleted, totalChallengesSolved
+   */
+  static async getChildrenStats(
+    req: Request,
+    res: Response<
+      ApiResponse<{
+        totalChildren: number;
+        activeChildren: number;
+        totalStoriesCompleted: number;
+        totalChallengesSolved: number;
+      }>
+    >,
+  ): Promise<void> {
+    try {
+      const stats = await ChildrenService.getChildrenStats();
+
+      res.status(200).json({
+        success: true,
+        data: stats,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error fetching children stats:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "STATS_ERROR",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to fetch children statistics",
         },
         timestamp: new Date(),
       });
