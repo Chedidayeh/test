@@ -20,6 +20,12 @@ router.get("/:id", (req, res) => badgeController.getBadgeById(req, res));
 // PUT - update badge by ID
 router.put("/:id", (req, res) => badgeController.updateBadge(req, res));
 
+// PUT - update badge translations (manual edits)
+router.put("/:id/translations", (req, res) =>
+  // Delegate to controller method that handles updating translations
+  badgeController.updateBadgeTranslations(req, res),
+);
+
 // DELETE badge by ID
 router.delete("/:id", (req, res) => badgeController.deleteBadge(req, res));
 

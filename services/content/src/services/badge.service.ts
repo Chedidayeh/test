@@ -1,11 +1,20 @@
-import { PrismaClient, Badge } from "@prisma/client";
+import { PrismaClient, Badge, LanguageCode } from "@prisma/client";
 import { logger } from "../utils/logger";
+import { getBadgeTranslationService } from "../translations/badge";
+import { TRANSLATION_CONFIG } from "../config/translation-config";
 
 export class BadgeService {
   private prisma: PrismaClient;
 
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
+  }
+
+  /**
+   * Get the global BadgeTranslationService instance
+   */
+  private getBadgeTranslationService() {
+    return getBadgeTranslationService(this.prisma);
   }
 
   /**
@@ -16,6 +25,7 @@ export class BadgeService {
       const badges = await this.prisma.badge.findMany({
         include: {
           level: true,
+          translations: true,
         },
         orderBy: {
           level: {
@@ -44,6 +54,7 @@ export class BadgeService {
         where: { id: badgeId },
         include: {
           level: true,
+          translations: true,
         },
       });
 
@@ -69,6 +80,7 @@ export class BadgeService {
         where: { levelId },
         include: {
           level: true,
+          translations: true,
         },
       });
 
@@ -103,6 +115,7 @@ export class BadgeService {
         where: { levelId: level.id },
         include: {
           level: true,
+          translations: true,
         },
       });
 
@@ -123,16 +136,32 @@ export class BadgeService {
   }
 
   /**
-   * Create a new badge
+   * Create a new badge with optional auto-translation
+   * @param data - Badge data (name, description, levelId, iconUrl)
+   * @param autoTranslate - Enable auto-translation
+   * @param sourceLanguage - Source language for translation (defaults to EN)
+   * @param targetLanguages - Target languages for translation (defaults to FR, AR)
+   * @returns Created badge
    */
-  async createBadge(data: {
-    levelId: string;
-    name: string;
-    description?: string | null;
-    iconUrl?: string | null;
-  }): Promise<Badge> {
+  async createBadge(
+    data: {
+      levelId: string;
+      name: string;
+      description?: string | null;
+      iconUrl?: string | null;
+    },
+    autoTranslate: boolean = false,
+    sourceLanguage: LanguageCode = TRANSLATION_CONFIG.SOURCE_LANGUAGE,
+    targetLanguages: LanguageCode[] = TRANSLATION_CONFIG.TARGET_LANGUAGES,
+  ): Promise<Badge> {
     try {
-      logger.info("Creating badge", { levelId: data.levelId, name: data.name });
+      logger.info("Creating badge", {
+        levelId: data.levelId,
+        name: data.name,
+        autoTranslate,
+        sourceLanguage,
+        targetLanguages,
+      });
 
       const badge = await this.prisma.badge.create({
         data,
@@ -140,6 +169,51 @@ export class BadgeService {
           level: true,
         },
       });
+
+      // Auto-translate if requested and feature is enabled
+      if (
+        autoTranslate &&
+        TRANSLATION_CONFIG.ENABLE_AUTO_TRANSLATION
+      ) {
+        try {
+          logger.info("Starting auto-translation for new badge", {
+            badgeId: badge.id,
+            sourceLanguage,
+            targetLanguages,
+          });
+
+          await this.getBadgeTranslationService().createBadgeTranslations(
+            badge.id,
+            {
+              name: data.name,
+              description: data.description || undefined,
+            },
+            sourceLanguage,
+            targetLanguages,
+          );
+
+          logger.info("Badge translations created successfully", {
+            badgeId: badge.id,
+          });
+        } catch (translationError) {
+          logger.error("Failed to auto-translate badge", {
+            badgeId: badge.id,
+            error:
+              translationError instanceof Error
+                ? translationError.message
+                : String(translationError),
+          });
+
+          // Re-throw to fail the operation (strict mode as per requirements)
+          throw new Error(
+            `Failed to create translations: ${
+              translationError instanceof Error
+                ? translationError.message
+                : "Unknown error"
+            }`,
+          );
+        }
+      }
 
       logger.info("Badge created successfully", { badgeId: badge.id });
       return badge;
@@ -150,7 +224,13 @@ export class BadgeService {
   }
 
   /**
-   * Update an existing badge
+   * Update an existing badge with optional auto-translation
+   * @param badgeId - Badge ID to update
+   * @param data - Partial badge data to update
+   * @param autoTranslate - Enable auto-translation of updated fields
+   * @param sourceLanguage - Source language for translation (defaults to EN)
+   * @param targetLanguages - Target languages for translation (defaults to FR, AR)
+   * @returns Updated badge
    */
   async updateBadge(
     badgeId: string,
@@ -158,10 +238,13 @@ export class BadgeService {
       name: string;
       description: string | null;
       iconUrl: string | null;
-    }>
+    }>,
+    autoTranslate: boolean = false,
+    sourceLanguage: LanguageCode = TRANSLATION_CONFIG.SOURCE_LANGUAGE,
+    targetLanguages: LanguageCode[] = TRANSLATION_CONFIG.TARGET_LANGUAGES,
   ): Promise<Badge> {
     try {
-      logger.info("Updating badge", { badgeId });
+      logger.info("Updating badge", { badgeId, autoTranslate, sourceLanguage, targetLanguages });
 
       const badge = await this.prisma.badge.update({
         where: { id: badgeId },
@@ -170,6 +253,52 @@ export class BadgeService {
           level: true,
         },
       });
+
+      // Auto-translate if requested and feature is enabled
+      if (
+        autoTranslate &&
+        TRANSLATION_CONFIG.ENABLE_AUTO_TRANSLATION &&
+        (data.name || data.description !== undefined)
+      ) {
+        try {
+          logger.info("Starting auto-translation for updated badge", {
+            badgeId,
+            sourceLanguage,
+            targetLanguages,
+          });
+
+          await this.getBadgeTranslationService().updateBadgeTranslations(
+            badgeId,
+            {
+              name: data.name,
+              description: data.description !== undefined ? data.description || undefined : undefined,
+            },
+            sourceLanguage,
+            targetLanguages,
+          );
+
+          logger.info("Badge translations updated successfully", {
+            badgeId,
+          });
+        } catch (translationError) {
+          // Re-throw to fail the operation (strict mode)
+          logger.error("Failed to auto-translate updated badge", {
+            badgeId,
+            error:
+              translationError instanceof Error
+                ? translationError.message
+                : String(translationError),
+          });
+
+          throw new Error(
+            `Failed to update translations: ${
+              translationError instanceof Error
+                ? translationError.message
+                : "Unknown error"
+            }`,
+          );
+        }
+      }
 
       logger.info("Badge updated successfully", { badgeId });
       return badge;

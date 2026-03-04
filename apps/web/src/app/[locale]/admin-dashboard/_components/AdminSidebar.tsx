@@ -2,13 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Settings,
-  Users,
-  BookOpen,
-  Home,
-  Map,
-} from "lucide-react";
+import { Settings, Users, BookOpen, Home, Map, TrendingUp } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { cn } from "@/src/lib/utils";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
@@ -48,6 +42,11 @@ const navigationSections: NavSection[] = [
         name: "Stories",
         href: "/admin-dashboard/stories",
         icon: <BookOpen className="w-5 h-5" />,
+      },
+      {
+        name: "Levels",
+        href: "/admin-dashboard/levels",
+        icon: <TrendingUp className="w-5 h-5" />,
       },
     ],
   },

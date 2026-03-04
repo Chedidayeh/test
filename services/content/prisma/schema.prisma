@@ -18,6 +18,13 @@ enum AgeGroupStatus {
   INACTIVE
 }
 
+enum LanguageCode {
+  EN
+  AR
+  FR
+}
+
+
 // Age Group: Defines target audience for content
 model AgeGroup {
   id     String @id @default(cuid())
@@ -26,23 +33,57 @@ model AgeGroup {
   maxAge Int
 
   status AgeGroupStatus @default(ACTIVE)
-
+  translations AgeGroupTranslation[]
   roadmaps Roadmap[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model AgeGroupTranslation {
+  id         String @id @default(cuid())
+  ageGroupId String
+  ageGroup   AgeGroup @relation(fields: [ageGroupId], references: [id], onDelete: Cascade)
+
+  languageCode LanguageCode @default(EN)
+  name         String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ageGroupId, languageCode])
+  @@unique([ageGroupId, languageCode])
 }
 
 model Theme {
-  id   String @id @default(cuid())
-  name String @unique // e.g., "Adventure", "Mystery", "Fantasy"
+  id          String    @id @default(cuid())
+  name        String    @unique // e.g., "Adventure", "Mystery", "Fantasy"
   description String
-  imageUrl String?
-  roadmaps Roadmap[]
+  imageUrl    String?
+  roadmaps    Roadmap[]
+  translations ThemeTranslation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+
+model ThemeTranslation {
+  id      String @id @default(cuid())
+  themeId String
+  theme   Theme  @relation(fields: [themeId], references: [id], onDelete: Cascade)
+
+  languageCode LanguageCode @default(EN)
+  name         String
+  description  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([themeId, languageCode])
+  @@unique([themeId, languageCode])
+}
+
 enum ReadingLevel {
   BEGINNER
   EASY
@@ -51,19 +92,21 @@ enum ReadingLevel {
   ADVANCED
 }
 
+
 // Roadmap: Fixed progression graph for an age group
 model Roadmap {
   id         String   @id @default(cuid())
   ageGroupId String
   ageGroup   AgeGroup @relation(fields: [ageGroupId], references: [id], onDelete: Cascade)
 
-  title       String?
+  title String?
 
-  themeId    String   
-  theme      Theme    @relation(fields: [themeId], references: [id])
+  themeId String
+  theme   Theme  @relation(fields: [themeId], references: [id])
 
   readingLevel ReadingLevel @default(BEGINNER)
 
+  translations RoadmapTranslation[]
   worlds World[]
 
   createdAt DateTime @default(now())
@@ -72,23 +115,55 @@ model Roadmap {
   @@index([ageGroupId])
 }
 
+model RoadmapTranslation {
+  id          String  @id @default(cuid())
+  roadmapId    String
+  roadmap      Roadmap @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+
+  languageCode LanguageCode @default(EN)
+  title        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([roadmapId, languageCode])
+  @@unique([roadmapId, languageCode])
+}
+
 // World: Collection of related stories within a roadmap
 model World {
   id        String  @id @default(cuid())
   roadmapId String
   roadmap   Roadmap @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
 
-  name              String
-  description       String?
-  imageUrl          String?
-  order             Int // Order in roadmap
+  name        String
+  description String?
+  imageUrl    String?
+  order       Int // Order in roadmap
 
+  translations WorldTranslation[]
   stories Story[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([roadmapId])
+}
+
+model WorldTranslation {
+  id      String @id @default(cuid())
+  worldId String
+  world   World  @relation(fields: [worldId], references: [id], onDelete: Cascade)
+
+  languageCode LanguageCode @default(EN)
+  name         String
+  description  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([worldId, languageCode])
+  @@unique([worldId, languageCode])
 }
 
 // Story: Individual story within a world
@@ -102,12 +177,30 @@ model Story {
   difficulty  Int // 1-5 difficulty scale
   order       Int // Order in world
 
+  translations StoryTranslation[]
+
   chapters Chapter[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([worldId])
+}
+
+model StoryTranslation {
+  id      String @id @default(cuid())
+  storyId String
+  story   Story  @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  languageCode LanguageCode @default(EN)
+  title        String
+  description  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([storyId, languageCode])
+  @@unique([storyId, languageCode])
 }
 
 // Chapter: Sections of a story with reading content and challenges
@@ -122,12 +215,31 @@ model Chapter {
   audioUrl String?
   order    Int // Order in story
 
+  translations ChapterTranslation[]
+
   challenge Challenge?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([storyId])
+}
+
+model ChapterTranslation {
+  id        String  @id @default(cuid())
+  chapterId String
+  chapter   Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  languageCode LanguageCode @default(EN)
+  title        String
+  content      String
+  audioUrl     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([chapterId, languageCode])
+  @@unique([chapterId, languageCode])
 }
 
 // Challenge Types enumeration
@@ -137,7 +249,6 @@ enum ChallengeType {
   RIDDLE // Meaning-based riddle
   CHOOSE_ENDING // Select the right story ending, all anserwers are correct, see if child understandood the story
   MORAL_DECISION //  all anserwers are correct, see if child understood the moral of the story
-
 }
 
 // Challenge: Questions/riddles within chapters
@@ -153,12 +264,30 @@ model Challenge {
   order       Int // Order in chapter
   hints       String[] // Array of hints for the challenge
 
-  answers Answer[]
+  translations ChallengeTranslation[]
+  answers      Answer[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([chapterId])
+}
+
+model ChallengeTranslation {
+  id          String    @id @default(cuid())
+  challengeId String
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  languageCode LanguageCode @default(EN)
+  question     String
+  description  String?
+  hints        String[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([challengeId, languageCode])
+  @@unique([challengeId, languageCode])
 }
 
 // Answer: Possible answers for challenges
@@ -171,10 +300,27 @@ model Answer {
   isCorrect Boolean // Is this the correct answer?
   order     Int? // For multiple choice option ordering
 
+  translations AnswerTranslation[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([challengeId])
+}
+
+model AnswerTranslation {
+  id       String @id @default(cuid())
+  answerId String
+  answer   Answer @relation(fields: [answerId], references: [id], onDelete: Cascade)
+
+  languageCode LanguageCode @default(EN)
+  text         String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([answerId, languageCode])
+  @@unique([answerId, languageCode])
 }
 
 // Level
@@ -183,25 +329,41 @@ model Level {
   levelNumber   Int    @unique
   requiredStars Int // Total stars needed to reach this level
 
-  badges Badge?
+  badge Badge?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-
-
 // Badge: Reward linked to levels
 model Badge {
-  id          String    @id @default(cuid())
-  name        String    // e.g., "Story Explorer", "World Conqueror" , Riddle Master , etc.
+  id          String  @id @default(cuid())
+  name        String // e.g., "Story Explorer", "World Conqueror" , Riddle Master , etc.
   description String?
   iconUrl     String?
-  levelId String  @unique
-  level   Level @relation(fields: [levelId], references: [id], onDelete: Cascade)
+  levelId     String  @unique
+  level       Level   @relation(fields: [levelId], references: [id], onDelete: Cascade)
+
+  translations BadgeTranslation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([levelId])
+}
+
+model BadgeTranslation {
+  id      String @id @default(cuid())
+  badgeId String
+  badge   Badge  @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  languageCode LanguageCode @default(EN)
+  name         String
+  description  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([badgeId, languageCode])
+  @@unique([badgeId, languageCode])
 }

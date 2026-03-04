@@ -577,6 +577,127 @@ export async function getLevelByNumber(levelNumber: number) {
   return response.data || null;
 }
 
+// Level CRUD - Consolidated with Badge
+export async function createLevel(
+  data: Omit<Level, "id" | "createdAt" | "updatedAt" | "badge"> & {
+    badge?: {
+      name: string;
+      description?: string;
+      iconUrl?: string;
+    };
+  },
+  autoTranslateBadge: boolean = false,
+  translationSource?: string,
+  translations?: Array<{
+    languageCode: string;
+    name: string;
+    description?: string;
+  }>,
+) {
+  const response = await apiRequest<ApiResponse<Level>>(
+    `/levels`,
+    {
+      method: "POST",
+      body: JSON.stringify({ ...data, autoTranslateBadge, translationSource, translations }),
+    },
+  );
+
+  if (isApiError(response)) {
+    console.error(
+      "[Content Server API] Failed to create level:",
+      response.error.message,
+    );
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error(
+      "[Content Server API] Failed to create level: API returned success=false",
+    );
+    return {
+      success: false as const,
+      error: response.error?.message || "Failed to create level",
+    };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+export async function updateLevel(
+  id: string,
+  data: Partial<Omit<Level, "id" | "createdAt" | "updatedAt" | "badge">> & {
+    badge?: {
+      id: string;
+      name: string;
+      description?: string;
+      iconUrl?: string;
+    };
+    translations?: Array<{
+      languageCode: string;
+      name: string;
+      description?: string;
+    }>;
+  },
+  autoTranslateBadge: boolean = false,
+  translationSource?: string,
+) {
+  const response = await apiRequest<ApiResponse<Level>>(
+    `/levels/${id}`,
+    {
+      method: "PUT",
+      body: JSON.stringify({ ...data, autoTranslateBadge, translationSource }),
+    },
+  );
+
+  if (isApiError(response)) {
+    console.error(
+      "[Content Server API] Failed to update level:",
+      response.error.message,
+    );
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error(
+      "[Content Server API] Failed to update level: API returned success=false",
+    );
+    return {
+      success: false as const,
+      error: response.error?.message || "Failed to update level",
+    };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+export async function deleteLevel(id: string) {
+  const response = await apiRequest<ApiResponse<{ id: string }>>(
+    `/levels/${id}`,
+    { method: "DELETE" },
+  );
+
+  if (isApiError(response)) {
+    console.error(
+      "[Content Server API] Failed to delete level:",
+      response.error.message,
+    );
+    return { success: false as const, error: response.error.message };
+  }
+
+  if (!response.success) {
+    console.error(
+      "[Content Server API] Failed to delete level: API returned success=false",
+    );
+    return {
+      success: false as const,
+      error: response.error?.message || "Failed to delete level",
+    };
+  }
+
+  return { success: true as const, data: response.data };
+}
+
+
 /**
  * ============================================
  * Badge ENDPOINTS

@@ -379,7 +379,7 @@ async function main() {
 
       const badge = await prisma.badge.create({
         data: {
-          name: `Level ${i + 1}: ${
+          name: `${
             i === 0
               ? "Story Starter"
               : i === 1
@@ -400,7 +400,6 @@ async function main() {
                               ? "Reading Champion"
                               : "Master Reader"
           }`,
-          description: `Achieved ${levelStars[i]} stars`,
           levelId: level.id,
         },
       });

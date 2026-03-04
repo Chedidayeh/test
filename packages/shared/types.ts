@@ -21,9 +21,21 @@ export const API_BASE_URL_V1 = "/api/v1";
 // ENUMS
 // ============================================================================
 
+export enum TranslationSourceType {
+  EN_TO_FR_AR = "en_to_fr_ar",      // Auto-translate from English
+  FR_TO_AR_EN = "fr_to_ar_en",      // Auto-translate from French
+  MANUAL = "manual"                  // Manual translations
+}
+
 export enum RoleType {
   PARENT = "PARENT",
   ADMIN = "ADMIN",
+}
+
+export enum LanguageCode {
+  EN = "EN",
+  AR = "AR",
+  FR = "FR",
 }
 
 export enum ChallengeType {
@@ -135,7 +147,17 @@ export interface AgeGroup {
   status: AgeGroupStatus;
   createdAt: Date;
   updatedAt: Date;
+  translations?: AgeGroupTranslation[];
   roadmaps: Roadmap[];
+}
+
+export interface AgeGroupTranslation {
+  id: string;
+  ageGroupId: string;
+  languageCode: LanguageCode;
+  name: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Theme {
@@ -145,7 +167,18 @@ export interface Theme {
   imageUrl?: string;
   createdAt: Date;
   updatedAt: Date;
-  roadmap?: Roadmap;
+  translations?: ThemeTranslation[];
+  roadmaps?: Roadmap[];
+}
+
+export interface ThemeTranslation {
+  id: string;
+  themeId: string;
+  languageCode: LanguageCode;
+  name: string;
+  description?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Roadmap {
@@ -153,12 +186,22 @@ export interface Roadmap {
   ageGroupId: string;
   themeId: string;
   title?: string | null;
+  readingLevel: ReadingLevel;
   createdAt: Date;
   updatedAt: Date;
   ageGroup: AgeGroup;
   theme: Theme;
-  readingLevel: ReadingLevel;
+  translations?: RoadmapTranslation[];
   worlds: World[];
+}
+
+export interface RoadmapTranslation {
+  id: string;
+  roadmapId: string;
+  languageCode: LanguageCode;
+  title?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface World {
@@ -171,7 +214,18 @@ export interface World {
   createdAt: Date;
   updatedAt: Date;
   roadmap: Roadmap;
+  translations?: WorldTranslation[];
   stories: Story[];
+}
+
+export interface WorldTranslation {
+  id: string;
+  worldId: string;
+  languageCode: LanguageCode;
+  name: string;
+  description?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Story {
@@ -184,7 +238,18 @@ export interface Story {
   createdAt: Date;
   updatedAt: Date;
   world: World;
+  translations?: StoryTranslation[];
   chapters: Chapter[];
+}
+
+export interface StoryTranslation {
+  id: string;
+  storyId: string;
+  languageCode: LanguageCode;
+  title: string;
+  description?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Chapter {
@@ -198,7 +263,19 @@ export interface Chapter {
   createdAt: Date;
   updatedAt: Date;
   story: Story;
+  translations?: ChapterTranslation[];
   challenge?: Challenge;
+}
+
+export interface ChapterTranslation {
+  id: string;
+  chapterId: string;
+  languageCode: LanguageCode;
+  title: string;
+  content: string;
+  audioUrl?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Challenge {
@@ -213,7 +290,19 @@ export interface Challenge {
   createdAt: Date;
   updatedAt: Date;
   chapter: Chapter;
+  translations?: ChallengeTranslation[];
   answers: Answer[];
+}
+
+export interface ChallengeTranslation {
+  id: string;
+  challengeId: string;
+  languageCode: LanguageCode;
+  question: string;
+  description?: string;
+  hints: string[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Answer {
@@ -222,6 +311,16 @@ export interface Answer {
   text: string;
   isCorrect: boolean;
   order?: number;
+  createdAt: Date;
+  updatedAt: Date;
+  translations?: AnswerTranslation[];
+}
+
+export interface AnswerTranslation {
+  id: string;
+  answerId: string;
+  languageCode: LanguageCode;
+  text: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -244,6 +343,17 @@ export interface Badge {
   createdAt: Date;
   updatedAt: Date;
   level: Level;
+  translations?: BadgeTranslation[];
+}
+
+export interface BadgeTranslation {
+  id: string;
+  badgeId: string;
+  languageCode: LanguageCode;
+  name: string;
+  description?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // ============================================================================

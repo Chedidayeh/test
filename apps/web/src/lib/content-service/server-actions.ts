@@ -6,6 +6,8 @@ import {
   Theme,
   Roadmap,
   World,
+  Level,
+  Badge,
   ServiceResponse,
   CreateStoryWithChaptersInput,
   ApiResponse,
@@ -31,7 +33,9 @@ import {
   deleteStory,
   createStoryWithChapters,
   editStoryWithChapters,
-
+  createLevel,
+  updateLevel,
+  deleteLevel,
 } from "./server-api";
 
 type FetchStoriesResult =
@@ -81,9 +85,7 @@ export async function fetchStoriesAction(
  * Batch fetch is more efficient than individual requests
  * Returns stories as a serializable array instead of Map
  */
-export async function fetchStoriesByIdsAction(
-  storyIds: string[],
-): Promise<{
+export async function fetchStoriesByIdsAction(storyIds: string[]): Promise<{
   success: boolean;
   stories: Story[];
   error?: string;
@@ -100,7 +102,10 @@ export async function fetchStoriesByIdsAction(
     return {
       success: false,
       stories: [],
-      error: error instanceof Error ? error.message : "Failed to fetch stories by IDs",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch stories by IDs",
     };
   }
 }
@@ -219,7 +224,9 @@ export async function validateAgeGroupReadinessAction(
     return {
       success: false,
       error:
-        error instanceof Error ? error.message : "Failed to validate age group readiness",
+        error instanceof Error
+          ? error.message
+          : "Failed to validate age group readiness",
     };
   }
 }
@@ -498,7 +505,6 @@ export async function deleteWorldAction(
  * ============================================
  */
 
-
 /**
  * Create a story with chapters, challenges, and answers in a single atomic transaction
  */
@@ -529,8 +535,10 @@ export async function createStoryWithChaptersAction(
       error: {
         code: "STORY_CREATION_FAILED",
         message:
-          error instanceof Error ? error.message : "Failed to create story with chapters",
-      }
+          error instanceof Error
+            ? error.message
+            : "Failed to create story with chapters",
+      },
     };
   }
 }
@@ -566,12 +574,13 @@ export async function editStoryWithChaptersAction(
       error: {
         code: "STORY_EDIT_FAILED",
         message:
-          error instanceof Error ? error.message : "Failed to edit story with chapters",
-      }
+          error instanceof Error
+            ? error.message
+            : "Failed to edit story with chapters",
+      },
     };
   }
 }
-
 
 export async function deleteStoryAction(
   id: string,
@@ -598,4 +607,117 @@ export async function deleteStoryAction(
     };
   }
 }
+
+/**
+ * ============================================
+ * LEVEL ACTIONS
+ * ============================================
+ */
+
+export async function createLevelAction(
+  data: Omit<Level, "id" | "createdAt" | "updatedAt" | "badge"> & {
+    badge?: {
+      name: string;
+      description?: string;
+      iconUrl?: string;
+    };
+  },
+  autoTranslateBadge: boolean = false,
+  translationSource?: string,
+  translations?: Array<{
+    languageCode: string;
+    name: string;
+    description?: string;
+  }>,
+): Promise<ServiceResponse<Level>> {
+  try {
+    const result = await createLevel(data, autoTranslateBadge, translationSource, translations);
+
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.error,
+      };
+    }
+
+    return {
+      success: true,
+      data: result.data!,
+    };
+  } catch (error) {
+    console.error("[Content Server Actions] Failed to create level:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to create level",
+    };
+  }
+}
+
+export async function updateLevelAction(
+  id: string,
+  data: Partial<Omit<Level, "id" | "createdAt" | "updatedAt" | "badge">> & {
+    badge?: {
+      id: string;
+      name: string;
+      description?: string;
+      iconUrl?: string;
+    };
+    translations?: Array<{
+      languageCode: string;
+      name: string;
+      description?: string;
+    }>;
+  },
+  autoTranslateBadge: boolean = false,
+  translationSource?: string,
+): Promise<ServiceResponse<Level>> {
+  try {
+    const result = await updateLevel(id, data, autoTranslateBadge, translationSource);
+
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.error,
+      };
+    }
+
+    return {
+      success: true,
+      data: result.data!,
+    };
+  } catch (error) {
+    console.error("Server action error updating level:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to update level",
+    };
+  }
+}
+
+export async function deleteLevelAction(
+  id: string,
+): Promise<ServiceResponse<void>> {
+  try {
+    const result = await deleteLevel(id);
+
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.error,
+      };
+    }
+
+    return {
+      success: true,
+      data: undefined,
+    };
+  } catch (error) {
+    console.error("Server action error deleting level:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to delete level",
+    };
+  }
+}
+
 

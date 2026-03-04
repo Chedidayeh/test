@@ -15,7 +15,11 @@ export class LevelService {
     try {
       const levels = await this.prisma.level.findMany({
         include: {
-          badges: true,
+          badge: {
+            include: {
+              translations: true,
+            }
+          },
         },
         orderBy: {
           levelNumber: "asc",
@@ -41,7 +45,11 @@ export class LevelService {
       const level = await this.prisma.level.findUnique({
         where: { id: levelId },
         include: {
-          badges: true,
+          badge: {
+            include: {
+              translations: true,
+            }
+          },
         },
       });
 
@@ -66,7 +74,11 @@ export class LevelService {
       const level = await this.prisma.level.findUnique({
         where: { levelNumber },
         include: {
-          badges: true,
+          badge: {
+            include: {
+              translations: true,
+            }
+          },
         },
       });
 
@@ -99,7 +111,11 @@ export class LevelService {
       const level = await this.prisma.level.create({
         data,
         include: {
-          badges: true,
+          badge: {
+            include: {
+              translations: true,
+            }
+          },
         },
       });
 
@@ -128,7 +144,11 @@ export class LevelService {
         where: { id: levelId },
         data,
         include: {
-          badges: true,
+          badge: {
+            include: {
+              translations: true,
+            }
+          },
         },
       });
 
@@ -150,7 +170,11 @@ export class LevelService {
       const level = await this.prisma.level.delete({
         where: { id: levelId },
         include: {
-          badges: true,
+          badge: {
+            include: {
+              translations: true,
+            }
+          },
         },
       });
 

@@ -87,13 +87,13 @@ export class BadgeController {
   }
 
   /**
-   * Create a new badge
+   * Create a new badge with optional auto-translation
    */
   async createBadge(req: Request, res: Response<ApiResponse<any>>): Promise<void> {
     try {
-      const { levelId, name, description, iconUrl } = req.body;
+      const { levelId, name, description, iconUrl, autoTranslate } = req.body;
 
-      logger.info("Create badge request", { levelId, name });
+      logger.info("Create badge request", { levelId, name, autoTranslate });
 
       // Validation
       if (!levelId || !name) {
@@ -118,31 +118,43 @@ export class BadgeController {
         return;
       }
 
-      const badge = await badgeService.createBadge({
-        levelId,
-        name,
-        description: description || null,
-        iconUrl: iconUrl || null,
-      });
+      const badge = await badgeService.createBadge(
+        {
+          levelId,
+          name,
+          description: description || null,
+          iconUrl: iconUrl || null,
+        },
+        autoTranslate === true,
+      );
 
-      logger.info("Badge created successfully", { badgeId: badge.id });
+      logger.info("Badge created successfully", {
+        badgeId: badge.id,
+        autoTranslateEnabled: autoTranslate,
+      });
 
       sendSuccess(res, badge, 201);
     } catch (error) {
-      logger.error("Error in createBadge controller", { error: String(error) });
+      logger.error("Error in createBadge controller", {
+        error: String(error),
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
       sendError(res, String(error), 500, "Failed to create badge");
     }
   }
 
   /**
-   * Update a badge
+   * Update a badge with optional auto-translation
    */
   async updateBadge(req: Request, res: Response<ApiResponse<Badge>>): Promise<void> {
     try {
       const { id } = req.params;
-      const { name, description, iconUrl } = req.body;
+      const { name, description, iconUrl, autoTranslate } = req.body;
 
-      logger.info("Update badge request", { badgeId: id });
+      logger.info("Update badge request", {
+        badgeId: id,
+        autoTranslate,
+      });
 
       if (!id) {
         sendError(res, "Badge ID is required", 400);
@@ -156,18 +168,103 @@ export class BadgeController {
         return;
       }
 
-      const updated = await badgeService.updateBadge(id, {
-        name: name || undefined,
-        description: description !== undefined ? description : undefined,
-        iconUrl: iconUrl !== undefined ? iconUrl : undefined,
-      });
+      const updated = await badgeService.updateBadge(
+        id,
+        {
+          name: name || undefined,
+          description: description !== undefined ? description : undefined,
+          iconUrl: iconUrl !== undefined ? iconUrl : undefined,
+        },
+        autoTranslate === true,
+      );
 
-      logger.info("Badge updated successfully", { badgeId: id });
+      logger.info("Badge updated successfully", {
+        badgeId: id,
+        autoTranslateEnabled: autoTranslate,
+      });
 
       sendSuccess(res, updated, 200);
     } catch (error) {
-      logger.error("Error in updateBadge controller", { error: String(error) });
+      logger.error("Error in updateBadge controller", {
+        error: String(error),
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
       sendError(res, String(error), 500, "Failed to update badge");
+    }
+  }
+
+  /**
+   * Update badge translations manually
+   */
+  async updateBadgeTranslations(req: Request, res: Response<ApiResponse<Badge>>): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { translations } = req.body;
+
+      logger.info("Update badge translations request", { badgeId: id });
+
+      if (!id) {
+        sendError(res, "Badge ID is required", 400);
+        return;
+      }
+
+      // Validate badge exists
+      const badge = await badgeService.getBadgeById(id);
+      if (!badge) {
+        sendError(res, `Badge with ID '${id}' not found`, 404);
+        return;
+      }
+
+      if (!Array.isArray(translations) || translations.length === 0) {
+        sendError(res, "translations must be a non-empty array", 400);
+        return;
+      }
+
+      const upserted: any[] = [];
+
+      for (const t of translations) {
+        const { languageCode, name, description } = t as {
+          languageCode: string;
+          name: string;
+          description?: string;
+        };
+
+        if (!languageCode || !name) {
+          sendError(res, "Each translation must include languageCode and name", 400);
+          return;
+        }
+
+        const badgeTranslation = await prisma.badgeTranslation.upsert({
+          where: {
+            badgeId_languageCode: {
+              badgeId: id,
+              languageCode: languageCode as any,
+            },
+          },
+          update: {
+            name,
+            description: description ?? null,
+          },
+          create: {
+            badgeId: id,
+            languageCode: languageCode as any,
+            name,
+            description: description ?? null,
+          },
+        });
+
+        upserted.push(badgeTranslation);
+      }
+
+      // Return the updated badge with translations
+      const updatedBadge = await badgeService.getBadgeById(id);
+
+      logger.info("Badge translations updated successfully", { badgeId: id, count: upserted.length });
+
+      sendSuccess(res, updatedBadge, 200);
+    } catch (error) {
+      logger.error("Error in updateBadgeTranslations controller", { error: String(error) });
+      sendError(res, String(error), 500, "Failed to update badge translations");
     }
   }
 
