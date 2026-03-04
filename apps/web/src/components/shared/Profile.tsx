@@ -11,7 +11,7 @@ import {
 
 import { Button } from "../ui/button";
 import { signOut } from "next-auth/react";
-import { LogOut, User, Settings, Layout } from "lucide-react";
+import { LogOut, User, Settings, Layout, Loader2 } from "lucide-react";
 import { Checkbox } from "../ui/checkbox";
 import { toast } from "sonner";
 import { Session } from "next-auth";
@@ -21,11 +21,18 @@ import { RoleType } from "@shared/types";
 export default function Profile({ session }: { session: Session }) {
   const [closeDialog, setCloseDialog] = React.useState(false);
   const [activeTab, setActiveTab] = useState<"profile" | "settings">("profile");
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const t = useTranslations("Profile");
 
   const handleLogout = async () => {
-    await signOut({ redirect: true, callbackUrl: "/" });
-    toast.success(t("loggedOut"));
+    try {
+      setIsLoggingOut(true);
+      await signOut({ redirect: true, callbackUrl: "/" });
+      toast.success(t("loggedOut"));
+    } catch (err) {
+      setIsLoggingOut(false);
+      toast.error(t("logoutError") ?? "Failed to log out");
+    }
   };
 
   return (
@@ -89,9 +96,19 @@ export default function Profile({ session }: { session: Session }) {
             </nav>
 
             <div className="mt-6 pt-6 border-t">
-              <Button onClick={handleLogout} variant="destructive">
-                <LogOut className="w-4 h-4" />
-                {t("logout")}
+              <Button
+                onClick={handleLogout}
+                variant="destructive"
+                disabled={isLoggingOut}
+              >
+                {isLoggingOut ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <LogOut className="w-4 h-4" />
+                    {t("logout")}
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -154,7 +171,7 @@ export default function Profile({ session }: { session: Session }) {
             {activeTab === "settings" && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-xl font-bold mb-4">{t("settings")}</h2>
+                  <h2 className="text-xl font-medium mb-4">{t("settings")}</h2>
 
                   {/* Notification Settings */}
                   <div className="bg-card rounded-lg border border-primary/20 p-6 space-y-4 mb-6">
@@ -162,17 +179,23 @@ export default function Profile({ session }: { session: Session }) {
                     <div className="space-y-3">
                       <label className="flex items-center gap-3 cursor-pointer">
                         <Checkbox defaultChecked className="w-4 h-4" />
-                        <span className="text-sm text-gray-500">{t("emailNotifications")}</span>
+                        <span className="text-sm text-gray-500">
+                          {t("emailNotifications")}
+                        </span>
                       </label>
                       <label className="flex items-center gap-3 cursor-pointer">
                         <Checkbox defaultChecked className="w-4 h-4" />
 
-                        <span className="text-sm text-gray-500">{t("learningProgressUpdates")}</span>
+                        <span className="text-sm text-gray-500">
+                          {t("learningProgressUpdates")}
+                        </span>
                       </label>
                       <label className="flex items-center gap-3 cursor-pointer">
                         <Checkbox defaultChecked className="w-4 h-4" />
 
-                        <span className="text-sm text-gray-500">{t("weeklySummary")}</span>
+                        <span className="text-sm text-gray-500">
+                          {t("weeklySummary")}
+                        </span>
                       </label>
                     </div>
                   </div>
@@ -180,7 +203,7 @@ export default function Profile({ session }: { session: Session }) {
                   {/* Danger Zone */}
                   <div className="bg-red-50 rounded-lg border border-red-200 p-4">
                     <h3 className="text-red-900 mb-4">{t("dangerZone")}</h3>
-                      <Button variant="destructive">{t("deleteAccount")}</Button>
+                    <Button variant="destructive">{t("deleteAccount")}</Button>
                   </div>
                 </div>
               </div>

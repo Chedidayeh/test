@@ -9,23 +9,19 @@ import { CircleQuestionMark, Settings, X } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import RiddleInteractive from "../_riddle-interaction-screen/RiddleInteractive";
 import StoryFlowNavigation from "./StoryFlowNavigation";
-import {
-  Story,
-  ChallengeStatus,
-  ChallengeAttempt,
-} from "@shared/types";
+import { Story, ChallengeStatus, ChallengeAttempt } from "@shared/types";
 import {
   transformStoryToPages,
   getChapterByPageNumber,
 } from "./storyDataTransform";
+import { useTranslations } from "next-intl";
 
 interface StoryReadingInteractiveProps {
   story: Story;
 }
 
-const StoryReadingInteractive = ({
-  story,
-}: StoryReadingInteractiveProps) => {
+const StoryReadingInteractive = ({ story }: StoryReadingInteractiveProps) => {
+  const t = useTranslations("StoryReadingInterface");
 
   // Start with page 1 (this is preview mode, no checkpoint needed)
   const [currentPage, setCurrentPage] = useState(1);
@@ -125,11 +121,13 @@ const StoryReadingInteractive = ({
 
   // Determine if riddle button should be shown
   // Show button only if challenge is not attempted
-  const shouldShowRiddleButton =
-    currentPageData.hasRiddle
+  const shouldShowRiddleButton = currentPageData.hasRiddle;
 
   // Callback to update challenge attempt when submitted from riddle component
-  const handleChallengeSubmitted = (updatedAttempt: ChallengeAttempt, starsEarned?: number) => {
+  const handleChallengeSubmitted = (
+    updatedAttempt: ChallengeAttempt,
+    starsEarned?: number,
+  ) => {
     setCurrentChallengeAttemptState(updatedAttempt);
     // Also cache it locally so we don't lose it on page navigation
     setLocalChallengeAttempts((prev) => ({
@@ -201,7 +199,7 @@ const StoryReadingInteractive = ({
                       variant={"secondary"}
                       onClick={() => setShowRiddle(true)}
                     >
-                      <span>Solve the riddle</span>
+                      <span>{t("storyFlowNavigation.solveRiddle")}</span>
                     </Button>
                   </motion.div>
                 )}
@@ -217,13 +215,13 @@ const StoryReadingInteractive = ({
                     {currentChallengeAttemptState.status ===
                       ChallengeStatus.SOLVED && (
                       <span className="font-medium text-secondary">
-                        ✓ Challenge Solved
+                        ✓ {t("storyFlowNavigation.challengeSolved")}
                       </span>
                     )}
                     {currentChallengeAttemptState.status ===
                       ChallengeStatus.SKIPPED && (
                       <span className="font-medium text-primary">
-                        ⊘ Challenge Skipped
+                        ⊘ {t("storyFlowNavigation.challengeSkipped")}
                       </span>
                     )}
                   </motion.div>
@@ -292,7 +290,7 @@ const StoryReadingInteractive = ({
           <div className="bg-card rounded-xl shadow-warm-xl p-6 md:p-8 max-w-md w-full">
             <div className="flex items-center justify-between mb-6">
               <h2 className="font-heading text-2xl text-foreground">
-                Reading Help
+                {t("readingHelp.title")}
               </h2>
               <button
                 onClick={() => setShowHelp(false)}
@@ -307,11 +305,10 @@ const StoryReadingInteractive = ({
               <div className="flex items-start gap-3">
                 <div>
                   <p className="font-body font-semibold text-foreground mb-1">
-                    Navigation
+                    {t("readingHelp.navigation")}
                   </p>
                   <p className="font-caption text-sm text-muted-foreground">
-                    Use the arrows at the bottom to move between pages. Your
-                    progress is saved automatically.
+                    {t("readingHelp.navigationDesc")}
                   </p>
                 </div>
               </div>
@@ -319,11 +316,10 @@ const StoryReadingInteractive = ({
               <div className="flex items-start gap-3">
                 <div>
                   <p className="font-body font-semibold text-foreground mb-1">
-                    Audio Reading
+                    {t("readingHelp.audioReading")}
                   </p>
                   <p className="font-caption text-sm text-muted-foreground">
-                    Press play to hear the story read aloud. Adjust speed and
-                    language in the controls.
+                    {t("readingHelp.audioReadingDesc")}
                   </p>
                 </div>
               </div>
@@ -331,18 +327,17 @@ const StoryReadingInteractive = ({
               <div className="flex items-start gap-3">
                 <div>
                   <p className="font-body font-semibold text-foreground mb-1">
-                    Riddles
+                    {t("readingHelp.riddles")}
                   </p>
                   <p className="font-caption text-sm text-muted-foreground">
-                    When you see a riddle indicator, solve it to continue the
-                    story and earn stars!
+                    {t("readingHelp.riddlesDesc")}
                   </p>
                 </div>
               </div>
             </div>
             <div className="flex items-center justify-center">
               <Button variant="accent" onClick={() => setShowHelp(false)}>
-                Got it!
+                {t("readingHelp.gotIt")}
               </Button>
             </div>
           </div>

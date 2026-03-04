@@ -10,9 +10,15 @@ import FeedbackDisplay from "./FeedbackDisplay";
 import { Lightbulb } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import FloatingItems from "./FloatingItems";
-import { Challenge, ChallengeStatus, ChallengeType, ChallengeAttempt } from "@shared/types";
+import {
+  Challenge,
+  ChallengeStatus,
+  ChallengeType,
+  ChallengeAttempt,
+} from "@shared/types";
 import { submitChallengeAnswerAction } from "@/src/lib/progress-service/server-actions";
 import type { SubmitChallengeAnswerRequest } from "@/src/lib/progress-service/server-api";
+import { useTranslations } from "next-intl";
 
 interface Choice {
   id: string;
@@ -40,7 +46,10 @@ interface RiddleInteractiveProps {
   storyImage?: string;
   storyImageAlt?: string;
   gameSessionId?: string;
-  onChallengeSubmitted?: (attempt: ChallengeAttempt, starsEarned?: number) => void;
+  onChallengeSubmitted?: (
+    attempt: ChallengeAttempt,
+    starsEarned?: number,
+  ) => void;
   onClose?: () => void;
 }
 
@@ -52,8 +61,7 @@ const RiddleInteractive = ({
   onChallengeSubmitted,
   onClose,
 }: RiddleInteractiveProps) => {
-  const router = useRouter();
-
+  const t = useTranslations("StoryReadingInterface.riddleInterface");
   // Transform Challenge to Riddle format
   const transformChallengeToRiddle = (challenge: Challenge): Riddle => {
     const riddle: Riddle = {
@@ -77,7 +85,7 @@ const RiddleInteractive = ({
 
   // Use challenge data if provided, otherwise use fallback
   const [currentRiddle] = useState<Riddle>(() => {
-      return transformChallengeToRiddle(challenge!);
+    return transformChallengeToRiddle(challenge!);
   });
 
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
@@ -97,7 +105,9 @@ const RiddleInteractive = ({
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(true);
-  const [actions, setActions] = useState<SubmitChallengeAnswerRequest['actions']>([]);
+  const [actions, setActions] = useState<
+    SubmitChallengeAnswerRequest["actions"]
+  >([]);
 
   const totalHints = currentRiddle.hints.length;
   const availableHints = totalHints - hintsUsed;
@@ -134,9 +144,9 @@ const RiddleInteractive = ({
     answerText: string | undefined,
     isCorrect: boolean,
     isSkipped: boolean = false,
-    status : ChallengeStatus,
+    status: ChallengeStatus,
     attemptNum: number = attempts,
-    attemptActions: SubmitChallengeAnswerRequest['actions'] = actions
+    attemptActions: SubmitChallengeAnswerRequest["actions"] = actions,
   ) => {
     if (!gameSessionId) {
       console.error("[Riddle] No game session ID provided");
@@ -166,7 +176,7 @@ const RiddleInteractive = ({
         baseStars: currentRiddle.starsReward,
         skipped: isSkipped,
         status: status,
-        actions: attemptActions
+        actions: attemptActions,
       });
 
       if (result.success) {
@@ -177,7 +187,10 @@ const RiddleInteractive = ({
         });
         // Notify parent component of the updated attempt with stars earned
         if (result.data?.attempt) {
-          onChallengeSubmitted?.(result.data.attempt, result.data?.totalStarsEarned);
+          onChallengeSubmitted?.(
+            result.data.attempt,
+            result.data?.totalStarsEarned,
+          );
         }
       } else {
         console.error("[Riddle] Failed to record challenge attempt", {
@@ -250,7 +263,9 @@ const RiddleInteractive = ({
         }
         // Get the answer ID from selected choice
         selectedAnswerId = selectedChoice || undefined;
-        selectedAnswerText = currentRiddle.choices?.find((c) => c.id === selectedChoice)?.text;
+        selectedAnswerText = currentRiddle.choices?.find(
+          (c) => c.id === selectedChoice,
+        )?.text;
         answerText = answer;
         break;
 
@@ -260,20 +275,22 @@ const RiddleInteractive = ({
         isCorrect = true;
         // Get the answer ID from selected choice
         selectedAnswerId = selectedChoice || undefined;
-        selectedAnswerText = currentRiddle.choices?.find((c) => c.id === selectedChoice)?.text;
+        selectedAnswerText = currentRiddle.choices?.find(
+          (c) => c.id === selectedChoice,
+        )?.text;
         answerText = answer;
         break;
     }
 
     // Capture action for this answer submission
-    const actionData: SubmitChallengeAnswerRequest['actions'][0] = {
+    const actionData: SubmitChallengeAnswerRequest["actions"][0] = {
       selectedAnswerId,
       selectedAnswerText,
       answerText,
       attemptNumberAtAction: currentAttempt,
       isCorrect: isCorrect,
     };
-    
+
     // Build new actions array synchronously before submitting
     const updatedActions = [...actions, actionData];
     setActions(updatedActions);
@@ -288,14 +305,22 @@ const RiddleInteractive = ({
     if (isCorrect) {
       stopTimerAndLog("solved");
       // Submit the challenge attempt to backend with all accumulated actions
-      submitChallengeAttempt(selectedAnswerId, answerText, true, false , ChallengeStatus.SOLVED, currentAttempt, updatedActions);
-      
+      submitChallengeAttempt(
+        selectedAnswerId,
+        answerText,
+        true,
+        false,
+        ChallengeStatus.SOLVED,
+        currentAttempt,
+        updatedActions,
+      );
+
       const messages = {
-        RIDDLE: "Fantastic! You solved the riddle! Your reading skills are amazing!",
-        TRUE_FALSE: "Correct! You understood that statement perfectly!",
-        MULTIPLE_CHOICE: "Excellent choice! You really understood the story!",
-        CHOOSE_ENDING: "Excellent choice! Thank you for sharing your perspective!",
-        MORAL_DECISION: "Excellent choice! Thank you for sharing your perspective!",
+        RIDDLE: t("solvedAnswerRIDDLE"),
+        TRUE_FALSE: t("solvedAnswerTRUE_FALSE"),
+        MULTIPLE_CHOICE: t("solvedAnswerMULTIPLE_CHOICE"),
+        CHOOSE_ENDING: t("solvedAnswerCHOOSE_ENDING"),
+        MORAL_DECISION: t("solvedAnswerMORAL_DECISION"),
       };
       setFeedbackState({
         type: "solved",
@@ -305,23 +330,37 @@ const RiddleInteractive = ({
     } else if (isAlmost) {
       stopTimerAndLog("almost");
       // Submit the challenge attempt to backend (incorrect answer) with all accumulated actions
-      submitChallengeAttempt(selectedAnswerId, answerText, false, false, ChallengeStatus.INCORRECT, currentAttempt, updatedActions);
-      
+      submitChallengeAttempt(
+        selectedAnswerId,
+        answerText,
+        false,
+        false,
+        ChallengeStatus.INCORRECT,
+        currentAttempt,
+        updatedActions,
+      );
+
       setFeedbackState({
         type: "almost",
-        message:
-          "Think about it a little more. You can do this!",
+        message: t("almostAnswer"),
         isVisible: true,
       });
     } else {
       stopTimerAndLog("incorrect");
       // Submit the challenge attempt to backend (incorrect answer) with all accumulated actions
-      submitChallengeAttempt(selectedAnswerId, answerText, false, false, ChallengeStatus.INCORRECT, currentAttempt, updatedActions);
-      
+      submitChallengeAttempt(
+        selectedAnswerId,
+        answerText,
+        false,
+        false,
+        ChallengeStatus.INCORRECT,
+        currentAttempt,
+        updatedActions,
+      );
+
       setFeedbackState({
         type: "incorrect",
-        message:
-          "Not quite right, but that's okay! Every try helps you learn. Want to try again or use a hint?",
+        message: t("incorrectAnswer"),
         isVisible: true,
       });
     }
@@ -335,15 +374,15 @@ const RiddleInteractive = ({
       setCurrentHintLevel(newHintLevel);
       setHintsUsed((prev) => prev + 1);
       setIsHintPanelVisible(true);
-      
+
       // Capture hint action
       setActions((prev) => [
         ...prev,
-        { 
+        {
           attemptNumberAtAction: attempts,
         },
       ]);
-      
+
       console.log("[Riddle] Hint requested", {
         hintIndex: newHintLevel - 1,
         attemptNumber: attempts,
@@ -370,12 +409,20 @@ const RiddleInteractive = ({
 
   const handleContinue = (action: "solved" | "skipped") => {
     stopTimerAndLog(action === "solved" ? "solved" : "skipped");
-    
+
     // If skipped, record the attempt as skipped to the backend with all accumulated actions
     if (action === "skipped") {
-      submitChallengeAttempt(undefined, undefined, false, true, ChallengeStatus.SKIPPED, attempts, actions);
+      submitChallengeAttempt(
+        undefined,
+        undefined,
+        false,
+        true,
+        ChallengeStatus.SKIPPED,
+        attempts,
+        actions,
+      );
     }
-    
+
     onClose?.();
   };
 
@@ -383,7 +430,6 @@ const RiddleInteractive = ({
     setIsAudioPlaying(!isAudioPlaying);
     setTimeout(() => setIsAudioPlaying(false), 3000);
   };
-
 
   return (
     <div className="">
@@ -399,7 +445,10 @@ const RiddleInteractive = ({
         <div className="mt-6">
           <RiddleQuestion
             question={currentRiddle.question}
-            storyImage={currentRiddle.storyImage || "https://images.unsplash.com/photo-1730314737966-92b9760790eb"}
+            storyImage={
+              currentRiddle.storyImage ||
+              "https://images.unsplash.com/photo-1730314737966-92b9760790eb"
+            }
             storyImageAlt={currentRiddle.storyImageAlt}
             riddleNumber={1}
             totalRiddles={3}
@@ -416,7 +465,7 @@ const RiddleInteractive = ({
             <TextInputAnswer
               onSubmit={handleTextSubmit}
               isDisabled={feedbackState.isVisible}
-              placeholder="Type your answer here..."
+              placeholder={t("textInputAnswer.placeholder")}
             />
           ) : (
             <>
@@ -433,7 +482,7 @@ const RiddleInteractive = ({
                 disabled={!selectedChoice || feedbackState.isVisible}
                 className="w-full mt-6 px-6 py-4 text-lg"
               >
-                Submit Answer
+                {t("submitAnswer")}
               </Button>
             </>
           )}
@@ -465,17 +514,19 @@ const RiddleInteractive = ({
       </div>
 
       {/* Floating Hint Button */}
-      <div className="fixed right-4 bottom-24 z-50 pointer-events-none">
-        <button
-          onClick={handleShowHintPanel}
-          className="pointer-events-auto flex items-center gap-3 px-4 py-3 bg-secondary text-white rounded-full shadow-warm hover:scale-105 transition-smooth disabled:opacity-50"
-        >
-          <Lightbulb size={20} />
-          <span className="hidden md:inline font-heading font-bold">
-            Need a Hint? ({availableHints})
-          </span>
-        </button>
-      </div>
+      {totalHints > 0 && (
+        <div className="fixed right-4 bottom-24 z-50 pointer-events-none">
+          <button
+            onClick={handleShowHintPanel}
+            className="pointer-events-auto flex items-center gap-3 px-4 py-3 bg-secondary text-white rounded-full shadow-warm hover:scale-105 transition-smooth disabled:opacity-50"
+          >
+            <Lightbulb size={20} />
+            <span className="hidden md:inline font-heading font-bold">
+              {t("needAHint")} ({availableHints})
+            </span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };

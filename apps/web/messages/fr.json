@@ -29,8 +29,14 @@
 		"themeToggle": "Basculer le thème"
 	},
 	"CommonComponents": {
+		"missingData": "Données manquantes",
+		"goBack": "Retour",
 		"language": "Langue",
-		"loading": "Chargement..."
+		"english": "Anglais",
+		"french": "Français",
+		"arabic": "Arabe",
+		"loading": "Chargement...",
+		"selectLanguage": "Langue"
 	},
 	"ParentDashboard": {
 		"yourChildren": "Vos enfants",
@@ -199,6 +205,8 @@
 		}
 	},
 	"ChildDashboard": {
+		"continueReading": "Continuez la lecture",
+		"childNotFound": "Enfant non trouvé. Veuillez vérifier le lien et réessayer.",
 		"progressTracker": {
 			"title": "Votre parcours",
 			"levelsUnlocked": "{completed}/{total} niveaux débloqués",
@@ -266,7 +274,7 @@
 			}
 		}
 	},
-		"RoadmapsLibrary":{
+	"RoadmapsLibrary": {
 		"library": {
 			"title": "Bibliothèque de parcours",
 			"description": "Découvrez des histoires étonnantes et commencez l'aventure de lecture de votre enfant !",
@@ -395,5 +403,141 @@
 		"invalidAgeGroup": "La tranche d'âge sélectionnée est invalide",
 		"selectAtLeastOneTheme": "Sélectionnez au moins un thème",
 		"stepOf": "Étape {step} sur {total}"
+	},
+	"StoryReadingInterface": {
+		"missingRequiredParameters": "Les paramètres requis sont manquants. Veuillez vérifier le lien et réessayer.",
+		"storyNotFound": "La story demandée n'a pas pu être trouvée. Veuillez vérifier l'ID de la story et réessayer.",
+		"unableToStartStory": "Impossible de démarrer la story pour l'enfant. Vérifiez les paramètres et réessayez.",
+		"readingSettings": {
+			"title": "Paramètres de lecture",
+			"textSize": "Taille du texte",
+			"small": "Petit",
+			"medium": "Moyen",
+			"large": "Grand",
+			"language": "Langue",
+			"english": "Anglais",
+			"french": "Français",
+			"arabic": "Arabe",
+			"highContrast": "Mode contraste élevé",
+			"highContrastDesc": "Lecture plus facile pour l'accessibilité visuelle",
+			"readingTip": "Conseil de lecture",
+			"readingTipText": "Utilisez les contrôles audio pour écouter tout en lisant. Cela aide à améliorer la prononciation et la compréhension !",
+			"closeButton": "Fermer"
+		},
+		"readingHelp": {
+			"title": "Aide à la lecture",
+			"navigation": "Navigation",
+			"navigationDesc": "Utilisez les flèches en bas pour vous déplacer entre les pages. Votre progression est sauvegardée automatiquement.",
+			"audioReading": "Lecture audio",
+			"audioReadingDesc": "Appuyez sur le bouton de lecture pour entendre l'histoire lue à haute voix. Ajustez la vitesse et la langue dans les contrôles.",
+			"riddles": "Énigmes",
+			"riddlesDesc": "Lorsque vous voyez un indicateur d'énigme, résolvez-la pour continuer l'histoire et gagner des étoiles !",
+			"gotIt": "D'accord !"
+		},
+		"storyFlowNavigation": {
+			"backButton": "Retour",
+			"returnToStory": "Revenir à l'Histoire",
+			"previousButton": "Précédent",
+			"nextButton": "Suivant",
+			"starsEarned": "{count} étoiles",
+			"pageProgress": "Page {current} sur {total}",
+			"timerMessage": "Continuez à lire... ({remaining}s restantes)",
+			"completionMessage": "Histoire terminée ! 🎉",
+			"solveRiddle": "Résoudre l'énigme",
+			"challengeSolved": "Défi résolu !",
+			"challengeSkipped": "Défi ignoré !",
+			"riddleTime": "C'est l'heure de l'énigme !",
+			"riddleTimeText": "Une fois que vous avez lu cette page, cliquez sur le bouton Résoudre l'énigme pour continuer l'histoire"
+		},
+		"storyControls": {
+			"playAudio": "Lire l'audio",
+			"pauseAudio": "Mettre en pause l'audio",
+			"volumeControl": "Volume",
+			"playbackSpeed": "Vitesse",
+			"normalSpeed": "Normal",
+			"fastSpeed": "Rapide",
+			"slowSpeed": "Lent",
+			"settings": "Paramètres",
+			"help": "Aide"
+		},
+		"riddleInterface": {
+			"submitAnswer": "Soumettre la réponse",
+			"needAHint": "Besoin d'un indice?",
+			"incorrectAnswer": "Pas tout à fait correct, mais ce n'est pas grave ! Chaque essai vous aide à apprendre. Voulez-vous réessayer ou utiliser un indice ?",
+			"almostAnswer": "Presque ! Vous êtes sur la bonne voie. Voulez-vous réessayer ou utiliser un indice ?",
+			"solvedAnswerRIDDLE": "Fantastique ! Vous avez résolu l'énigme et débloqué la suite de l'histoire !",
+			"solvedAnswerTRUE_FALSE": "Excellent choix! Vous avez vraiment compris l'histoire!",
+			"solvedAnswerMULTIPLE_CHOICE": "Excellent choix! Vous avez vraiment compris l'histoire!",
+			"solvedAnswerCHOOSE_ENDING": "Excellent choix! Merci de partager votre perspective!",
+			"solvedAnswerMORAL_DECISION": "Excellent choix! Merci de partager votre perspective!",
+			"riddleQuestion": {
+				"riddleCounter": "Énigme {current} sur {total}",
+				"trueOrFalse": "Choisissez Vrai ou Faux:",
+				"chooseEnding": "Choisissez la fin de l'histoire:",
+				"moralDecision": "Que ferez-vous?",
+				"multipleChoice": "Choisissez la bonne réponse:",
+				"riddle": "Résolvez l'énigme:",
+				"defaultQuestion": "Répondez à la question:",
+				"timeDisplay": "Temps: {seconds}s",
+				"playAudio": "Lire l'énigme à haute voix",
+				"stopAudio": "Arrêter la lecture de l'énigme"
+			},
+			"floatingItems": {
+				"attemptsLabel": "Tentatives",
+				"hintsUsedLabel": "Indices Utilisés"
+			},
+			"textInputAnswer": {
+				"yourAnswer": "Votre Réponse:",
+				"placeholder": "Tapez votre réponse ici...",
+				"checkButton": "Vérifier"
+			},
+			"multipleChoiceAnswer": {
+				"chooseAnswer": "Choisissez votre réponse:"
+			},
+			"hintPanel": {
+				"title": "Indice Utile",
+				"hintsRemaining": "{count} indices restants",
+				"previousHints": "Indices Précédents:",
+				"hintCounter": "Indice {current} sur {total}",
+				"noMoreHints": "Plus d'indices disponibles. Vous pouvez le faire!",
+				"allHintsRevealed": "Tous les indices révélés. Donnez le meilleur de vous-même!",
+				"closeButton": "Fermer",
+				"getAnotherHint": "Obtenir un Autre Indice ({remaining} restant)"
+			},
+			"feedbackDisplay": {
+				"solvedTitle": "Excellent Travail!",
+				"almostTitle": "Presque!",
+				"incorrectTitle": "Continue à Essayer!",
+				"starsEarned": "+{count} Étoiles Gagnées!",
+				"continueButton": "Continuer l'Histoire",
+				"skipButton": "Passer Cette Énigme",
+				"tryAgainButton": "Réessayer"
+			}
+		}
+	},
+	"StoryCompletion": {
+		"childNotFound": "Enfant non trouvé. Veuillez vérifier le lien et réessayer.",
+		"storyNotFound": "La histoire demandée n'est pas trouvée. Veuillez vérifier le lien et réessayer.",
+		"progressNotFound": "Progression de l'enfant non trouvée. Veuillez vérifier le lien et réessayer.",
+		"storyNotCompleted": "L'histoire n'est pas terminée. Veuillez vérifier le lien et réessayer.",
+		"completionHeader": {
+			"title": "Histoire Terminée!",
+			"subtitle": "Bravo, {childName}! Tu as fini \"{storyTitle}\"."
+		},
+		"progressCard": {
+			"starsEarned": "Étoiles Gagnées:",
+			"currentLevel": "Niveau Actuel",
+			"totalStars": "Total des Étoiles",
+			"progressToLevel": "Progression vers le Niveau {nextLevel}",
+			"progressPercentage": "{percentage}%",
+			"levelUnlocked": "🎉 Tu as atteint le Niveau {nextLevel}!",
+			"starsNeeded": "{count} étoiles supplémentaires nécessaires"
+		},
+		"badgeInfo": {
+			"unlocked": "Nouveau Badge Débloqué: {badgeName}"
+		},
+		"buttons": {
+			"returnToDashboard": "Retour au Tableau de Bord"
+		}
 	}
 }

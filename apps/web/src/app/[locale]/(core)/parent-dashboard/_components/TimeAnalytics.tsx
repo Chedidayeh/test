@@ -122,10 +122,13 @@ export default function TimeAnalytics({ childProgress, childProfile }: TimeAnaly
         </div>
         <div className="rounded-lg bg-linear-to-br from-cyan-200/20 to-blue-200/20 border border-cyan-200 dark:border-cyan-200/50 p-4">
           <p className="text-sm text-muted-foreground mb-1">{t("timeAnalytics.stats.currentStreak")}</p>
+                    <div className="flex items-baseline gap-1">
+
           <p className="text-3xl font-data font-bold text-cyan-600">
             {currentStreak}
           </p>
-          <p className="text-xs text-cyan-500 mt-1">{t("timeAnalytics.stats.consecutiveDays")}</p>
+          <p className="text-sm text-cyan-500 mt-1">{t("timeAnalytics.stats.consecutiveDays")}</p>
+        </div>
         </div>
       </div>
 

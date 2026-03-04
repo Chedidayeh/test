@@ -1,6 +1,7 @@
 'use client';
 
 import { CircleCheck } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 
 interface Choice {
@@ -21,10 +22,12 @@ const MultipleChoiceAnswer = ({
   onSelect,
   isDisabled,
 }: MultipleChoiceAnswerProps) => {
+    const t = useTranslations("StoryReadingInterface.riddleInterface");
+  
   return (
     <div className="space-y-4">
       <label className="block font-body font-semibold text-foreground text-lg mb-4">
-        Choose your answer:
+        {t("multipleChoiceAnswer.chooseAnswer")}
       </label>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {choices.map((choice) => {

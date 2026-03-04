@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import StoryReadingInteractive from "../_components/StoryReadingInteractive";
+import MissingDataAlert from "@/src/components/shared/MissingDataAlert";
 import { getStoryById } from "@/src/lib/content-service/server-api";
 import { auth } from "@/src/auth";
 import { redirect } from "next/navigation";
 import { RoleType } from "@shared/types";
+import { getTranslations } from "next-intl/server";
 export const metadata: Metadata = {
   title: "Story Reading - Readly",
   description:
@@ -15,26 +17,28 @@ export default async function page({
 }: {
   params: Promise<{ id: string }>;
 }) {
+    const t = await getTranslations("StoryReadingInterface");
+
   const session = await auth();
   if (!session) {
     redirect("/");
   }
-  if(session.user.role !== RoleType.ADMIN) {
+  if (session.user.role !== RoleType.ADMIN) {
     redirect("/");
   }
   const { id } = await params;
 
   if (!id) {
     return (
-      <div className="p-4 text-red-500">
-        Missing required parameters: id
-      </div>
+      <MissingDataAlert message={t("missingRequiredParameters")} />
     );
   }
 
   const story = await getStoryById(id);
   if (!story) {
-    return <div className="p-4 text-red-500">Story not found for id: {id}</div>;
+    return (
+      <MissingDataAlert message={t("storyNotFound")} />
+    );
   }
 
   return (

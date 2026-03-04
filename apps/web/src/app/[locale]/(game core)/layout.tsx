@@ -1,4 +1,5 @@
 import { auth } from "@/src/auth";
+import { RoleType } from "@shared/types";
 import { redirect } from "next/navigation";
 
 export default async function Layout({
@@ -11,7 +12,7 @@ export default async function Layout({
     redirect("/");
   }
 
-  if (session?.user.newUser) {
+  if (session?.user.newUser && session.user.role === RoleType.PARENT) {
     redirect("/onboarding");
   }
   return <div className="">{children}</div>;

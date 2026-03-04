@@ -150,7 +150,7 @@ export default function StoriesRoadmap({
                         href={`/story-replaying-interface/${story.id}?childId=${childProfile.child.id}`}
                       >
                         <Button variant={"accent"} className="w-max">
-                          Read again
+                          {t("roadmapPage.storiesRoadmap.buttons.readAgain")}
                         </Button>
                       </Link>
                     )}
@@ -159,7 +159,9 @@ export default function StoriesRoadmap({
                       <Link
                         href={`/story-reading-interface/${story.id}?childId=${childProfile.child.id}`}
                       >
-                        <Button className="w-max">Continue Reading</Button>
+                        <Button className="w-max">
+                          {t("roadmapPage.storiesRoadmap.buttons.continueReading")}
+                        </Button>
                       </Link>
                     )}
 
@@ -167,7 +169,9 @@ export default function StoriesRoadmap({
                       <Link
                         href={`/story-reading-interface/${story.id}?childId=${childProfile.child.id}`}
                       >
-                        <Button className="w-max">Start Reading</Button>
+                        <Button className="w-max">
+                          {t("roadmapPage.storiesRoadmap.buttons.startReading")}
+                        </Button>
                       </Link>
                     )}
                   </div>

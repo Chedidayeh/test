@@ -224,7 +224,7 @@ export function StoriesContent({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <Link href={`/story-preview-interface/${story.id}`}>
+                <Link href={`/story-preview-interface/${story.id}`} target="_blank">
                   <DropdownMenuItem className="cursor-pointer">
                     <Eye className="mr-2 h-4 w-4" />
                     <span>Preview</span>

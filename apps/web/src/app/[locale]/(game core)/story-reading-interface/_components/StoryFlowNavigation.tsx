@@ -2,17 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  BookMarked,
-  ChevronLeft,
-  ChevronRight,
-  Gamepad2,
-  Lightbulb,
-  PlayIcon,
-  Star,
-} from "lucide-react";
-import { Button } from "../../../../components/ui/button";
-import { se } from "date-fns/locale";
+import { ChevronLeft, ChevronRight, Lightbulb, Star } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import {
   ChallengeAttempt,
@@ -26,6 +17,8 @@ import {
   completeStoryAction,
   pauseGameSessionAction,
 } from "@/src/lib/progress-service/server-actions";
+import { Button } from "@/src/components/ui/button";
+import { useLocale } from "@/src/contexts/LocaleContext";
 interface StoryFlowNavigationProps {
   storyTitle?: string;
   currentPage?: number;
@@ -57,6 +50,8 @@ const StoryFlowNavigation = ({
   totalStarsEarned = 0,
   childId,
 }: StoryFlowNavigationProps) => {
+  const t = useTranslations("StoryReadingInterface");
+  const { isRTL } = useLocale();
   const router = useRouter();
   const [isSavingCheckpoint, setIsSavingCheckpoint] = useState(false);
   const MIN_READ_TIME = 3; // Minimum time in seconds before allowing next page
@@ -260,14 +255,17 @@ const StoryFlowNavigation = ({
           <Button
             variant={"outline"}
             onClick={handleBack}
-            aria-label="Back"
             className="absolute left-4 md:left-8"
           >
-            <ChevronLeft size={20} />
+            {isRTL ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
             {showRiddle ? (
-              <span className="ml-2">Return to Story</span>
+              <span className="ml-2">
+                {t("storyFlowNavigation.returnToStory")}
+              </span>
             ) : (
-              <span className="ml-2">Exit Story</span>
+              <span className="ml-2">
+                {t("storyFlowNavigation.backButton")}
+              </span>
             )}
           </Button>
 
@@ -287,11 +285,10 @@ const StoryFlowNavigation = ({
                 </div>
                 <div>
                   <p className="font-heading text-secondary font-semibold">
-                    Riddle Time!
+                    {t("storyFlowNavigation.riddleTime")}
                   </p>
                   <p className="font-body text-sm text-muted-foreground">
-                    Once you read this page, click &quot;Solve the riddle&quot;
-                    button to continue the story
+                    {t("storyFlowNavigation.riddleTimeText")}
                   </p>
                 </div>
               </div>
@@ -338,10 +335,12 @@ const StoryFlowNavigation = ({
             <Button
               onClick={handlePreviousPage}
               disabled={currentPage === 1}
-              aria-label="Previous page"
+              aria-label={t("storyFlowNavigation.previousButton")}
             >
-              <ChevronLeft size={20} />{" "}
-              <span className="hidden md:inline">Previous</span>
+              {isRTL ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}{" "}
+              <span className="hidden md:inline">
+                {t("storyFlowNavigation.previousButton")}
+              </span>
             </Button>
 
             {/* Page Counter */}
@@ -350,7 +349,10 @@ const StoryFlowNavigation = ({
                 {currentPage}
               </span>
               <span className="font-caption text-sm text-muted-foreground">
-                of {totalPages}
+                {t("storyFlowNavigation.pageProgress", {
+                  current: currentPage,
+                  total: totalPages,
+                })}
               </span>
             </div>
 
@@ -365,15 +367,19 @@ const StoryFlowNavigation = ({
               }
               aria-label={
                 isTimerActive && timeRemaining > 0
-                  ? `Wait ${timeRemaining}s to continue`
-                  : "Next page"
+                  ? t("storyFlowNavigation.timerMessage", {
+                      remaining: timeRemaining,
+                    })
+                  : t("storyFlowNavigation.nextButton")
               }
               className="relative"
             >
               {isTimerActive && timeRemaining > 0 ? (
                 <>
                   <span className="hidden md:inline">
-                    Wait {timeRemaining}s
+                    {t("storyFlowNavigation.timerMessage", {
+                      remaining: timeRemaining,
+                    })}
                   </span>
                   <span className="inline md:hidden">{timeRemaining}s</span>
                 </>
@@ -382,14 +388,24 @@ const StoryFlowNavigation = ({
                   <span className="hidden md:inline">
                     {currentPage === totalPages ? (
                       <span className="flex items-center">
-                        Finish Story <ChevronRight size={20} />
+                        {t("storyFlowNavigation.completionMessage")}{" "}
+                        {isRTL ? (
+                          <ChevronLeft size={20} />
+                        ) : (
+                          <ChevronRight size={20} />
+                        )}
                       </span>
                     ) : currentChallengeAttemptState?.status ==
                       ChallengeStatus.NOT_ATTEMPTED ? (
-                      "Solve the riddle"
+                      t("storyFlowNavigation.solveRiddle")
                     ) : (
                       <span className="flex items-center">
-                        Next <ChevronRight size={20} />
+                        {t("storyFlowNavigation.nextButton")}{" "}
+                        {isRTL ? (
+                          <ChevronLeft size={20} />
+                        ) : (
+                          <ChevronRight size={20} />
+                        )}
                       </span>
                     )}
                   </span>

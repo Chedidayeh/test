@@ -2,6 +2,7 @@
 
 import { Button } from '@/src/components/ui/button';
 import { Send } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface TextInputAnswerProps {
@@ -13,8 +14,10 @@ interface TextInputAnswerProps {
 const TextInputAnswer = ({
   onSubmit,
   isDisabled,
-  placeholder = 'Type your answer here...',
+  placeholder,
 }: TextInputAnswerProps) => {
+    const t = useTranslations("StoryReadingInterface.riddleInterface");
+  
   const [answer, setAnswer] = useState('');
 
   const handleSubmit = () => {
@@ -33,7 +36,7 @@ const TextInputAnswer = ({
   return (
     <div className="space-y-4">
       <label className="block font-body text-foreground text-lg">
-        Your Answer:
+        {t("textInputAnswer.yourAnswer")}
       </label>
       <div className="flex gap-3">
         <input
@@ -42,7 +45,7 @@ const TextInputAnswer = ({
           onChange={(e) => setAnswer(e.target.value)}
           onKeyPress={handleKeyPress}
           disabled={isDisabled}
-          placeholder={placeholder}
+          placeholder={placeholder || t("textInputAnswer.placeholder")}
           spellCheck={true}
           className="flex-1 px-6 py-2 rounded-xl border bg-secondary/10 text-foreground text-lg transition-smooth disabled:opacity-50"
         />
@@ -51,7 +54,7 @@ const TextInputAnswer = ({
           disabled={!answer.trim() || isDisabled}
           variant={"secondary"}
         >
-          Check
+          {t("textInputAnswer.checkButton")}
         </Button>
       </div>
     </div>

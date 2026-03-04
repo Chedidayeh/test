@@ -14,6 +14,7 @@ import {
 import {
   transformStoryToPages,
 } from "./storyDataTransform";
+import { useTranslations } from "next-intl";
 
 interface StoryReplayingInteractiveProps {
   story: Story;
@@ -24,6 +25,8 @@ const StoryReplayingInteractive = ({
   story,
   childId,
 }: StoryReplayingInteractiveProps) => {
+    const t = useTranslations("StoryReadingInterface");
+  
   // Always start at the first page for replay
   const [currentPage, setCurrentPage] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -169,7 +172,7 @@ const StoryReplayingInteractive = ({
           <div className="bg-card rounded-xl shadow-warm-xl p-6 md:p-8 max-w-md w-full">
             <div className="flex items-center justify-between mb-6">
               <h2 className="font-heading text-2xl text-foreground">
-                Reading Help
+                {t("readingHelp.title")}
               </h2>
               <button
                 onClick={() => setShowHelp(false)}
@@ -184,10 +187,10 @@ const StoryReplayingInteractive = ({
               <div className="flex items-start gap-3">
                 <div>
                   <p className="font-body font-semibold text-foreground mb-1">
-                    Navigation
+                    {t("readingHelp.navigation")}
                   </p>
                   <p className="font-caption text-sm text-muted-foreground">
-                    Use the arrows at the bottom to move between pages.
+                    {t("readingHelp.navigationDesc")}
                   </p>
                 </div>
               </div>
@@ -195,11 +198,10 @@ const StoryReplayingInteractive = ({
               <div className="flex items-start gap-3">
                 <div>
                   <p className="font-body font-semibold text-foreground mb-1">
-                    Audio Reading
+                    {t("readingHelp.audioReading")}
                   </p>
                   <p className="font-caption text-sm text-muted-foreground">
-                    Press play to hear the story read aloud. Adjust speed and
-                    language in the controls.
+                    {t("readingHelp.audioReadingDesc")}
                   </p>
                 </div>
               </div>
@@ -207,17 +209,17 @@ const StoryReplayingInteractive = ({
               <div className="flex items-start gap-3">
                 <div>
                   <p className="font-body font-semibold text-foreground mb-1">
-                    Reading Settings
+                    {t("readingHelp.riddles")}
                   </p>
                   <p className="font-caption text-sm text-muted-foreground">
-                    Customize text size and high contrast mode for better readability.
+                    {t("readingHelp.riddlesDesc")}
                   </p>
                 </div>
               </div>
             </div>
             <div className="flex items-center justify-center">
               <Button variant="accent" onClick={() => setShowHelp(false)}>
-                Got it!
+                {t("readingHelp.gotIt")}
               </Button>
             </div>
           </div>

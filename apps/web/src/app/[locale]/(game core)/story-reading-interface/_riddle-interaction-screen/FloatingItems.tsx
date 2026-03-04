@@ -1,4 +1,7 @@
+"use client";
+
 import { Lightbulb, PencilIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface FloatingItemsProps {
   attempts: number;
@@ -11,6 +14,8 @@ const FloatingItems = ({
   hintsUsed,
   totalHints,
 }: FloatingItemsProps) => {
+  const t = useTranslations("StoryReadingInterface.riddleInterface");
+
   return (
     <div className="fixed top-25 right-6 z-50 flex flex-col items-end gap-3 pointer-events-none">
       <div className="flex items-center gap-3 bg-card/90 backdrop-blur-md rounded-full px-3 py-2 shadow-warm pointer-events-auto">
@@ -18,8 +23,8 @@ const FloatingItems = ({
           <PencilIcon size={20} className="text-primary" />
         </div>
         <div className="text-right">
-          <p className="font-caption text-xs text-muted-foreground uppercase tracking-wider">
-            Attempts
+          <p className="font-caption  text-muted-foreground uppercase tracking-wider">
+            {t("floatingItems.attemptsLabel")}
           </p>
           <p className="font-data text-lg font-bold text-foreground">
             {attempts}
@@ -32,8 +37,8 @@ const FloatingItems = ({
           <Lightbulb size={20} className="text-secondary" />
         </div>
         <div className="text-right">
-          <p className="font-caption text-xs text-muted-foreground uppercase tracking-wider">
-            Hints Used
+          <p className="font-caption  text-muted-foreground uppercase tracking-wider">
+            {t("floatingItems.hintsUsedLabel")}
           </p>
           <p className="font-data text-lg font-bold text-foreground">
             {hintsUsed}/{totalHints}

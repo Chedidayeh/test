@@ -27,9 +27,9 @@ export default function RoleIndicator({ role }: RoleIndicatorProps) {
   return (
     <div
       className={cn(
-        "fixed top-3",
-        isRTL ? "left-50" : "right-50",
-        "z-99",
+        // "fixed top-3",
+        // isRTL ? "left-50" : "right-50",
+        // "z-99",
         "flex items-center gap-2 px-3 py-1.5 rounded-full",
         "border border-current/30",
         "text-sm font-medium",

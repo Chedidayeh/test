@@ -9,6 +9,8 @@ import { Session } from "next-auth";
 import Profile from "@/src/components/shared/Profile";
 import { LoginForm } from "@/src/components/shared/login-form";
 import { Switcher } from "@/src/components/shared/Switcher";
+import { RoleType } from "@shared/types";
+import { Button } from "@/src/components/ui/button";
 
 const Header = ({ session }: { session: Session | null }) => {
   const pathname = usePathname();
@@ -97,7 +99,12 @@ const Header = ({ session }: { session: Session | null }) => {
             </div> */}
 
             {/* Right - Login component (fixed to the far right) */}
-            <div className="flex-shrink-0 flex items-center gap-2">
+            <div className="flex-shrink-0 flex items-center gap-3">
+              {session?.user.role === RoleType.ADMIN && (
+                <Link href={"/admin-dashboard"}>
+                  <Button size={"sm"}>Admin Dashboard</Button>
+                </Link>
+              )}
               {user ? <Profile session={session} /> : <LoginForm />}{" "}
               <ModeToggle />
               <Switcher />

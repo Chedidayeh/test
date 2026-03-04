@@ -2,6 +2,7 @@
 
 import { Button } from "@/src/components/ui/button";
 import { CheckCircle, Lightbulb, SparklesIcon, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface Hint {
   text: string;
@@ -24,6 +25,8 @@ const HintPanel = ({
   isVisible,
   onClose,
 }: HintPanelProps) => {
+    const t = useTranslations("StoryReadingInterface.riddleInterface");
+  
   if (!isVisible) return null;
 
   const currentHint = hints[currentHintLevel - 1];
@@ -40,10 +43,10 @@ const HintPanel = ({
             </div>
             <div>
               <h2 className="font-heading text-xl text-foreground">
-                Helpful Hint
+                {t("hintPanel.title")}
               </h2>
               <p className="font-caption text-sm text-muted-foreground">
-                {availableHints} hints remaining
+                {t("hintPanel.hintsRemaining", { count: availableHints })}
               </p>
             </div>
           </div>
@@ -72,7 +75,7 @@ const HintPanel = ({
             <div className="p-6 rounded-xl border-2 border-secondary bg-secondary/10">
               <div className="flex items-center gap-2 mb-3">
                 <span className="font-caption text-xs uppercase tracking-wider font-semibold text-secondary">
-                  Hint {currentHintLevel} of {hints.length}
+                  {t("hintPanel.hintCounter", { current: currentHintLevel, total: hints.length })}
                 </span>
               </div>
               <p className="font-body text-lg text-foreground leading-relaxed">
@@ -86,7 +89,7 @@ const HintPanel = ({
         {currentHintLevel > 1 && (
           <div className="px-6 pb-2">
             <h3 className="font-heading text-lg text-foreground mb-3">
-              Previous Hints:
+              {t("hintPanel.previousHints")}
             </h3>
             <div className="space-y-3">
               {hints.slice(0, currentHintLevel - 1).map((hint, index) => (
@@ -97,7 +100,7 @@ const HintPanel = ({
                   <div className="flex items-center gap-2 mb-2">
                     <CheckCircle size={16} className="text-success" />
                     <span className="font-caption text-xs text-muted-foreground">
-                      Hint {index + 1}
+                      {t("hintPanel.hintCounter", { current: index + 1, total: hints.length })}
                     </span>
                   </div>
                   <p className="font-body text-sm text-foreground opacity-70">
@@ -113,23 +116,22 @@ const HintPanel = ({
         <div className="p-4 flex items-center justify-between gap-3 border-border">
           <div className="flex items-center justify-center">
             <Button variant={"outline"} onClick={onClose}>
-              Close
+              {t("hintPanel.closeButton")}
             </Button>
           </div>
           {hasMoreHints && availableHints > 0 ? (
             <Button
               variant={"secondary"}
-              className="w-full"
               onClick={onRequestHint}
             >
-              Get Another Hint ({availableHints} left)
+              {t("hintPanel.getAnotherHint", { remaining: availableHints })}
             </Button>
           ) : (
             <div className="text-center p-4 bg-muted rounded-xl">
               <p className="font-body text-foreground">
-                {availableHints === 0
-                  ? "No more hints available. You can do this!"
-                  : "All hints revealed. Give it your best try!"}
+              {availableHints === 0
+                  ? t("hintPanel.noMoreHints")
+                  : t("hintPanel.allHintsRevealed")}
               </p>
             </div>
           )}

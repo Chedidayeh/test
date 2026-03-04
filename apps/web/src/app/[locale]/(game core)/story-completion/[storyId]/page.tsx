@@ -1,8 +1,19 @@
-import { getBadges, getLevels, getStoryById } from "@/src/lib/content-service/server-api";
-import { getChildById, getChildProgress, updateChildLevel, assignBadgeToChild } from "@/src/lib/progress-service/server-api";
+import {
+  getBadges,
+  getLevels,
+  getStoryById,
+} from "@/src/lib/content-service/server-api";
+import {
+  getChildById,
+  getChildProgress,
+  updateChildLevel,
+  assignBadgeToChild,
+} from "@/src/lib/progress-service/server-api";
 import React from "react";
 import StoryCompetion from "./StoryCompetion";
 import { analyzeLevelProgress } from "../_lib/progress-analysis";
+import { getTranslations } from "next-intl/server";
+import MissingDataAlert from "@/src/components/shared/MissingDataAlert";
 
 export default async function page({
   params,
@@ -11,6 +22,8 @@ export default async function page({
   params: Promise<{ storyId: string }>;
   searchParams: Promise<{ childId: string; starsEarned?: string }>;
 }) {
+  const t = await getTranslations("StoryCompletion");
+
   const { storyId } = await params;
   const { childId } = (await searchParams) as {
     childId: string;
@@ -18,35 +31,21 @@ export default async function page({
 
   const child = await getChildById(childId);
   if (!child) {
-    return (
-      <div className="p-4 text-red-500">
-        Child not found for childId: {childId}
-      </div>
-    );
+    return <MissingDataAlert message={t("childNotFound")} />;
   }
 
   const story = await getStoryById(storyId);
   if (!story) {
-    return (
-      <div className="p-4 text-red-500">Story not found for id: {storyId}</div>
-    );
+    return <MissingDataAlert message={t("storyNotFound")} />;
   }
 
   const progress = await getChildProgress(childId, storyId);
   if (!progress) {
-    return (
-      <div className="p-4 text-red-500">
-        Progress not found for childId: {childId}, storyId: {storyId}
-      </div>
-    );
+    return <MissingDataAlert message={t("progressNotFound")} />;
   }
 
-  if(progress.status !== "COMPLETED") {
-    return (
-      <div className="p-4 text-red-500">
-        Story is not marked as completed. Current status: {progress.status}
-      </div>
-    );
+  if (progress.status !== "COMPLETED") {
+    return <MissingDataAlert message={t("storyNotCompleted")} />;
   }
 
   const badges = await getBadges().catch(() => []);

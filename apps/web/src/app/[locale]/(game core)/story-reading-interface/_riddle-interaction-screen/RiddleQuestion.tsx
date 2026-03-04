@@ -1,5 +1,8 @@
+"use client";
+
 import { Pause, Play, Puzzle, Clock } from "lucide-react";
 import { ChallengeType } from "@shared/types";
+import { useTranslations } from "next-intl";
 
 
 interface RiddleQuestionProps {
@@ -25,20 +28,22 @@ const RiddleQuestion = ({
   elapsedTime = 0,
   challengeType,
 }: RiddleQuestionProps) => {
+  const t = useTranslations("StoryReadingInterface.riddleInterface");
+  
   const getTypeLabel = (type?: ChallengeType): string => {
     switch (type) {
       case "TRUE_FALSE":
-        return "Choose True or False:";
+        return t("riddleQuestion.trueOrFalse");
       case "CHOOSE_ENDING":
-        return "Choose the story's ending:";
+        return t("riddleQuestion.chooseEnding");
       case "MORAL_DECISION":
-        return "What would you do?";
+        return t("riddleQuestion.moralDecision");
       case "MULTIPLE_CHOICE":
-        return "Choose the correct answer:";
+        return t("riddleQuestion.multipleChoice");
       case "RIDDLE":
-        return "Solve the riddle:";
+        return t("riddleQuestion.riddle");
       default:
-        return "Answer the question:";
+        return t("riddleQuestion.defaultQuestion");
     }
   };
   return (
@@ -48,13 +53,13 @@ const RiddleQuestion = ({
         <div className="flex items-center gap-2">
           <Puzzle size={24} className="text-secondary" />
           <span className="font-heading text-lg text-foreground">
-            Riddle {riddleNumber} of {totalRiddles}
+            {t("riddleQuestion.riddleCounter", { current: riddleNumber, total: totalRiddles })}
           </span>
         </div>
         <button
           onClick={onAudioPlay}
           className="p-3 rounded-full bg-secondary text-white hover:scale-105 transition-smooth shadow-warm"
-          aria-label={isAudioPlaying ? 'Stop reading riddle' : 'Read riddle aloud'}
+          aria-label={isAudioPlaying ? t("riddleQuestion.stopAudio") : t("riddleQuestion.playAudio")}
         >
           {isAudioPlaying ? <Pause size={20} /> : <Play size={20} />}
         </button>
@@ -64,7 +69,7 @@ const RiddleQuestion = ({
       <div className="mb-6 flex items-center gap-2 p-3 bg-secondary/10 rounded-lg w-fit">
         <Clock size={20} className="text-secondary" />
         <span className="font-heading text-lg text-foreground">
-          Time: {elapsedTime}s
+          {t("riddleQuestion.timeDisplay", { seconds: elapsedTime })}
         </span>
       </div>
 

@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { BookMarked, MapPlus } from "lucide-react";
 import { Progress, Roadmap, ProgressStatus, ChildProfile, Story, Chapter } from "@shared/types";
+import { useTranslations } from "next-intl";
 
 interface StoryCardData {
   storyId: string;
@@ -25,6 +26,8 @@ const ActionCards = ({
   roadmaps,
   childProfile,
 }: ActionCardsProps) => {
+    const t = useTranslations("ChildDashboard");
+  
   // Helper function to find story details from roadmaps
   const findStoryDetails = (storyId: string): StoryCardData | null => {
     for (const roadmap of roadmaps) {
@@ -65,7 +68,7 @@ const ActionCards = ({
     <div className="bg-card border border-black/30 rounded-xl p-6 shadow-warm-lg">
       <div className="flex items-center justify-between mb-6">
         <h2 className="font-heading text-2xl md:text-3xl text-foreground">
-          Continue Reading
+          {t("continueReading")}
         </h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

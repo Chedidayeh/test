@@ -29,8 +29,14 @@
 		"themeToggle": "Toggle theme"
 	},
 	"CommonComponents": {
+		"missingData": "Missing Data",
+		"goBack": "Go Back",
 		"language": "Language",
-		"loading": "Loading..."
+		"loading": "Loading...",
+		"english": "English",
+		"french": "French",
+		"arabic": "Arabic",
+		"selectLanguage": "Language"
 	},
 	"ParentDashboard": {
 		"yourChildren": "Your Children",
@@ -199,6 +205,8 @@
 		}
 	},
 	"ChildDashboard": {
+		"continueReading": "Continue Reading",
+		"childNotFound": "Child not found. Please check the link and try again.",
 		"progressTracker": {
 			"title": "Your Journey",
 			"levelsUnlocked": "{completed}/{total} levels unlocked",
@@ -266,7 +274,7 @@
 			}
 		}
 	},
-	"RoadmapsLibrary":{
+	"RoadmapsLibrary": {
 		"library": {
 			"title": "Roadmaps Library",
 			"description": "Discover amazing stories and start your child reading adventure!",
@@ -395,5 +403,141 @@
 		"invalidAgeGroup": "Selected age group is invalid",
 		"selectAtLeastOneTheme": "Select at least one theme",
 		"stepOf": "Step {step} of {total}"
+	},
+	"StoryReadingInterface": {
+		"missingRequiredParameters": "The story ID and child ID are required to load the story.",
+		"storyNotFound": "The requested story could not be found. Please verify the story ID and try again.",
+		"unableToStartStory": "Unable to start the story for the child. Check the parameters and try again.",
+		"readingSettings": {
+			"title": "Reading Settings",
+			"textSize": "Text Size",
+			"small": "Small",
+			"medium": "Medium",
+			"large": "Large",
+			"language": "Language",
+			"english": "English",
+			"french": "French",
+			"arabic": "Arabic",
+			"highContrast": "High Contrast Mode",
+			"highContrastDesc": "Easier reading for visual accessibility",
+			"readingTip": "Reading Tip",
+			"readingTipText": "Use the audio controls to listen along while reading. This helps improve pronunciation and comprehension!",
+			"closeButton": "Close"
+		},
+		"readingHelp": {
+			"title": "Reading Help",
+			"navigation": "Navigation",
+			"navigationDesc": "Use the arrows at the bottom to move between pages. Your progress is saved automatically.",
+			"audioReading": "Audio Reading",
+			"audioReadingDesc": "Press play to hear the story read aloud. Adjust speed and language in the controls.",
+			"riddles": "Riddles",
+			"riddlesDesc": "When you see a riddle indicator, solve it to continue the story and earn stars!",
+			"gotIt": "Got it!"
+		},
+		"storyFlowNavigation": {
+			"backButton": "Back",
+			"previousButton": "Previous",
+			"returnToStory": "Return to Story",
+			"nextButton": "Next",
+			"starsEarned": "{count} stars",
+			"pageProgress": "Page {current} of {total}",
+			"timerMessage": "Keep reading... ({remaining}s remaining)",
+			"completionMessage": "Story complete! 🎉",
+			"solveRiddle": "Solve the riddle",
+			"challengeSolved": "Challenge solved!",
+			"challengeSkipped": "Challenge skipped!",
+			"riddleTime": "It's riddle time!",
+			"riddleTimeText": "Once you read this page, click Solve the riddle button to continue the story"
+		},
+		"storyControls": {
+			"playAudio": "Play Audio",
+			"pauseAudio": "Pause Audio",
+			"volumeControl": "Volume",
+			"playbackSpeed": "Speed",
+			"normalSpeed": "Normal",
+			"fastSpeed": "Fast",
+			"slowSpeed": "Slow",
+			"settings": "Settings",
+			"help": "Help"
+		},
+		"riddleInterface": {
+			"submitAnswer": "Submit Answer",
+			"needAHint": "Need a Hint?",
+			"incorrectAnswer": "Not quite right, but that's okay! Every try helps you learn. Want to try again or use a hint?",
+			"almostAnswer": "Think about it a little more. You can do this!",
+			"solvedAnswerRIDDLE": "Fantastic! You solved the riddle! Your reading skills are amazing!",
+			"solvedAnswerTRUE_FALSE": "Correct! You understood that statement perfectly!",
+			"solvedAnswerMULTIPLE_CHOICE": "Excellent choice! You really understood the story!",
+			"solvedAnswerCHOOSE_ENDING": "Excellent choice! Thank you for sharing your perspective!",
+			"solvedAnswerMORAL_DECISION": "Excellent choice! Thank you for sharing your perspective!",
+			"riddleQuestion": {
+				"riddleCounter": "Riddle {current} of {total}",
+				"trueOrFalse": "Choose True or False:",
+				"chooseEnding": "Choose the story's ending:",
+				"moralDecision": "What would you do?",
+				"multipleChoice": "Choose the correct answer:",
+				"riddle": "Solve the riddle:",
+				"defaultQuestion": "Answer the question:",
+				"timeDisplay": "Time: {seconds}s",
+				"playAudio": "Read riddle aloud",
+				"stopAudio": "Stop reading riddle"
+			},
+			"floatingItems": {
+				"attemptsLabel": "Attempts",
+				"hintsUsedLabel": "Hints Used"
+			},
+			"textInputAnswer": {
+				"yourAnswer": "Your Answer:",
+				"placeholder": "Type your answer here...",
+				"checkButton": "Check"
+			},
+			"multipleChoiceAnswer": {
+				"chooseAnswer": "Choose your answer:"
+			},
+			"hintPanel": {
+				"title": "Helpful Hint",
+				"hintsRemaining": "{count} hints remaining",
+				"previousHints": "Previous Hints:",
+				"hintCounter": "Hint {current} of {total}",
+				"noMoreHints": "No more hints available. You can do this!",
+				"allHintsRevealed": "All hints revealed. Give it your best try!",
+				"closeButton": "Close",
+				"getAnotherHint": "Get Another Hint ({remaining} left)"
+			},
+			"feedbackDisplay": {
+				"solvedTitle": "Amazing Work!",
+				"almostTitle": "Almost There!",
+				"incorrectTitle": "Keep Trying!",
+				"starsEarned": "+{count} Stars Earned!",
+				"continueButton": "Continue Story",
+				"skipButton": "Skip This Riddle",
+				"tryAgainButton": "Try Again"
+			}
+		}
+	},
+	"StoryCompletion": {
+		"childNotFound": "Child not found. Please check the link and try again.",
+		"storyNotFound": "The requested story is not found. Please check the link and try again.",
+		"progressNotFound": "Child progress not found. Please check the link and try again.",
+		"storyNotCompleted": "The story is not completed. Please check the link and try again.",
+		"completionHeader": {
+			"title": "Story Completed!",
+			"subtitle": "Great job, {childName}! You finished \"{storyTitle}\"."
+		},
+		"progressCard": {
+			"starsEarned": "Stars Earned:",
+			"currentLevel": "Current Level",
+			"totalStars": "Total Stars",
+			"progressToLevel": "Progress to Level {nextLevel}",
+			"progressPercentage": "{percentage}%",
+			"levelUnlocked": "🎉 You've reached Level {nextLevel}!",
+			"starsNeeded": "{count} more stars needed"
+		},
+		"badgeInfo": {
+			"unlocked": "New Badge Unlocked: {badgeName}"
+		},
+		"buttons": {
+			"returnToDashboard": "Return to Dashboard"
+		}
 	}
 }

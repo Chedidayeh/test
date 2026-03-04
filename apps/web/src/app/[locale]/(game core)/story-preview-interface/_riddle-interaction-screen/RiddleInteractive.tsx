@@ -9,7 +9,13 @@ import FeedbackDisplay from "./FeedbackDisplay";
 import { Lightbulb } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import FloatingItems from "./FloatingItems";
-import { Challenge, ChallengeStatus, ChallengeType, ChallengeAttempt } from "@shared/types";
+import {
+  Challenge,
+  ChallengeStatus,
+  ChallengeType,
+  ChallengeAttempt,
+} from "@shared/types";
+import { useTranslations } from "next-intl";
 
 interface Choice {
   id: string;
@@ -36,7 +42,10 @@ interface RiddleInteractiveProps {
   challenge?: Challenge | null;
   storyImage?: string;
   storyImageAlt?: string;
-  onChallengeSubmitted?: (attempt: ChallengeAttempt, starsEarned?: number) => void;
+  onChallengeSubmitted?: (
+    attempt: ChallengeAttempt,
+    starsEarned?: number,
+  ) => void;
   onClose?: () => void;
 }
 
@@ -47,7 +56,8 @@ const RiddleInteractive = ({
   onChallengeSubmitted,
   onClose,
 }: RiddleInteractiveProps) => {
-
+    const t = useTranslations("StoryReadingInterface.riddleInterface");
+  
   // Transform Challenge to Riddle format
   const transformChallengeToRiddle = (challenge: Challenge): Riddle => {
     const riddle: Riddle = {
@@ -71,7 +81,7 @@ const RiddleInteractive = ({
 
   // Use challenge data if provided, otherwise use fallback
   const [currentRiddle] = useState<Riddle>(() => {
-      return transformChallengeToRiddle(challenge!);
+    return transformChallengeToRiddle(challenge!);
   });
 
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
@@ -186,7 +196,7 @@ const RiddleInteractive = ({
 
     if (isCorrect) {
       stopTimerAndLog("solved");
-      
+
       // Create a local challenge attempt object for preview
       const now = new Date();
       const localAttempt: ChallengeAttempt = {
@@ -215,15 +225,16 @@ const RiddleInteractive = ({
           createdAt: now,
           updatedAt: now,
         },
+        actions: [],
       };
       onChallengeSubmitted?.(localAttempt, currentRiddle.starsReward);
-      
+
       const messages = {
-        RIDDLE: "Fantastic! You solved the riddle! Your reading skills are amazing!",
-        TRUE_FALSE: "Correct! You understood that statement perfectly!",
-        MULTIPLE_CHOICE: "Excellent choice! You really understood the story!",
-        CHOOSE_ENDING: "Excellent choice! Thank you for sharing your perspective!",
-        MORAL_DECISION: "Excellent choice! Thank you for sharing your perspective!",
+        RIDDLE: t("solvedAnswerRIDDLE"),
+        TRUE_FALSE: t("solvedAnswerTRUE_FALSE"),
+        MULTIPLE_CHOICE: t("solvedAnswerMULTIPLE_CHOICE"),
+        CHOOSE_ENDING: t("solvedAnswerCHOOSE_ENDING"),
+        MORAL_DECISION: t("solvedAnswerMORAL_DECISION"),
       };
       setFeedbackState({
         type: "solved",
@@ -232,7 +243,7 @@ const RiddleInteractive = ({
       });
     } else if (isAlmost) {
       stopTimerAndLog("almost");
-      
+
       // Create a local challenge attempt object for preview
       const now = new Date();
       const localAttempt: ChallengeAttempt = {
@@ -261,18 +272,18 @@ const RiddleInteractive = ({
           createdAt: now,
           updatedAt: now,
         },
+        actions: [],
       };
       onChallengeSubmitted?.(localAttempt);
-      
+
       setFeedbackState({
         type: "almost",
-        message:
-          "Think about it a little more. You can do this!",
+        message: t("almostAnswer"),
         isVisible: true,
       });
     } else {
       stopTimerAndLog("incorrect");
-      
+
       // Create a local challenge attempt object for preview
       const now = new Date();
       const localAttempt: ChallengeAttempt = {
@@ -301,13 +312,13 @@ const RiddleInteractive = ({
           createdAt: now,
           updatedAt: now,
         },
+        actions: [],
       };
       onChallengeSubmitted?.(localAttempt);
-      
+
       setFeedbackState({
         type: "incorrect",
-        message:
-          "Not quite right, but that's okay! Every try helps you learn. Want to try again or use a hint?",
+        message: t("incorrectAnswer"),
         isVisible: true,
       });
     }
@@ -339,7 +350,7 @@ const RiddleInteractive = ({
 
   const handleContinue = (action: "solved" | "skipped") => {
     stopTimerAndLog(action === "solved" ? "solved" : "skipped");
-    
+
     // If skipped, create and track the attempt locally
     if (action === "skipped") {
       const now = new Date();
@@ -369,10 +380,12 @@ const RiddleInteractive = ({
           createdAt: now,
           updatedAt: now,
         },
+
+        actions: [],
       };
       onChallengeSubmitted?.(localAttempt);
     }
-    
+
     onClose?.();
   };
 
@@ -380,7 +393,6 @@ const RiddleInteractive = ({
     setIsAudioPlaying(!isAudioPlaying);
     setTimeout(() => setIsAudioPlaying(false), 3000);
   };
-
 
   return (
     <div className="">
@@ -396,7 +408,10 @@ const RiddleInteractive = ({
         <div className="mt-6">
           <RiddleQuestion
             question={currentRiddle.question}
-            storyImage={currentRiddle.storyImage || "https://images.unsplash.com/photo-1730314737966-92b9760790eb"}
+            storyImage={
+              currentRiddle.storyImage ||
+              "https://images.unsplash.com/photo-1730314737966-92b9760790eb"
+            }
             storyImageAlt={currentRiddle.storyImageAlt}
             riddleNumber={1}
             totalRiddles={3}
@@ -413,7 +428,7 @@ const RiddleInteractive = ({
             <TextInputAnswer
               onSubmit={handleTextSubmit}
               isDisabled={feedbackState.isVisible}
-              placeholder="Type your answer here..."
+              placeholder={t("textInputAnswer.placeholder")}
             />
           ) : (
             <>
@@ -430,7 +445,7 @@ const RiddleInteractive = ({
                 disabled={!selectedChoice || feedbackState.isVisible}
                 className="w-full mt-6 px-6 py-4 text-lg"
               >
-                Submit Answer
+                {t("submitAnswer")}
               </Button>
             </>
           )}
@@ -469,7 +484,7 @@ const RiddleInteractive = ({
         >
           <Lightbulb size={20} />
           <span className="hidden md:inline font-heading font-bold">
-            Need a Hint? ({availableHints})
+              {t("needAHint")} ({availableHints})
           </span>
         </button>
       </div>

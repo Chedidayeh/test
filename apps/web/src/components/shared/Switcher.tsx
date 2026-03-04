@@ -6,11 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { Button } from "../ui/button";
-const locales = [
-  { code: 'en', label: 'English', flag: 'EN' },
-  { code: 'fr', label: 'Français', flag: 'FR' },
-  { code: 'ar', label: 'العربية', flag: 'AR' },
-];
+
 
 
 export function Switcher() {
@@ -18,6 +14,12 @@ export function Switcher() {
   const pathname = usePathname();
   const locale = useLocale();
   const t = useTranslations('CommonComponents');
+
+  const locales = [
+  { code: 'en', label: t('english'), flag: 'EN' },
+  { code: 'fr', label: t('french'), flag: 'FR' },
+  { code: 'ar', label: t('arabic'), flag: 'AR' },
+];
 
   const handleChange = (newLocale: string) => {
     if (newLocale === locale) return;
@@ -34,8 +36,8 @@ export function Switcher() {
   return (
     <DropdownMenu key={locale}> {/* <--- key forces remount on locale change */}
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon" >
-          <Globe className="h-[1.2rem] w-[1.2rem] text-muted-foreground" />
+        <Button variant="outline" size={"sm"} >
+          {t("selectLanguage")}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent  align={locale === "ar" ? "start" :"end"}>

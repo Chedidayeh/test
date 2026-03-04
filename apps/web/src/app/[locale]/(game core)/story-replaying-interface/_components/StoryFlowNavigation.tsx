@@ -1,15 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
-import { Button } from "../../../../components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { Story } from "@shared/types";
 import { StoryPage } from "./storyDataTransform";
 import { useRouter } from "next/navigation";
+import { Button } from "@/src/components/ui/button";
+import { useTranslations } from "next-intl";
+import { useLocale } from "@/src/contexts/LocaleContext";
 interface StoryFlowNavigationProps {
   storyTitle?: string;
   currentPage?: number;
@@ -25,6 +24,9 @@ const StoryFlowNavigation = ({
   onPageChange,
   childId,
 }: StoryFlowNavigationProps) => {
+  const t = useTranslations("StoryReadingInterface");
+  const { isRTL } = useLocale();
+
   const router = useRouter();
   // No server operations or timer logic needed
 
@@ -65,11 +67,10 @@ const StoryFlowNavigation = ({
           <Button
             variant={"outline"}
             onClick={handleBack}
-            aria-label="Back"
             className="absolute left-4 md:left-8"
           >
-            <ChevronLeft size={20} />
-            <span className="ml-2">Back to dashboard</span>
+            {isRTL ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+            <span className="ml-2">{t("storyFlowNavigation.backButton")}</span>
           </Button>
 
           {/* Story Title */}
@@ -102,33 +103,45 @@ const StoryFlowNavigation = ({
             disabled={currentPage === 1}
             aria-label="Previous page"
           >
-            <ChevronLeft size={20} />{" "}
-            <span className="hidden md:inline">Previous</span>
+                          {isRTL ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}{" "}
+              <span className="hidden md:inline">
+                {t("storyFlowNavigation.previousButton")}
+              </span>
           </Button>
 
-          {/* Page Counter */}
-          <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1 pointer-events-none">
-            <span className="font-data text-2xl md:text-3xl font-bold text-primary">
-              {currentPage}
-            </span>
-            <span className="font-caption text-sm text-muted-foreground">
-              of {totalPages}
-            </span>
-          </div>
+            {/* Page Counter */}
+            <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1 pointer-events-none">
+              <span className="font-data text-2xl md:text-3xl font-bold text-primary">
+                {currentPage}
+              </span>
+              <span className="font-caption text-sm text-muted-foreground">
+                {t("storyFlowNavigation.pageProgress", {
+                  current: currentPage,
+                  total: totalPages,
+                })}
+              </span>
+            </div>
 
           {/* Next Button */}
-          <Button
-            onClick={handleNextPage}
-            aria-label="Next page"
-          >
+          <Button onClick={handleNextPage} aria-label="Next page">
             <span className="hidden md:inline">
               {currentPage === totalPages ? (
                 <span className="flex items-center">
-                  Finished <ChevronRight size={20} />
+                  {t("storyFlowNavigation.completionMessage")}
+                  {isRTL ? (
+                          <ChevronLeft size={20} />
+                        ) : (
+                          <ChevronRight size={20} />
+                        )}
                 </span>
               ) : (
                 <span className="flex items-center">
-                  Next <ChevronRight size={20} />
+                  {t("storyFlowNavigation.nextButton")}
+                  {isRTL ? (
+                          <ChevronLeft size={20} />
+                        ) : (
+                          <ChevronRight size={20} />
+                        )}
                 </span>
               )}
             </span>

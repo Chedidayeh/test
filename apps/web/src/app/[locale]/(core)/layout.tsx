@@ -23,7 +23,7 @@ export default async function Layout({
   return (
     <div>
       <Header userRole={userRole} />
-      {userRole && <RoleIndicator role={userRole} />}
+      {/* {userRole && <RoleIndicator role={userRole} />} */}
 
       {children}
     </div>

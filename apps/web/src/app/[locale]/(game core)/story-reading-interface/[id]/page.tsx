@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
 import StoryReadingInteractive from "../_components/StoryReadingInteractive";
 import { getStoryById } from "@/src/lib/content-service/server-api";
-import { createNewCheckpointSession, startStory } from "@/src/lib/progress-service/server-api";
+import {
+  createNewCheckpointSession,
+  startStory,
+} from "@/src/lib/progress-service/server-api";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
+import MissingDataAlert from "@/src/components/shared/MissingDataAlert";
 
 export const metadata: Metadata = {
   title: "Story Reading - Readly",
@@ -17,29 +22,29 @@ export default async function page({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ childId: string }>;
 }) {
+  const t = await getTranslations("StoryReadingInterface");
+
   const { id } = await params;
   const { childId } = (await searchParams) as {
     childId: string;
   };
   if (!id || !childId) {
     return (
-      <div className="p-4 text-red-500">
-        Missing required parameters: id, mode, or childId
-      </div>
+      <MissingDataAlert message={t("missingRequiredParameters")} />
     );
   }
 
   const story = await getStoryById(id);
   if (!story) {
-    return <div className="p-4 text-red-500">Story not found for id: {id}</div>;
+    return (
+      <MissingDataAlert message={t("storyNotFound")} />
+    )
   }
 
   const currentProgress = await startStory(childId, id); // returned progress contains the current game session
   if (!currentProgress) {
     return (
-      <div className="p-4 text-red-500">
-        Child progress not found for childId: {childId} and storyId: {id}
-      </div>
+      <MissingDataAlert message={t("unableToStartStory")} />
     );
   }
   // create new checkpoint session

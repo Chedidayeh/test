@@ -11,6 +11,8 @@ import {
 import { redirect } from "next/navigation";
 import { ProgressStatus } from "@shared/types";
 import { auth } from "@/src/auth";
+import { getTranslations } from "next-intl/server";
+import MissingDataAlert from "@/src/components/shared/MissingDataAlert";
 
 export const metadata: Metadata = {
   title: "My Dashboard - Readly",
@@ -23,18 +25,16 @@ export default async function ChildDashboardPage({
 }: {
   params: Promise<{ childId: string }>;
 }) {
-  const session = await auth()
+  const t = await getTranslations("ChildDashboard");
+
+  const session = await auth();
 
   const userRole = session?.user.role;
 
   const { childId } = await params;
   const childData = await getChildById(childId);
   if (!childData) {
-    return (
-      <div className="p-4 text-red-500">
-        Child not found for childId: {childId}
-      </div>
-    );
+    return <MissingDataAlert message={t("childNotFound")} />;
   }
   const levels = await getLevels().catch(() => []);
   const badges = await getBadges().catch(() => []);

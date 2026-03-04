@@ -11,6 +11,7 @@ import { LoginForm } from "@/src/components/shared/login-form";
 import { RoleType } from "@shared/types";
 import { useTranslations } from "next-intl";
 import { Switcher } from "@/src/components/shared/Switcher";
+import RoleIndicator from "@/src/components/shared/RoleIndicator";
 
 const Header = (
   { userRole }: { userRole: RoleType | undefined }
@@ -74,7 +75,8 @@ const Header = (
             </div>
 
             {/* Right - Login component (fixed to the far right) */}
-            <div className="flex-shrink-0 flex items-center gap-2">
+            <div className="flex-shrink-0 flex items-center gap-3">
+              <RoleIndicator role={userRole!} />
               <Profile session={session.data!} />
               <ModeToggle />
               <Switcher />

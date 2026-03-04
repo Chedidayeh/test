@@ -1,25 +1,25 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import {
   Star,
-  BookOpen,
   CheckCircle2,
   ChevronRight,
   Award,
+  ChevronLeft,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/src/components/ui/card";
-import { ChallengeStatus, ChildProfile, Progress, Story } from "@shared/types";
+import { ChildProfile, Progress, Story } from "@shared/types";
 import { LevelProgressAnalysis } from "../_lib/progress-analysis";
+import { useLocale } from "@/src/contexts/LocaleContext";
 
 interface StoryCompletionProps {
   child: ChildProfile;
@@ -35,6 +35,8 @@ export default function StoryCompletion({
   levelAnalysis,
 }: StoryCompletionProps) {
   const router = useRouter();
+  const t = useTranslations("StoryCompletion");
+  const {isRTL} = useLocale();
   const starsEarned = progress.gameSession?.starsEarned || 0;
 
   const handleReturnToDashboard = () => {
@@ -56,9 +58,9 @@ export default function StoryCompletion({
               <CheckCircle2 className="w-8 h-8 text-primary" />
             </div>
           </div>
-          <h1 className="text-4xl font-bold  mb-2">Story Completed!</h1>
+          <h1 className="text-4xl font-bold  mb-2">{t("completionHeader.title")}</h1>
           <p className="text-lg text-gray-500">
-            Great job, {child.name}! You finished &quot;{story.title}&quot;.
+            {t("completionHeader.subtitle", { childName: child.name, storyTitle: story.title })}
           </p>
         </motion.div>
 
@@ -73,7 +75,7 @@ export default function StoryCompletion({
             <CardHeader className="border-b">
               <CardTitle className="text-xl text-center">
                 <div className="flex items-center justify-center text-xl gap-2">
-                  Stars Earned :
+                  {t("progressCard.starsEarned")}
                   <Star className="w-8 h-8 text-yellow-500 fill-yellow-500" />
                   <span className="text-3xl font-bold ">{starsEarned}</span>
                 </div>{" "}
@@ -82,7 +84,7 @@ export default function StoryCompletion({
             <CardContent className="pt-6 space-y-4">
               {/* Current Level */}
               <div className="flex items-center text-xl justify-between">
-                <span className="text-gray-500">Current Level</span>
+                <span className="text-gray-500">{t("progressCard.currentLevel")}</span>
                 <span className="text-2xl font-bold text-primary">
                   {levelAnalysis.currentLevel}
                 </span>
@@ -90,7 +92,7 @@ export default function StoryCompletion({
 
               {/* Total Stars */}
               <div className="flex items-center  text-xl justify-between">
-                <span className="text-gray-500">Total Stars</span>
+                <span className="text-gray-500">{t("progressCard.totalStars")}</span>
                 <div className="flex items-center gap-1">
                   <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
                   <span className="font-bold text-2xl">
@@ -103,14 +105,10 @@ export default function StoryCompletion({
               <div className="space-y-2">
                 <div className="flex items-center justify-between  text-xl">
                   <span className="text-gray-500">
-                    Progress to Level {levelAnalysis.nextLevelNumber}
+                    {t("progressCard.progressToLevel", { nextLevel: levelAnalysis.nextLevelNumber })}
                   </span>
                   <span className="font-semibold text-2xl">
-                    {Math.min(
-                      100,
-                      Math.round(levelAnalysis.progressPercentage),
-                    )}
-                    %
+                    {t("progressCard.progressPercentage", { percentage: Math.min(100, Math.round(levelAnalysis.progressPercentage)) })}
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
@@ -124,9 +122,9 @@ export default function StoryCompletion({
                 <div className=" text-gray-500 text-lg text-center">
                   {levelAnalysis.willReachNextLevel
                     ? 
-                    `🎉 You've reached Level ${levelAnalysis.nextLevelNumber}!`
+                    t("progressCard.levelUnlocked", { nextLevel: levelAnalysis.nextLevelNumber })
                     : 
-                    <span className="text-primary text-xl mt-2">{levelAnalysis.starsNeededForNextLevel} more stars needed</span>}
+                    <span className="text-primary text-xl mt-2">{t("progressCard.starsNeeded", { count: levelAnalysis.starsNeededForNextLevel })}</span>}
                 </div>
               </div>
 
@@ -136,7 +134,7 @@ export default function StoryCompletion({
                   <Award className="w-7 h-7 text-yellow-500" />
                   <div className="flex-1">
                     <p className="font-semibold text-yellow-900">
-                      New Badge Unlocked:  {levelAnalysis.nextBadge.name}
+                      {t("badgeInfo.unlocked", { badgeName: levelAnalysis.nextBadge.name })}
                     </p>
                     {levelAnalysis.nextBadge.description && (
                       <p className="text-yellow-700 mt-1">
@@ -158,8 +156,8 @@ export default function StoryCompletion({
           className="gap-3 flex items-center justify-center"
         >
           <Button className="max-w-max " onClick={handleReturnToDashboard}>
-            Return to Dashboard
-            <ChevronRight className="w-4 h-4 ml-1" />
+            {t("buttons.returnToDashboard")}
+            {isRTL ? <ChevronLeft className="w-4 h-4 mr-1" /> : <ChevronRight className="w-4 h-4 ml-1" />}
           </Button>
         </motion.div>
       </div>

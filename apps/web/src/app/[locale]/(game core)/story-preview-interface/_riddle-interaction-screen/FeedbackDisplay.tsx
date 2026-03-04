@@ -17,6 +17,7 @@ interface Hint {
 }
 
 import { Star, type LucideIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface FeedbackDisplayProps {
   type: "solved" | "almost" | "incorrect" | null;
@@ -35,20 +36,32 @@ const FeedbackDisplay2 = ({
   onTryAgain,
   isVisible,
 }: FeedbackDisplayProps) => {
+    const t = useTranslations("StoryReadingInterface.riddleInterface");
+  
   if (!isVisible || !type) return null;
 
+    const getTitleForType = (feedbackType: "solved" | "almost" | "incorrect") => {
+    switch (feedbackType) {
+      case "solved":
+        return t("feedbackDisplay.solvedTitle");
+      case "almost":
+        return t("feedbackDisplay.almostTitle");
+      case "incorrect":
+        return t("feedbackDisplay.incorrectTitle");
+    }
+  };
   const feedbackConfig = {
     solved: {
       bgColor: "bg-secondary/80",
-      title: "Amazing Work!",
+      title: getTitleForType("solved"),
     },
     almost: {
       bgColor: "bg-secondary/20",
-      title: "Almost There!",
+      title: getTitleForType("almost"),
     },
     incorrect: {
       bgColor: "bg-secondary/20",
-      title: "Keep Trying!",
+      title: getTitleForType("incorrect"),
     },
   };
 
@@ -98,7 +111,7 @@ const FeedbackDisplay2 = ({
             <div className="flex items-center justify-center gap-3 mb-6 p-4 bg-secondary/20 rounded-xl">
               <Star className="fill-amber-500 text-amber-500" />
               <span className="font-heading text-2xl text-foreground">
-                +{starsEarned} Stars Earned!
+                {t("feedbackDisplay.starsEarned", { count: starsEarned })}
               </span>
             </div>
           )}
@@ -111,7 +124,7 @@ const FeedbackDisplay2 = ({
                   variant={"secondary"}
                   onClick={() => onContinue("solved")}
                 >
-                  Continue Story
+                  {t("feedbackDisplay.continueButton")}
                 </Button>
               </div>
             ) : (
@@ -120,10 +133,10 @@ const FeedbackDisplay2 = ({
                   variant={"outline"}
                   onClick={() => onContinue("skipped")}
                 >
-                  Skip This Riddle
+                  {t("feedbackDisplay.skipButton")}
                 </Button>
                 <Button variant={"secondary"} onClick={onTryAgain}>
-                  Try Again
+                  {t("feedbackDisplay.tryAgainButton")}
                 </Button>
               </div>
             )}

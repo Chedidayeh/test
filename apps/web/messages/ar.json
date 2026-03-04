@@ -6,7 +6,7 @@
 		"cta": {
 			"getStarted": "البدء",
 			"startAdventure": "ابدأ مغامرة طفلك",
-			"parentDashboard": "لوحة الوالدين"
+			"parentDashboard": "لوحة الولي"
 		},
 		"trust": "✨ موثوق من قبل الأهالي والمربين • آمن وتعليمي • تعلم مدعوم بالذكاء الاصطناعي",
 		"words": [
@@ -17,8 +17,14 @@
 		]
 	},
 	"CommonComponents": {
+		"missingData": "بيانات مفقودة",
+		"goBack": "العودة",
 		"language": "اللغة",
-		"loading": "جارٍ التحميل..."
+		"english": "الإنجليزية",
+		"french": "الفرنسية",
+		"arabic": "العربية",
+		"loading": "جارٍ التحميل...",
+		"selectLanguage": "اللغة"
 	},
 	"ParentDashboard": {
 		"yourChildren": "قائمة أطفالك",
@@ -187,6 +193,8 @@
 		}
 	},
 	"ChildDashboard": {
+		"continueReading": "متابعة القراءة",
+		"childNotFound": "الطفل غير موجود. يرجى التحقق من الرابط والمحاولة مرة أخرى.",
 		"progressTracker": {
 			"title": "رحلتك",
 			"levelsUnlocked": "{completed}/{total} مستويات مفتوحة",
@@ -254,59 +262,59 @@
 			}
 		}
 	},
-		"RoadmapsLibrary":{
-			"library": {
-				"title": "مكتبة المسارات",
-				"description": "اكتشف قصصًا مذهلة وابدأ مغامرة القراءة لطفلك!",
-				"allRoadmaps": "جميع المسارات ({count})",
-				"empty": {
-					"title": "لم يتم العثور على مسارات",
-					"hint": "حاول تعديل المرشحات أو استعلام البحث الخاص بك"
-				}
-			},
-			"searchBar": {
-				"placeholder": "ابحث عن القصص...",
-				"noSuggestions": "لم يتم العثور على اقتراحات"
-			},
-			"filterPanel": {
-				"title": "المرشحات",
-				"categoryLabel": "الفئة",
-				"ageGroupLabel": "مجموعة العمر",
-				"readingLevelLabel": "مستوى القراءة",
-				"clearAllFilters": "مسح جميع المرشحات ({count})",
-				"activeCount": "{count} نشط"
-			},
-			"featuredCarousel": {
-				"startReading": "ابدأ القراءة",
-				"previousStory": "القصة السابقة",
-				"nextStory": "القصة التالية",
-				"goToRoadmap": "انتقل إلى المسار {index}"
-			},
-			"roadmapCard": {
-				"worldLabel": "عالم",
-				"worldsLabel": "عوالم",
-				"coverImageAlt": "صورة الغلاف لـ {title}",
-				"allocateButton": "تخصيص للطفل"
-			},
-			"allocateDialog": {
-				"title": "تخصيص مسار للطفل",
-				"description": "حدد الطفل الذي يجب أن يكون لديه إمكانية الوصول إلى \"{roadmapName}\"",
-				"empty": "لا توجد أطفال متاحة. يرجى إضافة الأطفال أولاً.",
-				"alreadyAllocated": "تم التخصيص بالفعل",
-				"buttons": {
-					"cancel": "إلغاء",
-					"allocate": "تخصيص",
-					"allocating": "جارٍ التخصيص..."
-				},
-				"messages": {
-					"selectChild": "يرجى تحديد طفل",
-					"alreadyHasAccess": "{childName} لديه بالفعل إمكانية الوصول إلى هذا المسار",
-					"allocatedSuccess": "تم تخصيص المسار \"{roadmapName}\" إلى {childName}",
-					"allocationFailed": "فشل تخصيص المسار",
-					"unexpectedError": "حدث خطأ غير متوقع"
-				}
+	"RoadmapsLibrary": {
+		"library": {
+			"title": "مكتبة القصص",
+			"description": "اكتشف قصصًا مذهلة وابدأ مغامرة القراءة لطفلك!",
+			"allRoadmaps": "جميع المسارات ({count})",
+			"empty": {
+				"title": "لم يتم العثور على مسارات",
+				"hint": "حاول تعديل المرشحات أو استعلام البحث الخاص بك"
 			}
 		},
+		"searchBar": {
+			"placeholder": "ابحث عن القصص...",
+			"noSuggestions": "لم يتم العثور على اقتراحات"
+		},
+		"filterPanel": {
+			"title": "ابحث عن طريق",
+			"categoryLabel": "الفئة",
+			"ageGroupLabel": "مجموعة العمر",
+			"readingLevelLabel": "مستوى القراءة",
+			"clearAllFilters": "مسح جميع المرشحات ({count})",
+			"activeCount": "{count} نشط"
+		},
+		"featuredCarousel": {
+			"startReading": "ابدأ القراءة",
+			"previousStory": "القصة السابقة",
+			"nextStory": "القصة التالية",
+			"goToRoadmap": "انتقل إلى المسار {index}"
+		},
+		"roadmapCard": {
+			"worldLabel": "عالم",
+			"worldsLabel": "عوالم",
+			"coverImageAlt": "صورة الغلاف لـ {title}",
+			"allocateButton": "تخصيص للطفل"
+		},
+		"allocateDialog": {
+			"title": "تخصيص مسار للطفل",
+			"description": "حدد الطفل الذي يجب أن يكون لديه إمكانية الوصول إلى \"{roadmapName}\"",
+			"empty": "لا توجد أطفال متاحة. يرجى إضافة الأطفال أولاً.",
+			"alreadyAllocated": "تم التخصيص بالفعل",
+			"buttons": {
+				"cancel": "إلغاء",
+				"allocate": "تخصيص",
+				"allocating": "جارٍ التخصيص..."
+			},
+			"messages": {
+				"selectChild": "يرجى تحديد طفل",
+				"alreadyHasAccess": "{childName} لديه بالفعل إمكانية الوصول إلى هذا المسار",
+				"allocatedSuccess": "تم تخصيص المسار \"{roadmapName}\" إلى {childName}",
+				"allocationFailed": "فشل تخصيص المسار",
+				"unexpectedError": "حدث خطأ غير متوقع"
+			}
+		}
+	},
 	"CoreHeader": {
 		"nav": {
 			"parentDashboard": "لوحة الولي",
@@ -395,5 +403,141 @@
 		"invalidAgeGroup": "فئة العمر المحددة غير صالحة",
 		"selectAtLeastOneTheme": "حدد موضوعًا واحدًا على الأقل",
 		"stepOf": "الخطوة {step} من {total}"
+	},
+	"StoryReadingInterface": {
+		"missingRequiredParameters": " المعلمات المطلوبة مفقودة. يرجى التحقق من الرابط والمحاولة مرة أخرى.",
+		"storyNotFound": "القصة المطلوبة غير موجودة. يرجى التحقق من معرف القصة والمحاولة مرة أخرى.",
+		"unableToStartStory": "تعذر بدء القصة. يرجى المحاولة مرة أخرى لاحقًا.",
+		"readingSettings": {
+			"title": "إعدادات القراءة",
+			"textSize": "حجم النص",
+			"small": "صغير",
+			"medium": "متوسط",
+			"large": "كبير",
+			"language": "اللغة",
+			"english": "الإنجليزية",
+			"french": "الفرنسية",
+			"arabic": "العربية",
+			"highContrast": "وضع التباين العالي",
+			"highContrastDesc": "قراءة أسهل لتحسين إمكانية الوصول البصري",
+			"readingTip": "نصيحة القراءة",
+			"readingTipText": "استخدم عناصر التحكم في الصوت للاستماع أثناء القراءة. يساعد هذا على تحسين النطق والفهم!",
+			"closeButton": "إغلاق"
+		},
+		"readingHelp": {
+			"title": "مساعدة القراءة",
+			"navigation": "التنقل",
+			"navigationDesc": "استخدم الأسهم في الأسفل للتنقل بين الصفحات. يتم حفظ التقدم الخاص بك تلقائيًا.",
+			"audioReading": "القراءة الصوتية",
+			"audioReadingDesc": "اضغط على تشغيل لسماع القصة بصوت عالٍ. اضبط السرعة واللغة في عناصر التحكم.",
+			"riddles": "الألغاز",
+			"riddlesDesc": "عندما ترى مؤشر لغز، قم بحله لمواصلة القصة وكسب النجوم!",
+			"gotIt": "حسناً!"
+		},
+		"storyFlowNavigation": {
+			"backButton": "عودة",
+			"returnToStory": "العودة إلى القصة",
+			"previousButton": "السابق",
+			"nextButton": "التالي",
+			"starsEarned": "{count} نجوم",
+			"pageProgress": "الصفحة {current} من {total}",
+			"timerMessage": "استمر في القراءة... ({remaining}ث متبقية)",
+			"completionMessage": "تمت القصة",
+			"solveRiddle": "حل اللغز",
+			"challengeSolved": "تحدي تم حله",
+			"challengeSkipped": "تحدي تم تخطيه. استمر في القراءة! ",
+			"riddleTime": "حان وقت اللغز!",
+			"riddleTimeText": "بمجرد قراءة هذه الصفحة، انقر على حل اللغز"
+		},
+		"storyControls": {
+			"playAudio": "تشغيل الصوت",
+			"pauseAudio": "إيقاف الصوت",
+			"volumeControl": "مستوى الصوت",
+			"playbackSpeed": "السرعة",
+			"normalSpeed": "عادي",
+			"fastSpeed": "سريع",
+			"slowSpeed": "بطيء",
+			"settings": "الإعدادات",
+			"help": "المساعدة"
+		},
+		"riddleInterface": {
+			"submitAnswer": "قم بالإجابة",
+			"needAHint": "هل تحتاج إلى تلميح؟",
+			"incorrectAnswer": "ليست الإجابة صحيحة تمامًا، لكن لا بأس! كل محاولة تساعدك على التعلم. هل تريد المحاولة مرة أخرى أو استخدام تلميح؟",
+			"almostAnswer": "فكر في الأمر قليلاً أكثر. يمكنك فعل ذلك!",
+			"solvedAnswerRIDDLE": " رائع! لقد حللت اللغز! مهاراتك في القراءة مذهلة!",
+			"solvedAnswerTRUE_FALSE": "صحيح! لقد فهمت تلك العبارة تمامًا!",
+			"solvedAnswerMULTIPLE_CHOICE": "اختيار ممتاز! لقد فهمت القصة حقًا!",
+			"solvedAnswerCHOOSE_ENDING": "اختيار ممتاز! شكراً لمشاركة وجهة نظرك!",
+			"solvedAnswerMORAL_DECISION": "اختيار ممتاز! شكراً لمشاركة وجهة نظرك!",
+			"riddleQuestion": {
+				"riddleCounter": "اللغز {current} من {total}",
+				"trueOrFalse": "اختر صحيح أو خاطئ:",
+				"chooseEnding": "اختر نهاية القصة:",
+				"moralDecision": "ماذا ستفعل؟",
+				"multipleChoice": "اختر الإجابة الصحيحة:",
+				"riddle": "حل اللغز:",
+				"defaultQuestion": "أجب على السؤال:",
+				"timeDisplay": "الوقت: {seconds}ث",
+				"playAudio": "قراءة اللغز بصوت عالٍ",
+				"stopAudio": "إيقاف قراءة اللغز"
+			},
+			"floatingItems": {
+				"attemptsLabel": "المحاولات",
+				"hintsUsedLabel": "التلميحات المستخدمة"
+			},
+			"textInputAnswer": {
+				"yourAnswer": "إجابتك:",
+				"placeholder": "اكتب إجابتك هنا...",
+				"checkButton": "تحقق"
+			},
+			"multipleChoiceAnswer": {
+				"chooseAnswer": "اختر إجابتك:"
+			},
+			"hintPanel": {
+				"title": "تلميح مفيد",
+				"hintsRemaining": "{count} تلميحات متبقية",
+				"previousHints": "التلميحات السابقة:",
+				"hintCounter": "التلميح {current} من {total}",
+				"noMoreHints": "لا توجد تلميحات إضافية. يمكنك فعل ذلك!",
+				"allHintsRevealed": "تم الكشف عن جميع التلميحات. حاول بأفضل ما لديك!",
+				"closeButton": "إغلاق",
+				"getAnotherHint": "احصل على تلميح آخر ({remaining} متبقي)"
+			},
+			"feedbackDisplay": {
+				"solvedTitle": "عمل رائع!",
+				"almostTitle": "قريب جداً!",
+				"incorrectTitle": "استمر في المحاولة!",
+				"starsEarned": "+{count} نجوم مكتسبة!",
+				"continueButton": "متابعة القصة",
+				"skipButton": "تخطي هذا اللغز",
+				"tryAgainButton": "حاول مرة أخرى"
+			}
+		}
+	},
+	"StoryCompletion": {
+		"childNotFound": "لم يتم العثور على الطفل. يرجى التحقق من الرابط والمحاولة مرة أخرى.",
+		"storyNotFound": "القصة المطلوبة غير موجودة. يرجى التحقق من الرابط والمحاولة مرة أخرى.",
+		"progressNotFound": "لم يتم العثور على تقدم الطفل. يرجى التحقق من الرابط والمحاولة مرة أخرى.",
+		"storyNotCompleted": "القصة غير مكتملة. يرجى التحقق من الرابط والمحاولة مرة أخرى.",
+		"completionHeader": {
+			"title": "تمت القصة!",
+			"subtitle": "عمل رائع، {childName} لقد انتهيت من \"{storyTitle}\""
+		},
+		"progressCard": {
+			"starsEarned": "النجوم المكتسبة:",
+			"currentLevel": "المستوى الحالي",
+			"totalStars": "إجمالي النجوم",
+			"progressToLevel": "التقدم إلى المستوى {nextLevel}",
+			"progressPercentage": "{percentage}%",
+			"levelUnlocked": "🎉 لقد وصلت إلى المستوى {nextLevel}!",
+			"starsNeeded": "{count} نجوم إضافية مطلوبة"
+		},
+		"badgeInfo": {
+			"unlocked": "شارة جديدة مفتوحة: {badgeName}"
+		},
+		"buttons": {
+			"returnToDashboard": "العودة إلى لوحة التحكم"
+		}
 	}
 }
