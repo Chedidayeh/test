@@ -42,17 +42,17 @@ export default function RoadmapPage({
 
   return (
     <>
-      <main className="space-y-2 mx-auto px-4 py-2">
-        <div className="flex items-center gap-4">
-          <Button variant={"outline"} onClick={() => setSeeRoadmap(false)}>
-              {isRTL ? <ChevronLeft size={20} className="rotate-180" /> : <ChevronLeft size={20} />}
+      <main className="space-y-3 mx-auto px-4 py-4 md:px-6 md:py-2">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <Button variant={"outline"} onClick={() => setSeeRoadmap(false)} className="px-2 py-1 md:px-3 md:py-2">
+            {isRTL ? <ChevronLeft size={18} className="rotate-180" /> : <ChevronLeft size={18} />}
           </Button>
 
           <div>
-            <h1 className="text-2xl font-bold">
+            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold">
               {t("roadmapPage.title", { name: roadmap.theme.name })}
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm md:text-base text-muted-foreground max-w-prose">
               {roadmap.theme.description}
             </p>
           </div>
@@ -71,7 +71,7 @@ export default function RoadmapPage({
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="p-6 rounded-xl bg-muted/30 border border-border text-center"
+          className="p-6 hidden md:block rounded-xl bg-muted/30 border border-border text-center"
         >
           <p className="text-muted-foreground">
             💡 <span className="font-semibold">{t("roadmapPage.proTip")}</span> {t("roadmapPage.proTipMessage")}

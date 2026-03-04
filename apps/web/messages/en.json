@@ -259,7 +259,7 @@
 			"storiesRoadmap": {
 				"noStories": "No stories available in this world.",
 				"status": {
-					"completed": "✓ Completed",
+					"completed": "Completed",
 					"inProgress": "In Progress ({percentage}%)",
 					"locked": "Locked",
 					"notStarted": "Start"

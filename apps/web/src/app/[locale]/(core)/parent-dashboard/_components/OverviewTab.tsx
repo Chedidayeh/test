@@ -32,20 +32,20 @@ export default function OverviewTab({
   const streak = getCurrentStreak(selectedChild);
   
   return (
-    <TabsContent value="overview" className="space-y-6">
-      <div className="bg-linear-to-r from-primary/5 via-secondary/5 to-accent/5 rounded-xl p-6 border border-black/10">
-        <div className="flex items-start justify-between gap-4">
+    <TabsContent value="overview" className="space-y-4 md:space-y-6">
+      <div className="bg-linear-to-r from-primary/5 via-secondary/5 to-accent/5 rounded-xl p-4 md:p-6 border border-black/10">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4">
           <div>
-            <h2 className="font-heading text-3xl text-foreground">
+            <h2 className="font-heading text-xl md:text-3xl text-foreground">
               {t("overview.welcome", { name: parentName || "Parent" })}
             </h2>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-xs md:text-sm text-muted-foreground mt-2">
               {t("overview.description", { childName: selectedChild?.child?.name || "" })}
             </p>
           </div>
           {selectedChild?.childId && (
-            <Link href={`/child-dashboard/${selectedChild.childId}`}>
-              <Button className="whitespace-nowrap">
+            <Link href={`/child-dashboard/${selectedChild.childId}`} className="w-full md:w-auto">
+              <Button className="whitespace-nowrap w-full md:w-auto text-xs md:text-sm">
                 {t("overview.childDashboardButton", { childName: selectedChild.child?.name || "Child" })}
               </Button>
             </Link>

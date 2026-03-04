@@ -63,9 +63,9 @@ export default function ParentDashboardInteractive({
   };
 
   return (
-    <div className="container mx-auto px-4">
+    <div className="container mx-auto px-4 py-4 sm:py-0">
       {/* Main Layout: Sidebar + Content */}
-      <div className="flex gap-6">
+      <div className="flex flex-col lg:flex-row gap-4 md:gap-6">
         {/* Sidebar - Child Selector */}
         <ChildSidebar
           session={session}
@@ -78,7 +78,7 @@ export default function ParentDashboardInteractive({
         />
 
         {/* Main Content */}
-        <div className="flex-1">
+        <div className="flex-1 w-full">
           {/* Tabs */}
           <DashboardTabs activeTab={activeTab} onTabChange={setActiveTab}>
             <OverviewTab

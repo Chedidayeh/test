@@ -247,9 +247,9 @@
 			"storiesRoadmap": {
 				"noStories": "لا توجد قصص متاحة في هذا العالم.",
 				"status": {
-					"completed": "✓ مكتمل",
+					"completed": "مكتمل",
 					"inProgress": "قيد التقدم ({percentage}%)",
-					"locked": "مقفول",
+					"locked": "مقفل",
 					"notStarted": "ابدأ"
 				},
 				"chapters": "فصول",
@@ -277,7 +277,7 @@
 			"noSuggestions": "لم يتم العثور على اقتراحات"
 		},
 		"filterPanel": {
-			"title": "ابحث عن طريق",
+			"title": " ابحث عن طريق المرشحات",
 			"categoryLabel": "الفئة",
 			"ageGroupLabel": "مجموعة العمر",
 			"readingLevelLabel": "مستوى القراءة",

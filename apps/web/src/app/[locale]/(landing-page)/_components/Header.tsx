@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, Home, Users, Library, LogIn } from "lucide-react";
+import { BookOpen, Home, Users, Library, LogIn, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { ModeToggle } from "@/src/components/shared/ModeToggle";
 import { Session } from "next-auth";
@@ -33,6 +33,7 @@ const Header = ({ session }: { session: Session | null }) => {
   };
 
   const user = session?.user;
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <>
@@ -50,54 +51,6 @@ const Header = ({ session }: { session: Session | null }) => {
               </span>
             </Link>
 
-            {/* Center Navigation (keeps nav visually centered) */}
-            {/* <div className="flex-1 flex justify-center">
-              <nav className="flex items-center gap-10">
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  const active = isActive(item.href);
-                  // Use native anchor + smooth scroll for hash links to ensure in-page navigation
-                  if (item.href && item.href.startsWith("#")) {
-                    return (
-                      <a
-                        key={item.href}
-                        href={item.href}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          const id = item.href.replace("#", "");
-                          const el = document.getElementById(id);
-                          const headerOffset = 80; // approximate sticky header height
-                          if (el) {
-                            const y =
-                              el.getBoundingClientRect().top +
-                              window.scrollY -
-                              headerOffset;
-                            window.scrollTo({ top: y, behavior: "smooth" });
-                          } else {
-                            // fallback: set hash
-                            window.location.hash = item.href;
-                          }
-                        }}
-                        className={`flex items-center hover:bg-primary bg-primary/5 gap-2 px-3 py-1 rounded-2xl transition-all duration-300`}
-                      >
-                        <span className="text-white">{item.label}</span>
-                      </a>
-                    );
-                  }
-
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={`flex items-center hover:bg-primary bg-primary/5 gap-2 px-3 py-1 rounded-2xl transition-all duration-300`}
-                    >
-                      <span className="text-white">{item.label}</span>
-                    </Link>
-                  );
-                })}
-              </nav>
-            </div> */}
-
             {/* Right - Login component (fixed to the far right) */}
             <div className="flex-shrink-0 flex items-center gap-3">
               {session?.user.role === RoleType.ADMIN && (
@@ -109,6 +62,27 @@ const Header = ({ session }: { session: Session | null }) => {
               <ModeToggle />
               <Switcher />
             </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Mobile Header */}
+      <header className="md:hidden sticky top-0 z-50 bg-transparent">
+        <div className="flex items-center justify-between px-4 py-3">
+          <Link
+            href="/"
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            onClick={() => setMobileOpen(false)}
+          >
+            <span className="font-heading text-white text-lg font-bold">
+              Readly
+            </span>
+          </Link>
+
+          <div className="flex items-center gap-2">
+            {user ? <Profile session={session} /> : <LoginForm />}{" "}
+            <ModeToggle />
+            <Switcher />
           </div>
         </div>
       </header>

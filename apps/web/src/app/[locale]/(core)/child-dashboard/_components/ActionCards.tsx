@@ -71,7 +71,7 @@ const ActionCards = ({
           {t("continueReading")}
         </h2>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* In Progress Stories Cards */}
         {inProgressStories.length > 0 &&
           inProgressStories.map(({ progressId, storyData, progress }) => {

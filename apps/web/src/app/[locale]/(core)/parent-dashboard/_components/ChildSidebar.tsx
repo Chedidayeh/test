@@ -44,28 +44,28 @@ export default function ChildSidebar({
   const [addChildDialogOpen, setAddChildDialogOpen] = useState(false);
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="hidden md:flex md:flex-col md:w-64 bg-card rounded-xl p-4 shadow-warm-lg border border-black/30 h-fit md:sticky md:top-8 gap-4">
+    <div className="flex flex-col items-start gap-4 w-full lg:w-auto">
+      <div className="w-full lg:flex lg:flex-col lg:w-64 bg-card rounded-xl p-4 shadow-warm-lg border border-black/30 h-fit lg:sticky lg:top-8 gap-4">
         <div>
-          <h3 className="font-heading text-lg text-foreground mb-4 px-2">
+          <h3 className="font-heading text-sm lg:text-lg text-foreground mb-3 lg:mb-4 px-2">
             {t("yourChildren")}
           </h3>
         </div>
 
-        <div className="space-y-2">
+        <div className="flex lg:flex-col overflow-x-auto lg:overflow-x-visible gap-2 lg:space-y-2 pb-2 lg:pb-0">
           {children.map((profile) => (
             <button
               key={profile.childId}
               onClick={() => onChildSelect(profile.childId)}
               className={cn(
-                "w-full flex items-center gap-3 p-3 rounded-lg transition-all",
-                "hover:bg- active:scale-95",
+                "flex-shrink-0 lg:w-full flex lg:flex-row flex-col lg:flex-row items-center lg:items-center gap-2 lg:gap-3 p-2 lg:p-3 rounded-lg transition-all",
+                "hover:bg-muted active:scale-95 whitespace-nowrap lg:whitespace-normal",
                 selectedChildId === profile.childId
                   ? "bg-primary/15 border border-primary/30"
                   : "hover:bg-muted",
               )}
             >
-              <Avatar className="h-10 w-10">
+              <Avatar className="h-8 w-8 lg:h-10 lg:w-10 flex-shrink-0">
                 <AvatarImage
                   src={profile.child?.avatar || ""}
                   alt={profile.child?.name}
@@ -74,8 +74,8 @@ export default function ChildSidebar({
                   {profile.child?.name?.[0]?.toUpperCase() || "?"}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex-1 text-left">
-                <p className="font-semibold text-sm text-foreground">
+              <div className="flex-1 lg:flex lg:flex-col lg:text-left">
+                <p className="font-semibold text-xs lg:text-sm text-foreground">
                   {profile.child?.name || t("unknown")}
                 </p>
                 <p className="text-xs text-muted-foreground">
@@ -83,13 +83,13 @@ export default function ChildSidebar({
                 </p>
               </div>
               {selectedChildId === profile.childId && (
-                <div className="w-2 h-2 rounded-full bg-primary" />
+                <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
               )}
             </button>
           ))}
         </div>
         {userRole === RoleType.PARENT && (
-          <Button variant="outline" onClick={() => setAddChildDialogOpen(true)}>
+          <Button size={"sm"} variant="outline" className="w-full lg:w-auto" onClick={() => setAddChildDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-1" />
             {t("addChild")}
           </Button>

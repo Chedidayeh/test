@@ -295,7 +295,7 @@ export function LoginForm({ className, hideTrigger = false, open, onOpenChange }
                           {t("haveAccount")} {" "}
                           <button
                             type="button"
-                            className="underline-offset-4 hover:underline"
+                            className="underline-offset-4 text-primary hover:underline"
                             onClick={() => setIsSignUp(false)}
                             disabled={isLoading}
                           >
@@ -307,7 +307,7 @@ export function LoginForm({ className, hideTrigger = false, open, onOpenChange }
                           {t("noAccount")} {" "}
                           <button
                             type="button"
-                            className="underline-offset-4 hover:underline"
+                            className="underline-offset-4 text-primary hover:underline"
                             onClick={() => setIsSignUp(true)}
                             disabled={isLoading}
                           >

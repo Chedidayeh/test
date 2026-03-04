@@ -177,7 +177,7 @@ export default function ParentOnboarding({
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
-      <div className="w-full max-w-2xl">
+      <div className="w-full max-w-2xl px-2 sm:px-0">
         {/* Back Button */}
         {/* <div className="mb-8">
           <Button
@@ -196,14 +196,14 @@ export default function ParentOnboarding({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.3 }}
-          className="flex flex-col items-center mb-8 text-center"
+          className="flex flex-col items-center mb-6 sm:mb-8 text-center"
         >
-          <h1 className="text-3xl font-bold mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">
             {step === 1 && t("titleStep1")}
             {step === 2 && t("titleStep2")}
             {step === 3 && t("titleStep3")}
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             {step === 1 && t("descStep1")}
             {step === 2 && t("descStep2")}
             {step === 3 && t("descStep3")}
@@ -216,7 +216,7 @@ export default function ParentOnboarding({
             {[1, 2, 3].map((s) => (
               <motion.div
                 key={s}
-                className={`h-10 w-10 rounded-full flex items-center justify-center font-semibold text-sm transition-all ${
+                className={`h-8 w-8 sm:h-10 sm:w-10 rounded-full flex items-center justify-center font-semibold text-xs sm:text-sm transition-all ${
                   s < step
                     ? "bg-primary text-primary-foreground"
                     : s === step
@@ -249,7 +249,7 @@ export default function ParentOnboarding({
         </div>
 
         {/* Form Content */}
-        <div className="bg-card rounded-lg border p-8 shadow-sm">
+        <div className="bg-card rounded-lg border p-4 sm:p-8 shadow-sm">
           <AnimatePresence mode="wait">
             {step === 1 && (
               <motion.form
@@ -312,11 +312,11 @@ export default function ParentOnboarding({
                   </Field>
                 </FieldGroup>
 
-                <div className="flex gap-3 mt-8">
+                <div className="flex flex-col sm:flex-row gap-3 mt-6 sm:mt-8">
                   <Button
                     type="button"
                     variant="outline"
-                    className="flex-1"
+                    className="w-full sm:flex-1"
                     onClick={() => router.push("/")}
                   >
                     {isRTL ? (
@@ -326,7 +326,7 @@ export default function ParentOnboarding({
                     )}
                     {t("cancel")}
                   </Button>
-                  <Button type="submit" className="flex-1">
+                  <Button type="submit" className="w-full sm:flex-1">
                     {t("next")}
                     {isRTL ? (
                       <ChevronLeft className="w-4 h-4 ml-2" />
@@ -360,7 +360,7 @@ export default function ParentOnboarding({
                         control={childPreferencesForm.control}
                         name="favoriteThemes"
                         render={({ field }) => (
-                          <div className="space-y-2 grid grid-cols-2 md:grid-cols-3">
+                          <div className="space-y-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                             {availableThemes.map((theme) => {
                               const checked =
                                 Array.isArray(field.value) &&
@@ -410,11 +410,11 @@ export default function ParentOnboarding({
                   {/* Reading level removed — handled later or by defaults */}
                 </FieldGroup>
 
-                <div className="flex gap-3 mt-8">
+                <div className="flex flex-col sm:flex-row gap-3 mt-6 sm:mt-8">
                   <Button
                     type="button"
                     variant="outline"
-                    className="flex-1"
+                    className="w-full sm:flex-1"
                     onClick={handlePrevious}
                   >
                     {isRTL ? (
@@ -424,7 +424,7 @@ export default function ParentOnboarding({
                     )}{" "}
                     {t("previous")}
                   </Button>
-                  <Button type="submit" className="flex-1">
+                  <Button type="submit" className="w-full sm:flex-1">
                     {t("next")}
                     {isRTL ? (
                       <ChevronLeft className="w-4 h-4 ml-2" />
@@ -460,11 +460,11 @@ export default function ParentOnboarding({
                   </span>
                 </p>
 
-                <div className="flex gap-3 mt-8">
+                <div className="flex flex-col sm:flex-row gap-3 mt-6 sm:mt-8">
                   <Button
                     type="button"
                     variant="outline"
-                    className="flex-1"
+                    className="w-full sm:flex-1"
                     disabled={isLoading}
                     onClick={handlePrevious}
                   >
@@ -480,7 +480,7 @@ export default function ParentOnboarding({
                     type="submit"
                     onClick={handleFinalSubmit}
                     disabled={isLoading}
-                    className="flex-1"
+                    className="w-full sm:flex-1"
                   >
                     {isLoading ? t("settingUp") : t("startExploring")}
                     {isRTL ? (
@@ -496,7 +496,7 @@ export default function ParentOnboarding({
         </div>
 
         {/* Step counter */}
-        <p className="text-center text-sm text-muted-foreground mt-6">
+        <p className="text-center text-xs sm:text-sm text-muted-foreground mt-6">
           {t("stepOf", { step, total: 3 })}
         </p>
       </div>

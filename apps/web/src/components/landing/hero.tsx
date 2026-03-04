@@ -21,14 +21,14 @@ export default function Hero({ session }: { session: Session | null }) {
   return (
     <div>
       {/* Hero Content */}
-      <div className="text-center max-w-4xl mx-auto">
+      <div className="text-center max-w-4xl mx-auto px-4 sm:px-0">
         {/* Main Headline */}
         <div className="space-y-3 sm:space-y-4">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white drop-shadow-lg">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white drop-shadow-lg">
             {t("headline")} <br />
             {isRTL ? <span className="text-amber-400">{words[0]}</span> : <FlipWords words={words} />}
           </h1>
-          <p className="text-lg sm:text-xl text-gray-100 drop-shadow-md font-medium">
+          <p className="text-base sm:text-lg text-gray-100 drop-shadow-md font-medium">
             {t("subline")}
           </p>
           <p className="text-sm sm:text-base text-gray-200 drop-shadow-md max-w-2xl mx-auto">
@@ -37,9 +37,9 @@ export default function Hero({ session }: { session: Session | null }) {
         </div>
 
         {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6 sm:pt-20">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6 sm:pt-12">
           <Button
-            className="px-8 py-3 sm:py-4"
+            className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4"
             onClick={() => {
               if (session?.user.newUser) {
                 router.push("/onboarding");
@@ -59,7 +59,7 @@ export default function Hero({ session }: { session: Session | null }) {
         </div>
 
         {/* Trust Badge */}
-        <div className="mt-10 sm:mt-20">
+        <div className="mt-6 sm:mt-10">
           <p className="text-gray-200 drop-shadow-md">{t("trust")}</p>
         </div>
       </div>

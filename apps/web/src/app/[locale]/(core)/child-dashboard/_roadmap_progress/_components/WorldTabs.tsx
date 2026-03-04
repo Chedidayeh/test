@@ -58,7 +58,7 @@ export default function WorldTabs({
                     />
                   )}
 
-                  <span className="hidden sm:inline">{world.name}</span>
+                  <span className="inline">{world.name}</span>
                 </motion.button>
               );
             })}

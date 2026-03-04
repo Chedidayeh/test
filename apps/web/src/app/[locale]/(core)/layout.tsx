@@ -1,5 +1,5 @@
 import Header from "./_components/Header";
-import RoleIndicator from "@/src/components/shared/RoleIndicator";
+import MobileRoleIndicator from "@/src/components/shared/MobileRoleIndicator";
 import { auth } from "@/src/auth";
 import { redirect } from "next/navigation";
 import { RoleType } from "@shared/types";
@@ -23,7 +23,7 @@ export default async function Layout({
   return (
     <div>
       <Header userRole={userRole} />
-      {/* {userRole && <RoleIndicator role={userRole} />} */}
+      {userRole && <MobileRoleIndicator role={userRole} />}
 
       {children}
     </div>

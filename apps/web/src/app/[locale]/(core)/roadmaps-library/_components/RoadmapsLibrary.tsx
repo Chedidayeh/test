@@ -7,9 +7,16 @@ import SearchBar from "./SearchBar";
 import FilterPanel from "./FilterPanel";
 import FeaturedCarousel from "./FeaturedCarousel";
 import RoadmapCard from "./RoadmapCard";
+import {
+  Sheet,
+  SheetTrigger,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/src/components/ui/sheet";
+import { Button } from "@/src/components/ui/button";
 import { Roadmap, ChildProfile } from "@shared/types";
 import { transformRoadmapForDisplay } from "../_lib/roadmap-display";
-
 
 interface Filters {
   categories: string[];
@@ -22,7 +29,10 @@ interface RoadmapsLibraryProps {
   childrenList?: ChildProfile[];
 }
 
-const RoadmapsLibrary = ({ roadmaps, childrenList = [] }: RoadmapsLibraryProps) => {
+const RoadmapsLibrary = ({
+  roadmaps,
+  childrenList = [],
+}: RoadmapsLibraryProps) => {
   const t = useTranslations("RoadmapsLibrary");
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<Filters>({
@@ -33,20 +43,18 @@ const RoadmapsLibrary = ({ roadmaps, childrenList = [] }: RoadmapsLibraryProps) 
 
   // Transform real roadmap data for display
   const displayRoadmaps = roadmaps.map(transformRoadmapForDisplay);
-  
+
   // Create a map for quick lookup of original roadmaps
   const roadmapMap = new Map(roadmaps.map((r) => [r.id, r]));
 
-
-
   // Get unique themes/categories from roadmaps
   const uniqueThemes = Array.from(
-    new Set(displayRoadmaps.map((r) => r.category))
+    new Set(displayRoadmaps.map((r) => r.category)),
   );
 
   // Get unique age groups from roadmaps
   const uniqueAgeGroups = Array.from(
-    new Set(displayRoadmaps.map((r) => r.ageGroup))
+    new Set(displayRoadmaps.map((r) => r.ageGroup)),
   );
 
   const getFilteredRoadmaps = () => {
@@ -57,9 +65,7 @@ const RoadmapsLibrary = ({ roadmaps, childrenList = [] }: RoadmapsLibraryProps) 
       filtered = filtered.filter(
         (roadmap) =>
           roadmap.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          roadmap.description
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase()),
+          roadmap.description.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     }
 
@@ -87,7 +93,6 @@ const RoadmapsLibrary = ({ roadmaps, childrenList = [] }: RoadmapsLibraryProps) 
     return filtered;
   };
 
-
   const handleSearch = (query: string) => {
     setSearchQuery(query);
   };
@@ -105,16 +110,14 @@ const RoadmapsLibrary = ({ roadmaps, childrenList = [] }: RoadmapsLibraryProps) 
 
         {/* Featured Carousel */}
         <div className="mb-8">
-          <FeaturedCarousel
-            roadmaps={roadmaps}
-          />
+          <FeaturedCarousel roadmaps={roadmaps} />
         </div>
 
-        <div className="text-center mb-8">
-          <h1 className="font-heading text-4xl text-foreground mb-1">
+        <div className="text-center mb-6">
+          <h1 className="font-heading text-3xl md:text-4xl text-foreground mb-1">
             {t("library.title")}
           </h1>
-          <p className="font-body text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="font-body text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
             {t("library.description")}
           </p>
         </div>
@@ -123,8 +126,8 @@ const RoadmapsLibrary = ({ roadmaps, childrenList = [] }: RoadmapsLibraryProps) 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Filter Panel */}
           <div className="lg:col-span-1">
-            <FilterPanel 
-              onFilterChange={handleFilterChange} 
+            <FilterPanel
+              onFilterChange={handleFilterChange}
               uniqueThemes={uniqueThemes}
               uniqueAgeGroups={uniqueAgeGroups}
             />
@@ -133,11 +136,13 @@ const RoadmapsLibrary = ({ roadmaps, childrenList = [] }: RoadmapsLibraryProps) 
           {/* Stories Grid */}
           <div className="lg:col-span-3">
             {/* Search Bar */}
-            <div className="mb-2">
-              <SearchBar onSearch={handleSearch} />
+            <div className="flex items-center justify-between mb-3 gap-4">
+              <div className="flex-1">
+                <SearchBar onSearch={handleSearch} />
+              </div>
             </div>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="font-heading text-2xl text-foreground">
+              <h2 className="font-heading text-xl md:text-2xl text-foreground">
                 {t("library.allRoadmaps", { count: filteredRoadmaps.length })}
               </h2>
             </div>
@@ -152,7 +157,7 @@ const RoadmapsLibrary = ({ roadmaps, childrenList = [] }: RoadmapsLibraryProps) 
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredRoadmaps.map((roadmap) => {
                   const originalRoadmap = roadmapMap.get(roadmap.id);
                   return originalRoadmap ? (

@@ -71,7 +71,7 @@ export default function StoriesRoadmap({
       className="w-full"
     >
       {/* Main Roadmap Container - Grid Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 py-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 py-6">
         {progressiveLockedStories.map((story, index) => (
           <motion.div
             key={story.id}
@@ -80,7 +80,7 @@ export default function StoriesRoadmap({
             transition={{ delay: index * 0.1, duration: 0.4 }}
           >
             <div
-              className={`relative h-64 rounded-xl overflow-hidden group transition-all duration-300 ${
+              className={`relative h-44 md:h-64 rounded-xl overflow-hidden group transition-all duration-300 ${
                 story.status === "locked"
                   ? "opacity-60 hover:opacity-75"
                   : "hover:shadow-lg hover:scale-105"
@@ -126,7 +126,7 @@ export default function StoriesRoadmap({
                     {story.status === "locked" && t("roadmapPage.storiesRoadmap.status.locked")}
                     {story.status === "not_started" && t("roadmapPage.storiesRoadmap.status.notStarted")}
                   </span>
-                  <div className="flex items-center gap-2 opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200">
+                  <div className="md:flex items-center hidden gap-2 scale-95 opacity-100 group-hover:scale-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200">
                     <div className="flex items-center gap-1 text-white backdrop-blur-sm bg-accent rounded-2xl px-3 py-1">
                       <BookOpen className="w-4 h-4" />
                       <div className="text-sm">
@@ -144,7 +144,7 @@ export default function StoriesRoadmap({
                 {/* Centered Buttons (Hidden until hover) */}
 
                 {userRole === RoleType.PARENT && (
-                  <div className="max-w-max mx-auto opacity-0 scale-95 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200">
+                  <div className="max-w-max mx-auto transition-all duration-200 md:scale-95 md:translate-y-2 md:pointer-events-none opacity-100 md:group-hover:scale-100 md:group-hover:translate-y-0 md:group-hover:pointer-events-auto">
                     {story.status === "completed" && (
                       <Link
                         href={`/story-replaying-interface/${story.id}?childId=${childProfile.child.id}`}

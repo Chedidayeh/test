@@ -69,18 +69,9 @@ const ChildDashboardInteractive = ({
           setSeeRoadmap={setSeeRoadmap}
         />
       ) : (
-        <div className="hidden md:grid md:grid-cols-4 gap-6 container mx-auto px-4">
-          {/* Left Sidebar - Progress Tracker */}
-          <div className="md:col-span-1 top-8">
-            <ProgressTracker
-              currentStars={child.totalStars || 0}
-              levels={levels}
-              currentLevel={child.currentLevel || 1}
-            />
-          </div>
-
-          {/* Main Content */}
-          <div className="md:col-span-3 space-y-4">
+        <>
+          {/* Mobile View */}
+          <div className="lg:hidden space-y-4 container mx-auto px-4 py-4">
             {/* Welcome Banner */}
             <WelcomeBanner
               childName={child.child.name || "Young Reader"}
@@ -93,6 +84,13 @@ const ChildDashboardInteractive = ({
               readingTimeSubtitle={readingTimeSubtitle}
             />
 
+            {/* Progress Tracker */}
+            <ProgressTracker
+              currentStars={child.totalStars || 0}
+              levels={levels}
+              currentLevel={child.currentLevel || 1}
+            />
+
             {/* Action Cards */}
             {hasInProgressStories && (
               <ActionCards
@@ -102,13 +100,57 @@ const ChildDashboardInteractive = ({
               />
             )}
 
+            {/* Roadmaps */}
             <Roadmaps
               roadmaps={roadmaps}
               setSelectedRoadmap={setSelectedRoadmap}
               setSeeRoadmap={setSeeRoadmap}
             />
           </div>
-        </div>
+
+          {/* Desktop View */}
+          <div className="hidden lg:grid lg:grid-cols-4 gap-6  mx-auto px-4 py-4">
+            {/* Left Sidebar - Progress Tracker */}
+            <div className="lg:col-span-1 sticky top-8 h-fit">
+              <ProgressTracker
+                currentStars={child.totalStars || 0}
+                levels={levels}
+                currentLevel={child.currentLevel || 1}
+              />
+            </div>
+
+            {/* Main Content */}
+            <div className="lg:col-span-3 space-y-4">
+              {/* Welcome Banner */}
+              <WelcomeBanner
+                childName={child.child.name || "Young Reader"}
+                avatar={child.child.avatar}
+                currentLevel={child.currentLevel || 1}
+                totalStars={child.totalStars || 0}
+                recentBadges={childBadges}
+                storiesCompleted={storiesCompleted}
+                readingTimeMinutes={readingTimeMinutes}
+                readingTimeSubtitle={readingTimeSubtitle}
+              />
+
+              {/* Action Cards */}
+              {hasInProgressStories && (
+                <ActionCards
+                  currentProgresses={currentProgresses}
+                  roadmaps={roadmaps}
+                  childProfile={child}
+                />
+              )}
+
+              {/* Roadmaps */}
+              <Roadmaps
+                roadmaps={roadmaps}
+                setSelectedRoadmap={setSelectedRoadmap}
+                setSeeRoadmap={setSeeRoadmap}
+              />
+            </div>
+          </div>
+        </>
       )}
     </>
   );
