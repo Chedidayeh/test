@@ -159,7 +159,9 @@ export default function Profile({ session }: { session: Session }) {
                         <label className="text-xs md:text-sm font-medium text-gray-500">
                           {t("fullName")}
                         </label>
-                        <p className="text-sm md:text-base">{session?.user?.name}</p>
+                        <p className="text-sm md:text-base">
+                          {session?.user?.name}
+                        </p>
                       </div>
                     </div>
 
@@ -169,7 +171,9 @@ export default function Profile({ session }: { session: Session }) {
                         <label className="text-xs md:text-sm font-medium text-gray-500">
                           {t("emailAddress")}
                         </label>
-                        <p className="text-sm md:text-base break-all">{session?.user?.email}</p>
+                        <p className="text-sm md:text-base break-all">
+                          {session?.user?.email}
+                        </p>
                       </div>
                     </div>
 
@@ -187,8 +191,8 @@ export default function Profile({ session }: { session: Session }) {
                       </div>
                     </div>
                   </div>
-                                    {/* Mobile Logout Button */}
-                  <div className="md:hidden mt-4">
+                  {/* Mobile Logout Button */}
+                  <div className="md:hidden flex items-center justify-between mt-4">
                     <Button
                       onClick={handleLogout}
                       variant="destructive"
@@ -204,6 +208,7 @@ export default function Profile({ session }: { session: Session }) {
                         </>
                       )}
                     </Button>
+                    <Button>Admin</Button>
                   </div>
                 </div>
 
@@ -220,11 +225,15 @@ export default function Profile({ session }: { session: Session }) {
             {activeTab === "settings" && (
               <div className="space-y-4 md:space-y-6">
                 <div>
-                  <h2 className="text-lg md:text-xl font-medium mb-3 md:mb-4">{t("settings")}</h2>
+                  <h2 className="text-lg md:text-xl font-medium mb-3 md:mb-4">
+                    {t("settings")}
+                  </h2>
 
                   {/* Notification Settings */}
                   <div className="bg-card rounded-lg border border-primary/20 p-3 md:p-6 space-y-3 md:space-y-4 mb-4 md:mb-6">
-                    <h3 className="text-sm md:text-base font-medium">{t("notificationPreferences")}</h3>
+                    <h3 className="text-sm md:text-base font-medium">
+                      {t("notificationPreferences")}
+                    </h3>
                     <div className="space-y-2 md:space-y-3">
                       <label className="flex items-center gap-3 cursor-pointer">
                         <Checkbox defaultChecked className="w-4 h-4" />
@@ -251,13 +260,17 @@ export default function Profile({ session }: { session: Session }) {
 
                   {/* Danger Zone */}
                   <div className="bg-red-50 rounded-lg border border-red-200 p-3 md:p-4">
-                    <h3 className="text-red-900 mb-3 md:mb-4 text-sm md:text-base">{t("dangerZone")}</h3>
-                    <Button variant="destructive" className="w-full md:w-auto" size={"sm"}>
+                    <h3 className="text-red-900 mb-3 md:mb-4 text-sm md:text-base">
+                      {t("dangerZone")}
+                    </h3>
+                    <Button
+                      variant="destructive"
+                      className="w-full md:w-auto"
+                      size={"sm"}
+                    >
                       {t("deleteAccount")}
                     </Button>
                   </div>
-
-
                 </div>
               </div>
             )}

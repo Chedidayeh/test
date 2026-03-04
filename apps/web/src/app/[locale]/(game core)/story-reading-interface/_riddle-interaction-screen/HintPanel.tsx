@@ -33,35 +33,35 @@ const HintPanel = ({
   const hasMoreHints = currentHintLevel < hints.length;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-fade-in">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-3 sm:p-4 z-50 animate-fade-in">
       <div className="bg-card rounded-xl shadow-warm-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b-2 border-border">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 text-white bg-secondary rounded-full flex items-center justify-center">
-              <Lightbulb />
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b-2 border-border">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 text-white bg-secondary rounded-full flex items-center justify-center flex-shrink-0">
+              <Lightbulb size={18} className="sm:size-6" />
             </div>
             <div>
-              <h2 className="font-heading text-xl text-foreground">
+              <h2 className="font-heading text-base sm:text-xl text-foreground">
                 {t("hintPanel.title")}
               </h2>
-              <p className="font-caption text-sm text-muted-foreground">
+              <p className="font-caption text-xs sm:text-sm text-muted-foreground">
                 {t("hintPanel.hintsRemaining", { count: availableHints })}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-muted transition-smooth"
+            className="p-1 sm:p-2 rounded-lg hover:bg-muted transition-smooth flex-shrink-0 ml-2"
             aria-label="Close hint panel"
           >
-            <X />
+            <X size={20} className="sm:size-6" />
           </button>
         </div>
 
         {/* Friendly Character */}
-        <div className="p-6 flex justify-center">
-          <div className="relative w-60 h-60 rounded-2xl overflow-hidden">
+        <div className="p-4 sm:p-6 flex justify-center">
+          <div className="relative w-40 sm:w-60 h-40 sm:h-60 rounded-2xl overflow-hidden">
             <img
               src="/hint-avatars/need-help.png"
               className=" object-contain shadow-warm"
@@ -71,14 +71,14 @@ const HintPanel = ({
 
         {/* Current Hint */}
         {currentHint && (
-          <div className="px-6 pb-2">
-            <div className="p-6 rounded-xl border-2 border-secondary bg-secondary/10">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="font-caption  uppercase tracking-wider font-semibold text-secondary">
+          <div className="px-3 sm:px-6 pb-2">
+            <div className="p-4 sm:p-6 rounded-xl border-2 border-secondary bg-secondary/10">
+              <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                <span className="font-caption text-xs sm:text-sm uppercase tracking-wider font-semibold text-secondary">
                   {t("hintPanel.hintCounter", { current: currentHintLevel, total: hints.length })}
                 </span>
               </div>
-              <p className="font-body text-lg text-foreground leading-relaxed">
+              <p className="font-body text-sm sm:text-lg text-foreground leading-relaxed">
                 {currentHint.text}
               </p>
             </div>
@@ -87,23 +87,23 @@ const HintPanel = ({
 
         {/* Previous Hints */}
         {currentHintLevel > 1 && (
-          <div className="px-6 pb-2">
-            <h3 className="font-heading text-lg text-foreground mb-3">
+          <div className="px-3 sm:px-6 pb-2">
+            <h3 className="font-heading text-sm sm:text-lg text-foreground mb-2 sm:mb-3">
               {t("hintPanel.previousHints")}
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {hints.slice(0, currentHintLevel - 1).map((hint, index) => (
                 <div
                   key={index}
-                  className="p-4 rounded-lg bg-muted border border-border"
+                  className="p-3 sm:p-4 rounded-lg bg-muted border border-border"
                 >
-                  <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle size={16} className="text-success" />
-                    <span className="font-caption  text-muted-foreground">
+                  <div className="flex items-center gap-2 mb-1 sm:mb-2">
+                    <CheckCircle size={14} className="sm:size-4 text-success flex-shrink-0" />
+                    <span className="font-caption text-xs sm:text-sm text-muted-foreground">
                       {t("hintPanel.hintCounter", { current: index + 1, total: hints.length })}
                     </span>
                   </div>
-                  <p className="font-body text-sm text-foreground opacity-70">
+                  <p className="font-body text-xs sm:text-sm text-foreground opacity-70">
                     {hint.text}
                   </p>
                 </div>
@@ -113,19 +113,19 @@ const HintPanel = ({
         )}
 
         {/* Actions */}
-        <div className="p-4 flex items-center justify-between gap-3 border-border">
+        <div className="p-3 sm:p-4 flex items-center justify-between gap-2 sm:gap-3 border-border">
           <div className="flex items-center justify-center">
-            <Button variant={"outline"} onClick={onClose}>
+            <Button variant={"outline"} onClick={onClose} className="text-xs sm:text-sm">
               {t("hintPanel.closeButton")}
             </Button>
           </div>
           {hasMoreHints && availableHints > 0 ? (
-            <Button variant={"secondary"} onClick={onRequestHint}>
+            <Button variant={"secondary"} onClick={onRequestHint} className="text-xs sm:text-sm">
               {t("hintPanel.getAnotherHint", { remaining: availableHints })}
             </Button>
           ) : (
-            <div className="text-center p-4 bg-muted rounded-xl">
-              <p className="font-body text-foreground">
+            <div className="text-center p-2 sm:p-4 bg-muted rounded-xl">
+              <p className="font-body text-xs sm:text-sm text-foreground">
                 {availableHints === 0
                   ? t("hintPanel.noMoreHints")
                   : t("hintPanel.allHintsRevealed")}

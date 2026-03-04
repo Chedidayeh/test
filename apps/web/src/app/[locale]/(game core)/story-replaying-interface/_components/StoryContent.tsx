@@ -11,9 +11,9 @@ interface StoryContentProps {
 
 const StoryContent = ({ currentPage, textSize, highContrast, highlightedWord }: StoryContentProps) => {
   const textSizeClasses = {
-    small: 'text-lg md:text-xl',
-    medium: 'text-xl md:text-2xl',
-    large: 'text-2xl md:text-3xl',
+    small: 'text-base sm:text-lg md:text-xl',
+    medium: 'text-lg sm:text-xl md:text-2xl',
+    large: 'text-xl sm:text-2xl md:text-3xl',
   };
 
   const words = currentPage.text.split(' ');
@@ -26,7 +26,7 @@ const StoryContent = ({ currentPage, textSize, highContrast, highlightedWord }: 
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -8 }}
         transition={{ duration: 0.3 }}
-        className={`flex flex-col gap-8 ${highContrast ? 'bg-black text-white' : 'text-foreground'}`}
+        className={`flex flex-col gap-4 sm:gap-6 md:gap-8 ${highContrast ? 'bg-black text-white' : 'text-foreground'}`}
       >
       {/* Story Image */}
       {/* <div className="w-full aspect-video rounded-xl overflow-hidden shadow-warm-lg">
@@ -38,7 +38,7 @@ const StoryContent = ({ currentPage, textSize, highContrast, highlightedWord }: 
       </div> */}
 
       {/* Story Text */}
-      <div className={`font-body ${textSizeClasses[textSize]} leading-relaxed space-y-4`}>
+      <div className={`font-body ${textSizeClasses[textSize]} leading-relaxed space-y-2 sm:space-y-3 md:space-y-4`}>
         {words.map((word, index) => (
           <span
             key={index}

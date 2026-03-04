@@ -184,13 +184,17 @@ export default function ParentsPage({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <Link href={`/parent-dashboard?parentId=${parent.id}`} target="_blank">
-                <DropdownMenuItem className="cursor-pointer">
-                  <Eye className="mr-2 h-4 w-4" />
-                  <span>View Details</span>
-                </DropdownMenuItem>
-              </Link>
-
+              {parent.children && parent.children.length > 0 && (
+                <Link
+                  href={`/parent-dashboard?parentId=${parent.id}`}
+                  target="_blank"
+                >
+                  <DropdownMenuItem className="cursor-pointer">
+                    <Eye className="mr-2 h-4 w-4" />
+                    <span>View Details</span>
+                  </DropdownMenuItem>
+                </Link>
+              )}
               <DropdownMenuItem
                 className="cursor-pointer text-red-600"
                 onClick={() => {

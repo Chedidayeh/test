@@ -29,7 +29,7 @@
 	"ParentDashboard": {
 		"yourChildren": "قائمة أطفالك",
 		"unknown": "غير معروف",
-		"stars": "{count} نجوم",
+		"stars": "{count} نجمة",
 		"addChild": "إضافة طفل",
 		"addChildDialog": {
 			"title": "إضافة طفل جديد",
@@ -94,7 +94,7 @@
 		"achievements": {
 			"title": "الشارات والإنجازات",
 			"unlockedSummary": "تم فتح {unlocked} من أصل {total} شارات لـ {childName}",
-			"dashboardButton": "لوحة تحكم {childName} →",
+			"dashboardButton":  "فضاء التعلم لطفلك {childName} →",
 			"emptyTitle": "🏆",
 			"emptyMessage": "لا توجد شارات متاحة. تحقق لاحقًا للحصول على مزيد من الإنجازات!",
 			"locked": {
@@ -107,7 +107,7 @@
 		"riddleStatistics": {
 			"title": "إحصائيات الألغاز",
 			"description": "رؤى متعمقة حول رحلة القراءة وحل المشكلات لـ {childName}.",
-			"dashboardButton": "لوحة تحكم {childName} →",
+			"dashboardButton": "فضاء التعلم لطفلك {childName} →",
 			"stats": {
 				"totalChallenges": "إجمالي التحديات",
 				"solved": "تحديات ناجحة",
@@ -161,7 +161,7 @@
 		"timeAnalytics": {
 			"title": "تحليلات الوقت",
 			"description": "رؤى متعمقة حول قراءة {childName} من حيث الوقت والاتساق",
-			"dashboardButton": "لوحة تحكم {childName} →",
+			"dashboardButton": "فضاء التعلم لطفلك {childName} →",
 			"presets": {
 				"last3Days": "آخر 3 أيام",
 				"last7Days": "آخر 7 أيام",
@@ -207,7 +207,7 @@
 			"starsToGo": "نجوم متبقية",
 			"levelsLabel": "المستويات",
 			"levelLabel": "المستوى {level}",
-			"requiredStars": "{count} نجوم",
+			"requiredStars": "{count} نجمة",
 			"badgeLabel": "شارة",
 			"motivation": {
 				"1": "مرحبًا بك في مغامرة القراءة الخاصة بك",
@@ -439,7 +439,7 @@
 			"returnToStory": "العودة إلى القصة",
 			"previousButton": "السابق",
 			"nextButton": "التالي",
-			"starsEarned": "{count} نجوم",
+			"starsEarned": "{count} نجمة",
 			"pageProgress": "الصفحة {current} من {total}",
 			"timerMessage": "استمر في القراءة... ({remaining}ث متبقية)",
 			"completionMessage": "تمت القصة",
@@ -502,7 +502,7 @@
 				"noMoreHints": "لا توجد تلميحات إضافية. يمكنك فعل ذلك!",
 				"allHintsRevealed": "تم الكشف عن جميع التلميحات. حاول بأفضل ما لديك!",
 				"closeButton": "إغلاق",
-				"getAnotherHint": "احصل على تلميح آخر ({remaining} متبقي)"
+				"getAnotherHint": "تلميح آخر ({remaining} متبقي)"
 			},
 			"feedbackDisplay": {
 				"solvedTitle": "عمل رائع!",
@@ -531,7 +531,7 @@
 			"progressToLevel": "التقدم إلى المستوى {nextLevel}",
 			"progressPercentage": "{percentage}%",
 			"levelUnlocked": "🎉 لقد وصلت إلى المستوى {nextLevel}!",
-			"starsNeeded": "{count} نجوم إضافية مطلوبة"
+			"starsNeeded": "{count} نجمة إضافية مطلوبة"
 		},
 		"badgeInfo": {
 			"unlocked": "شارة جديدة مفتوحة: {badgeName}"

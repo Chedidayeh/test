@@ -43,28 +43,28 @@ const ReadingSettings = ({
 
   const t = useTranslations("StoryReadingInterface");
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-card rounded-xl shadow-warm-xl p-6 md:p-8 max-w-md w-full">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4">
+      <div className="bg-card rounded-xl shadow-warm-xl p-4 sm:p-6 md:p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="font-heading text-2xl text-foreground">
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
+          <h2 className="font-heading text-xl sm:text-2xl text-foreground">
             {t("readingSettings.title")}
           </h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-accent hover:text-white rounded-full transition-smooth"
+            className="p-1 sm:p-2 hover:bg-accent hover:text-white rounded-full transition-smooth flex-shrink-0 ml-2"
             aria-label={t("readingSettings.closeButton")}
           >
-            <X  />
+            <X size={20} className="sm:size-6" />
           </button>
         </div>
 
         {/* Text Size */}
-        <div className="mb-6">
-          <label className="block font-body font-semibold text-foreground mb-3">
+        <div className="mb-4 sm:mb-6">
+          <label className="block font-body font-semibold text-sm sm:text-base text-foreground mb-2 sm:mb-3">
             {t("readingSettings.textSize")}
           </label>
-          <div className="flex gap-3">
+          <div className="flex gap-2 sm:gap-3">
             {(["small", "medium", "large"] as const).map((size) => {
               const sizeLabels = {
                 small: t("readingSettings.small"),
@@ -75,7 +75,7 @@ const ReadingSettings = ({
                 <button
                   key={size}
                   onClick={() => onTextSizeChange(size)}
-                  className={`flex-1 px-4 py-3 rounded-lg font-body font-medium transition-smooth ${
+                  className={`flex-1 px-2 sm:px-4 py-2 sm:py-3 rounded-lg font-body font-medium text-xs sm:text-sm transition-smooth ${
                     textSize === size
                       ? "bg-accent text-accent-foreground shadow-warm"
                       : "bg-muted hover:bg-accent/20"
@@ -99,11 +99,11 @@ const ReadingSettings = ({
         </div>
 
         {/* Language Selection */}
-        <div className="mb-6">
-          <label className="block font-body font-semibold text-foreground mb-3">
+        <div className="mb-4 sm:mb-6">
+          <label className="block font-body font-semibold text-sm sm:text-base text-foreground mb-2 sm:mb-3">
             {t("readingSettings.language")}
           </label>
-          <div className="flex gap-3">
+          <div className="flex gap-2 sm:gap-3">
             {(["en", "fr", "ar"] as const).map((lang) => {
               const languageLabels = {
                 en: t("readingSettings.english"),
@@ -114,13 +114,13 @@ const ReadingSettings = ({
                 <button
                   key={lang}
                   onClick={() => handleChange(lang)}
-                  className={`flex-1 px-4 py-3 rounded-lg font-body font-medium transition-smooth ${
+                  className={`flex-1 px-2 sm:px-4 py-2 sm:py-3 rounded-lg font-body font-medium text-xs sm:text-sm transition-smooth ${
                     locale === lang
                       ? "bg-accent text-accent-foreground shadow-warm"
                       : "bg-muted hover:bg-accent/20"
                   }`}
                 >
-                  <span className="text-base">
+                  <span className="text-xs sm:text-base">
                     {languageLabels[lang]}
                   </span>
                 </button>
@@ -145,14 +145,14 @@ const ReadingSettings = ({
         </div> */}
 
         {/* Reading Tips */}
-        <div className="bg-accent/10 border-2 border-accent/30 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <Lightbulb className="text-accent w-12 h-12" />
+        <div className="bg-accent/10 border-2 border-accent/30 rounded-lg p-3 sm:p-4">
+          <div className="flex items-start gap-2 sm:gap-3">
+            <Lightbulb className="text-accent w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-body font-semibold text-foreground mb-1">
+              <p className="font-body font-semibold text-sm sm:text-base text-foreground mb-1">
                 {t("readingSettings.readingTip")}
               </p>
-              <p className="font-caption text-sm text-muted-foreground">
+              <p className="font-caption text-xs sm:text-sm text-muted-foreground">
                 {t("readingSettings.readingTipText")}
               </p>
             </div>

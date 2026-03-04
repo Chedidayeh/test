@@ -33,11 +33,11 @@ const TextInputAnswer = ({
   };
 
   return (
-    <div className="space-y-4">
-      <label className="block font-body text-foreground text-lg">
+    <div className="space-y-2 sm:space-y-4">
+      <label className="block font-body text-sm sm:text-base text-foreground">
         {t("textInputAnswer.yourAnswer")}
       </label>
-      <div className="flex gap-3">
+      <div className="flex gap-2 sm:gap-3">
         <input
           type="text"
           value={answer}
@@ -46,7 +46,7 @@ const TextInputAnswer = ({
           disabled={isDisabled}
           placeholder={placeholder || t("textInputAnswer.placeholder")}
           spellCheck={true}
-          className="flex-1 px-6 py-2 rounded-xl border bg-secondary/10 text-foreground text-lg transition-smooth disabled:opacity-50"
+          className="flex-1 px-3 sm:px-6 py-2 sm:py-3 rounded-xl border bg-secondary/10 text-sm sm:text-base text-foreground transition-smooth disabled:opacity-50"
         />
         <Button
           onClick={handleSubmit}

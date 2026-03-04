@@ -69,27 +69,27 @@ const FeedbackDisplay2 = ({
   const config = feedbackConfig[type];
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-fade-in">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-3 sm:p-4 z-50 animate-fade-in">
       <div className="bg-card rounded-xl shadow-warm-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b-2 border-border">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 text-white bg-secondary rounded-full flex items-center justify-center">
-              {type === "incorrect" && <CircleX />}
-              {type === "solved" && <CircleCheck />}
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b-2 border-border">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 text-white bg-secondary rounded-full flex items-center justify-center flex-shrink-0">
+              {type === "incorrect" && <CircleX size={18} className="sm:size-6" />}
+              {type === "solved" && <CircleCheck size={18} className="sm:size-6" />}
             </div>
             <div>
-              <h2 className="font-heading text-xl text-foreground">
+              <h2 className="font-heading text-base sm:text-xl text-foreground">
                 {config.title}
               </h2>
             </div>
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {/* Friendly Character */}
-          <div className="p-6 flex justify-center">
-            <div className="relative w-60 h-60 rounded-2xl overflow-hidden">
+          <div className="p-4 sm:p-6 flex justify-center">
+            <div className="relative w-40 sm:w-60 h-40 sm:h-60 rounded-2xl overflow-hidden">
               <img
                 src={
                   type === "solved"
@@ -101,42 +101,48 @@ const FeedbackDisplay2 = ({
             </div>
           </div>
 
-          <div className="text-center mb-6">
-            <p className="font-body text-xl text-foreground leading-relaxed">
+          <div className="text-center mb-4 sm:mb-6">
+            <p className="font-body text-sm sm:text-xl text-foreground leading-relaxed">
               {message}
             </p>
           </div>
 
           {/* Stars Earned (for correct answers) */}
           {type === "solved" && starsEarned > 0 && (
-            <div className="flex items-center justify-center gap-3 mb-6 p-4 bg-secondary/20 rounded-xl">
-              <Star className="fill-amber-500 text-amber-500" />
-              <span className="font-heading text-2xl text-foreground">
+            <div className="flex items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-6 p-3 sm:p-4 bg-secondary/20 rounded-xl">
+              <Star size={20} className="sm:size-6 fill-amber-500 text-amber-500" />
+              <span className="font-heading text-xl sm:text-2xl text-foreground">
                 {t("feedbackDisplay.starsEarned", { count: starsEarned })}
               </span>
             </div>
           )}
 
           {/* Actions */}
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {type === "solved" ? (
               <div className="flex items-center justify-center">
                 <Button
                   variant={"secondary"}
                   onClick={() => onContinue("solved")}
+                  className="text-sm sm:text-base"
                 >
                   {t("feedbackDisplay.continueButton")}
                 </Button>
               </div>
             ) : (
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center justify-between gap-2 sm:gap-4">
                 <Button
                   variant={"outline"}
                   onClick={() => onContinue("skipped")}
+                  className="text-xs sm:text-sm flex-1"
                 >
                   {t("feedbackDisplay.skipButton")}
                 </Button>
-                <Button variant={"secondary"} onClick={onTryAgain}>
+                <Button
+                  variant={"secondary"}
+                  onClick={onTryAgain}
+                  className="text-xs sm:text-sm flex-1"
+                >
                   {t("feedbackDisplay.tryAgainButton")}
                 </Button>
               </div>

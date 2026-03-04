@@ -502,7 +502,7 @@
 				"noMoreHints": "No more hints available. You can do this!",
 				"allHintsRevealed": "All hints revealed. Give it your best try!",
 				"closeButton": "Close",
-				"getAnotherHint": "Get Another Hint ({remaining} left)"
+				"getAnotherHint": "Another Hint ({remaining} left)"
 			},
 			"feedbackDisplay": {
 				"solvedTitle": "Amazing Work!",

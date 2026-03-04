@@ -395,8 +395,8 @@ const RiddleInteractive = ({
   };
 
   return (
-    <div className="">
-      <div className="container mx-auto px-4 max-w-5xl">
+    <div className="pt-16 sm:pt-20 pb-20 sm:pb-24 md:pb-28 lg:pb-32">
+      <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 max-w-5xl">
         {/* Progress Indicator */}
         <FloatingItems
           attempts={attempts}
@@ -405,7 +405,7 @@ const RiddleInteractive = ({
         />
 
         {/* Riddle Question */}
-        <div className="mt-6">
+        <div className="mt-4 sm:mt-6">
           <RiddleQuestion
             question={currentRiddle.question}
             storyImage={
@@ -423,7 +423,7 @@ const RiddleInteractive = ({
         </div>
 
         {/* Answer Input */}
-        <div className="mt-6 bg-card rounded-xl shadow-warm-lg p-6">
+        <div className="mt-4 sm:mt-6 bg-card rounded-xl shadow-warm-lg p-4 sm:p-6">
           {currentRiddle.type === "RIDDLE" ? (
             <TextInputAnswer
               onSubmit={handleTextSubmit}
@@ -443,7 +443,7 @@ const RiddleInteractive = ({
                 variant={"secondary"}
                 onClick={handleChoiceSubmit}
                 disabled={!selectedChoice || feedbackState.isVisible}
-                className="w-full mt-6 px-6 py-4 text-lg"
+                className="w-full mt-4 sm:mt-6 px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base"
               >
                 {t("submitAnswer")}
               </Button>
@@ -477,17 +477,19 @@ const RiddleInteractive = ({
       </div>
 
       {/* Floating Hint Button */}
-      <div className="fixed right-4 bottom-24 z-50 pointer-events-none">
-        <button
-          onClick={handleShowHintPanel}
-          className="pointer-events-auto flex items-center gap-3 px-4 py-3 bg-secondary text-white rounded-full shadow-warm hover:scale-105 transition-smooth disabled:opacity-50"
-        >
-          <Lightbulb size={20} />
-          <span className="hidden md:inline font-heading font-bold">
+      {totalHints > 0 && (
+        <div className="fixed right-2 sm:right-4 md:right-6 lg:right-8 bottom-20 sm:bottom-24 md:bottom-28 lg:bottom-32 z-50 pointer-events-none">
+          <button
+            onClick={handleShowHintPanel}
+            className="pointer-events-auto flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 bg-secondary text-white rounded-full shadow-warm hover:scale-105 transition-smooth disabled:opacity-50 text-xs sm:text-sm flex-shrink-0"
+          >
+            <Lightbulb size={18} className="sm:size-5" />
+            <span className="hidden sm:inline font-heading font-bold">
               {t("needAHint")} ({availableHints})
-          </span>
-        </button>
-      </div>
+            </span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };

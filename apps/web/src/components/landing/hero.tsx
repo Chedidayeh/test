@@ -26,7 +26,7 @@ export default function Hero({ session }: { session: Session | null }) {
         <div className="space-y-3 sm:space-y-4">
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white drop-shadow-lg">
             {t("headline")} <br />
-            {isRTL ? <span className="text-amber-400">{words[0]}</span> : <FlipWords words={words} />}
+            <FlipWords words={words} isRTL={isRTL} />
           </h1>
           <p className="text-base sm:text-lg text-gray-100 drop-shadow-md font-medium">
             {t("subline")}

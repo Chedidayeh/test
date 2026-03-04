@@ -62,15 +62,21 @@ const StoryFlowNavigation = ({
         transition={{ duration: 0.28 }}
         className={`absolute top-0 left-0 right-0 border-b bg-card shadow-warm-md transition-smooth pointer-events-auto`}
       >
-        <div className="relative flex items-center justify-center px-4 md:px-8 py-4 md:py-4 h-20">
+        <div className="relative flex items-center justify-center px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 min-h-16 sm:min-h-20">
           {/* Back Button */}
           <Button
             variant={"outline"}
             onClick={handleBack}
-            className="absolute left-4 md:left-8"
+            className="absolute left-2 sm:left-3 md:left-4 lg:left-8 text-xs sm:text-sm"
           >
-            {isRTL ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-            <span className="ml-2">{t("storyFlowNavigation.backButton")}</span>
+            {isRTL ? (
+              <ChevronRight size={18} className="sm:size-5" />
+            ) : (
+              <ChevronLeft size={18} className="sm:size-5" />
+            )}
+            <span className="hidden sm:inline ml-1 sm:ml-2">
+              {t("storyFlowNavigation.backButton")}
+            </span>{" "}
           </Button>
 
           {/* Story Title */}
@@ -96,31 +102,31 @@ const StoryFlowNavigation = ({
         transition={{ duration: 0.28 }}
         className={`absolute bottom-0 left-0 border-t right-0 bg-card shadow-warm-lg transition-smooth pointer-events-auto`}
       >
-        <div className="relative flex items-center justify-between px-4 md:px-32 py-4 md:py-6 h-20">
+        <div className="relative flex items-center justify-between px-2 sm:px-4 md:px-8 lg:px-16 xl:px-24 py-3 sm:py-4 min-h-16 sm:min-h-20">
           {/* Previous Button */}
           <Button
             onClick={handlePreviousPage}
             disabled={currentPage === 1}
             aria-label="Previous page"
           >
-                          {isRTL ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}{" "}
-              <span className="hidden md:inline">
-                {t("storyFlowNavigation.previousButton")}
-              </span>
+            {isRTL ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}{" "}
+            <span className="hidden md:inline">
+              {t("storyFlowNavigation.previousButton")}
+            </span>
           </Button>
 
-            {/* Page Counter */}
-            <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1 pointer-events-none">
-              <span className="font-data text-2xl md:text-3xl font-bold text-primary">
-                {currentPage}
-              </span>
-              <span className="font-caption text-sm text-muted-foreground">
-                {t("storyFlowNavigation.pageProgress", {
-                  current: currentPage,
-                  total: totalPages,
-                })}
-              </span>
-            </div>
+          {/* Page Counter */}
+          <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1 pointer-events-none">
+            <span className="font-data text-2xl md:text-3xl font-bold text-primary">
+              {currentPage}
+            </span>
+            <span className="font-caption text-sm text-muted-foreground">
+              {t("storyFlowNavigation.pageProgress", {
+                current: currentPage,
+                total: totalPages,
+              })}
+            </span>
+          </div>
 
           {/* Next Button */}
           <Button onClick={handleNextPage} aria-label="Next page">
@@ -129,24 +135,24 @@ const StoryFlowNavigation = ({
                 <span className="flex items-center">
                   {t("storyFlowNavigation.completionMessage")}
                   {isRTL ? (
-                          <ChevronLeft size={20} />
-                        ) : (
-                          <ChevronRight size={20} />
-                        )}
+                    <ChevronLeft size={18} className="sm:size-5" />
+                  ) : (
+                    <ChevronRight size={18} className="sm:size-5" />
+                  )}
                 </span>
               ) : (
                 <span className="flex items-center">
                   {t("storyFlowNavigation.nextButton")}
                   {isRTL ? (
-                          <ChevronLeft size={20} />
-                        ) : (
-                          <ChevronRight size={20} />
-                        )}
+                    <ChevronLeft size={18} className="sm:size-5" />
+                  ) : (
+                    <ChevronRight size={18} className="sm:size-5" />
+                  )}
                 </span>
               )}
             </span>
-            <span className="inline md:hidden">
-              {currentPage === totalPages ? "Done" : "Next"}
+            <span className="md:hidden">
+              {isRTL ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
             </span>
           </Button>
         </div>

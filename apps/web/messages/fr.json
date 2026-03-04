@@ -499,10 +499,10 @@
 				"hintsRemaining": "{count} indices restants",
 				"previousHints": "Indices Précédents:",
 				"hintCounter": "Indice {current} sur {total}",
-				"noMoreHints": "Plus d'indices disponibles. Vous pouvez le faire!",
+				"noMoreHints": "Pas d'indices disponibles. Vous pouvez le faire!",
 				"allHintsRevealed": "Tous les indices révélés. Donnez le meilleur de vous-même!",
 				"closeButton": "Fermer",
-				"getAnotherHint": "Obtenir un Autre Indice ({remaining} restant)"
+				"getAnotherHint": "Autre Indice ({remaining} restant)"
 			},
 			"feedbackDisplay": {
 				"solvedTitle": "Excellent Travail!",
