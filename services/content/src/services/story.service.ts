@@ -45,6 +45,7 @@ export class StoryService {
                 challenge : true,
               },
             },
+            translations: true,
             world : true,
           },
           orderBy: { order: "asc" },
@@ -79,6 +80,7 @@ export class StoryService {
           world: {
             include:{roadmap: true}
           },
+          translations: true,
           chapters: {
             include: {
               challenge: {
@@ -116,6 +118,7 @@ export class StoryService {
         where: { worldId },
         include: {
           world: true,
+          translations: true,
           chapters: {
             select: {
               id: true,
@@ -166,6 +169,7 @@ export class StoryService {
           id: { in: uniqueIds },
         },
         include: {
+          translations: true,
           world: {
             include:{roadmap: true}
           },

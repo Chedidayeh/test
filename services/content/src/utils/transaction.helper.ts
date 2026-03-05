@@ -4,10 +4,17 @@
  * Ensures all operations succeed together or rollback as a unit
  */
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, LanguageCode } from "@prisma/client";
 import { logger } from "./logger";
 import type { Story } from "../types";
-import { CreateStoryWithChaptersInput, ChallengeType } from "@shared/types";
+import { CreateStoryWithChaptersInput, ChallengeType, TranslationSourceType } from "@shared/types";
+import {
+  buildTranslationRecords,
+  getTranslationStrategyForSource,
+  buildCompleteTranslationResult,
+  validateTranslationRecord,
+  TranslationRecord,
+} from "./translation-builder";
 
 
 /**
@@ -30,26 +37,46 @@ export async function createStoryWithChaptersTransaction(
       chaptersCount: input.chapters.length,
     });
 
-    const result = await prisma.$transaction(async (tx) => {
-      // Step 1: Create the story
-      const story = await tx.story.create({
-        data: {
-          worldId: input.worldId,
-          title: input.title,
-          description: input.description || null,
-          difficulty: input.difficulty,
-          order: input.order,
-        },
-      });
+    const result = await prisma.$transaction(
+      async (tx) => {
+        // Step 1: Create the story
+        const story = await tx.story.create({
+          data: {
+            worldId: input.worldId,
+            title: input.title,
+            description: input.description || null,
+            difficulty: input.difficulty,
+            order: input.order,
+          },
+        });
 
       logger.info("Story created in transaction", {
         storyId: story.id,
         title: story.title,
       });
 
+      // Step 1b: Create story translations based on translation source
+      let storyTranslationsCreated = 0;
+      if (input.translationSource) {
+        if (input.translationSource === TranslationSourceType.MANUAL) {
+          await createManualTranslationRecordsForStory(tx, story.id, input.translations);
+        } else {
+          await createTranslationRecordsForStory(
+            tx,
+            story.id,
+            input.translationSource,
+            input.translations
+          );
+        }
+        storyTranslationsCreated = 1; // Track that translations were created
+      }
+
       let chaptersCreated = 0;
       let challengesCreated = 0;
       let answersCreated = 0;
+      let chapterTranslationsCreated = 0;
+      let challengeTranslationsCreated = 0;
+      let answerTranslationsCreated = 0;
 
       // Step 2: Create chapters with challenges and answers
       for (const chapterInput of input.chapters) {
@@ -69,6 +96,25 @@ export async function createStoryWithChaptersTransaction(
           chapterId: chapter.id,
           title: chapter.title,
         });
+
+        // Step 2b: Create chapter translations
+        if (input.translationSource) {
+          if (input.translationSource === TranslationSourceType.MANUAL) {
+            await createManualTranslationRecordsForChapter(
+              tx,
+              chapter.id,
+              chapterInput.translations
+            );
+          } else {
+            await createTranslationRecordsForChapter(
+              tx,
+              chapter.id,
+              input.translationSource,
+              chapterInput.translations
+            );
+          }
+          chapterTranslationsCreated++;
+        }
 
         // Step 3: Create challenge if provided
         if (chapterInput.challenge) {
@@ -90,9 +136,28 @@ export async function createStoryWithChaptersTransaction(
             type: challenge.type,
           });
 
+          // Step 3b: Create challenge translations
+          if (input.translationSource) {
+            if (input.translationSource === TranslationSourceType.MANUAL) {
+              await createManualTranslationRecordsForChallenge(
+                tx,
+                challenge.id,
+                chapterInput.challenge.translations
+              );
+            } else {
+              await createTranslationRecordsForChallenge(
+                tx,
+                challenge.id,
+                input.translationSource,
+                chapterInput.challenge.translations
+              );
+            }
+            challengeTranslationsCreated++;
+          }
+
           // Step 4: Create answers for challenge
           for (const answerInput of chapterInput.challenge.answers) {
-            await tx.answer.create({
+            const answer = await tx.answer.create({
               data: {
                 challengeId: challenge.id,
                 text: answerInput.text,
@@ -103,9 +168,28 @@ export async function createStoryWithChaptersTransaction(
 
             answersCreated++;
             logger.info("Answer created in transaction", {
-              challengeId: challenge.id,
+              answerId: answer.id,
               text: answerInput.text,
             });
+
+            // Step 4b: Create answer translations
+            if (input.translationSource) {
+              if (input.translationSource === TranslationSourceType.MANUAL) {
+                await createManualTranslationRecordsForAnswer(
+                  tx,
+                  answer.id,
+                  answerInput.translations
+                );
+              } else {
+                await createTranslationRecordsForAnswer(
+                  tx,
+                  answer.id,
+                  input.translationSource,
+                  answerInput.translations
+                );
+              }
+              answerTranslationsCreated++;
+            }
           }
         }
       }
@@ -135,7 +219,9 @@ export async function createStoryWithChaptersTransaction(
       }
 
       return completeStory
-    });
+    },
+      { timeout: 60000 }
+    );
 
     logger.info("Story creation transaction completed successfully", {
       storyId: result.id,
@@ -144,6 +230,7 @@ export async function createStoryWithChaptersTransaction(
       answersCreated: result.chapters.reduce((acc, chapter) => {
         return acc + (chapter.challenge?.answers.length || 0);
       }, 0),
+      translationSource: input.translationSource,
     });
 
     return result as Story;
@@ -301,27 +388,63 @@ export async function editStoryWithChaptersTransaction(
       storyId,
       title: input.title,
       chaptersCount: input.chapters.length,
+      translationSource: input.translationSource,
+      hasTranslations: !!input.translations && input.translations.length > 0,
     });
 
-    const result = await prisma.$transaction(async (tx) => {
-      // Step 1: Update the story
-      const story = await tx.story.update({
-        where: { id: storyId },
-        data: {
-          worldId: input.worldId,
-          title: input.title,
-          description: input.description || null,
-          difficulty: input.difficulty,
-          order: input.order,
-        },
-      });
+    const result = await prisma.$transaction(
+      async (tx) => {
+        // Step 1: Update the story
+        const story = await tx.story.update({
+          where: { id: storyId },
+          data: {
+            worldId: input.worldId,
+            title: input.title,
+            description: input.description || null,
+            difficulty: input.difficulty,
+            order: input.order,
+          },
+        });
 
       logger.info("Story updated in transaction", {
         storyId: story.id,
         title: story.title,
       });
 
-      // Step 2: Delete all existing chapters (cascades to challenges and answers)
+      // Step 1b: Delete old story translations and create new ones
+      await tx.storyTranslation.deleteMany({
+        where: { storyId: story.id },
+      });
+
+      logger.debug("Attempting story translations", {
+        storyId: story.id,
+        translationSource: input.translationSource,
+        hasTranslations: !!input.translations && input.translations.length > 0,
+        translationsLength: input.translations?.length || 0,
+      });
+
+      if (input.translationSource) {
+        logger.debug("Story translationSource is set, proceeding with translation creation", {
+          storyId: story.id,
+          translationSource: input.translationSource,
+        });
+        if (input.translationSource === TranslationSourceType.MANUAL) {
+          await createManualTranslationRecordsForStory(tx, story.id, input.translations);
+        } else {
+          await createTranslationRecordsForStory(
+            tx,
+            story.id,
+            input.translationSource,
+            input.translations
+          );
+        }
+      } else {
+        logger.warn("No translationSource provided for story edit - skipping translations", {
+          storyId: story.id,
+        });
+      }
+
+      // Step 2: Delete all existing chapters (cascades to challenges, answers, and translations)
       await tx.chapter.deleteMany({
         where: { storyId: story.id },
       });
@@ -353,6 +476,30 @@ export async function editStoryWithChaptersTransaction(
           title: chapter.title,
         });
 
+        // Step 3b: Create chapter translations
+        logger.debug("Attempting chapter translations", {
+          chapterId: chapter.id,
+          translationSource: input.translationSource,
+          hasTranslations: !!chapterInput.translations && chapterInput.translations.length > 0,
+        });
+
+        if (input.translationSource) {
+          if (input.translationSource === TranslationSourceType.MANUAL) {
+            await createManualTranslationRecordsForChapter(
+              tx,
+              chapter.id,
+              chapterInput.translations
+            );
+          } else {
+            await createTranslationRecordsForChapter(
+              tx,
+              chapter.id,
+              input.translationSource,
+              chapterInput.translations
+            );
+          }
+        }
+
         // Step 4: Create challenge if provided
         if (chapterInput.challenge) {
           const challenge = await tx.challenge.create({
@@ -373,9 +520,33 @@ export async function editStoryWithChaptersTransaction(
             type: challenge.type,
           });
 
+          // Step 4b: Create challenge translations
+          logger.debug("Attempting challenge translations", {
+            challengeId: challenge.id,
+            translationSource: input.translationSource,
+            hasTranslations: !!chapterInput.challenge.translations && chapterInput.challenge.translations.length > 0,
+          });
+
+          if (input.translationSource) {
+            if (input.translationSource === TranslationSourceType.MANUAL) {
+              await createManualTranslationRecordsForChallenge(
+                tx,
+                challenge.id,
+                chapterInput.challenge.translations
+              );
+            } else {
+              await createTranslationRecordsForChallenge(
+                tx,
+                challenge.id,
+                input.translationSource,
+                chapterInput.challenge.translations
+              );
+            }
+          }
+
           // Step 5: Create answers for challenge
           for (const answerInput of chapterInput.challenge.answers) {
-            await tx.answer.create({
+            const answer = await tx.answer.create({
               data: {
                 challengeId: challenge.id,
                 text: answerInput.text,
@@ -386,9 +557,33 @@ export async function editStoryWithChaptersTransaction(
 
             answersCreated++;
             logger.info("Answer created in edit transaction", {
-              challengeId: challenge.id,
+              answerId: answer.id,
               text: answerInput.text,
             });
+
+            // Step 5b: Create answer translations
+            logger.debug("Attempting answer translations", {
+              answerId: answer.id,
+              translationSource: input.translationSource,
+              hasTranslations: !!answerInput.translations && answerInput.translations.length > 0,
+            });
+
+            if (input.translationSource) {
+              if (input.translationSource === TranslationSourceType.MANUAL) {
+                await createManualTranslationRecordsForAnswer(
+                  tx,
+                  answer.id,
+                  answerInput.translations
+                );
+              } else {
+                await createTranslationRecordsForAnswer(
+                  tx,
+                  answer.id,
+                  input.translationSource,
+                  answerInput.translations
+                );
+              }
+            }
           }
         }
       }
@@ -418,7 +613,9 @@ export async function editStoryWithChaptersTransaction(
       }
 
       return completeStory;
-    });
+    },
+      { timeout: 60000 }
+    );
 
     logger.info("Story edit transaction completed successfully", {
       storyId: result.id,
@@ -435,6 +632,379 @@ export async function editStoryWithChaptersTransaction(
       error: String(error),
       storyId,
       chaptersCount: input.chapters.length,
+    });
+    throw error;
+  }
+}
+
+/**
+ * Create story translation records based on translation source mode
+ * For AUTO modes: generates translations via DeepL
+ * @param tx Prisma transaction context
+ * @param storyId Story ID to create translations for
+ * @param translationSource Translation mode
+ * @param translations Input translations (source language for AUTO, all languages for MANUAL)
+ */
+async function createTranslationRecordsForStory(
+  tx: any,
+  storyId: string,
+  translationSource: TranslationSourceType,
+  translations: TranslationRecord[] | undefined
+): Promise<void> {
+  try {
+    // Build translations based on mode
+    const builtTranslations = buildTranslationRecords(translations, translationSource);
+    if (!builtTranslations || builtTranslations.length === 0) {
+      logger.debug("No translations to create for story", { storyId });
+      return;
+    }
+
+    // Get translation strategy (source + target languages)
+    const strategy = getTranslationStrategyForSource(translationSource);
+
+    // For AUTO modes: translate content
+    let translationResult =
+      translationSource !== TranslationSourceType.MANUAL
+        ? await buildCompleteTranslationResult(
+            translationSource,
+            builtTranslations[0],
+            strategy
+          )
+        : null;
+
+    // Create translation records
+    if (translationResult) {
+      // AUTO mode: create records from translation result
+      for (const record of translationResult.records.values()) {
+        validateTranslationRecord(record, "story");
+        await tx.storyTranslation.create({
+          data: {
+            storyId,
+            languageCode: LanguageCode[record.languageCode as keyof typeof LanguageCode],
+            title: record.title || "",
+            description: record.description || null,
+          },
+        });
+      }
+      logger.info("Story translations created (AUTO mode)", {
+        storyId,
+        count: translationResult.records.size,
+        languages: Array.from(translationResult.records.keys()),
+      });
+    } else {
+      // MANUAL mode should not reach here (handled by createManualTranslationRecordsForStory)
+      logger.warn("Unexpected state: MANUAL mode in createTranslationRecordsForStory");
+    }
+  } catch (error) {
+    logger.error("Failed to create story translations", {
+      storyId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+/**
+ * Create manual story translation records (user-provided translations)
+ */
+async function createManualTranslationRecordsForStory(
+  tx: any,
+  storyId: string,
+  translations: TranslationRecord[] | undefined
+): Promise<void> {
+  try {
+    if (!translations || translations.length === 0) {
+      logger.debug("No manual translations to create for story", { storyId });
+      return;
+    }
+
+    for (const translation of translations) {
+      validateTranslationRecord(translation, "story");
+      await tx.storyTranslation.create({
+        data: {
+          storyId,
+          languageCode: LanguageCode[translation.languageCode as keyof typeof LanguageCode],
+          title: translation.title || "",
+          description: translation.description || null,
+        },
+      });
+    }
+
+    logger.info("Story translations created (MANUAL mode)", {
+      storyId,
+      count: translations.length,
+      languages: translations.map((t) => t.languageCode),
+    });
+  } catch (error) {
+    logger.error("Failed to create manual story translations", {
+      storyId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+/**
+ * Create chapter translation records based on translation source mode
+ */
+async function createTranslationRecordsForChapter(
+  tx: any,
+  chapterId: string,
+  translationSource: TranslationSourceType,
+  translations: TranslationRecord[] | undefined
+): Promise<void> {
+  try {
+    const builtTranslations = buildTranslationRecords(translations, translationSource);
+    if (!builtTranslations || builtTranslations.length === 0) {
+      logger.debug("No translations to create for chapter", { chapterId });
+      return;
+    }
+
+    const strategy = getTranslationStrategyForSource(translationSource);
+
+    let translationResult =
+      translationSource !== TranslationSourceType.MANUAL
+        ? await buildCompleteTranslationResult(translationSource, builtTranslations[0], strategy)
+        : null;
+
+    if (translationResult) {
+      for (const record of translationResult.records.values()) {
+        validateTranslationRecord(record, "chapter");
+        await tx.chapterTranslation.create({
+          data: {
+            chapterId,
+            languageCode: LanguageCode[record.languageCode as keyof typeof LanguageCode],
+            title: record.title || "",
+            content: record.content || "",
+            audioUrl: record.audioUrl || null,
+          },
+        });
+      }
+      logger.info("Chapter translations created (AUTO mode)", {
+        chapterId,
+        count: translationResult.records.size,
+      });
+    }
+  } catch (error) {
+    logger.error("Failed to create chapter translations", {
+      chapterId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+/**
+ * Create manual chapter translation records
+ */
+async function createManualTranslationRecordsForChapter(
+  tx: any,
+  chapterId: string,
+  translations: TranslationRecord[] | undefined
+): Promise<void> {
+  try {
+    if (!translations || translations.length === 0) {
+      logger.debug("No manual translations to create for chapter", { chapterId });
+      return;
+    }
+
+    for (const translation of translations) {
+      validateTranslationRecord(translation, "chapter");
+      await tx.chapterTranslation.create({
+        data: {
+          chapterId,
+          languageCode: LanguageCode[translation.languageCode as keyof typeof LanguageCode],
+          title: translation.title || "",
+          content: translation.content || "",
+          audioUrl: translation.audioUrl || null,
+        },
+      });
+    }
+
+    logger.info("Chapter translations created (MANUAL mode)", {
+      chapterId,
+      count: translations.length,
+    });
+  } catch (error) {
+    logger.error("Failed to create manual chapter translations", {
+      chapterId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+/**
+ * Create challenge translation records based on translation source mode
+ */
+async function createTranslationRecordsForChallenge(
+  tx: any,
+  challengeId: string,
+  translationSource: TranslationSourceType,
+  translations: TranslationRecord[] | undefined
+): Promise<void> {
+  try {
+    const builtTranslations = buildTranslationRecords(translations, translationSource);
+    if (!builtTranslations || builtTranslations.length === 0) {
+      logger.debug("No translations to create for challenge", { challengeId });
+      return;
+    }
+
+    const strategy = getTranslationStrategyForSource(translationSource);
+
+    let translationResult =
+      translationSource !== TranslationSourceType.MANUAL
+        ? await buildCompleteTranslationResult(translationSource, builtTranslations[0], strategy)
+        : null;
+
+    if (translationResult) {
+      for (const record of translationResult.records.values()) {
+        validateTranslationRecord(record, "challenge");
+        await tx.challengeTranslation.create({
+          data: {
+            challengeId,
+            languageCode: LanguageCode[record.languageCode as keyof typeof LanguageCode],
+            question: record.question || "",
+            description: record.description || null,
+            hints: record.hints || [],
+          },
+        });
+      }
+      logger.info("Challenge translations created (AUTO mode)", {
+        challengeId,
+        count: translationResult.records.size,
+      });
+    }
+  } catch (error) {
+    logger.error("Failed to create challenge translations", {
+      challengeId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+/**
+ * Create manual challenge translation records
+ */
+async function createManualTranslationRecordsForChallenge(
+  tx: any,
+  challengeId: string,
+  translations: TranslationRecord[] | undefined
+): Promise<void> {
+  try {
+    if (!translations || translations.length === 0) {
+      logger.debug("No manual translations to create for challenge", { challengeId });
+      return;
+    }
+
+    for (const translation of translations) {
+      validateTranslationRecord(translation, "challenge");
+      await tx.challengeTranslation.create({
+        data: {
+          challengeId,
+          languageCode: LanguageCode[translation.languageCode as keyof typeof LanguageCode],
+          question: translation.question || "",
+          description: translation.description || null,
+          hints: translation.hints || [],
+        },
+      });
+    }
+
+    logger.info("Challenge translations created (MANUAL mode)", {
+      challengeId,
+      count: translations.length,
+    });
+  } catch (error) {
+    logger.error("Failed to create manual challenge translations", {
+      challengeId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+/**
+ * Create answer translation records based on translation source mode
+ */
+async function createTranslationRecordsForAnswer(
+  tx: any,
+  answerId: string,
+  translationSource: TranslationSourceType,
+  translations: TranslationRecord[] | undefined
+): Promise<void> {
+  try {
+    const builtTranslations = buildTranslationRecords(translations, translationSource);
+    if (!builtTranslations || builtTranslations.length === 0) {
+      logger.debug("No translations to create for answer", { answerId });
+      return;
+    }
+
+    const strategy = getTranslationStrategyForSource(translationSource);
+
+    let translationResult =
+      translationSource !== TranslationSourceType.MANUAL
+        ? await buildCompleteTranslationResult(translationSource, builtTranslations[0], strategy)
+        : null;
+
+    if (translationResult) {
+      for (const record of translationResult.records.values()) {
+        validateTranslationRecord(record, "answer");
+        await tx.answerTranslation.create({
+          data: {
+            answerId,
+            languageCode: LanguageCode[record.languageCode as keyof typeof LanguageCode],
+            text: record.text || "",
+          },
+        });
+      }
+      logger.info("Answer translations created (AUTO mode)", {
+        answerId,
+        count: translationResult.records.size,
+      });
+    }
+  } catch (error) {
+    logger.error("Failed to create answer translations", {
+      answerId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+/**
+ * Create manual answer translation records
+ */
+async function createManualTranslationRecordsForAnswer(
+  tx: any,
+  answerId: string,
+  translations: TranslationRecord[] | undefined
+): Promise<void> {
+  try {
+    if (!translations || translations.length === 0) {
+      logger.debug("No manual translations to create for answer", { answerId });
+      return;
+    }
+
+    for (const translation of translations) {
+      validateTranslationRecord(translation, "answer");
+      await tx.answerTranslation.create({
+        data: {
+          answerId,
+          languageCode: LanguageCode[translation.languageCode as keyof typeof LanguageCode],
+          text: translation.text || "",
+        },
+      });
+    }
+
+    logger.info("Answer translations created (MANUAL mode)", {
+      answerId,
+      count: translations.length,
+    });
+  } catch (error) {
+    logger.error("Failed to create manual answer translations", {
+      answerId,
+      error: error instanceof Error ? error.message : String(error),
     });
     throw error;
   }

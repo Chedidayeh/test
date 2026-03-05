@@ -38,6 +38,12 @@ export enum LanguageCode {
   FR = "FR",
 }
 
+export enum Local {
+  EN = "en",
+  AR = "ar",
+  FR = "fr",
+}
+
 export enum ChallengeType {
   MULTIPLE_CHOICE = "MULTIPLE_CHOICE", // standard quiz format with predefined answers
   TRUE_FALSE = "TRUE_FALSE", // standard true/false format
@@ -512,6 +518,10 @@ export interface CreateAnswerInput {
   text: string;
   isCorrect: boolean;
   order?: number | null;
+  translations?: Array<{
+    languageCode: string;
+    text?: string;
+  }>;
 }
 
 /**
@@ -525,6 +535,12 @@ export interface CreateChallengeInput {
   order: number;
   hints?: string[];
   answers: CreateAnswerInput[];
+  translations?: Array<{
+    languageCode: string;
+    question?: string;
+    description?: string;
+    hints?: string[];
+  }>;
 }
 
 /**
@@ -537,6 +553,11 @@ export interface CreateChapterInput {
   audioUrl?: string | null;
   order: number;
   challenge?: CreateChallengeInput;
+  translations?: Array<{
+    languageCode: string;
+    title?: string;
+    content?: string;
+  }>;
 }
 
 /**
@@ -548,7 +569,26 @@ export interface CreateStoryWithChaptersInput {
   description?: string | null;
   difficulty: number;
   order: number;
+  translationSource: TranslationSourceType;
+  translations?: Array<{
+    languageCode: string;
+    title?: string;
+    description?: string;
+  }>;
+  
   chapters: CreateChapterInput[];
+}
+
+
+export interface ManualTranslationEdit {
+  languageCode: string;
+  name?: string;
+  description?: string;
+  title?: string;
+  content?: string;
+  question?: string;
+  text?: string;
+  hints?: string[];
 }
 
 // =============================================================================

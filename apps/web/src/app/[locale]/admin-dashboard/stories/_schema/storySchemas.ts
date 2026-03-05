@@ -1,5 +1,11 @@
-import { ChallengeType } from "@shared/types";
+import { ChallengeType, TranslationSourceType } from "@shared/types";
 import { z } from "zod";
+
+/**
+ * Translation Data Structures
+ * Used to store translations for each content level (story, chapter, challenge, answer)
+ */
+
 
 /**
  * Challenge Type Descriptions
@@ -28,11 +34,16 @@ export const answerSchema = z.object({
 /**
  * Answer Form Schema (for creating/updating answers)
  * Used when creating a single answer or batch answers
+ * Includes support for multi-language translations
  */
 export const answerFormSchema = z.object({
   text: z.string().min(1, "Answer text is required"),
   isCorrect: z.boolean(),
   order: z.number().int().min(0).default(0),
+  translations: z.array(z.object({
+    languageCode: z.string().min(1, "Language code is required"),
+    text: z.string().min(1, "Answer text is required for translation"),
+  })).optional().default([]),
 }).transform((data) => ({
   ...data,
   order: data.order ?? 0,
@@ -87,6 +98,7 @@ export const challengeSchema = z.object({
 /**
  * Challenge Form Schema (for creating/updating challenges)
  * Used in the form creation flow
+ * Includes support for multi-language translations
  * 
  * Validation rules for answers:
  * - MULTIPLE_CHOICE, TRUE_FALSE, RIDDLE: At least one answer must be correct
@@ -100,6 +112,12 @@ export const challengeFormSchema = z.object({
   order: z.number().int().min(1),
   hints: z.array(z.string().min(1, "Hint cannot be empty")).max(3, "Maximum 3 hints allowed").default([]),
   answers: z.array(answerFormSchema).min(1, "At least one answer is required"),
+  translations: z.array(z.object({
+    languageCode: z.string().min(1, "Language code is required"),
+    question: z.string().min(5, "Question must be at least 5 characters"),
+    description: z.string().optional(),
+    hints: z.array(z.string().min(1, "Hint cannot be empty")).optional().default([]),
+  })).optional().default([]),
 }).transform((data) => ({
   ...data,
   hints: data.hints || [],
@@ -150,6 +168,7 @@ export const chapterSchema = z.object({
 /**
  * Chapter Form Schema (for creating/updating chapters)
  * Used in the form creation flow
+ * Includes support for multi-language translations
  */
 export const chapterFormSchema = z.object({
   title: z.string().min(3, "Chapter title must be at least 3 characters"),
@@ -158,6 +177,11 @@ export const chapterFormSchema = z.object({
   audioUrl: z.string().url("Invalid audio URL").optional().or(z.literal("")),
   order: z.number().int().min(1),
   challenge: challengeFormSchema.optional(),
+  translations: z.array(z.object({
+    languageCode: z.string().min(1, "Language code is required"),
+    title: z.string().min(3, "Chapter title must be at least 3 characters"),
+    content: z.string().min(20, "Chapter content must be at least 20 characters"),
+  })).optional().default([]),
 });
 
 /**
@@ -178,6 +202,7 @@ export const storySchema = z.object({
  * Story Form Schema (for creating/updating stories)
  * This is the main schema used in the multi-step form
  * Can be used for bulk creation (story + chapters + challenges in one request)
+ * Includes support for multi-language translations
  */
 export const storyFormSchema = z.object({
   worldId: z.string().min(1, "World is required"),
@@ -185,7 +210,13 @@ export const storyFormSchema = z.object({
   description: z.string().min(10, "Description must be at least 10 characters"),
   difficulty: z.number().int().min(1).max(5),
   order: z.number().int().min(1),
+  translationSource: z.nativeEnum(TranslationSourceType).default(TranslationSourceType.MANUAL),
   chapters: z.array(chapterFormSchema).min(1, "At least one chapter is required"),
+  translations: z.array(z.object({
+    languageCode: z.string().min(1, "Language code is required"),
+    title: z.string().min(3, "Story title must be at least 3 characters"),
+    description: z.string().min(10, "Description must be at least 10 characters").optional(),
+  })).optional().default([]),
 });
 
 /**

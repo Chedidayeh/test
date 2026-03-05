@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { World, ChallengeType, Story } from "@shared/types";
+import { World, ChallengeType, Story, TranslationSourceType, ManualTranslationEdit } from "@shared/types";
 import {
   storyFormSchema,
   ChallengTypeDescriptions,
@@ -20,7 +20,12 @@ import {
 import { Label } from "@/src/components/ui/label";
 import { Card } from "@/src/components/ui/card";
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Plus, Trash2, AlertCircle } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Trash2, AlertCircle, Loader2 } from "lucide-react";
+import {
+  Dialog,
+  DialogOverlay,
+  DialogPortal,
+} from "@/src/components/ui/dialog";
 
 interface StoryFormProps {
   worlds: World[];
@@ -32,6 +37,46 @@ interface StoryFormProps {
 
 type ValidationErrors = Record<string, any>;
 
+/**
+ * Helper function to get user-friendly label for translation source
+ */
+const getSourceLanguageLabel = (source: TranslationSourceType): string => {
+  switch (source) {
+    case TranslationSourceType.EN_TO_FR_AR:
+      return "English (EN) → French, Arabic";
+    case TranslationSourceType.FR_TO_AR_EN:
+      return "French (FR) → Arabic, English";
+    case TranslationSourceType.MANUAL:
+      return "Manual Translation (All Languages)";
+  }
+};
+
+/**
+ * Check if source is auto-translate mode (not MANUAL)
+ */
+const isAutoTranslateMode = (source: TranslationSourceType): boolean => {
+  return source !== TranslationSourceType.MANUAL;
+};
+
+/**
+ * Get target languages based on translation source
+ */
+const getTargetLanguages = (source: TranslationSourceType): string[] => {
+  switch (source) {
+    case TranslationSourceType.EN_TO_FR_AR:
+      return ["FR", "AR"];
+    case TranslationSourceType.FR_TO_AR_EN:
+      return ["AR", "EN"];
+    case TranslationSourceType.MANUAL:
+      return [];
+  }
+};
+
+/**
+ * Get all available languages
+ */
+const getAllLanguages = (): string[] => ["EN", "FR", "AR"];
+
 const getInitialFormData = (data?: any): StoryFormData => {
   if (data) {
     return {
@@ -40,12 +85,14 @@ const getInitialFormData = (data?: any): StoryFormData => {
       description: data.description || "",
       difficulty: data.difficulty || 1,
       order: data.order || 1,
+      translationSource: data.translationSource || TranslationSourceType.MANUAL,
       chapters: (data.chapters || []).map((chapter: any) => ({
         title: chapter.title || "",
         content: chapter.content || "",
         imageUrl: chapter.imageUrl || "",
         audioUrl: chapter.audioUrl || "",
         order: chapter.order || 1,
+        translations: chapter.translations || [],
         challenge: chapter.challenge ? {
           type: chapter.challenge.type,
           question: chapter.challenge.question || "",
@@ -53,13 +100,16 @@ const getInitialFormData = (data?: any): StoryFormData => {
           baseStars: chapter.challenge.baseStars || 20,
           order: chapter.challenge.order || 0,
           hints: chapter.challenge.hints || [],
+          translations: chapter.challenge.translations || [],
           answers: (chapter.challenge.answers || []).map((answer: any) => ({
             text: answer.text || "",
             isCorrect: answer.isCorrect || false,
             order: answer.order || 0,
+            translations: answer.translations || [],
           })),
         } : undefined,
       })),
+      translations: data.translations || [],
     };
   }
 
@@ -69,6 +119,7 @@ const getInitialFormData = (data?: any): StoryFormData => {
     description: "",
     difficulty: 1,
     order: 1,
+    translationSource: TranslationSourceType.MANUAL,
     chapters: [
       {
       title: "",
@@ -76,11 +127,13 @@ const getInitialFormData = (data?: any): StoryFormData => {
       imageUrl: "",
       audioUrl: "",
       order: 1,
+      translations: [],
       challenge: undefined,
     },
   ],
-}};
-
+    translations: [],
+};
+}
 export function StoryForm({
   worlds,
   onSubmit,
@@ -97,6 +150,11 @@ export function StoryForm({
     new Set([0])
   );
   const [orderValidationError, setOrderValidationError] = useState<string>("");
+  const [newStoryTranslations, setNewStoryTranslations] = useState<ManualTranslationEdit[]>([
+    { languageCode: "EN", title: "", description: "" },
+    { languageCode: "FR", title: "", description: "" },
+    { languageCode: "AR", title: "", description: "" },
+  ]);
 
   const selectedWorld = worlds.find((w) => w.id === formData.worldId);
   const existingStories = selectedWorld?.stories || [];
@@ -235,8 +293,29 @@ export function StoryForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Error Summary */}
+    <>
+      {/* Loading Dialog */}
+      <Dialog open={isLoading}>
+        <DialogPortal>
+          <DialogOverlay className="bg-black/50 backdrop-blur-sm" />
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg p-6 flex flex-col items-center gap-4 max-w-xs">
+              <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+              <div className="text-center">
+                <p className="font-semibold text-slate-900 dark:text-white">
+                  {mode === "edit" ? "Updating Story..." : "Creating Story..."}
+                </p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                  Please wait while we {mode === "edit" ? "update" : "create"} your story and translations.
+                </p>
+              </div>
+            </div>
+          </div>
+        </DialogPortal>
+      </Dialog>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Error Summary */}
       {Object.keys(errors).length > 0 && (
         <Card className="sticky top-20 z-50 p-4 border-red-200 bg-red-50 shadow-lg">
           <div className="flex gap-2">
@@ -293,6 +372,32 @@ export function StoryForm({
       <Card className="p-6">
         <h3 className="font-medium mb-4">Story Information</h3>
         <div className="space-y-4">
+          {/* Translation Mode Selector */}
+          <div>
+            <Label className="text-sm font-medium mb-3 block">Translation Mode</Label>
+            <div className="flex flex-col gap-2">
+              {Object.values(TranslationSourceType).map((mode) => (
+                <div key={mode} className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    id={`mode-${mode}`}
+                    name="translationSource"
+                    value={mode}
+                    checked={formData.translationSource === mode}
+                    onChange={(e) => updateField("translationSource", e.target.value as TranslationSourceType)}
+                    className="w-4 h-4"
+                  />
+                  <Label htmlFor={`mode-${mode}`} className="cursor-pointer text-sm font-normal mb-0">
+                    {getSourceLanguageLabel(mode as TranslationSourceType)}
+                  </Label>
+                </div>
+              ))}
+            </div>
+            {errors.translationSource && (
+              <span className="text-xs text-red-600 mt-1">{errors.translationSource}</span>
+            )}
+          </div>
+
           <div>
             <Label htmlFor="title">Story Title</Label>
             <Input
@@ -322,6 +427,48 @@ export function StoryForm({
               </span>
             )}
           </div>
+
+          {/* Manual Translation Fields for Story */}
+          {isAutoTranslateMode(formData.translationSource) && (
+            <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-900">
+              <p><strong>Auto-translate mode enabled</strong></p>
+              <p className="text-xs mt-1">The title and description above (in {getSourceLanguageLabel(formData.translationSource).split("(")[1]?.split(")")[0]}) will be automatically translated to {getTargetLanguages(formData.translationSource).join(", ")}.</p>
+            </div>
+          )}
+
+          {formData.translationSource === TranslationSourceType.MANUAL && (
+            <div className="space-y-3 bg-background p-4 rounded border">
+              <p className="text-sm font-medium ">Translations for All Languages</p>
+              {newStoryTranslations.map((trans, idx) => (
+                <div key={trans.languageCode} className="space-y-2">
+                  <Label className="text-xs font-medium">{trans.languageCode}</Label>
+                  <Input
+                    placeholder={`Title in ${trans.languageCode}`}
+                    value={trans.title || ""}
+                    onChange={(e) => {
+                      const updated = [...newStoryTranslations];
+                      updated[idx] = { ...trans, title: e.target.value };
+                      setNewStoryTranslations(updated);
+                      updateField("translations", updated);
+                    }}
+                    className="text-sm"
+                  />
+                  <Textarea
+                    placeholder={`Description in ${trans.languageCode}`}
+                    value={trans.description || ""}
+                    onChange={(e) => {
+                      const updated = [...newStoryTranslations];
+                      updated[idx] = { ...trans, description: e.target.value };
+                      setNewStoryTranslations(updated);
+                      updateField("translations", updated);
+                    }}
+                    className="text-sm h-16"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
 
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -363,7 +510,7 @@ export function StoryForm({
                 }`}
               />
               {mode === "edit" && (
-                <p className="text-xs text-slate-500 mt-1">Story order cannot be changed after creation</p>
+                <p className="text-xs  mt-1">Story order cannot be changed after creation</p>
               )}
               {orderValidationError && mode !== "edit" && (
                 <span className="text-xs text-red-600 mt-1">
@@ -402,6 +549,7 @@ export function StoryForm({
               chapter={chapter}
               isExpanded={expandedChapters.has(chapterIndex)}
               isChallengExpanded={expandedChallenge.has(chapterIndex)}
+              translationSource={formData.translationSource}
               onToggle={() => toggleChapter(chapterIndex)}
               onToggleChallenge={() => toggleChallenge(chapterIndex)}
               onRemove={() => removeChapter(chapterIndex)}
@@ -430,7 +578,8 @@ export function StoryForm({
           }
         </Button>
       </div>
-    </form>
+      </form>
+    </>
   );
 }
 
@@ -440,6 +589,7 @@ interface ChapterAccordionProps {
   chapter: any;
   isExpanded: boolean;
   isChallengExpanded: boolean;
+  translationSource: TranslationSourceType;
   onToggle: () => void;
   onToggleChallenge: () => void;
   onRemove: () => void;
@@ -452,6 +602,7 @@ function ChapterAccordion({
   chapter,
   isExpanded,
   isChallengExpanded,
+  translationSource,
   onToggle,
   onToggleChallenge,
   onRemove,
@@ -522,6 +673,57 @@ function ChapterAccordion({
             )}
           </div>
 
+          {/* Manual Translation Fields for Chapter */}
+          {isAutoTranslateMode(translationSource) && (
+            <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-900">
+              <p><strong>Auto-translate mode enabled</strong></p>
+              <p className="text-xs mt-1">The title and content above will be automatically translated to {getTargetLanguages(translationSource).join(", ")}.</p>
+            </div>
+          )}
+
+          {translationSource === TranslationSourceType.MANUAL && (
+            <div className="space-y-3 bg-background p-4 rounded border">
+              <p className="text-sm font-medium ">Chapter Translations</p>
+              {getAllLanguages().map((lang) => (
+                <div key={lang} className="space-y-2">
+                  <Label className="text-xs font-medium">{lang}</Label>
+                  <Input
+                    placeholder={`Chapter title in ${lang}`}
+                    value={chapter.translations?.find((t: any) => t.languageCode === lang)?.title || ""}
+                    onChange={(e) => {
+                      const translations = chapter.translations || [];
+                      const existing = translations.findIndex((t: any) => t.languageCode === lang);
+                      const updated = [...translations];
+                      if (existing >= 0) {
+                        updated[existing] = { ...updated[existing], title: e.target.value };
+                      } else {
+                        updated.push({ languageCode: lang, title: e.target.value, content: "" });
+                      }
+                      onUpdateField("translations", updated);
+                    }}
+                    className="text-sm"
+                  />
+                  <Textarea
+                    placeholder={`Chapter content in ${lang}`}
+                    value={chapter.translations?.find((t: any) => t.languageCode === lang)?.content || ""}
+                    onChange={(e) => {
+                      const translations = chapter.translations || [];
+                      const existing = translations.findIndex((t: any) => t.languageCode === lang);
+                      const updated = [...translations];
+                      if (existing >= 0) {
+                        updated[existing] = { ...updated[existing], content: e.target.value };
+                      } else {
+                        updated.push({ languageCode: lang, title: "", content: e.target.value });
+                      }
+                      onUpdateField("translations", updated);
+                    }}
+                    className="text-sm h-20"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
           <div>
             <Label className="text-sm">Order</Label>
             <Input
@@ -531,7 +733,7 @@ function ChapterAccordion({
               disabled
               className="mt-1 bg-slate-100 cursor-not-allowed"
             />
-            <p className="text-xs text-slate-500 mt-1">Automatically set based on chapter position</p>
+            <p className="text-xs  mt-1">Automatically set based on chapter position</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -586,6 +788,7 @@ function ChapterAccordion({
                 chapterIndex={chapterIndex}
                 challenge={chapter.challenge}
                 isExpanded={isChallengExpanded}
+                translationSource={translationSource}
                 onToggle={onToggleChallenge}
                 onUpdateField={(path, value) =>
                   onUpdateField(`challenge.${path}`, value)
@@ -609,6 +812,7 @@ interface ChallengeSectionProps {
   chapterIndex: number;
   challenge: any;
   isExpanded: boolean;
+  translationSource: TranslationSourceType;
   onToggle: () => void;
   onUpdateField: (path: string, value: any) => void;
   onRemoveChallenge: () => void;
@@ -619,6 +823,7 @@ function ChallengeSection({
   chapterIndex,
   challenge,
   isExpanded,
+  translationSource,
   onToggle,
   onUpdateField,
   onRemoveChallenge,
@@ -717,7 +922,7 @@ function ChallengeSection({
                 </SelectContent>
               </Select>
               {challengeType && (
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs  mt-1">
                   {ChallengTypeDescriptions[challengeType]}
                 </p>
               )}
@@ -772,6 +977,57 @@ function ChallengeSection({
               </span>
             )}
           </div>
+
+          {/* Manual Translation Fields for Challenge */}
+          {isAutoTranslateMode(translationSource) && (
+            <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-900">
+              <p><strong>Auto-translate mode enabled</strong></p>
+              <p className="text-xs mt-1">The question and description above will be automatically translated to {getTargetLanguages(translationSource).join(", ")}.</p>
+            </div>
+          )}
+
+          {translationSource === TranslationSourceType.MANUAL && (
+            <div className="space-y-3 bg-background p-4 rounded border">
+              <p className="text-sm font-medium ">Challenge Translations</p>
+              {getAllLanguages().map((lang) => (
+                <div key={lang} className="space-y-2">
+                  <Label className="text-xs font-medium">{lang}</Label>
+                  <Textarea
+                    placeholder={`Challenge question in ${lang}`}
+                    value={challenge.translations?.find((t: any) => t.languageCode === lang)?.question || ""}
+                    onChange={(e) => {
+                      const translations = challenge.translations || [];
+                      const existing = translations.findIndex((t: any) => t.languageCode === lang);
+                      const updated = [...translations];
+                      if (existing >= 0) {
+                        updated[existing] = { ...updated[existing], question: e.target.value };
+                      } else {
+                        updated.push({ languageCode: lang, question: e.target.value, description: "", hints: [] });
+                      }
+                      onUpdateField("translations", updated);
+                    }}
+                    className="text-xs h-16"
+                  />
+                  <Input
+                    placeholder={`Challenge description in ${lang}`}
+                    value={challenge.translations?.find((t: any) => t.languageCode === lang)?.description || ""}
+                    onChange={(e) => {
+                      const translations = challenge.translations || [];
+                      const existing = translations.findIndex((t: any) => t.languageCode === lang);
+                      const updated = [...translations];
+                      if (existing >= 0) {
+                        updated[existing] = { ...updated[existing], description: e.target.value };
+                      } else {
+                        updated.push({ languageCode: lang, question: "", description: e.target.value, hints: [] });
+                      }
+                      onUpdateField("translations", updated);
+                    }}
+                    className="text-xs"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Answers Section */}
           <div className="pt-3 border-t">
@@ -848,6 +1104,37 @@ function ChallengeSection({
                         className="h-8 text-xs"
                       />
                     )}
+
+                    {/* Manual Translation Fields for Answer */}
+                    {isAutoTranslateMode(translationSource) && challengeType !== ChallengeType.TRUE_FALSE && (
+                      <p className="mt-2 text-xs text-primary ">The answer text above will be automatically translated.</p>
+                    )}
+
+                    {translationSource === TranslationSourceType.MANUAL && challengeType !== ChallengeType.TRUE_FALSE && (
+                      <div className="mt-2 space-y-1 bg-background p-2 rounded border text-xs">
+                        {getAllLanguages().map((lang) => (
+                          <Input
+                            key={lang}
+                            placeholder={`Answer in ${lang}`}
+                            value={answer.translations?.find((t: any) => t.languageCode === lang)?.text || ""}
+                            onChange={(e) => {
+                              const newAnswers = [...challenge.answers];
+                              const translations = answer.translations || [];
+                              const existing = translations.findIndex((t: any) => t.languageCode === lang);
+                              const updated = [...translations];
+                              if (existing >= 0) {
+                                updated[existing] = { languageCode: lang, text: e.target.value };
+                              } else {
+                                updated.push({ languageCode: lang, text: e.target.value });
+                              }
+                              newAnswers[answerIndex].translations = updated;
+                              onUpdateField("answers", newAnswers);
+                            }}
+                            className="h-6"
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {challengeType !== ChallengeType.TRUE_FALSE &&
@@ -892,31 +1179,76 @@ function ChallengeSection({
 
             <div className="space-y-2">
               {challenge.hints.map((hint: string, hintIndex: number) => (
-                <div key={hintIndex} className="flex gap-2 items-start">
-                  <Input
-                    placeholder={`Hint ${hintIndex + 1}`}
-                    value={hint}
-                    onChange={(e) => {
-                      const newHints = [...challenge.hints];
-                      newHints[hintIndex] = e.target.value;
-                      onUpdateField("hints", newHints);
-                    }}
-                    className="h-8 text-xs"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onUpdateField(
-                        "hints",
-                        challenge.hints.filter(
-                          (_: string, i: number) => i !== hintIndex
-                        )
-                      );
-                    }}
-                    className="p-1 hover:bg-red-50 rounded"
-                  >
-                    <Trash2 className="w-4 h-4 text-red-600" />
-                  </button>
+                <div key={hintIndex} className="space-y-2 p-2 rounded border bg-background">
+                  <div className="flex gap-2 items-start">
+                    <Input
+                      placeholder={`Hint ${hintIndex + 1}`}
+                      value={hint}
+                      onChange={(e) => {
+                        const newHints = [...challenge.hints];
+                        newHints[hintIndex] = e.target.value;
+                        onUpdateField("hints", newHints);
+                      }}
+                      className="h-8 text-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onUpdateField(
+                          "hints",
+                          challenge.hints.filter(
+                            (_: string, i: number) => i !== hintIndex
+                          )
+                        );
+                      }}
+                      className="p-1 hover:bg-red-50 rounded"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-600" />
+                    </button>
+                  </div>
+
+                  {/* Auto Translate Hints Info */}
+                  {isAutoTranslateMode(translationSource) && (
+                    <p className="text-xs text-primary  border-t pt-2 mt-2">This hint will be automatically translated.</p>
+                  )}
+
+                  {/* Manual Translation Fields for Hint */}
+                  {translationSource === TranslationSourceType.MANUAL && (
+                    <div className="space-y-1 border-t pt-2 mt-2">
+                      {getAllLanguages().map((lang) => (
+                        <Input
+                          key={lang}
+                          placeholder={`Hint ${hintIndex + 1} in ${lang}`}
+                          value={challenge.translations?.find((t: any) => t.languageCode === lang)?.hints?.[hintIndex] || ""}
+                          onChange={(e) => {
+                            const translations = challenge.translations || [];
+                            const langTransIdx = translations.findIndex((t: any) => t.languageCode === lang);
+                            const updated = [...translations];
+                            
+                            if (langTransIdx >= 0) {
+                              const hints = updated[langTransIdx].hints || [];
+                              hints[hintIndex] = e.target.value;
+                              updated[langTransIdx] = { 
+                                ...updated[langTransIdx], 
+                                hints 
+                              };
+                            } else {
+                              const hints = new Array(challenge.hints.length).fill("");
+                              hints[hintIndex] = e.target.value;
+                              updated.push({ 
+                                languageCode: lang, 
+                                question: "", 
+                                description: "",
+                                hints 
+                              });
+                            }
+                            onUpdateField("translations", updated);
+                          }}
+                          className="h-7 text-xs"
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -940,8 +1272,8 @@ function ExistingStoriesReference({
 }: ExistingStoriesReferenceProps) {
   if (isLoading) {
     return (
-      <Card className="p-6 bg-slate-50 border-slate-200">
-        <h3 className="font-medium mb-4 text-slate-700">Existing Stories</h3>
+      <Card className="p-6 bg-background border-slate-200">
+        <h3 className="font-medium mb-4 ">Existing Stories</h3>
         <p className="text-sm text-slate-600">Loading stories...</p>
       </Card>
     );
@@ -949,9 +1281,9 @@ function ExistingStoriesReference({
 
   if (stories.length === 0) {
     return (
-      <Card className="p-6 bg-blue-50 border-blue-200">
-        <h3 className="font-medium mb-2 text-blue-900">Existing Stories</h3>
-        <p className="text-sm text-blue-700">
+      <Card className="p-6 ">
+        <h3 className="font-medium mb-2 ">Existing Stories</h3>
+        <p className="text-sm text-blue-500">
           No stories in this world yet. You can start with any order number.
         </p>
       </Card>

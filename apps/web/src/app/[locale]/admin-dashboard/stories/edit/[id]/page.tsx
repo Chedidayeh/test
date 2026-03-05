@@ -34,9 +34,6 @@ export default async function EditStoryPage({
       </div>
     );
   }
-  console.log("Editing story:", story);
-  console.log("Editing story chapters:", story.chapters);
-  console.log("Editing story world:", story.chapters[1].challenge?.answers);
 
   // Fetch data server-side
   const ageGroups = await getAgeGroupsForAdmin();

@@ -2,6 +2,7 @@ import * as deepl from "deepl-node";
 import { LanguageCode } from "@prisma/client";
 import { logger } from "./logger";
 import { TRANSLATION_CONFIG } from "../config/translation-config";
+import { Local } from "@shared/types";
 
 /**
  * Translation Agent
@@ -106,11 +107,11 @@ export class TranslationAgent {
   ): deepl.SourceLanguageCode | null {
     switch (lang) {
       case LanguageCode.EN:
-        return "en";
+        return Local.EN;
       case LanguageCode.AR:
-        return "ar";
+        return Local.AR;
       case LanguageCode.FR:
-        return "fr";
+        return Local.FR;
       default:
         return null;
     }

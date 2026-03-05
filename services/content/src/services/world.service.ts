@@ -16,7 +16,11 @@ export class WorldService {
     try {
       const worlds = await this.prisma.world.findMany({
         include: {
-          stories: true,
+          stories: {
+            include:{
+              translations: true,
+            }
+          },
         },
         orderBy: { order: "asc" },
       });
@@ -37,7 +41,11 @@ export class WorldService {
       const world = await this.prisma.world.findUnique({
         where: { id: worldId },
         include: {
-          stories: true,
+          stories: {
+            include:{
+              translations: true,
+            }
+          },
         },
       });
 
@@ -62,7 +70,11 @@ export class WorldService {
       const worlds = await this.prisma.world.findMany({
         where: { roadmapId },
         include: {
-          stories: true,
+          stories: {
+            include:{
+              translations: true,
+            }
+          },
         },
         orderBy: { order: "asc" },
       });

@@ -23,7 +23,7 @@ export const TRANSLATION_CONFIG = {
   SUPPORTED_MODELS: ["badge", "story", "challenge"] as const,
 
   // DeepL API Configuration
-  DEEPL_API_TIMEOUT: 30000, // 30 seconds per request
+  DEEPL_API_TIMEOUT: 60000, // 30 seconds per request
   DEEPL_MAX_RETRIES: 3, // Allow up to 3 retries on failure
   DEEPL_RETRY_DELAY_MS: 1000, // 1 second initial delay, exponential backoff after
 
