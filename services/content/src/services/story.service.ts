@@ -35,7 +35,6 @@ export class StoryService {
               select: {
                 id: true,
                 storyId: true,
-                title: true,
                 content: true,
                 imageUrl: true,
                 audioUrl: true,
@@ -83,9 +82,12 @@ export class StoryService {
           translations: true,
           chapters: {
             include: {
+              translations: true,
               challenge: {
                 include: {
+                  translations: true,
                   answers: {
+                    include:{translations: true,},
                     orderBy: { order: "asc" },
                   },
                 },
@@ -123,7 +125,6 @@ export class StoryService {
             select: {
               id: true,
               storyId: true,
-              title: true,
               content: true,
               imageUrl: true,
               audioUrl: true,
@@ -175,9 +176,12 @@ export class StoryService {
           },
           chapters: {
             include: {
+              translations: true,
               challenge: {
                 include: {
+                  translations: true,
                   answers: {
+                    include:{translations: true,},
                     orderBy: { order: "asc" },
                   },
                 },

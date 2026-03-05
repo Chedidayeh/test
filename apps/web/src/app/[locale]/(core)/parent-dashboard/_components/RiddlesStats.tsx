@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import {
@@ -17,11 +16,11 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/src/components/ui/dialog";
-import { Progress, Story, Challenge, ChallengeAttempt, ChallengeStatus } from "@shared/types";
-import { calculateChallengeStats, getAggregatedChallengeStats } from "../_lib/stats";
+import { Progress, Story, Challenge, ChallengeAttempt, ChallengeStatus, Local, LanguageCode } from "@shared/types";
+import { calculateChallengeStats, getAggregatedChallengeStats, localizeChallengStats, LocalizedChallengeStats } from "../_lib/stats";
 import { fetchStoriesByIdsAction } from "@/src/lib/content-service/server-actions";
 import { useMemo, useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 
 interface RiddlesStatsProps {
   childProgress: Progress[];
@@ -29,6 +28,19 @@ interface RiddlesStatsProps {
 
 export default function RiddlesStats({ childProgress }: RiddlesStatsProps) {
   const t = useTranslations("ParentDashboard");
+  const locale = useLocale();
+
+  // Convert locale to LanguageCode for translations
+  const getLanguageCode = () => {
+    const baseLocale = (locale || Local.EN).split("-")[0].toUpperCase();
+    if (baseLocale === "EN") return LanguageCode.EN;
+    if (baseLocale === "AR") return LanguageCode.AR;
+    if (baseLocale === "FR") return LanguageCode.FR;
+    return LanguageCode.EN;
+  };
+
+  const langCode = getLanguageCode();
+
   // Calculate challenge statistics from real progress data
   const challengeStats = useMemo(
     () => calculateChallengeStats(childProgress),
@@ -44,7 +56,7 @@ export default function RiddlesStats({ childProgress }: RiddlesStatsProps) {
   // Fetch stories for displaying challenge context
   const [stories, setStories] = useState<Map<string, Story>>(new Map());
   const [loading, setLoading] = useState(false);
-  const [sortedChallengeStats, setSortedChallengeStats] = useState(challengeStats);
+  const [sortedChallengeStats, setSortedChallengeStats] = useState<LocalizedChallengeStats[]>([]);
   const [selectedChallenge, setSelectedChallenge] = useState<{
     challengeId: string;
     storyId: string;
@@ -116,7 +128,9 @@ export default function RiddlesStats({ childProgress }: RiddlesStatsProps) {
             return 0;
           });
 
-          setSortedChallengeStats(sorted);
+          // Localize stats with story and chapter titles
+          const localizedStats = localizeChallengStats(sorted, Array.from(storyMap.values()), locale);
+          setSortedChallengeStats(localizedStats);
         }
       } catch (error) {
         console.error("Failed to fetch stories:", error);
@@ -126,10 +140,31 @@ export default function RiddlesStats({ childProgress }: RiddlesStatsProps) {
     };
 
     loadStories();
-  }, [challengeStats]);
+  }, [challengeStats, locale]);
 
   const { totalChallenges, solvedChallenges, successRate, avgAttemptsPerChallenge } =
     aggregatedStats;
+
+  /**
+   * Get localized challenge content (question, description, hints)
+   */
+  const getLocalizedChallenge = (challenge: Challenge | null) => {
+    if (!challenge) return null;
+    const translation = challenge.translations?.find((t) => t.languageCode === langCode);
+    return {
+      question: translation?.question || challenge.question,
+      description: translation?.description || challenge.description,
+      hints: translation?.hints || challenge.hints,
+    };
+  };
+
+  /**
+   * Get localized answer text
+   */
+  const getLocalizedAnswerText = (answer: { id: string; text: string; translations?: Array<{ languageCode: string; text: string }> }) => {
+    const translation = answer.translations?.find((t) => t.languageCode === langCode);
+    return translation?.text || answer.text;
+  };
 
   /**
    * Get all challenge attempts for a specific challenge
@@ -161,7 +196,7 @@ export default function RiddlesStats({ childProgress }: RiddlesStatsProps) {
     }
 
     const correctAnswer = challenge.answers?.find((a) => a.isCorrect);
-    return correctAnswer?.text || t("riddleStatistics.noCorrectAnswer");
+    return correctAnswer ? getLocalizedAnswerText(correctAnswer) : t("riddleStatistics.noCorrectAnswer");
   };
 
   /**
@@ -298,7 +333,7 @@ export default function RiddlesStats({ childProgress }: RiddlesStatsProps) {
                     {loading ? (
                       <span className="text-muted-foreground text-sm">{t("riddleStatistics.loading")}</span>
                     ) : (
-                      getChallengeDisplayName(challenge.storyId, challenge.id)
+                        `${challenge.storyTitle} - ${t("riddleStatistics.chapter")} ${challenge.chapterIndex ?? "?"}`
                     )}
                   </TableCell>
                   <TableCell>
@@ -340,7 +375,12 @@ export default function RiddlesStats({ childProgress }: RiddlesStatsProps) {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {selectedChallenge && getChallengeDisplayName(selectedChallenge.storyId, selectedChallenge.challengeId)}
+              {selectedChallenge && (() => {
+                const localizedStat = sortedChallengeStats.find((s) => s.id === selectedChallenge.challengeId);
+                return localizedStat 
+                  ? `${localizedStat.storyTitle} - ${t("riddleStatistics.chapter")} ${localizedStat.chapterIndex ?? "?"}`
+                  : getChallengeDisplayName(selectedChallenge.storyId, selectedChallenge.challengeId);
+              })()}
             </DialogTitle>
             <DialogDescription>
               {t("riddleStatistics.modal.title")}
@@ -354,7 +394,7 @@ export default function RiddlesStats({ childProgress }: RiddlesStatsProps) {
                 <div className="flex items-center gap-2">
                   <Badge variant="outline">{selectedChallenge.challenge.type}</Badge>
                 </div>
-                <h3 className="font-medium text-lg">{t("riddleStatistics.modal.questionLabel")} {selectedChallenge.challenge.question}</h3>
+                <h3 className="font-medium text-lg">{t("riddleStatistics.modal.questionLabel")} {getLocalizedChallenge(selectedChallenge.challenge)?.question}</h3>
               </div>
 
               {/* Correct Answer */}
@@ -374,7 +414,7 @@ export default function RiddlesStats({ childProgress }: RiddlesStatsProps) {
                         className={`p-3 rounded-lg border`}
                       >
                         <div className="flex items-center gap-2">
-                          <span>{answer.text}</span>
+                          <span>{getLocalizedAnswerText(answer)}</span>
                         </div>
                       </div>
                     ))}
@@ -383,11 +423,11 @@ export default function RiddlesStats({ childProgress }: RiddlesStatsProps) {
               )}
 
               {/* Hints */}
-              {selectedChallenge.challenge.hints && selectedChallenge.challenge.hints.length > 0 && (
+              {getLocalizedChallenge(selectedChallenge.challenge)?.hints && getLocalizedChallenge(selectedChallenge.challenge)!.hints.length > 0 && (
                 <div className="space-y-3">
                   <h4 className="font-medium">{t("riddleStatistics.modal.hintsLabel")}</h4>
                   <div className="space-y-2">
-                    {selectedChallenge.challenge.hints.map((hint, index) => (
+                    {getLocalizedChallenge(selectedChallenge.challenge)?.hints.map((hint, index) => (
                       <div key={index} className="p-2 px-4 border rounded-lg">
                         <p className="font-medium text-sm text-muted-foreground">{t("riddleStatistics.modal.hintNumber", { n: index + 1 })}</p>
                         <p className="text-sm mt-1">{hint}</p>
@@ -433,7 +473,7 @@ export default function RiddlesStats({ childProgress }: RiddlesStatsProps) {
                         {attempt.actions && attempt.actions.length > 0 && (
                           <div className="space-y-2 pt-2">
                             <div className="space-y-2">
-                              {attempt.actions.map((action, idx) => (
+                              {attempt.actions.map((action) => (
                                 <div key={action.id} className="bg-white dark:bg-gray-950 p-2 rounded border text-sm space-y-1">
                                   <p className="font-medium">
                                    {t("riddleStatistics.modal.attemptLabel", { n: action.attemptNumberAtAction })}

@@ -94,7 +94,7 @@ const WelcomeBanner = ({
                 <span className="font-body text-xs lg:text-sm text-muted-foreground truncate">
                   {t("welcomeBanner.stats.stars")}
                 </span>
-                <span className="font-heading font-semibold text-foreground text-sm lg:text-base">
+                <span className="font-heading font-medium text-foreground text-sm lg:text-base">
                   {totalStars}
                 </span>
               </div>
@@ -110,7 +110,7 @@ const WelcomeBanner = ({
                 <span className="font-body text-xs lg:text-sm text-muted-foreground truncate">
                   {t("welcomeBanner.stats.stories")}
                 </span>
-                <span className="font-heading font-semibold text-foreground text-sm lg:text-base">
+                <span className="font-heading font-medium text-foreground text-sm lg:text-base">
                   {storiesCompleted}
                 </span>
               </div>
@@ -126,8 +126,8 @@ const WelcomeBanner = ({
                 <span className="font-body text-xs lg:text-sm text-muted-foreground truncate">
                   {t("welcomeBanner.stats.readingTime")}
                 </span>
-                <span className="font-heading font-semibold text-foreground text-sm lg:text-base">
-                  {readingTimeMinutes}m
+                <span className="font-heading font-medium text-foreground text-sm lg:text-base">
+                  {t("welcomeBanner.stats.minutes", { count: readingTimeMinutes })}
                 </span>
                 {readingTimeSubtitle && (
                   <span className="text-xs text-muted-foreground hidden lg:inline">

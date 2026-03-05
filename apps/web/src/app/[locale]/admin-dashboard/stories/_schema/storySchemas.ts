@@ -62,7 +62,6 @@ export const challengeSchema = z.object({
   chapterId: z.string().optional(), // Optional for form creation
   type: z.nativeEnum(ChallengeType),
   question: z.string().min(5, "Question must be at least 5 characters"),
-  description: z.string().min(5, "Description must be at least 5 characters").or(z.literal("")).optional(),
   baseStars: z.number().int().min(5, "Base stars must be at least 5").max(100, "Base stars cannot exceed 100"),
   order: z.number().int().min(1, "Order must be at least 1"),
   hints: z.array(z.string().min(1, "Hint cannot be empty")).max(3, "Maximum 3 hints allowed").default([]),
@@ -107,7 +106,6 @@ export const challengeSchema = z.object({
 export const challengeFormSchema = z.object({
   type: z.nativeEnum(ChallengeType),
   question: z.string().min(5, "Question must be at least 5 characters"),
-  description: z.string().min(5, "Description must be at least 5 characters").or(z.literal("")).optional(),
   baseStars: z.number().int().min(5).max(100),
   order: z.number().int().min(1),
   hints: z.array(z.string().min(1, "Hint cannot be empty")).max(3, "Maximum 3 hints allowed").default([]),
@@ -115,7 +113,6 @@ export const challengeFormSchema = z.object({
   translations: z.array(z.object({
     languageCode: z.string().min(1, "Language code is required"),
     question: z.string().min(5, "Question must be at least 5 characters"),
-    description: z.string().optional(),
     hints: z.array(z.string().min(1, "Hint cannot be empty")).optional().default([]),
   })).optional().default([]),
 }).transform((data) => ({
@@ -157,7 +154,6 @@ export const challengeFormSchema = z.object({
 export const chapterSchema = z.object({
   id: z.string().optional(),
   storyId: z.string().optional(), // Optional for form creation
-  title: z.string().min(3, "Chapter title must be at least 3 characters"),
   content: z.string().min(20, "Chapter content must be at least 20 characters"),
   imageUrl: z.string().url("Invalid image URL").optional().or(z.literal("")),
   audioUrl: z.string().url("Invalid audio URL").optional().or(z.literal("")),
@@ -171,7 +167,6 @@ export const chapterSchema = z.object({
  * Includes support for multi-language translations
  */
 export const chapterFormSchema = z.object({
-  title: z.string().min(3, "Chapter title must be at least 3 characters"),
   content: z.string().min(20, "Chapter content must be at least 20 characters"),
   imageUrl: z.string().url("Invalid image URL").optional().or(z.literal("")),
   audioUrl: z.string().url("Invalid audio URL").optional().or(z.literal("")),
@@ -179,7 +174,6 @@ export const chapterFormSchema = z.object({
   challenge: challengeFormSchema.optional(),
   translations: z.array(z.object({
     languageCode: z.string().min(1, "Language code is required"),
-    title: z.string().min(3, "Chapter title must be at least 3 characters"),
     content: z.string().min(20, "Chapter content must be at least 20 characters"),
   })).optional().default([]),
 });
@@ -192,7 +186,7 @@ export const storySchema = z.object({
   id: z.string().optional(),
   worldId: z.string().min(1, "World ID is required"),
   title: z.string().min(3, "Story title must be at least 3 characters"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
+  description: z.string().min(10, "Description must be at least 10 characters").optional().or(z.literal("")),
   difficulty: z.number().int().min(1, "Difficulty must be between 1 and 5").max(5, "Difficulty must be between 1 and 5"),
   order: z.number().int().min(1, "Order must be at least 1"),
   chapters: z.array(chapterSchema).min(1, "At least one chapter is required"),
@@ -207,7 +201,7 @@ export const storySchema = z.object({
 export const storyFormSchema = z.object({
   worldId: z.string().min(1, "World is required"),
   title: z.string().min(3, "Story title must be at least 3 characters"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
+  description: z.string().min(10, "Description must be at least 10 characters").optional().or(z.literal("")),
   difficulty: z.number().int().min(1).max(5),
   order: z.number().int().min(1),
   translationSource: z.nativeEnum(TranslationSourceType).default(TranslationSourceType.MANUAL),

@@ -14,7 +14,9 @@ import {
   ChallengeStatus,
   ChallengeType,
   ChallengeAttempt,
+  Local,
 } from "@shared/types";
+import { useLocale } from "@/src/contexts/LocaleContext";
 import { useTranslations } from "next-intl";
 
 interface Choice {
@@ -59,23 +61,45 @@ const RiddleInteractive = ({
     const t = useTranslations("StoryReadingInterface.riddleInterface");
   
   // Transform Challenge to Riddle format
+  const { locale } = useLocale();
+
   const transformChallengeToRiddle = (challenge: Challenge): Riddle => {
+    const baseLocale = (locale || Local.EN).split("-")[0].toUpperCase();
+
+    // pick challenge-level translation if present
+    const challengeTranslation = challenge.translations?.find((t) => t.languageCode === baseLocale);
+
+    // Build choices with localized text when available
+    const choices = challenge.answers?.map((answer) => {
+      const answerTranslation = answer.translations?.find((t) => t.languageCode === baseLocale);
+      return {
+        id: answer.id,
+        text: answerTranslation?.text || answer.text,
+      };
+    });
+
+    // Determine correct answer text (localized if possible)
+    const correctAnswerRaw = challenge.answers?.find((a) => a.isCorrect) || null;
+    const correctAnswerTranslation = correctAnswerRaw
+      ? correctAnswerRaw.translations?.find((t) => t.languageCode === baseLocale)
+      : null;
+    const correctAnswerText = correctAnswerTranslation?.text || correctAnswerRaw?.text || "";
+
+    // Build hints (use translated hints array if present)
+    const hintsArray = challengeTranslation?.hints || challenge.hints || [];
+
     const riddle: Riddle = {
       id: challenge.id,
-      question: challenge.question,
+      question: challengeTranslation?.question || challenge.question,
       type: challenge.type as ChallengeType,
-      correctAnswer: challenge.answers?.find((a) => a.isCorrect)?.text || "",
-      choices: challenge.answers?.map((answer) => ({
-        id: answer.id,
-        text: answer.text,
-      })),
-      hints: challenge.hints.map((hint) => ({
-        text: hint,
-      })),
+      correctAnswer: correctAnswerText,
+      choices: choices,
+      hints: hintsArray.map((hint) => ({ text: hint })),
       storyImage: storyImage,
       storyImageAlt: storyImageAlt,
       starsReward: challenge.baseStars,
     };
+
     return riddle;
   };
 
@@ -481,7 +505,7 @@ const RiddleInteractive = ({
         <div className="fixed right-2 sm:right-4 md:right-6 lg:right-8 bottom-20 sm:bottom-24 md:bottom-28 lg:bottom-32 z-50 pointer-events-none">
           <button
             onClick={handleShowHintPanel}
-            className="pointer-events-auto flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 bg-secondary text-white rounded-full shadow-warm hover:scale-105 transition-smooth disabled:opacity-50 text-xs sm:text-sm flex-shrink-0"
+            className="pointer-events-auto flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 bg-secondary text-white rounded-full shadow-warm hover:scale-105 transition-smooth disabled:opacity-50 text-xs sm:text-sm shrink-0"
           >
             <Lightbulb size={18} className="sm:size-5" />
             <span className="hidden sm:inline font-heading font-bold">

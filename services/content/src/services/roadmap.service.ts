@@ -16,7 +16,7 @@ export class RoadmapService {
   async getRoadmaps(): Promise<Roadmap[]> {
     try {
       const roadmaps = await this.prisma.roadmap.findMany({
-        where:{ ageGroup: { status: AgeGroupStatus.ACTIVE } },
+        where: { ageGroup: { status: AgeGroupStatus.ACTIVE } },
         include: {
           theme: true,
           ageGroup: true,
@@ -127,12 +127,17 @@ export class RoadmapService {
           },
         },
         include: {
+          translations: true,
           theme: true,
           ageGroup: true,
           worlds: {
             include: {
+              translations: true,
               stories: {
-                include: { chapters: { include: { challenge: true } } },
+                include: {
+                  translations: true,
+                  chapters: { include: { challenge: true } },
+                },
               },
             },
             orderBy: { order: "asc" },
@@ -184,7 +189,7 @@ export class RoadmapService {
   async createRoadmap(data: {
     ageGroupId: string;
     themeId: string;
-    readingLevel: ReadingLevel
+    readingLevel: ReadingLevel;
     title?: string;
   }): Promise<Roadmap> {
     try {
@@ -231,7 +236,7 @@ export class RoadmapService {
       ageGroupId: string;
       readingLevel: ReadingLevel;
       title: string;
-    }>
+    }>,
   ): Promise<Roadmap> {
     try {
       logger.info("Updating roadmap", { roadmapId });

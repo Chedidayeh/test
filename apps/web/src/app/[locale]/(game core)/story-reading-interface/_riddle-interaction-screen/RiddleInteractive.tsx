@@ -15,10 +15,12 @@ import {
   ChallengeStatus,
   ChallengeType,
   ChallengeAttempt,
+  Local,
 } from "@shared/types";
 import { submitChallengeAnswerAction } from "@/src/lib/progress-service/server-actions";
 import type { SubmitChallengeAnswerRequest } from "@/src/lib/progress-service/server-api";
 import { useTranslations } from "next-intl";
+import { useLocale } from "@/src/contexts/LocaleContext";
 
 interface Choice {
   id: string;
@@ -62,26 +64,49 @@ const RiddleInteractive = ({
   onClose,
 }: RiddleInteractiveProps) => {
   const t = useTranslations("StoryReadingInterface.riddleInterface");
-  // Transform Challenge to Riddle format
-  const transformChallengeToRiddle = (challenge: Challenge): Riddle => {
-    const riddle: Riddle = {
-      id: challenge.id,
-      question: challenge.question,
-      type: challenge.type as ChallengeType,
-      correctAnswer: challenge.answers?.find((a) => a.isCorrect)?.text || "",
-      choices: challenge.answers?.map((answer) => ({
-        id: answer.id,
-        text: answer.text,
-      })),
-      hints: challenge.hints.map((hint) => ({
-        text: hint,
-      })),
-      storyImage: storyImage,
-      storyImageAlt: storyImageAlt,
-      starsReward: challenge.baseStars,
+
+    // Transform Challenge to Riddle format
+    const { locale } = useLocale();
+  
+    const transformChallengeToRiddle = (challenge: Challenge): Riddle => {
+      const baseLocale = (locale || Local.EN).split("-")[0].toUpperCase();
+  
+      // pick challenge-level translation if present
+      const challengeTranslation = challenge.translations?.find((t) => t.languageCode === baseLocale);
+  
+      // Build choices with localized text when available
+      const choices = challenge.answers?.map((answer) => {
+        const answerTranslation = answer.translations?.find((t) => t.languageCode === baseLocale);
+        return {
+          id: answer.id,
+          text: answerTranslation?.text || answer.text,
+        };
+      });
+  
+      // Determine correct answer text (localized if possible)
+      const correctAnswerRaw = challenge.answers?.find((a) => a.isCorrect) || null;
+      const correctAnswerTranslation = correctAnswerRaw
+        ? correctAnswerRaw.translations?.find((t) => t.languageCode === baseLocale)
+        : null;
+      const correctAnswerText = correctAnswerTranslation?.text || correctAnswerRaw?.text || "";
+  
+      // Build hints (use translated hints array if present)
+      const hintsArray = challengeTranslation?.hints || challenge.hints || [];
+  
+      const riddle: Riddle = {
+        id: challenge.id,
+        question: challengeTranslation?.question || challenge.question,
+        type: challenge.type as ChallengeType,
+        correctAnswer: correctAnswerText,
+        choices: choices,
+        hints: hintsArray.map((hint) => ({ text: hint })),
+        storyImage: storyImage,
+        storyImageAlt: storyImageAlt,
+        starsReward: challenge.baseStars,
+      };
+  
+      return riddle;
     };
-    return riddle;
-  };
 
   // Use challenge data if provided, otherwise use fallback
   const [currentRiddle] = useState<Riddle>(() => {

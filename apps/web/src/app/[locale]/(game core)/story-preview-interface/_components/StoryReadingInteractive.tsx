@@ -9,12 +9,16 @@ import { CircleQuestionMark, Settings, X } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import RiddleInteractive from "../_riddle-interaction-screen/RiddleInteractive";
 import StoryFlowNavigation from "./StoryFlowNavigation";
-import { Story, ChallengeStatus, ChallengeAttempt } from "@shared/types";
 import {
-  transformStoryToPages,
-  getChapterByPageNumber,
-} from "./storyDataTransform";
+  Story,
+  ChallengeStatus,
+  ChallengeAttempt,
+  Local,
+  StoryTranslation,
+} from "@shared/types";
+import { getChapterByPageNumber } from "./storyDataTransform";
 import { useTranslations } from "next-intl";
+import { useLocale } from "@/src/contexts/LocaleContext";
 
 interface StoryReadingInteractiveProps {
   story: Story;
@@ -22,7 +26,7 @@ interface StoryReadingInteractiveProps {
 
 const StoryReadingInteractive = ({ story }: StoryReadingInteractiveProps) => {
   const t = useTranslations("StoryReadingInterface");
-
+  const { locale } = useLocale();
   // Start with page 1 (this is preview mode, no checkpoint needed)
   const [currentPage, setCurrentPage] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -52,8 +56,42 @@ const StoryReadingInteractive = ({ story }: StoryReadingInteractiveProps) => {
   // Track total stars earned locally from solved challenges
   const [totalStarsEarned, setTotalStarsEarned] = useState(0);
 
-  // Transform story chapters into pages
-  const pages = useMemo(() => transformStoryToPages(story), [story]);
+  // Locale-aware pages: pick translated chapter content/title when available
+  const localizedPages = useMemo(() => {
+    const baseLocale = (locale || Local.EN).split("-")[0].toUpperCase(); // EN, AR, FR
+    if (!story.chapters || story.chapters.length === 0) return [];
+
+    const sortedChapters = [...story.chapters].sort(
+      (a, b) => a.order - b.order,
+    );
+
+    return sortedChapters.map((chapter, index) => {
+      const translation = chapter.translations?.find(
+        (t) => t.languageCode === baseLocale,
+      );
+      return {
+        pageNumber: index + 1,
+        text: translation?.content || chapter.content || "",
+        image: chapter.imageUrl,
+        alt: `Page ${index + 1}`,
+        hasRiddle: !!chapter.challenge,
+      };
+    });
+  }, [story, locale]);
+
+  // Localized story title based on current locale
+  const localizedTitle = useMemo(() => {
+    try {
+      const baseLocale = (locale || Local.EN).split("-")[0];
+      const langKey = baseLocale.toUpperCase(); // EN, AR, FR
+      const translation = story.translations?.find(
+        (t: StoryTranslation) => t.languageCode === langKey,
+      );
+      return translation?.title || story.title;
+    } catch {
+      return story.title;
+    }
+  }, [story, locale]);
 
   useEffect(() => {
     // Update challenge attempt state when current chapter changes
@@ -74,8 +112,8 @@ const StoryReadingInteractive = ({ story }: StoryReadingInteractiveProps) => {
   }, [currentChapter, localChallengeAttempts]);
 
   useEffect(() => {
-    if (isPlaying && pages.length > 0) {
-      const words = pages[currentPage - 1].text.split(" ");
+    if (isPlaying && localizedPages.length > 0) {
+      const words = localizedPages[currentPage - 1].text.split(" ");
 
       // Start from the current wordIndex, or 0 if at the beginning
       let currentWordIndex = wordIndex;
@@ -95,7 +133,7 @@ const StoryReadingInteractive = ({ story }: StoryReadingInteractiveProps) => {
 
       return () => clearInterval(interval);
     }
-  }, [isPlaying, currentPage, pages, wordIndex]);
+  }, [isPlaying, currentPage, localizedPages, wordIndex]);
 
   const handlePlayPause = () => {
     setIsPlaying(!isPlaying);
@@ -116,7 +154,7 @@ const StoryReadingInteractive = ({ story }: StoryReadingInteractiveProps) => {
   };
 
   // Get current page data
-  const currentPageData = pages[currentPage - 1];
+  const currentPageData = localizedPages[currentPage - 1];
   const currentChallenge = currentChapter?.challenge || null;
 
   // Determine if riddle button should be shown
@@ -144,12 +182,12 @@ const StoryReadingInteractive = ({ story }: StoryReadingInteractiveProps) => {
     <div className="pt-16 sm:pt-20 pb-20 sm:pb-24 md:pb-28 lg:pb-32 flex flex-col">
       {/* Story Flow Navigation */}
       <StoryFlowNavigation
-        storyTitle={story.title}
+        storyTitle={localizedTitle}
         currentPage={currentPage}
         riddleMode={currentPageData.hasRiddle}
         showRiddle={showRiddle}
         setShowRiddle={setShowRiddle}
-        totalPages={pages.length}
+        totalPages={localizedPages.length}
         onPageChange={handlePageChange}
         currentChallengeAttemptState={currentChallengeAttemptState}
         totalStarsEarned={totalStarsEarned}
@@ -165,7 +203,7 @@ const StoryReadingInteractive = ({ story }: StoryReadingInteractiveProps) => {
               transition={{ duration: 0.28 }}
               className="flex-1 flex items-center justify-center"
             >
-            <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 max-w-4xl">
+              <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 max-w-4xl">
                 {/* Story Content */}
                 <StoryContent
                   currentPage={currentPageData}
@@ -235,7 +273,7 @@ const StoryReadingInteractive = ({ story }: StoryReadingInteractiveProps) => {
             <motion.button
               onClick={() => setShowSettings(true)}
               whileHover={{ scale: 1.06 }}
-              className="w-12 h-12 sm:w-14 sm:h-14 bg-card hover:bg-accent hover:text-white text-foreground rounded-full shadow-warm-lg hover:scale-110 transition-smooth flex items-center justify-center flex-shrink-0"
+              className="w-12 h-12 sm:w-14 sm:h-14 bg-card hover:bg-accent hover:text-white text-foreground rounded-full shadow-warm-lg hover:scale-110 transition-smooth flex items-center justify-center shrink-0"
               aria-label="Reading settings"
             >
               <Settings size={20} className="sm:size-6" />
@@ -245,7 +283,7 @@ const StoryReadingInteractive = ({ story }: StoryReadingInteractiveProps) => {
             <motion.button
               onClick={() => setShowHelp(true)}
               whileHover={{ scale: 1.06 }}
-              className="w-12 h-12 sm:w-14 sm:h-14 bg-card hover:bg-accent hover:text-white text-foreground rounded-full shadow-warm-lg hover:scale-110 transition-smooth flex items-center justify-center flex-shrink-0"
+              className="w-12 h-12 sm:w-14 sm:h-14 bg-card hover:bg-accent hover:text-white text-foreground rounded-full shadow-warm-lg hover:scale-110 transition-smooth flex items-center justify-center shrink-0"
               aria-label="Reading help"
             >
               <CircleQuestionMark size={20} className="sm:size-6" />
@@ -294,7 +332,7 @@ const StoryReadingInteractive = ({ story }: StoryReadingInteractiveProps) => {
               </h2>
               <button
                 onClick={() => setShowHelp(false)}
-                className="p-1 sm:p-2 hover:bg-accent hover:text-white rounded-full transition-smooth flex-shrink-0 ml-2"
+                className="p-1 sm:p-2 hover:bg-accent hover:text-white rounded-full transition-smooth shrink-0 ml-2"
                 aria-label="Close help"
               >
                 <X size={20} className="sm:size-6" />

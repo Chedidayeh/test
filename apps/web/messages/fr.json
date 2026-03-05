@@ -101,7 +101,10 @@
 			"riddlesSolved": "Énigmes résolues",
 			"totalReadingTime": "Temps total de lecture",
 			"averagePerDay": "Moyenne par jour",
-			"currentStreak": "Série en cours"
+			"currentStreak": "Série en cours",
+			"minutes": "minutes",
+			"days": "jours",
+			"day": "jour"
 		},
 		"achievements": {
 			"title": "Badges et réalisations",
@@ -117,6 +120,7 @@
 			"levelLabel": "Niveau {level}"
 		},
 		"riddleStatistics": {
+			"chapter": "Chapitre",
 			"title": "Statistiques des énigmes",
 			"description": "Aperçu approfondi du parcours de lecture et de résolution de problèmes de {childName}.",
 			"dashboardButton": "Tableau de bord de {childName} →",
@@ -238,7 +242,8 @@
 			"stats": {
 				"stars": "Étoiles gagnées:",
 				"stories": "Histoires terminées:",
-				"readingTime": "Minutes lues:"
+				"readingTime": "Minutes lues:",
+				"minutes": "{count} minutes"
 			},
 			"avatarAlt": "Avatar de {name}"
 		},

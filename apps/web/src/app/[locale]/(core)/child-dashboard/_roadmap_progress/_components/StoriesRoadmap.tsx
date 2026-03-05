@@ -6,7 +6,8 @@ import { BookOpen, Lock, Zap } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { World, ChildProfile, Roadmap, RoleType } from "@shared/types";
+import { World, ChildProfile, Roadmap, RoleType, Local, LanguageCode } from "@shared/types";
+import { useLocale } from "next-intl";
 import { getEnrichedStoriesForWorld } from "../../_lib/helpers";
 
 interface StoriesRoadmapProps {
@@ -23,6 +24,25 @@ export default function StoriesRoadmap({
   childProfile,
 }: StoriesRoadmapProps) {
   const t = useTranslations("ChildDashboard");
+  const locale = useLocale();
+
+  const getLanguageCode = () => {
+    const baseLocale = (locale || Local.EN).split("-")[0].toUpperCase();
+    if (baseLocale === "EN") return LanguageCode.EN;
+    if (baseLocale === "AR") return LanguageCode.AR;
+    if (baseLocale === "FR") return LanguageCode.FR;
+    return LanguageCode.EN;
+  };
+
+  const langCode = getLanguageCode();
+
+  const getLocalizedStory = (story: World["stories"][0]) => {
+    const translation = story.translations?.find((tr: { languageCode: LanguageCode }) => tr.languageCode === langCode);
+    return {
+      title: translation?.title || story.title,
+      description: translation?.description || story.description,
+    };
+  };
   // Enrich all stories with progress data (includes cross-world locking)
   const enrichedStories = getEnrichedStoriesForWorld(
     selectedWorld,
@@ -94,7 +114,7 @@ export default function StoriesRoadmap({
               />
 
               {/* Overlay Gradient */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+              <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-transparent" />
 
               {/* Lock Icon - if locked */}
               {story.status === "locked" && (
@@ -179,12 +199,19 @@ export default function StoriesRoadmap({
 
                 {/* Bottom: Title and Description */}
                 <div>
-                  <h3 className="font-heading text-lg font-bold text-white mb-1">
-                    {story.name}
-                  </h3>
-                  <p className="text-sm text-gray-200 line-clamp-2">
-                    {story.description}
-                  </p>
+                  {(() => {
+                    const localized = getLocalizedStory(story);
+                    return (
+                      <>
+                        <h3 className="font-heading text-lg font-bold text-white mb-1">
+                          {localized.title}
+                        </h3>
+                        <p className="text-sm text-gray-200 line-clamp-2">
+                          {localized.description}
+                        </p>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             </div>

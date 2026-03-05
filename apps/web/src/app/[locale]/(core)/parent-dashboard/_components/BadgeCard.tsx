@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Badge } from "@shared/types";
+import { Badge, Local, LanguageCode } from "@shared/types";
+import { useLocale } from "next-intl";
 import { LockIcon, StarIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -28,6 +29,21 @@ export default function BadgeCard({
   showDetails = true,
 }: BadgeCardProps) {
   const t = useTranslations("ParentDashboard");
+  const locale = useLocale();
+
+  const getLanguageCode = () => {
+    const baseLocale = (locale || Local.EN).split("-")[0].toUpperCase();
+    if (baseLocale === "EN") return LanguageCode.EN;
+    if (baseLocale === "AR") return LanguageCode.AR;
+    if (baseLocale === "FR") return LanguageCode.FR;
+    return LanguageCode.EN;
+  };
+
+  const langCode = getLanguageCode();
+
+  const translation = badge.translations?.find((tr) => tr.languageCode === langCode);
+  const localizedName = translation?.name || badge.name;
+  const localizedDescription = translation?.description || badge.description;
   return (
     <motion.div
       initial={{ scale: 0.8, opacity: 0, y: 20 }}
@@ -54,7 +70,7 @@ export default function BadgeCard({
           initial={{ opacity: 0 }}
           whileHover={{ opacity: 1 }}
           transition={{ duration: 0.3, ease: "easeInOut" }}
-          className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent" 
+          className="absolute inset-0 bg-linear-to-br from-primary/10 to-transparent" 
         />
       )}
 
@@ -82,10 +98,10 @@ export default function BadgeCard({
         ) : (
           <>
             <p className={`font-semibold text-xl leading-tight ${BADGE_STYLE.text}`}>
-              {badge.name}
+              {localizedName}
             </p>
             <p className={`text-sm text-gray-500 px-2`}>
-              {badge.description}
+              {localizedDescription}
             </p>
             <p className={`flex items-center justify-center gap-1 ${BADGE_STYLE.label}`}>
               <StarIcon size={16} />

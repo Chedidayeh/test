@@ -10,6 +10,10 @@ import {
   type SessionCheckpoint,
   type ChallengeAttempt,
   ChallengeStatus,
+  Local,
+  LanguageCode,
+  type Story,
+  type Chapter,
 } from "@shared/types";
 
 // ============================================================================
@@ -29,10 +33,19 @@ export interface ChallengeStats {
   solvedAttempts: number; // Number of successful attempts
   successRate: number; // Percentage (0-100)
   isSolved: boolean; // Whether challenge was ever solved successfully
-  status: ChallengeStatus // Status of the challenge
+  status: ChallengeStatus; // Status of the challenge
   lastAttemptDate?: Date; // Date of most recent attempt
   timeSpentSeconds: number; // Total time spent on this challenge
   hintsUsed: number; // Total hints used across all attempts
+}
+
+/**
+ * Localized Challenge Statistics with story and chapter titles
+ * Extends ChallengeStats with localized story and chapter names based on locale
+ */
+export interface LocalizedChallengeStats extends ChallengeStats {
+  storyTitle: string; // Localized story title
+  chapterIndex: number | null; // Chapter order/index within the story
 }
 
 /**
@@ -74,7 +87,9 @@ function formatDateLocal(date: Date): string {
  * @param checkpoint - SessionCheckpoint with startedAt, pausedAt, and sessionDurationSeconds
  * @returns Array of {date, seconds} allocations, one per calendar day
  */
-function splitCheckpointAcrossDays(checkpoint: SessionCheckpoint): { date: string; seconds: number }[] {
+function splitCheckpointAcrossDays(
+  checkpoint: SessionCheckpoint,
+): { date: string; seconds: number }[] {
   // If no pausedAt, skip this checkpoint (session still in progress)
   if (!checkpoint.pausedAt) {
     return [];
@@ -82,7 +97,10 @@ function splitCheckpointAcrossDays(checkpoint: SessionCheckpoint): { date: strin
 
   // Determine the total duration in seconds
   let totalSeconds = 0;
-  if (checkpoint.sessionDurationSeconds !== null && checkpoint.sessionDurationSeconds !== undefined) {
+  if (
+    checkpoint.sessionDurationSeconds !== null &&
+    checkpoint.sessionDurationSeconds !== undefined
+  ) {
     totalSeconds = checkpoint.sessionDurationSeconds;
   } else {
     // Fallback: calculate from timestamps
@@ -105,10 +123,12 @@ function splitCheckpointAcrossDays(checkpoint: SessionCheckpoint): { date: strin
 
   // If same day, return single allocation
   if (startDate.getTime() === endDate.getTime()) {
-    return [{
-      date: formatDateLocal(startDate),
-      seconds: totalSeconds,
-    }];
+    return [
+      {
+        date: formatDateLocal(startDate),
+        seconds: totalSeconds,
+      },
+    ];
   }
 
   const allocations: { date: string; seconds: number }[] = [];
@@ -120,7 +140,9 @@ function splitCheckpointAcrossDays(checkpoint: SessionCheckpoint): { date: strin
   endOfStartDay.setUTCDate(endOfStartDay.getUTCDate() + 1);
   endOfStartDay.setUTCMilliseconds(-1); // 23:59:59.999
 
-  const startDaySeconds = Math.floor((endOfStartDay.getTime() - startTime.getTime()) / 1000);
+  const startDaySeconds = Math.floor(
+    (endOfStartDay.getTime() - startTime.getTime()) / 1000,
+  );
   allocations.push({
     date: formatDateLocal(startDate),
     seconds: Math.max(0, Math.round(startDaySeconds)),
@@ -145,7 +167,9 @@ function splitCheckpointAcrossDays(checkpoint: SessionCheckpoint): { date: strin
 
   // Allocate time for the END day: from start of that day to endTime
   const startOfEndDay = new Date(endDate);
-  const endDaySeconds = Math.floor((endTime.getTime() - startOfEndDay.getTime()) / 1000);
+  const endDaySeconds = Math.floor(
+    (endTime.getTime() - startOfEndDay.getTime()) / 1000,
+  );
   allocations.push({
     date: formatDateLocal(endDate),
     seconds: Math.max(0, Math.round(endDaySeconds)),
@@ -166,8 +190,14 @@ function splitCheckpointAcrossDays(checkpoint: SessionCheckpoint): { date: strin
  * @param progressArray - Array of Progress records (from ChildProfile)
  * @returns Array of TimeEntry sorted by date (ascending)
  */
-export function calculateTimeEntries(progressArray: Progress[] | undefined): TimeEntry[] {
-  if (!progressArray || !Array.isArray(progressArray) || progressArray.length === 0) {
+export function calculateTimeEntries(
+  progressArray: Progress[] | undefined,
+): TimeEntry[] {
+  if (
+    !progressArray ||
+    !Array.isArray(progressArray) ||
+    progressArray.length === 0
+  ) {
     return [];
   }
 
@@ -177,7 +207,10 @@ export function calculateTimeEntries(progressArray: Progress[] | undefined): Tim
   const sessionsByDate = new Map<string, Set<string>>(); // date -> Set of gameSessionIds
 
   for (const progress of progressArray) {
-    if (!progress.gameSession?.checkpoints || !Array.isArray(progress.gameSession.checkpoints)) {
+    if (
+      !progress.gameSession?.checkpoints ||
+      !Array.isArray(progress.gameSession.checkpoints)
+    ) {
       continue;
     }
 
@@ -207,16 +240,18 @@ export function calculateTimeEntries(progressArray: Progress[] | undefined): Tim
   }
 
   // Convert to TimeEntry array
-  const timeEntries: TimeEntry[] = Array.from(timeByDate.entries()).map(([date, totalSeconds]) => {
-    const minutes = Math.round(totalSeconds / 60);
-    const storiesRead = sessionsByDate.get(date)?.size || 0;
+  const timeEntries: TimeEntry[] = Array.from(timeByDate.entries()).map(
+    ([date, totalSeconds]) => {
+      const minutes = Math.round(totalSeconds / 60);
+      const storiesRead = sessionsByDate.get(date)?.size || 0;
 
-    return {
-      date,
-      minutes,
-      storiesRead,
-    };
-  });
+      return {
+        date,
+        minutes,
+        storiesRead,
+      };
+    },
+  );
 
   // Sort by date (ascending - oldest first)
   return timeEntries.sort((a, b) => a.date.localeCompare(b.date));
@@ -240,15 +275,24 @@ export function calculateDailyTimeStats(timeEntries: TimeEntry[] | undefined) {
   }
 
   // Calculate total reading time
-  const totalMinutes = timeEntries.reduce((sum, entry) => sum + entry.minutes, 0);
+  const totalMinutes = timeEntries.reduce(
+    (sum, entry) => sum + entry.minutes,
+    0,
+  );
   const totalHours = Math.round((totalMinutes / 60) * 10) / 10;
 
   // Calculate average per day (only count days with reading)
-  const daysWithReading = timeEntries.filter((entry) => entry.minutes > 0).length;
-  const avgMinutesPerDay = daysWithReading > 0 ? Math.round(totalMinutes / daysWithReading) : 0;
+  const daysWithReading = timeEntries.filter(
+    (entry) => entry.minutes > 0,
+  ).length;
+  const avgMinutesPerDay =
+    daysWithReading > 0 ? Math.round(totalMinutes / daysWithReading) : 0;
 
   // Calculate total stories
-  const totalStories = timeEntries.reduce((sum, entry) => sum + entry.storiesRead, 0);
+  const totalStories = timeEntries.reduce(
+    (sum, entry) => sum + entry.storiesRead,
+    0,
+  );
 
   // Calculate current streak (consecutive days with reading from end)
   let currentStreak = 0;
@@ -280,9 +324,13 @@ export function calculateDailyTimeStats(timeEntries: TimeEntry[] | undefined) {
  * @returns Array of ChallengeStats sorted by most recent attempt
  */
 export function calculateChallengeStats(
-  progressArray: Progress[] | undefined
+  progressArray: Progress[] | undefined,
 ): ChallengeStats[] {
-  if (!progressArray || !Array.isArray(progressArray) || progressArray.length === 0) {
+  if (
+    !progressArray ||
+    !Array.isArray(progressArray) ||
+    progressArray.length === 0
+  ) {
     return [];
   }
 
@@ -294,11 +342,15 @@ export function calculateChallengeStats(
   const allAttempts: AttemptWithContext[] = [];
 
   for (const progress of progressArray) {
-    if (progress.gameSession?.challengeAttempts && Array.isArray(progress.gameSession.challengeAttempts)) {
+    if (
+      progress.gameSession?.challengeAttempts &&
+      Array.isArray(progress.gameSession.challengeAttempts)
+    ) {
       // Attach story and chapter info from parent Progress and GameSession
       for (const attempt of progress.gameSession.challengeAttempts) {
         (attempt as unknown as AttemptWithContext)._storyId = progress.storyId;
-        (attempt as unknown as AttemptWithContext)._chapterId = progress.gameSession.chapterId || null;
+        (attempt as unknown as AttemptWithContext)._chapterId =
+          progress.gameSession.chapterId || null;
         allAttempts.push(attempt as unknown as AttemptWithContext);
       }
     }
@@ -331,12 +383,21 @@ export function calculateChallengeStats(
   const stats: ChallengeStats[] = [];
   for (const [challengeId, grouping] of challengeMap.entries()) {
     const { storyId, chapterId, attempts } = grouping;
-    
+
     // Get the highest attempt number to determine total attempts
-    const totalAttempts = attempts.length > 0 ? Math.max(...attempts.map((a) => a.attemptNumber)) : 0;
+    const totalAttempts =
+      attempts.length > 0
+        ? Math.max(...attempts.map((a) => a.attemptNumber))
+        : 0;
     const solvedAttempts = attempts.filter((a) => a.isCorrect === true).length;
-    const successRate = totalAttempts > 0 ? Math.round((solvedAttempts / totalAttempts) * 100) : 0;
-    const timeSpentSeconds = attempts.reduce((sum, a) => sum + a.timeSpentSeconds, 0);
+    const successRate =
+      totalAttempts > 0
+        ? Math.round((solvedAttempts / totalAttempts) * 100)
+        : 0;
+    const timeSpentSeconds = attempts.reduce(
+      (sum, a) => sum + a.timeSpentSeconds,
+      0,
+    );
     const hintsUsed = attempts.reduce((sum, a) => sum + a.usedHints, 0);
 
     // Determine challenge status
@@ -351,9 +412,11 @@ export function calculateChallengeStats(
 
     // Get most recent attempt date
     const sortedByDate = [...attempts].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
-    const lastAttemptDate = sortedByDate.length > 0 ? new Date(sortedByDate[0].createdAt) : undefined;
+    const lastAttemptDate =
+      sortedByDate.length > 0 ? new Date(sortedByDate[0].createdAt) : undefined;
 
     stats.push({
       id: challengeId,
@@ -385,7 +448,9 @@ export function calculateChallengeStats(
  * @param progressArray - Array of Progress records
  * @returns Object with aggregated challenge statistics
  */
-export function getAggregatedChallengeStats(progressArray: Progress[] | undefined) {
+export function getAggregatedChallengeStats(
+  progressArray: Progress[] | undefined,
+) {
   const challengeStats = calculateChallengeStats(progressArray);
 
   if (challengeStats.length === 0) {
@@ -400,10 +465,17 @@ export function getAggregatedChallengeStats(progressArray: Progress[] | undefine
   const totalChallenges = challengeStats.length;
   const solvedChallenges = challengeStats.filter((c) => c.isSolved).length;
   const successRate =
-    totalChallenges > 0 ? Math.round((solvedChallenges / totalChallenges) * 100) : 0;
-  const totalAttempts = challengeStats.reduce((sum, c) => sum + c.totalAttempts, 0);
+    totalChallenges > 0
+      ? Math.round((solvedChallenges / totalChallenges) * 100)
+      : 0;
+  const totalAttempts = challengeStats.reduce(
+    (sum, c) => sum + c.totalAttempts,
+    0,
+  );
   const avgAttemptsPerChallenge =
-    totalChallenges > 0 ? Math.round((totalAttempts / totalChallenges) * 10) / 10 : 0;
+    totalChallenges > 0
+      ? Math.round((totalAttempts / totalChallenges) * 10) / 10
+      : 0;
 
   return {
     totalChallenges,
@@ -456,13 +528,16 @@ export function getTotalReadingTime(profile: ChildProfile | undefined): number {
   // Collect all completed checkpoints from progress objects
   const allCheckpoints: SessionCheckpoint[] = [];
   for (const progress of profile.progress) {
-    if (!progress.gameSession?.checkpoints || !Array.isArray(progress.gameSession.checkpoints)) {
+    if (
+      !progress.gameSession?.checkpoints ||
+      !Array.isArray(progress.gameSession.checkpoints)
+    ) {
       continue;
     }
 
     // Only count checkpoints that have been paused (completed)
     const completedCheckpoints = progress.gameSession.checkpoints.filter(
-      (cp) => cp.pausedAt !== null
+      (cp) => cp.pausedAt !== null,
     );
     allCheckpoints.push(...completedCheckpoints);
   }
@@ -472,21 +547,27 @@ export function getTotalReadingTime(profile: ChildProfile | undefined): number {
   }
 
   // Calculate total reading time from completed checkpoints
-  const totalSeconds = allCheckpoints.reduce((sum: number, checkpoint: SessionCheckpoint) => {
-    let duration = 0;
+  const totalSeconds = allCheckpoints.reduce(
+    (sum: number, checkpoint: SessionCheckpoint) => {
+      let duration = 0;
 
-    // Use sessionDurationSeconds if available
-    if (checkpoint.sessionDurationSeconds !== null && checkpoint.sessionDurationSeconds !== undefined) {
-      duration = checkpoint.sessionDurationSeconds;
-    } else if (checkpoint.pausedAt) {
-      // Calculate from startedAt to pausedAt
-      const startMs = new Date(checkpoint.startedAt).getTime();
-      const pauseMs = new Date(checkpoint.pausedAt).getTime();
-      duration = Math.floor((pauseMs - startMs) / 1000);
-    }
+      // Use sessionDurationSeconds if available
+      if (
+        checkpoint.sessionDurationSeconds !== null &&
+        checkpoint.sessionDurationSeconds !== undefined
+      ) {
+        duration = checkpoint.sessionDurationSeconds;
+      } else if (checkpoint.pausedAt) {
+        // Calculate from startedAt to pausedAt
+        const startMs = new Date(checkpoint.startedAt).getTime();
+        const pauseMs = new Date(checkpoint.pausedAt).getTime();
+        duration = Math.floor((pauseMs - startMs) / 1000);
+      }
 
-    return sum + Math.max(0, duration);
-  }, 0);
+      return sum + Math.max(0, duration);
+    },
+    0,
+  );
 
   return Math.round(totalSeconds / 60);
 }
@@ -502,19 +583,22 @@ export function getRiddlesSolved(profile: ChildProfile | undefined): number {
   if (!profile?.progress || !Array.isArray(profile.progress)) {
     return 0;
   }
-  
+
   // Collect all challenge attempts from game sessions
   const allAttempts: ChallengeAttempt[] = [];
   for (const progress of profile.progress) {
-    if (progress.gameSession?.challengeAttempts && Array.isArray(progress.gameSession.challengeAttempts)) {
+    if (
+      progress.gameSession?.challengeAttempts &&
+      Array.isArray(progress.gameSession.challengeAttempts)
+    ) {
       allAttempts.push(...progress.gameSession.challengeAttempts);
     }
   }
-  
+
   if (allAttempts.length === 0) {
     return 0;
   }
-  
+
   // Count unique challenges that were solved correctly (isCorrect = true)
   const solvedChallenges = new Set(
     allAttempts
@@ -552,8 +636,14 @@ export function getBadgesCount(profile: ChildProfile | undefined): number {
  * @param profile - ChildProfile data
  * @returns Average reading time in minutes per day
  */
-export function getAverageReadingTimePerDay(profile: ChildProfile | undefined): number {
-  if (!profile?.progress || !Array.isArray(profile.progress) || profile.progress.length === 0) {
+export function getAverageReadingTimePerDay(
+  profile: ChildProfile | undefined,
+): number {
+  if (
+    !profile?.progress ||
+    !Array.isArray(profile.progress) ||
+    profile.progress.length === 0
+  ) {
     return 0;
   }
 
@@ -565,7 +655,9 @@ export function getAverageReadingTimePerDay(profile: ChildProfile | undefined): 
   }
 
   const totalMinutes = getTotalReadingTime(profile);
-  const daysWithReading = timeEntries.filter((entry) => entry.minutes > 0).length;
+  const daysWithReading = timeEntries.filter(
+    (entry) => entry.minutes > 0,
+  ).length;
 
   if (daysWithReading === 0) {
     return 0;
@@ -582,20 +674,27 @@ export function getAverageReadingTimePerDay(profile: ChildProfile | undefined): 
  * @returns Number of consecutive days with reading activity
  */
 export function getCurrentStreak(profile: ChildProfile | undefined): number {
-  if (!profile?.progress || !Array.isArray(profile.progress) || profile.progress.length === 0) {
+  if (
+    !profile?.progress ||
+    !Array.isArray(profile.progress) ||
+    profile.progress.length === 0
+  ) {
     return 0;
   }
 
   // Collect all completed checkpoints from progress objects
   const allCheckpoints: SessionCheckpoint[] = [];
   for (const progress of profile.progress) {
-    if (!progress.gameSession?.checkpoints || !Array.isArray(progress.gameSession.checkpoints)) {
+    if (
+      !progress.gameSession?.checkpoints ||
+      !Array.isArray(progress.gameSession.checkpoints)
+    ) {
       continue;
     }
 
     // Only count checkpoints that have been paused (completed)
     const completedCheckpoints = progress.gameSession.checkpoints.filter(
-      (cp) => cp.pausedAt !== null
+      (cp) => cp.pausedAt !== null,
     );
     allCheckpoints.push(...completedCheckpoints);
   }
@@ -608,8 +707,8 @@ export function getCurrentStreak(profile: ChildProfile | undefined): number {
   const checkpointDates = new Set(
     allCheckpoints.map((checkpoint: SessionCheckpoint) => {
       const date = new Date(checkpoint.pausedAt!);
-      return date.toISOString().split('T')[0]; // YYYY-MM-DD format
-    })
+      return date.toISOString().split("T")[0]; // YYYY-MM-DD format
+    }),
   );
 
   // Sort dates in descending order
@@ -625,7 +724,7 @@ export function getCurrentStreak(profile: ChildProfile | undefined): number {
   currentDate.setHours(0, 0, 0, 0);
 
   // Check if today has a checkpoint
-  const todayString = currentDate.toISOString().split('T')[0];
+  const todayString = currentDate.toISOString().split("T")[0];
   const checkingDate = new Date(currentDate);
 
   // If no checkpoint today, start from yesterday
@@ -635,7 +734,7 @@ export function getCurrentStreak(profile: ChildProfile | undefined): number {
 
   // Count consecutive days
   for (const checkpointDate of sortedDates) {
-    const checkingDateString = checkingDate.toISOString().split('T')[0];
+    const checkingDateString = checkingDate.toISOString().split("T")[0];
 
     if (checkpointDate === checkingDateString) {
       streak++;
@@ -656,8 +755,14 @@ export function getCurrentStreak(profile: ChildProfile | undefined): number {
  * @param profile - ChildProfile data
  * @returns Number of days with reading activity (all-time)
  */
-export function getTotalDaysReadAllTime(profile: ChildProfile | undefined): number {
-  if (!profile?.progress || !Array.isArray(profile.progress) || profile.progress.length === 0) {
+export function getTotalDaysReadAllTime(
+  profile: ChildProfile | undefined,
+): number {
+  if (
+    !profile?.progress ||
+    !Array.isArray(profile.progress) ||
+    profile.progress.length === 0
+  ) {
     return 0;
   }
 
@@ -669,7 +774,9 @@ export function getTotalDaysReadAllTime(profile: ChildProfile | undefined): numb
   }
 
   // Count days where child had at least 1 minute of reading (minutes > 0)
-  const daysWithReading = timeEntries.filter((entry) => entry.minutes > 0).length;
+  const daysWithReading = timeEntries.filter(
+    (entry) => entry.minutes > 0,
+  ).length;
 
   return daysWithReading;
 }
@@ -681,7 +788,9 @@ export function getTotalDaysReadAllTime(profile: ChildProfile | undefined): numb
  * @param profile - ChildProfile data
  * @returns Total calendar days since joining (including today)
  */
-export function getTotalDaysSinceJoining(profile: ChildProfile | undefined): number {
+export function getTotalDaysSinceJoining(
+  profile: ChildProfile | undefined,
+): number {
   if (!profile?.createdAt) {
     return 0;
   }
@@ -695,7 +804,9 @@ export function getTotalDaysSinceJoining(profile: ChildProfile | undefined): num
   today.setHours(0, 0, 0, 0);
 
   // Calculate days difference in milliseconds, convert to days, add 1 for inclusive count
-  const daysDifference = Math.floor((today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+  const daysDifference = Math.floor(
+    (today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24),
+  );
 
   // Add 1 to make inclusive (if joined today, it's day 1, not day 0)
   return daysDifference + 1;
@@ -717,7 +828,8 @@ export function getReadingActivityRate(profile: ChildProfile | undefined): {
   const totalDays = getTotalDaysSinceJoining(profile);
 
   // Avoid division by zero
-  const percentage = totalDays > 0 ? Math.round((daysRead / totalDays) * 100) : 0;
+  const percentage =
+    totalDays > 0 ? Math.round((daysRead / totalDays) * 100) : 0;
 
   return {
     daysRead,
@@ -736,16 +848,16 @@ export function formatReadingTime(minutes: number): string {
   if (minutes < 60) {
     return `${minutes} mins`;
   }
-  
+
   const hours = Math.floor(minutes / 60);
   const remainingMins = minutes % 60;
-  
+
   const hourLabel = hours === 1 ? "hr" : "hrs";
-  
+
   if (remainingMins === 0) {
     return `${hours} ${hourLabel}`;
   }
-  
+
   return `${hours} ${hourLabel} ${remainingMins} mins`;
 }
 
@@ -817,12 +929,14 @@ export function getDateRangePresets(): Record<string, TimeRange> {
 export function filterTimeEntriesByRange(
   timeEntries: TimeEntry[],
   startDate: Date,
-  endDate: Date
+  endDate: Date,
 ): TimeEntry[] {
   const startStr = formatDateLocal(startDate);
   const endStr = formatDateLocal(endDate);
 
-  return timeEntries.filter((entry) => entry.date >= startStr && entry.date <= endStr);
+  return timeEntries.filter(
+    (entry) => entry.date >= startStr && entry.date <= endStr,
+  );
 }
 
 /**
@@ -833,7 +947,10 @@ export function filterTimeEntriesByRange(
  * @param endDate - Range end date
  * @returns Array of date strings in YYYY-MM-DD format
  */
-export function generateDateRangeArray(startDate: Date, endDate: Date): string[] {
+export function generateDateRangeArray(
+  startDate: Date,
+  endDate: Date,
+): string[] {
   const dates: string[] = [];
   const current = new Date(startDate);
   current.setHours(0, 0, 0, 0);
@@ -859,10 +976,12 @@ export function generateDateRangeArray(startDate: Date, endDate: Date): string[]
 export function fillTimeEntriesGaps(
   timeEntries: TimeEntry[],
   startDate: Date,
-  endDate: Date
+  endDate: Date,
 ): TimeEntry[] {
   const allDates = generateDateRangeArray(startDate, endDate);
-  const entriesByDate = new Map(timeEntries.map((entry) => [entry.date, entry]));
+  const entriesByDate = new Map(
+    timeEntries.map((entry) => [entry.date, entry]),
+  );
 
   return allDates.map((date) => {
     if (entriesByDate.has(date)) {
@@ -893,6 +1012,106 @@ export function getAllStats(profile: ChildProfile | undefined) {
     badgesCount: getBadgesCount(profile),
     readingActivityRate: getReadingActivityRate(profile),
   };
+}
+
+// ============================================================================
+// LOCALIZATION HELPERS
+// ============================================================================
+
+/**
+ * Get localized story title based on locale
+ * Falls back to original title if translation not found
+ *
+ * @param story - Story object with optional translations
+ * @param locale - Locale string (e.g., 'en', 'ar', 'fr')
+ * @returns Localized story title
+ */
+export function getLocalizedStoryTitle(
+  story: Story | undefined,
+  locale?: string,
+): string {
+  if (!story) return "Unknown Story";
+
+  // Convert locale to language code (en → EN, ar → AR, fr → FR)
+  const baseLocale = (locale || Local.EN).split("-")[0].toUpperCase();
+  const langCode = baseLocale as keyof typeof LanguageCode;
+
+  // Try to find translation for current locale
+  const translation = story.translations?.find(
+    (t) => t.languageCode === langCode,
+  );
+  return translation?.title || story.title;
+}
+
+/**
+ * Localize challenge statistics with story and chapter titles
+ * Merges ChallengeStats with localized story/chapter information
+ *
+ * @param challengeStats - Array of ChallengeStats without localized titles
+ * @param stories - Array of Story objects (for lookup)
+ * @param locale - Current locale string (e.g., 'en', 'ar', 'fr')
+ * @returns Array of LocalizedChallengeStats with story/chapter titles
+ */
+export function localizeChallengStats(
+  challengeStats: ChallengeStats[],
+  stories: Story[],
+  locale?: string,
+): LocalizedChallengeStats[] {
+  return challengeStats.map((stat) => {
+    // Find the story for this challenge
+    const story = stories.find((s) => s.id === stat.storyId);
+    const storyTitle = getLocalizedStoryTitle(story, locale);
+
+    // Determine chapter index (order) if available
+    let chapterIndex: number | null = null;
+    if (story?.chapters) {
+      const chapter = story.chapters.find(
+        (c) => c.id === stat.chapterId || c.challenge?.id === stat.id,
+      );
+      if (chapter) chapterIndex = chapter.order ?? null;
+    }
+
+    return {
+      ...stat,
+      storyTitle,
+      chapterIndex,
+    };
+  });
+}
+
+/**
+ * Batch localize challenge statistics for efficient rendering
+ * Useful for tables/lists of challenges with locale-aware names
+ *
+ * @param challengeStats - Array of ChallengeStats
+ * @param storiesMap - Map of story ID → Story object (for fast lookup)
+ * @param chaptersMap - Map of chapter ID → Chapter object (for fast lookup)
+ * @param locale - Current locale string
+ * @returns Array of LocalizedChallengeStats with localized titles
+ */
+export function localizeChallengStatsWithMaps(
+  challengeStats: ChallengeStats[],
+  storiesMap: Map<string, Story>,
+  locale?: string,
+): LocalizedChallengeStats[] {
+  return challengeStats.map((stat) => {
+    const story = storiesMap.get(stat.storyId);
+    const storyTitle = getLocalizedStoryTitle(story, locale);
+
+    let chapterIndex: number | null = null;
+    if (story?.chapters) {
+      const chapter = story.chapters.find(
+        (c) => c.id === stat.chapterId || c.challenge?.id === stat.id,
+      );
+      if (chapter) chapterIndex = chapter.order ?? null;
+    }
+
+    return {
+      ...stat,
+      storyTitle,
+      chapterIndex,
+    };
+  });
 }
 
 // ============================================================================
@@ -928,7 +1147,9 @@ export function testMultiDayCheckpointSplit(): void {
   console.log("Input checkpoint:");
   console.log(`  startedAt: ${testCheckpoint.startedAt.toISOString()}`);
   console.log(`  pausedAt: ${testCheckpoint.pausedAt!.toISOString()}`);
-  console.log(`  duration: ${testCheckpoint.sessionDurationSeconds} seconds (3 hours)`);
+  console.log(
+    `  duration: ${testCheckpoint.sessionDurationSeconds} seconds (3 hours)`,
+  );
   console.log("\nExpected output:");
   console.log(`  2026-02-27: 7200 seconds (2 hours)`);
   console.log(`  2026-02-28: 3600 seconds (1 hour)`);
@@ -938,7 +1159,10 @@ export function testMultiDayCheckpointSplit(): void {
   });
 
   // Validate the results
-  const totalSeconds = allocations.reduce((sum, alloc) => sum + alloc.seconds, 0);
+  const totalSeconds = allocations.reduce(
+    (sum, alloc) => sum + alloc.seconds,
+    0,
+  );
   const isValid =
     allocations.length === 2 &&
     allocations[0].date === "2026-02-27" &&
@@ -948,7 +1172,9 @@ export function testMultiDayCheckpointSplit(): void {
     totalSeconds === 10800;
 
   console.log(`\nValidation: ${isValid ? "✓ PASS" : "✗ FAIL"}`);
-  console.log(`Total seconds preserved: ${totalSeconds === 10800 ? "✓ Yes" : "✗ No"}`);
+  console.log(
+    `Total seconds preserved: ${totalSeconds === 10800 ? "✓ Yes" : "✗ No"}`,
+  );
 }
 
 // Optional: Test same-day checkpoint
@@ -968,8 +1194,9 @@ export function testSameDayCheckpointSplit(): void {
   const allocations = splitCheckpointAcrossDays(testCheckpoint);
 
   console.log("\n=== Same-Day Checkpoint Split Test ===");
-  console.log(`Single allocation on 2026-02-27: ${allocations[0].seconds} seconds (expected: 5400)`);
+  console.log(
+    `Single allocation on 2026-02-27: ${allocations[0].seconds} seconds (expected: 5400)`,
+  );
   const isValid = allocations.length === 1 && allocations[0].seconds === 5400;
   console.log(`Validation: ${isValid ? "✓ PASS" : "✗ FAIL"}`);
 }
-

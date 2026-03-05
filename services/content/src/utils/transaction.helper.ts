@@ -83,7 +83,6 @@ export async function createStoryWithChaptersTransaction(
         const chapter = await tx.chapter.create({
           data: {
             storyId: story.id,
-            title: chapterInput.title,
             content: chapterInput.content,
             imageUrl: chapterInput.imageUrl || null,
             audioUrl: chapterInput.audioUrl || null,
@@ -94,7 +93,6 @@ export async function createStoryWithChaptersTransaction(
         chaptersCreated++;
         logger.info("Chapter created in transaction", {
           chapterId: chapter.id,
-          title: chapter.title,
         });
 
         // Step 2b: Create chapter translations
@@ -123,7 +121,6 @@ export async function createStoryWithChaptersTransaction(
               chapterId: chapter.id,
               type: chapterInput.challenge.type,
               question: chapterInput.challenge.question,
-              description: chapterInput.challenge.description || null,
               baseStars: chapterInput.challenge.baseStars || 20,
               order: chapterInput.challenge.order,
               hints: chapterInput.challenge.hints || [],
@@ -276,9 +273,6 @@ export function validateStoryCreationInput(
 
   // Validate chapters
   input.chapters.forEach((chapter, index) => {
-    if (!chapter.title || chapter.title.trim() === "") {
-      throw new Error(`Chapter ${index + 1}: Title is required`);
-    }
 
     if (!chapter.content || chapter.content.trim() === "") {
       throw new Error(`Chapter ${index + 1}: Content is required`);
@@ -369,7 +363,7 @@ export function validateStoryCreationInput(
 
 /**
  * Edit a story with chapters, challenges, and answers in an atomic transaction
- * Deletes all existing chapters (cascading to challenges and answers) and creates new ones
+ * Uses upsert to preserve IDs and maintain game session links (instead of delete/recreate)
  * All operations succeed together or rollback on failure
  *
  * @param prisma PrismaClient instance
@@ -384,13 +378,19 @@ export async function editStoryWithChaptersTransaction(
   input: CreateStoryWithChaptersInput
 ): Promise<Story> {
   try {
-    logger.info("Starting story edit transaction", {
+    logger.info("Starting story edit transaction (upsert mode)", {
       storyId,
       title: input.title,
       chaptersCount: input.chapters.length,
       translationSource: input.translationSource,
       hasTranslations: !!input.translations && input.translations.length > 0,
     });
+
+    // Declare tracking variables outside transaction scope so they're accessible in final logging
+    let chaptersUpserted = 0;
+    let challengesUpserted = 0;
+    let answersUpserted = 0;
+    let chaptersDeleted = 0;
 
     const result = await prisma.$transaction(
       async (tx) => {
@@ -416,18 +416,7 @@ export async function editStoryWithChaptersTransaction(
         where: { storyId: story.id },
       });
 
-      logger.debug("Attempting story translations", {
-        storyId: story.id,
-        translationSource: input.translationSource,
-        hasTranslations: !!input.translations && input.translations.length > 0,
-        translationsLength: input.translations?.length || 0,
-      });
-
       if (input.translationSource) {
-        logger.debug("Story translationSource is set, proceeding with translation creation", {
-          storyId: story.id,
-          translationSource: input.translationSource,
-        });
         if (input.translationSource === TranslationSourceType.MANUAL) {
           await createManualTranslationRecordsForStory(tx, story.id, input.translations);
         } else {
@@ -438,52 +427,74 @@ export async function editStoryWithChaptersTransaction(
             input.translations
           );
         }
-      } else {
-        logger.warn("No translationSource provided for story edit - skipping translations", {
-          storyId: story.id,
-        });
       }
 
-      // Step 2: Delete all existing chapters (cascades to challenges, answers, and translations)
-      await tx.chapter.deleteMany({
+      // Step 2: Fetch existing chapters to merge with new data
+      const existingChapters = await tx.chapter.findMany({
         where: { storyId: story.id },
-      });
-
-      logger.info("Existing chapters deleted in transaction", {
-        storyId: story.id,
-      });
-
-      let chaptersCreated = 0;
-      let challengesCreated = 0;
-      let answersCreated = 0;
-
-      // Step 3: Create new chapters with challenges and answers
-      for (const chapterInput of input.chapters) {
-        const chapter = await tx.chapter.create({
-          data: {
-            storyId: story.id,
-            title: chapterInput.title,
-            content: chapterInput.content,
-            imageUrl: chapterInput.imageUrl || null,
-            audioUrl: chapterInput.audioUrl || null,
-            order: chapterInput.order,
+        include: {
+          challenge: {
+            include: { answers: true },
           },
-        });
+        },
+      });
 
-        chaptersCreated++;
-        logger.info("Chapter created in edit transaction", {
-          chapterId: chapter.id,
-          title: chapter.title,
-        });
+      logger.info("Fetched existing chapters for upsert", {
+        storyId: story.id,
+        existingChaptersCount: existingChapters.length,
+      });
 
-        // Step 3b: Create chapter translations
-        logger.debug("Attempting chapter translations", {
-          chapterId: chapter.id,
-          translationSource: input.translationSource,
-          hasTranslations: !!chapterInput.translations && chapterInput.translations.length > 0,
-        });
+      // Step 3: Create map of existing chapters by order for efficient lookup
+      const existingChaptersByOrder = new Map(
+        existingChapters.map((ch) => [ch.order, ch])
+      );
 
+      // Step 4: Upsert chapters from input
+      for (const chapterInput of input.chapters) {
+        const existingChapter = existingChaptersByOrder.get(chapterInput.order);
+        
+        let chapter;
+        if (existingChapter) {
+          // Update existing chapter
+          chapter = await tx.chapter.update({
+            where: { id: existingChapter.id },
+            data: {
+              content: chapterInput.content,
+              imageUrl: chapterInput.imageUrl || null,
+              audioUrl: chapterInput.audioUrl || null,
+              order: chapterInput.order,
+            },
+          });
+          
+          logger.info("Chapter updated in edit transaction", {
+            chapterId: chapter.id,
+          });
+        } else {
+          // Create new chapter
+          chapter = await tx.chapter.create({
+            data: {
+              storyId: story.id,
+              content: chapterInput.content,
+              imageUrl: chapterInput.imageUrl || null,
+              audioUrl: chapterInput.audioUrl || null,
+              order: chapterInput.order,
+            },
+          });
+          
+          logger.info("Chapter created in edit transaction", {
+            chapterId: chapter.id,
+          });
+        }
+
+        chaptersUpserted++;
+
+        // Step 4b: Upsert chapter translations
         if (input.translationSource) {
+          // Delete old translations and recreate
+          await tx.chapterTranslation.deleteMany({
+            where: { chapterId: chapter.id },
+          });
+
           if (input.translationSource === TranslationSourceType.MANUAL) {
             await createManualTranslationRecordsForChapter(
               tx,
@@ -500,34 +511,56 @@ export async function editStoryWithChaptersTransaction(
           }
         }
 
-        // Step 4: Create challenge if provided
+        // Step 5: Upsert challenge if provided
         if (chapterInput.challenge) {
-          const challenge = await tx.challenge.create({
-            data: {
-              chapterId: chapter.id,
-              type: chapterInput.challenge.type,
-              question: chapterInput.challenge.question,
-              description: chapterInput.challenge.description || null,
-              baseStars: chapterInput.challenge.baseStars || 20,
-              order: chapterInput.challenge.order,
-              hints: chapterInput.challenge.hints || [],
-            },
-          });
+          const existingChallenge = existingChapter?.challenge;
 
-          challengesCreated++;
-          logger.info("Challenge created in edit transaction", {
-            challengeId: challenge.id,
-            type: challenge.type,
-          });
+          let challenge;
+          if (existingChallenge) {
+            // Update existing challenge
+            challenge = await tx.challenge.update({
+              where: { id: existingChallenge.id },
+              data: {
+                type: chapterInput.challenge.type,
+                question: chapterInput.challenge.question,
+                baseStars: chapterInput.challenge.baseStars || 20,
+                order: chapterInput.challenge.order,
+                hints: chapterInput.challenge.hints || [],
+              },
+            });
 
-          // Step 4b: Create challenge translations
-          logger.debug("Attempting challenge translations", {
-            challengeId: challenge.id,
-            translationSource: input.translationSource,
-            hasTranslations: !!chapterInput.challenge.translations && chapterInput.challenge.translations.length > 0,
-          });
+            logger.info("Challenge updated in edit transaction", {
+              challengeId: challenge.id,
+              type: challenge.type,
+            });
+          } else {
+            // Create new challenge
+            challenge = await tx.challenge.create({
+              data: {
+                chapterId: chapter.id,
+                type: chapterInput.challenge.type,
+                question: chapterInput.challenge.question,
+                baseStars: chapterInput.challenge.baseStars || 20,
+                order: chapterInput.challenge.order,
+                hints: chapterInput.challenge.hints || [],
+              },
+            });
 
+            logger.info("Challenge created in edit transaction", {
+              challengeId: challenge.id,
+              type: challenge.type,
+            });
+          }
+
+          challengesUpserted++;
+
+          // Step 5b: Upsert challenge translations
           if (input.translationSource) {
+            // Delete old translations and recreate
+            await tx.challengeTranslation.deleteMany({
+              where: { challengeId: challenge.id },
+            });
+
             if (input.translationSource === TranslationSourceType.MANUAL) {
               await createManualTranslationRecordsForChallenge(
                 tx,
@@ -544,31 +577,61 @@ export async function editStoryWithChaptersTransaction(
             }
           }
 
-          // Step 5: Create answers for challenge
-          for (const answerInput of chapterInput.challenge.answers) {
-            const answer = await tx.answer.create({
-              data: {
-                challengeId: challenge.id,
+          // Step 6: Upsert answers for challenge
+          const existingAnswers = existingChallenge?.answers || [];
+          const answerInputs = chapterInput.challenge.answers;
+          
+          // Map existing answers by order for efficient lookup
+          const existingAnswersByOrder = new Map(
+            existingAnswers.map((ans) => [ans.order ?? -1, ans])
+          );
+
+          for (let ansIdx = 0; ansIdx < answerInputs.length; ansIdx++) {
+            const answerInput = answerInputs[ansIdx];
+            const existingAnswer = existingAnswersByOrder.get(answerInput.order ?? -1);
+
+            let answer;
+            if (existingAnswer) {
+              // Update existing answer
+              answer = await tx.answer.update({
+                where: { id: existingAnswer.id },
+                data: {
+                  text: answerInput.text,
+                  isCorrect: answerInput.isCorrect,
+                  order: answerInput.order ?? null,
+                },
+              });
+
+              logger.info("Answer updated in edit transaction", {
+                answerId: answer.id,
                 text: answerInput.text,
-                isCorrect: answerInput.isCorrect,
-                order: answerInput.order ?? null,
-              },
-            });
+              });
+            } else {
+              // Create new answer
+              answer = await tx.answer.create({
+                data: {
+                  challengeId: challenge.id,
+                  text: answerInput.text,
+                  isCorrect: answerInput.isCorrect,
+                  order: answerInput.order ?? null,
+                },
+              });
 
-            answersCreated++;
-            logger.info("Answer created in edit transaction", {
-              answerId: answer.id,
-              text: answerInput.text,
-            });
+              logger.info("Answer created in edit transaction", {
+                answerId: answer.id,
+                text: answerInput.text,
+              });
+            }
 
-            // Step 5b: Create answer translations
-            logger.debug("Attempting answer translations", {
-              answerId: answer.id,
-              translationSource: input.translationSource,
-              hasTranslations: !!answerInput.translations && answerInput.translations.length > 0,
-            });
+            answersUpserted++;
 
+            // Step 6b: Upsert answer translations
             if (input.translationSource) {
+              // Delete old translations and recreate
+              await tx.answerTranslation.deleteMany({
+                where: { answerId: answer.id },
+              });
+
               if (input.translationSource === TranslationSourceType.MANUAL) {
                 await createManualTranslationRecordsForAnswer(
                   tx,
@@ -585,7 +648,51 @@ export async function editStoryWithChaptersTransaction(
               }
             }
           }
+
+          // Delete answers that are in existing but not in input
+          const answerIdsToKeep = new Set(
+            answerInputs
+              .map((a) => existingAnswersByOrder.get(a.order ?? -1)?.id)
+              .filter((id): id is string => !!id)
+          );
+
+          const answersToDelete = existingAnswers.filter(
+            (ans) => !answerIdsToKeep.has(ans.id)
+          );
+
+          for (const answerToDelete of answersToDelete) {
+            await tx.answer.delete({
+              where: { id: answerToDelete.id },
+            });
+            logger.info("Answer deleted in edit transaction", {
+              answerId: answerToDelete.id,
+            });
+          }
+        } else if (existingChapter?.challenge) {
+          // Challenge was removed - delete it
+          await tx.challenge.delete({
+            where: { id: existingChapter.challenge.id },
+          });
+          logger.info("Challenge deleted in edit transaction", {
+            challengeId: existingChapter.challenge.id,
+          });
         }
+      }
+
+      // Step 7: Delete chapters that were removed (exist in DB but not in input)
+      const inputChapterOrders = new Set(input.chapters.map((ch) => ch.order));
+      const chaptersToDelete = existingChapters.filter(
+        (ch) => !inputChapterOrders.has(ch.order)
+      );
+
+      for (const chapterToDelete of chaptersToDelete) {
+        await tx.chapter.delete({
+          where: { id: chapterToDelete.id },
+        });
+        chaptersDeleted++;
+        logger.info("Chapter deleted in edit transaction", {
+          chapterId: chapterToDelete.id,
+        });
       }
 
       // Fetch complete story with all relations
@@ -620,8 +727,12 @@ export async function editStoryWithChaptersTransaction(
     logger.info("Story edit transaction completed successfully", {
       storyId: result.id,
       chaptersCount: result.chapters.length,
-      challengesCreated: result.chapters.filter(c => c.challenge !== null).length,
-      answersCreated: result.chapters.reduce((acc, chapter) => {
+      chaptersUpserted,
+      chaptersDeleted,
+      challengesUpserted,
+      answersUpserted,
+      challengesExisting: result.chapters.filter(c => c.challenge !== null).length,
+      answersExisting: result.chapters.reduce((acc, chapter) => {
         return acc + (chapter.challenge?.answers.length || 0);
       }, 0),
     });
@@ -774,7 +885,6 @@ async function createTranslationRecordsForChapter(
           data: {
             chapterId,
             languageCode: LanguageCode[record.languageCode as keyof typeof LanguageCode],
-            title: record.title || "",
             content: record.content || "",
             audioUrl: record.audioUrl || null,
           },
@@ -814,7 +924,6 @@ async function createManualTranslationRecordsForChapter(
         data: {
           chapterId,
           languageCode: LanguageCode[translation.languageCode as keyof typeof LanguageCode],
-          title: translation.title || "",
           content: translation.content || "",
           audioUrl: translation.audioUrl || null,
         },
@@ -865,7 +974,6 @@ async function createTranslationRecordsForChallenge(
             challengeId,
             languageCode: LanguageCode[record.languageCode as keyof typeof LanguageCode],
             question: record.question || "",
-            description: record.description || null,
             hints: record.hints || [],
           },
         });
@@ -905,7 +1013,6 @@ async function createManualTranslationRecordsForChallenge(
           challengeId,
           languageCode: LanguageCode[translation.languageCode as keyof typeof LanguageCode],
           question: translation.question || "",
-          description: translation.description || null,
           hints: translation.hints || [],
         },
       });

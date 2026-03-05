@@ -261,7 +261,6 @@ export interface StoryTranslation {
 export interface Chapter {
   id: string;
   storyId: string;
-  title: string;
   content: string; // Reading content (text)
   imageUrl?: string;
   audioUrl?: string;
@@ -277,7 +276,6 @@ export interface ChapterTranslation {
   id: string;
   chapterId: string;
   languageCode: LanguageCode;
-  title: string;
   content: string;
   audioUrl?: string;
   createdAt: Date;
@@ -530,7 +528,6 @@ export interface CreateAnswerInput {
 export interface CreateChallengeInput {
   type: ChallengeType;
   question: string;
-  description?: string | null;
   baseStars?: number;
   order: number;
   hints?: string[];
@@ -538,7 +535,6 @@ export interface CreateChallengeInput {
   translations?: Array<{
     languageCode: string;
     question?: string;
-    description?: string;
     hints?: string[];
   }>;
 }
@@ -547,7 +543,6 @@ export interface CreateChallengeInput {
  * Input type for creating a chapter with challenge
  */
 export interface CreateChapterInput {
-  title: string;
   content: string;
   imageUrl?: string | null;
   audioUrl?: string | null;
@@ -555,8 +550,8 @@ export interface CreateChapterInput {
   challenge?: CreateChallengeInput;
   translations?: Array<{
     languageCode: string;
-    title?: string;
     content?: string;
+    audioUrl?: string;
   }>;
 }
 
@@ -584,7 +579,7 @@ export interface ManualTranslationEdit {
   languageCode: string;
   name?: string;
   description?: string;
-  title?: string;
+  title?: string ;
   content?: string;
   question?: string;
   text?: string;

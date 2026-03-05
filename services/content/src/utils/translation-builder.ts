@@ -442,7 +442,6 @@ export function validateTranslationRecord(
       break;
 
     case "chapter":
-      if (!record.title) errors.push("title is required for chapter translation");
       if (!record.content) errors.push("content is required for chapter translation");
       if (!record.languageCode) errors.push("languageCode is required");
       break;

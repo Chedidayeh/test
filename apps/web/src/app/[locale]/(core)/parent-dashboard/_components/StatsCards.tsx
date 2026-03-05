@@ -145,7 +145,7 @@ export default function StatsCards({
           icon=""
           label={t("stats.totalReadingTime")}
           value={totalReadingTime}
-          suffix="minutes"
+          suffix={t("stats.minutes")}
           readingTimeSubtitle={readingTimeSubtitle}
           borderColor="border-pink-200 dark:border-pink-200/50"
           color="bg-linear-to-br from-pink-200/20 to-rose-200/20"
@@ -156,7 +156,7 @@ export default function StatsCards({
           icon=""
           label={t("stats.averagePerDay")}
           value={averagePerDay}
-          suffix="minutes"
+          suffix={t("stats.minutes")}
           readingTimeSubtitle={readingTimeSubtitle}
           suffixColor="text-green-500"
           borderColor="border-green-200 dark:border-green-200/50"
@@ -167,7 +167,7 @@ export default function StatsCards({
           icon=""
           label={t("stats.currentStreak")}
           value={currentStreak}
-          suffix="days"
+          suffix={currentStreak > 1 ? t("stats.days") : t("stats.day")}
           suffixColor="text-cyan-500"
           borderColor="border-cyan-200 dark:border-cyan-200/50"
           color="bg-linear-to-br from-cyan-200/20 to-cyan-200/20"

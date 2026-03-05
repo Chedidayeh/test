@@ -15,12 +15,15 @@ import {
   Progress,
   ChallengeStatus,
   ChallengeAttempt,
+  Local,
+  StoryTranslation,
 } from "@shared/types";
 import {
   transformStoryToPages,
   getChapterByPageNumber,
 } from "./storyDataTransform";
 import { useTranslations } from "next-intl";
+import { useLocale } from "@/src/contexts/LocaleContext";
 
 interface StoryReadingInteractiveProps {
   story: Story;
@@ -56,6 +59,7 @@ const StoryReadingInteractive = ({
   childId,
 }: StoryReadingInteractiveProps) => {
   const t = useTranslations("StoryReadingInterface");
+  const {locale} = useLocale();
 
   // Initialize page from checkpoint, or default to 1
   const initialPage = getPageNumberFromChapterId(
@@ -93,8 +97,36 @@ const StoryReadingInteractive = ({
     currentProgress?.gameSession?.starsEarned || 0,
   );
 
-  // Transform story chapters into pages
-  const pages = useMemo(() => transformStoryToPages(story), [story]);
+    // Locale-aware pages: pick translated chapter content/title when available
+    const localizedPages = useMemo(() => {
+      const baseLocale = (locale || Local.EN).split("-")[0].toUpperCase(); // EN, AR, FR
+      if (!story.chapters || story.chapters.length === 0) return [];
+  
+      const sortedChapters = [...story.chapters].sort((a, b) => a.order - b.order);
+  
+      return sortedChapters.map((chapter, index) => {
+        const translation = chapter.translations?.find((t) => t.languageCode === baseLocale);
+        return {
+          pageNumber: index + 1,
+          text: translation?.content || chapter.content || "",
+          image: chapter.imageUrl,
+          alt: `Page ${index + 1}`,
+          hasRiddle: !!chapter.challenge,
+        };
+      });
+    }, [story, locale]);
+  
+    // Localized story title based on current locale
+    const localizedTitle = useMemo(() => {
+      try {
+        const baseLocale = (locale || Local.EN).split("-")[0];
+        const langKey = baseLocale.toUpperCase(); // EN, AR, FR
+        const translation = story.translations?.find((t: StoryTranslation) => t.languageCode === langKey);
+        return translation?.title || story.title;
+      } catch {
+        return story.title;
+      }
+    }, [story, locale]);
 
   useEffect(() => {
     // Update challenge attempt state when current chapter changes
@@ -125,8 +157,8 @@ const StoryReadingInteractive = ({
   ]);
 
   useEffect(() => {
-    if (isPlaying && pages.length > 0) {
-      const words = pages[currentPage - 1].text.split(" ");
+    if (isPlaying && localizedPages.length > 0) {
+      const words = localizedPages[currentPage - 1].text.split(" ");
 
       // Start from the current wordIndex, or 0 if at the beginning
       let currentWordIndex = wordIndex;
@@ -146,7 +178,7 @@ const StoryReadingInteractive = ({
 
       return () => clearInterval(interval);
     }
-  }, [isPlaying, currentPage, pages, wordIndex]);
+  }, [isPlaying, currentPage, localizedPages, wordIndex]);
 
   const handlePlayPause = () => {
     setIsPlaying(!isPlaying);
@@ -167,7 +199,7 @@ const StoryReadingInteractive = ({
   };
 
   // Get current page data
-  const currentPageData = pages[currentPage - 1];
+  const currentPageData = localizedPages[currentPage - 1];
   const currentChallenge = currentChapter?.challenge || null;
 
   // Determine if riddle button should be shown
@@ -175,7 +207,6 @@ const StoryReadingInteractive = ({
   const shouldShowRiddleButton =
     currentPageData.hasRiddle &&
     (currentChallengeAttemptState?.status === ChallengeStatus.NOT_ATTEMPTED || currentChallengeAttemptState?.status === ChallengeStatus.INCORRECT);
-
   // Callback to update challenge attempt when submitted from riddle component
   const handleChallengeSubmitted = (updatedAttempt: ChallengeAttempt, starsEarned?: number) => {
     setCurrentChallengeAttemptState(updatedAttempt);
@@ -194,15 +225,15 @@ const StoryReadingInteractive = ({
     <div className="pt-16 sm:pt-20 pb-20 sm:pb-24 md:pb-28 lg:pb-32 flex flex-col">
       {/* Story Flow Navigation */}
       <StoryFlowNavigation
-        storyTitle={story.title}
+        storyTitle={localizedTitle}
         currentPage={currentPage}
         riddleMode={currentPageData.hasRiddle}
         showRiddle={showRiddle}
         setShowRiddle={setShowRiddle}
-        totalPages={pages.length}
+        totalPages={localizedPages.length}
         onPageChange={handlePageChange}
         currentProgress={currentProgress}
-        pages={pages}
+        pages={localizedPages}
         story={story}
         currentChallengeAttemptState={currentChallengeAttemptState}
         totalStarsEarned={totalStarsEarned}

@@ -101,7 +101,10 @@
 			"riddlesSolved": "Riddles Solved",
 			"totalReadingTime": "Total Reading Time",
 			"averagePerDay": "Average Per Day",
-			"currentStreak": "Current Streak"
+			"currentStreak": "Current Streak",
+			"minutes": "minutes",
+			"days": "days",
+			"day": "day"
 		},
 		"achievements": {
 			"title": "Badges & Achievements",
@@ -117,6 +120,7 @@
 			"levelLabel": "Level {level}"
 		},
 		"riddleStatistics": {
+			"chapter": "Chapter",
 			"title": "Riddle Statistics",
 			"description": "In-depth insights into {childName}'s reading and problem-solving journey",
 			"dashboardButton": "{childName}'s dashboard →",
@@ -238,7 +242,8 @@
 			"stats": {
 				"stars": "Stars earned:",
 				"stories": "Stories completed:",
-				"readingTime": "Minutes read:"
+				"readingTime": "Minutes read:",
+				"minutes": "{count} minutes"
 			},
 			"avatarAlt": "Avatar of {name}"
 		},

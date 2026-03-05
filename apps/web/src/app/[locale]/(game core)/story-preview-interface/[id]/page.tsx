@@ -35,7 +35,6 @@ export default async function page({
   }
 
   const story = await getStoryById(id);
-  console.log("Fetched story in page component:", story);
   if (!story) {
     return (
       <MissingDataAlert message={t("storyNotFound")} />

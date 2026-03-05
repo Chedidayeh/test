@@ -83,7 +83,10 @@
 			"riddlesSolved": "الألغاز المحلولة",
 			"totalReadingTime": "إجمالي وقت القراءة",
 			"averagePerDay": "المتوسط يوميًا",
-			"currentStreak": "السلسلة الحالية"
+			"currentStreak": "السلسلة الحالية",
+			"minutes": "دقيقة",
+			"days": "أيام",
+			"day": "يوم"
 		},
 		"tabs": {
 			"overview": "نظرة عامة",
@@ -94,7 +97,7 @@
 		"achievements": {
 			"title": "الشارات والإنجازات",
 			"unlockedSummary": "تم فتح {unlocked} من أصل {total} شارات لـ {childName}",
-			"dashboardButton":  "فضاء التعلم لطفلك {childName} →",
+			"dashboardButton": "فضاء التعلم لطفلك {childName} →",
 			"emptyTitle": "🏆",
 			"emptyMessage": "لا توجد شارات متاحة. تحقق لاحقًا للحصول على مزيد من الإنجازات!",
 			"locked": {
@@ -105,6 +108,7 @@
 			"levelLabel": "المستوى {level}"
 		},
 		"riddleStatistics": {
+			"chapter": "الفصل",
 			"title": "إحصائيات الألغاز",
 			"description": "رؤى متعمقة حول رحلة القراءة وحل المشكلات لـ {childName}.",
 			"dashboardButton": "فضاء التعلم لطفلك {childName} →",
@@ -179,7 +183,7 @@
 			},
 			"tableHeaders": {
 				"date": "التاريخ",
-				"minutes": "دقائق"
+				"minutes": "دقيقة"
 			},
 			"noActivityMessage": "لا توجد نشاطات قراءة بعد. ابدأ اللعب لرؤية إحصاءات القراءة!",
 			"dateRangePicker": {
@@ -226,7 +230,8 @@
 			"stats": {
 				"stars": "النجوم المكتسبة:",
 				"stories": "القصص المكتملة:",
-				"readingTime": "الدقائق المقروءة:"
+				"readingTime": "الدقائق المقروءة:",
+				"minutes": "{count} دقيقة"
 			},
 			"avatarAlt": "الصورة الرمزية لـ {name}"
 		},

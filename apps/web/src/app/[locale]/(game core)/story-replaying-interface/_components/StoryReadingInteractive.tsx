@@ -8,13 +8,10 @@ import ReadingSettings from "./ReadingSettings";
 import { CircleQuestionMark, Settings, X } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import StoryFlowNavigation from "./StoryFlowNavigation";
-import {
-  Story,
-} from "@shared/types";
-import {
-  transformStoryToPages,
-} from "./storyDataTransform";
+import { Local, Story, StoryTranslation } from "@shared/types";
+import { transformStoryToPages } from "./storyDataTransform";
 import { useTranslations } from "next-intl";
+import { useLocale } from "@/src/contexts/LocaleContext";
 
 interface StoryReplayingInteractiveProps {
   story: Story;
@@ -25,8 +22,9 @@ const StoryReplayingInteractive = ({
   story,
   childId,
 }: StoryReplayingInteractiveProps) => {
-    const t = useTranslations("StoryReadingInterface");
-  
+  const t = useTranslations("StoryReadingInterface");
+  const { locale } = useLocale();
+
   // Always start at the first page for replay
   const [currentPage, setCurrentPage] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -41,12 +39,45 @@ const StoryReplayingInteractive = ({
   const [showSettings, setShowSettings] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
 
-  // Transform story chapters into pages
-  const pages = useMemo(() => transformStoryToPages(story), [story]);
+  // Locale-aware pages: pick translated chapter content/title when available
+  const localizedPages = useMemo(() => {
+    const baseLocale = (locale || Local.EN).split("-")[0].toUpperCase(); // EN, AR, FR
+    if (!story.chapters || story.chapters.length === 0) return [];
 
+    const sortedChapters = [...story.chapters].sort(
+      (a, b) => a.order - b.order,
+    );
+
+    return sortedChapters.map((chapter, index) => {
+      const translation = chapter.translations?.find(
+        (t) => t.languageCode === baseLocale,
+      );
+      return {
+        pageNumber: index + 1,
+        text: translation?.content || chapter.content || "",
+        image: chapter.imageUrl,
+        alt: `Page ${index + 1}`,
+        hasRiddle: !!chapter.challenge,
+      };
+    });
+  }, [story, locale]);
+
+  // Localized story title based on current locale
+  const localizedTitle = useMemo(() => {
+    try {
+      const baseLocale = (locale || Local.EN).split("-")[0];
+      const langKey = baseLocale.toUpperCase(); // EN, AR, FR
+      const translation = story.translations?.find(
+        (t: StoryTranslation) => t.languageCode === langKey,
+      );
+      return translation?.title || story.title;
+    } catch {
+      return story.title;
+    }
+  }, [story, locale]);
   useEffect(() => {
-    if (isPlaying && pages.length > 0) {
-      const words = pages[currentPage - 1].text.split(" ");
+    if (isPlaying && localizedPages.length > 0) {
+      const words = localizedPages[currentPage - 1].text.split(" ");
 
       // Start from the current wordIndex, or 0 if at the beginning
       let currentWordIndex = wordIndex;
@@ -66,7 +97,7 @@ const StoryReplayingInteractive = ({
 
       return () => clearInterval(interval);
     }
-  }, [isPlaying, currentPage, pages, wordIndex]);
+  }, [isPlaying, currentPage, localizedPages, wordIndex]);
 
   const handlePlayPause = () => {
     setIsPlaying(!isPlaying);
@@ -87,15 +118,15 @@ const StoryReplayingInteractive = ({
   };
 
   // Get current page data
-  const currentPageData = pages[currentPage - 1];
+  const currentPageData = localizedPages[currentPage - 1];
 
   return (
     <div className="pt-16 sm:pt-20 pb-20 sm:pb-24 md:pb-28 lg:pb-32 flex flex-col">
       {/* Story Flow Navigation */}
       <StoryFlowNavigation
-        storyTitle={story.title}
+        storyTitle={localizedTitle}
         currentPage={currentPage}
-        totalPages={pages.length}
+        totalPages={localizedPages.length}
         onPageChange={handlePageChange}
         childId={childId}
       />
@@ -106,9 +137,9 @@ const StoryReplayingInteractive = ({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -12 }}
           transition={{ duration: 0.28 }}
-              className="flex-1 flex items-center justify-center"
+          className="flex-1 flex items-center justify-center"
         >
-            <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 max-w-4xl">
+          <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 max-w-4xl">
             {/* Story Content */}
             <StoryContent
               currentPage={currentPageData}
@@ -119,39 +150,36 @@ const StoryReplayingInteractive = ({
 
             {/* TTS Controls */}
             <motion.div
-                  className="mt-6 sm:mt-8"
+              className="mt-6 sm:mt-8"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.35 }}
             >
-              <Controls
-                isPlaying={isPlaying}
-                onPlayPause={handlePlayPause}
-              />
+              <Controls isPlaying={isPlaying} onPlayPause={handlePlayPause} />
             </motion.div>
           </div>
         </motion.div>
       </AnimatePresence>
 
-          <div className="fixed right-2 sm:right-4 md:right-6 lg:right-8 bottom-20 sm:bottom-24 md:bottom-28 lg:bottom-32 flex flex-col gap-2 sm:gap-3 z-40">
+      <div className="fixed right-2 sm:right-4 md:right-6 lg:right-8 bottom-20 sm:bottom-24 md:bottom-28 lg:bottom-32 flex flex-col gap-2 sm:gap-3 z-40">
         {/* Settings Button */}
         <motion.button
           onClick={() => setShowSettings(true)}
           whileHover={{ scale: 1.06 }}
-              className="w-12 h-12 sm:w-14 sm:h-14 bg-card hover:bg-accent hover:text-white text-foreground rounded-full shadow-warm-lg hover:scale-110 transition-smooth flex items-center justify-center flex-shrink-0"
+          className="w-12 h-12 sm:w-14 sm:h-14 bg-card hover:bg-accent hover:text-white text-foreground rounded-full shadow-warm-lg hover:scale-110 transition-smooth flex items-center justify-center flex-shrink-0"
           aria-label="Reading settings"
         >
-              <Settings size={20} className="sm:size-6" />
+          <Settings size={20} className="sm:size-6" />
         </motion.button>
 
         {/* Help Button */}
         <motion.button
           onClick={() => setShowHelp(true)}
           whileHover={{ scale: 1.06 }}
-              className="w-12 h-12 sm:w-14 sm:h-14 bg-card hover:bg-accent hover:text-white text-foreground rounded-full shadow-warm-lg hover:scale-110 transition-smooth flex items-center justify-center flex-shrink-0"
+          className="w-12 h-12 sm:w-14 sm:h-14 bg-card hover:bg-accent hover:text-white text-foreground rounded-full shadow-warm-lg hover:scale-110 transition-smooth flex items-center justify-center flex-shrink-0"
           aria-label="Reading help"
         >
-              <CircleQuestionMark size={20} className="sm:size-6" />
+          <CircleQuestionMark size={20} className="sm:size-6" />
         </motion.button>
       </div>
 
@@ -165,7 +193,6 @@ const StoryReplayingInteractive = ({
           onClose={() => setShowSettings(false)}
         />
       )}
-
 
       {/* Help Modal */}
       {showHelp && (

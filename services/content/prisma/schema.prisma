@@ -209,7 +209,6 @@ model Chapter {
   storyId String
   story   Story  @relation(fields: [storyId], references: [id], onDelete: Cascade)
 
-  title    String
   content  String // Reading content (text)
   imageUrl String?
   audioUrl String?
@@ -231,7 +230,6 @@ model ChapterTranslation {
   chapter   Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
   languageCode LanguageCode @default(EN)
-  title        String
   content      String
   audioUrl     String?
 
@@ -259,7 +257,6 @@ model Challenge {
 
   type        ChallengeType
   question    String
-  description String?
   baseStars   Int           @default(20) // Base stars for solving
   order       Int // Order in chapter
   hints       String[] // Array of hints for the challenge
@@ -280,7 +277,6 @@ model ChallengeTranslation {
 
   languageCode LanguageCode @default(EN)
   question     String
-  description  String?
   hints        String[]
 
   createdAt DateTime @default(now())

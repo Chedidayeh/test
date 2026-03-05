@@ -126,7 +126,7 @@ const StoryFlowNavigation = ({
               </div>
             </motion.div>
           ) : (
-            <h1 className="font-heading text-sm sm:text-base md:text-lg lg:text-xl text-foreground truncate max-w-[140px] sm:max-w-xs md:max-w-md px-2">
+            <h1 className="font-heading text-sm sm:text-base md:text-lg lg:text-xl text-foreground truncate max-w-35 sm:max-w-xs md:max-w-md px-2">
               {storyTitle}
             </h1>
           )}

@@ -91,8 +91,14 @@ export class TranslationAgent {
       return (
         message.includes("timeout") ||
         message.includes("network") ||
+        message.includes("connection") ||
+        message.includes("socket") ||
         message.includes("econnrefused") ||
-        message.includes("econnreset")
+        message.includes("econnreset") ||
+        message.includes("enotfound") ||
+        message.includes("etimedout") ||
+        message.includes("ehostunreach") ||
+        message.includes("hang up")
       );
     }
 

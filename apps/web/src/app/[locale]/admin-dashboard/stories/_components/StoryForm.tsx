@@ -122,7 +122,6 @@ const getInitialFormData = (data?: any): StoryFormData => {
     translationSource: TranslationSourceType.MANUAL,
     chapters: [
       {
-      title: "",
       content: "",
       imageUrl: "",
       audioUrl: "",
@@ -644,21 +643,6 @@ function ChapterAccordion({
           </div>
 
           <div>
-            <Label className="text-sm">Chapter Title</Label>
-            <Input
-              placeholder="Chapter title"
-              value={chapter.title}
-              onChange={(e) => onUpdateField("title", e.target.value)}
-              className="mt-1"
-            />
-            {errors[`chapters.${chapterIndex}.title`] && (
-              <span className="text-xs text-red-600 mt-1">
-                {errors[`chapters.${chapterIndex}.title`]}
-              </span>
-            )}
-          </div>
-
-          <div>
             <Label className="text-sm">Chapter Content</Label>
             <Textarea
               placeholder="Write your chapter content here..."
@@ -677,7 +661,7 @@ function ChapterAccordion({
           {isAutoTranslateMode(translationSource) && (
             <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-900">
               <p><strong>Auto-translate mode enabled</strong></p>
-              <p className="text-xs mt-1">The title and content above will be automatically translated to {getTargetLanguages(translationSource).join(", ")}.</p>
+              <p className="text-xs mt-1">The content above will be automatically translated to {getTargetLanguages(translationSource).join(", ")}.</p>
             </div>
           )}
 
@@ -686,23 +670,8 @@ function ChapterAccordion({
               <p className="text-sm font-medium ">Chapter Translations</p>
               {getAllLanguages().map((lang) => (
                 <div key={lang} className="space-y-2">
-                  <Label className="text-xs font-medium">{lang}</Label>
-                  <Input
-                    placeholder={`Chapter title in ${lang}`}
-                    value={chapter.translations?.find((t: any) => t.languageCode === lang)?.title || ""}
-                    onChange={(e) => {
-                      const translations = chapter.translations || [];
-                      const existing = translations.findIndex((t: any) => t.languageCode === lang);
-                      const updated = [...translations];
-                      if (existing >= 0) {
-                        updated[existing] = { ...updated[existing], title: e.target.value };
-                      } else {
-                        updated.push({ languageCode: lang, title: e.target.value, content: "" });
-                      }
-                      onUpdateField("translations", updated);
-                    }}
-                    className="text-sm"
-                  />
+                                    <Label className="text-xs font-medium">{lang}</Label>
+
                   <Textarea
                     placeholder={`Chapter content in ${lang}`}
                     value={chapter.translations?.find((t: any) => t.languageCode === lang)?.content || ""}
@@ -963,26 +932,11 @@ function ChallengeSection({
             )}
           </div>
 
-          <div>
-            <Label className="text-xs">Description (optional)</Label>
-            <Textarea
-              placeholder="Additional context for the challenge"
-              value={challenge.description || ""}
-              onChange={(e) => onUpdateField("description", e.target.value)}
-              className="mt-1 h-12 text-xs"
-            />
-            {errors[`chapters.${chapterIndex}.challenge.description`] && (
-              <span className="text-xs text-red-600 mt-1">
-                {errors[`chapters.${chapterIndex}.challenge.description`]}
-              </span>
-            )}
-          </div>
-
           {/* Manual Translation Fields for Challenge */}
           {isAutoTranslateMode(translationSource) && (
             <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-900">
               <p><strong>Auto-translate mode enabled</strong></p>
-              <p className="text-xs mt-1">The question and description above will be automatically translated to {getTargetLanguages(translationSource).join(", ")}.</p>
+              <p className="text-xs mt-1">The question above will be automatically translated to {getTargetLanguages(translationSource).join(", ")}.</p>
             </div>
           )}
 
@@ -1007,22 +961,6 @@ function ChallengeSection({
                       onUpdateField("translations", updated);
                     }}
                     className="text-xs h-16"
-                  />
-                  <Input
-                    placeholder={`Challenge description in ${lang}`}
-                    value={challenge.translations?.find((t: any) => t.languageCode === lang)?.description || ""}
-                    onChange={(e) => {
-                      const translations = challenge.translations || [];
-                      const existing = translations.findIndex((t: any) => t.languageCode === lang);
-                      const updated = [...translations];
-                      if (existing >= 0) {
-                        updated[existing] = { ...updated[existing], description: e.target.value };
-                      } else {
-                        updated.push({ languageCode: lang, question: "", description: e.target.value, hints: [] });
-                      }
-                      onUpdateField("translations", updated);
-                    }}
-                    className="text-xs"
                   />
                 </div>
               ))}

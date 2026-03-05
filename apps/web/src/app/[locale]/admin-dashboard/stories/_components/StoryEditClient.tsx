@@ -84,26 +84,24 @@ export function StoryEditClient({
             ? [{ languageCode: getSourceLanguageForMode(validatedData.translationSource)?.toUpperCase() || "EN", title: validatedData.title, description: validatedData.description }]
             : buildTranslations(validatedData.translations, validatedData.translationSource),
         chapters: validatedData.chapters.map((chapter) => ({
-          title: chapter.title,
           content: chapter.content,
           imageUrl: chapter.imageUrl || undefined,
           audioUrl: chapter.audioUrl || undefined,
           order: chapter.order,
           translations:
             validatedData.translationSource !== "manual"
-              ? [{ languageCode: getSourceLanguageForMode(validatedData.translationSource)?.toUpperCase() || "EN", title: chapter.title, content: chapter.content }]
+              ? [{ languageCode: getSourceLanguageForMode(validatedData.translationSource)?.toUpperCase() || "EN", content: chapter.content }]
               : buildTranslations(chapter.translations, validatedData.translationSource),
           ...(chapter.challenge && {
             challenge: {
               type: chapter.challenge.type,
               question: chapter.challenge.question,
-              description: chapter.challenge.description || undefined,
               baseStars: chapter.challenge.baseStars,
               order: chapter.challenge.order,
               hints: chapter.challenge.hints || [],
               translations:
                 validatedData.translationSource !== "manual"
-                  ? [{ languageCode: getSourceLanguageForMode(validatedData.translationSource)?.toUpperCase() || "EN", question: chapter.challenge.question, description: chapter.challenge.description, hints: chapter.challenge.hints }]
+                  ? [{ languageCode: getSourceLanguageForMode(validatedData.translationSource)?.toUpperCase() || "EN", question: chapter.challenge.question, hints: chapter.challenge.hints }]
                   : buildTranslations(chapter.challenge.translations, validatedData.translationSource),
               answers: chapter.challenge.answers.map((answer) => ({
                 text: answer.text,
