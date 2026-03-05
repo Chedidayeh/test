@@ -3,7 +3,7 @@ import { RoadmapService } from "../services/roadmap.service";
 import { sendSuccess, sendError } from "../utils/response";
 import { logger } from "../utils/logger";
 import { PrismaClient } from "@prisma/client";
-import { ApiResponse, Roadmap } from "@shared/types";
+import { ApiResponse, Roadmap, TranslationSourceType, ManualTranslationEdit } from "@shared/types";
 
 const prisma = new PrismaClient();
 const roadmapService = new RoadmapService(prisma);
@@ -106,9 +106,9 @@ export class RoadmapController {
    */
   async createRoadmap(req: Request, res: Response<ApiResponse<Roadmap>>): Promise<void> {
     try {
-      const { ageGroupId, themeId, readingLevel, title } = req.body;
+      const { ageGroupId, themeId, readingLevel, title, translationSource, translations } = req.body;
 
-      logger.info("Create roadmap request", { ageGroupId, themeId });
+      logger.info("Create roadmap request", { ageGroupId, themeId, translationSource });
 
       // Validate required fields
       if (!ageGroupId || ageGroupId.trim() === "") {
@@ -176,11 +176,41 @@ export class RoadmapController {
         return;
       }
 
+      // Validate translation source if provided
+      let validTranslationSource = translationSource;
+      if (translationSource && !Object.values(TranslationSourceType).includes(translationSource)) {
+        sendError(
+          res,
+          `Invalid translation source. Must be one of: ${Object.values(TranslationSourceType).join(", ")}`,
+          400,
+        );
+        return;
+      }
+
+      // Validate translations array if provided
+      let validTranslations: ManualTranslationEdit[] = [];
+      if (translations && Array.isArray(translations)) {
+        // Validate each translation has required title field
+        for (const translation of translations) {
+          if (!translation.languageCode) {
+            sendError(res, "Each translation must have a languageCode", 400);
+            return;
+          }
+          if (!translation.title || translation.title.trim() === "") {
+            sendError(res, "Each translation must have a non-empty title field", 400);
+            return;
+          }
+        }
+        validTranslations = translations;
+      }
+
       const roadmap = await roadmapService.createRoadmap({
         ageGroupId,
         themeId,
         readingLevel: readingLevel.toUpperCase(),
         title: title || null,
+        translationSource: validTranslationSource,
+        translations: validTranslations,
       });
 
       sendSuccess(res, roadmap, 201);
@@ -196,9 +226,9 @@ export class RoadmapController {
   async updateRoadmap(req: Request, res: Response<ApiResponse<Roadmap>>): Promise<void> {
     try {
       const { id } = req.params;
-      const { ageGroupId, readingLevel, title } = req.body;
+      const { ageGroupId, readingLevel, title, translationSource, translations } = req.body;
 
-      logger.info("Update roadmap request", { roadmapId: id });
+      logger.info("Update roadmap request", { roadmapId: id, translationSource });
 
       if (!id) {
         sendError(res, "Roadmap ID is required", 400);
@@ -206,8 +236,8 @@ export class RoadmapController {
       }
 
       // Validate at least one field is provided
-      if (!ageGroupId && !readingLevel && !title) {
-        sendError(res, "At least one field (ageGroupId, readingLevel, title) must be provided", 400);
+      if (!ageGroupId && !readingLevel && !title && !translationSource && !translations) {
+        sendError(res, "At least one field (ageGroupId, readingLevel, title, translationSource, translations) must be provided", 400);
         return;
       }
 
@@ -272,7 +302,40 @@ export class RoadmapController {
         }
       }
 
-      const updatedRoadmap = await roadmapService.updateRoadmap(id, updateData);
+      // Validate translation source if provided
+      let validTranslationSource = translationSource;
+      if (translationSource && !Object.values(TranslationSourceType).includes(translationSource)) {
+        sendError(
+          res,
+          `Invalid translation source. Must be one of: ${Object.values(TranslationSourceType).join(", ")}`,
+          400,
+        );
+        return;
+      }
+
+      // Validate translations array if provided
+      let validTranslations: ManualTranslationEdit[] = [];
+      if (translations && Array.isArray(translations)) {
+        // Validate each translation has required title field
+        for (const translation of translations) {
+          if (!translation.languageCode) {
+            sendError(res, "Each translation must have a languageCode", 400);
+            return;
+          }
+          if (!translation.title || translation.title.trim() === "") {
+            sendError(res, "Each translation must have a non-empty title field", 400);
+            return;
+          }
+        }
+        validTranslations = translations;
+      }
+
+      const updatedRoadmap = await roadmapService.updateRoadmap(
+        id,
+        updateData,
+        validTranslationSource,
+        validTranslations,
+      );
 
       sendSuccess(res, updatedRoadmap, 200);
     } catch (error) {

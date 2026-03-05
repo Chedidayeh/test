@@ -55,6 +55,7 @@ import {
   deleteWorldAction,
 } from "@/src/lib/content-service/server-actions";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface RoadmapsContentProps {
   roadmaps: Roadmap[];
@@ -69,6 +70,7 @@ export function RoadmapsContent({
   worlds: initialWorlds,
   themes: initialThemes,
 }: RoadmapsContentProps) {
+  const router = useRouter();
   // Data state
   const [roadmaps, setRoadmaps] = useState<Roadmap[]>(initialRoadmaps);
   const [ageGroups, setAgeGroups] = useState<AgeGroup[]>(initialAgeGroups);
@@ -105,6 +107,7 @@ export function RoadmapsContent({
         return false;
       }
       setAgeGroups([...ageGroups, result.data]);
+      router.refresh();
       return true;
     } catch (error) {
       toast.error("Failed to create age group");
@@ -133,6 +136,8 @@ export function RoadmapsContent({
       }
       setAgeGroups(ageGroups.map((ag) => (ag.id === id ? result.data : ag)));
       toast.success("Age group updated successfully");
+      router.refresh();
+
       return true;
     } catch (error) {
       toast.error("Failed to update age group");
@@ -150,6 +155,7 @@ export function RoadmapsContent({
       }
       setAgeGroups(ageGroups.filter((ag) => ag.id !== id));
       setRoadmaps(roadmaps.filter((r) => r.ageGroupId !== id));
+      router.refresh();
       return true;
     } catch (error) {
       toast.error("Failed to delete age group");
@@ -172,6 +178,7 @@ export function RoadmapsContent({
         return false;
       }
       setThemes([...themes, result.data]);
+      router.refresh();
       return true;
     } catch (error) {
       toast.error("Failed to create theme");
@@ -191,6 +198,8 @@ export function RoadmapsContent({
         return false;
       }
       setThemes(themes.map((t) => (t.id === id ? result.data : t)));
+      router.refresh();
+
       return true;
     } catch (error) {
       toast.error("Failed to update theme");
@@ -208,6 +217,8 @@ export function RoadmapsContent({
       }
       setThemes(themes.filter((t) => t.id !== id));
       setRoadmaps(roadmaps.filter((r) => r.themeId !== id));
+      router.refresh();
+
       return true;
     } catch (error) {
       toast.error("Failed to delete theme");
@@ -230,6 +241,8 @@ export function RoadmapsContent({
         return false;
       }
       setWorlds([...worlds, result.data]);
+      router.refresh();
+
       return true;
     } catch (error) {
       toast.error("Failed to create world");
@@ -249,6 +262,8 @@ export function RoadmapsContent({
         return false;
       }
       setWorlds(worlds.map((w) => (w.id === id ? result.data : w)));
+      router.refresh();
+
       return true;
     } catch (error) {
       toast.error("Failed to update world");
@@ -265,6 +280,8 @@ export function RoadmapsContent({
         return false;
       }
       setWorlds(worlds.filter((w) => w.id !== id));
+      router.refresh();
+
       return true;
     } catch (error) {
       toast.error("Failed to delete world");
@@ -282,14 +299,7 @@ export function RoadmapsContent({
   const handleCreateRoadmap = async (data: RoadmapFormData) => {
     setIsRoadmapLoading(true);
     try {
-      const roadmapData = {
-        ageGroupId: data.ageGroupId,
-        themeId: data.themeId,
-        readingLevel: data.readingLevel,
-        title: data.title,
-      };
-
-      const result = await createRoadmapAction(roadmapData);
+      const result = await createRoadmapAction(data);
       if (!result.success) {
         toast.error(result.error);
         return;
@@ -306,7 +316,9 @@ export function RoadmapsContent({
 
       setRoadmaps([...roadmaps, completeRoadmap]);
       setIsCreateRoadmapDialogOpen(false);
+
       toast.success("Roadmap created successfully");
+      router.refresh();
     } finally {
       setIsRoadmapLoading(false);
     }
@@ -317,14 +329,7 @@ export function RoadmapsContent({
     if (!editingRoadmap) return;
 
     try {
-      const roadmapData = {
-        ageGroupId: data.ageGroupId,
-        themeId: data.themeId,
-        readingLevel: data.readingLevel,
-        title: data.title,
-      };
-
-      const result = await updateRoadmapAction(editingRoadmap.id, roadmapData);
+      const result = await updateRoadmapAction(editingRoadmap.id, data);
       if (!result.success) {
         toast.error(result.error);
         return;
@@ -349,6 +354,7 @@ export function RoadmapsContent({
       setEditingRoadmap(null);
       setIsCreateRoadmapDialogOpen(false);
       toast.success("Roadmap updated successfully");
+      router.refresh();
     } finally {
       setIsRoadmapLoading(false);
     }
@@ -366,6 +372,7 @@ export function RoadmapsContent({
       setRoadmaps(roadmaps.filter((r) => r.id !== roadmap.id));
       setRoadmapToDelete(null);
       toast.success("Roadmap deleted successfully");
+      router.refresh();
     } finally {
       setIsRoadmapLoading(false);
     }

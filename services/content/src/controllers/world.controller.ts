@@ -3,7 +3,7 @@ import { WorldService } from "../services/world.service";
 import { sendSuccess, sendError } from "../utils/response";
 import { logger } from "../utils/logger";
 import { PrismaClient } from "@prisma/client";
-import { ApiResponse, World } from "@shared/types";
+import { ApiResponse, World, TranslationSourceType, ManualTranslationEdit } from "@shared/types";
 
 const prisma = new PrismaClient();
 const worldService = new WorldService(prisma);
@@ -83,9 +83,9 @@ export class WorldController {
    */
   async createWorld(req: Request, res: Response<ApiResponse<World>>): Promise<void> {
     try {
-      const { roadmapId, name, description, imageUrl, order } = req.body;
+      const { roadmapId, name, description, imageUrl, order, translationSource, translations } = req.body;
 
-      logger.info("Create world request", { name, roadmapId });
+      logger.info("Create world request", { name, roadmapId, translationSource });
 
       // Validate required fields
       if (!roadmapId || roadmapId.trim() === "") {
@@ -137,12 +137,46 @@ export class WorldController {
         }
       }
 
+      // Validate translation source if provided
+      let validTranslationSource = translationSource;
+      if (translationSource && !Object.values(TranslationSourceType).includes(translationSource)) {
+        sendError(
+          res,
+          `Invalid translation source. Must be one of: ${Object.values(TranslationSourceType).join(", ")}`,
+          400,
+        );
+        return;
+      }
+
+      // Validate translations array if provided
+      let validTranslations: ManualTranslationEdit[] = [];
+      if (translations && Array.isArray(translations)) {
+        // Validate each translation has both name and description
+        for (const translation of translations) {
+          if (!translation.languageCode) {
+            sendError(res, "Each translation must have a languageCode", 400);
+            return;
+          }
+          if (!translation.name || translation.name.trim() === "") {
+            sendError(res, "Each translation must have a non-empty name field", 400);
+            return;
+          }
+          if (!translation.description || translation.description.trim() === "") {
+            sendError(res, "Each translation must have a non-empty description field", 400);
+            return;
+          }
+        }
+        validTranslations = translations;
+      }
+
       const world = await worldService.createWorld({
         roadmapId,
         name: name.trim(),
         description: description?.trim() || null,
         imageUrl: imageUrl?.trim() || null,
         order: order ?? 0,
+        translationSource: validTranslationSource,
+        translations: validTranslations,
       });
 
       sendSuccess(res, world, 201);
@@ -158,9 +192,9 @@ export class WorldController {
   async updateWorld(req: Request, res: Response<ApiResponse<World>>): Promise<void> {
     try {
       const { id } = req.params;
-      const { name, description, imageUrl, order } = req.body;
+      const { name, description, imageUrl, order, translationSource, translations } = req.body;
 
-      logger.info("Update world request", { worldId: id });
+      logger.info("Update world request", { worldId: id, translationSource });
 
       if (!id) {
         sendError(res, "World ID is required", 400);
@@ -172,7 +206,9 @@ export class WorldController {
         name === undefined &&
         description === undefined &&
         imageUrl === undefined &&
-        order === undefined
+        order === undefined &&
+        !translationSource &&
+        !translations
       ) {
         sendError(
           res,
@@ -232,7 +268,44 @@ export class WorldController {
         updateData.order = order;
       }
 
-      const updatedWorld = await worldService.updateWorld(id, updateData);
+      // Validate translation source if provided
+      let validTranslationSource = translationSource;
+      if (translationSource && !Object.values(TranslationSourceType).includes(translationSource)) {
+        sendError(
+          res,
+          `Invalid translation source. Must be one of: ${Object.values(TranslationSourceType).join(", ")}`,
+          400,
+        );
+        return;
+      }
+
+      // Validate translations array if provided
+      let validTranslations: ManualTranslationEdit[] = [];
+      if (translations && Array.isArray(translations)) {
+        // Validate each translation has both name and description
+        for (const translation of translations) {
+          if (!translation.languageCode) {
+            sendError(res, "Each translation must have a languageCode", 400);
+            return;
+          }
+          if (!translation.name || translation.name.trim() === "") {
+            sendError(res, "Each translation must have a non-empty name field", 400);
+            return;
+          }
+          if (!translation.description || translation.description.trim() === "") {
+            sendError(res, "Each translation must have a non-empty description field", 400);
+            return;
+          }
+        }
+        validTranslations = translations;
+      }
+
+      const updatedWorld = await worldService.updateWorld(
+        id,
+        updateData,
+        validTranslationSource,
+        validTranslations,
+      );
 
       sendSuccess(res, updatedWorld, 200);
     } catch (error) {

@@ -2,12 +2,12 @@
 
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
+import { Textarea } from "@/src/components/ui/textarea";
 import { Label } from "@/src/components/ui/label";
 import { Card } from "@/src/components/ui/card";
-import { AlertCircle } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -16,7 +16,8 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { worldSchema, WorldFormData } from "../schemas/roadmapSchemas";
-import { World, Roadmap } from "@shared/types";
+import { World, Roadmap, TranslationSourceType, ManualTranslationEdit, LanguageCode } from "@shared/types";
+import { getSourceLanguageLabel } from "@/src/lib/translation-utils";
 
 interface WorldFormProps {
   world?: World;
@@ -36,6 +37,54 @@ export function WorldForm({
   onCancel,
 }: WorldFormProps) {
   const [orderValidationError, setOrderValidationError] = useState<string>("");
+  const [translationSource, setTranslationSource] = useState<TranslationSourceType>(TranslationSourceType.MANUAL);
+  const [manualTranslations, setManualTranslations] = useState<ManualTranslationEdit[]>([
+    { languageCode: LanguageCode.EN, name: "", description: "" },
+    { languageCode: LanguageCode.FR, name: "", description: "" },
+    { languageCode: LanguageCode.AR, name: "", description: "" },
+  ]);
+
+  // Initialize manual translations from existing data when editing
+  const computedTranslations = useMemo(() => {
+    if (world?.translations && world.translations.length > 0) {
+      // Create a map of existing translations by language code
+      const existingMap = new Map(
+        world.translations.map((t) => [
+          t.languageCode as LanguageCode,
+          { name: t.name, description: t.description || "" },
+        ])
+      );
+
+      // Merge with default structure to ensure all languages are present
+      return [
+        {
+          languageCode: LanguageCode.EN,
+          name: existingMap.get(LanguageCode.EN)?.name || "",
+          description: existingMap.get(LanguageCode.EN)?.description || "",
+        },
+        {
+          languageCode: LanguageCode.FR,
+          name: existingMap.get(LanguageCode.FR)?.name || "",
+          description: existingMap.get(LanguageCode.FR)?.description || "",
+        },
+        {
+          languageCode: LanguageCode.AR,
+          name: existingMap.get(LanguageCode.AR)?.name || "",
+          description: existingMap.get(LanguageCode.AR)?.description || "",
+        },
+      ];
+    }
+
+    return [
+      { languageCode: LanguageCode.EN, name: "", description: "" },
+      { languageCode: LanguageCode.FR, name: "", description: "" },
+      { languageCode: LanguageCode.AR, name: "", description: "" },
+    ];
+  }, [world?.translations]);
+
+  useEffect(() => {
+    setManualTranslations(computedTranslations);
+  }, [computedTranslations]);
 
   const {
     register,
@@ -53,6 +102,8 @@ export function WorldForm({
           description: world.description,
           imageUrl: world.imageUrl || "",
           order: world.order,
+          translationSource: TranslationSourceType.MANUAL,
+          translations: world.translations?.map((t) => ({ languageCode: t.languageCode.toUpperCase(), name: t.name, description: t.description ?? "" })) || [],
         }
       : {
           roadmapId: "",
@@ -60,6 +111,8 @@ export function WorldForm({
           description: "",
           imageUrl: "",
           order: 1,
+          translationSource: TranslationSourceType.MANUAL,
+          translations: [],
         },
   });
 
@@ -85,6 +138,14 @@ export function WorldForm({
     setValue("roadmapId", newRoadmapId);
     setValue("order", nextOrder);
     setOrderValidationError("");
+  };
+
+  const handleTranslationSourceChange = (value: string) => {
+    setTranslationSource(value as TranslationSourceType);
+  };
+
+  const handleTranslationChange = (languageCode: string, field: string, value: string) => {
+    setManualTranslations((prev) => prev.map((t) => (t.languageCode === languageCode ? { ...t, [field]: value } : t)));
   };
 
   // Validate order against existing worlds in selected roadmap on blur
@@ -115,8 +176,23 @@ export function WorldForm({
     [roadmapId, worlds]
   );
     
+  const handleFormSubmit = (data: WorldFormData) => {
+    const updatedData = {
+      ...data,
+      translationSource,
+      translations:
+        translationSource === TranslationSourceType.MANUAL
+          ? manualTranslations
+              .filter((t) => t.name && t.name.trim() !== "" && t.description && t.description.trim() !== "")
+              .map((t) => ({ languageCode: t.languageCode, name: t.name!, description: t.description! }))
+          : [],
+    };
+
+    onSubmit(updatedData);
+  };
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
       <Card className="p-6">
         <h3 className="font-medium mb-4">World Details</h3>
         <div className="space-y-4">
@@ -225,6 +301,58 @@ export function WorldForm({
               </span>
             )}
           </div>
+        </div>
+      </Card>
+
+      {/* Translation Section */}
+      <Card className="p-6">
+        <h3 className="font-medium mb-4">Translations</h3>
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="translationSource">Translation Mode</Label>
+            <Select value={translationSource} onValueChange={handleTranslationSourceChange}>
+              <SelectTrigger id="translationSource" className="mt-1">
+                <SelectValue placeholder="Select translation mode" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={TranslationSourceType.MANUAL}>Manual Translations</SelectItem>
+                <SelectItem value={TranslationSourceType.EN_TO_FR_AR}>Auto-translate from English</SelectItem>
+                <SelectItem value={TranslationSourceType.FR_TO_AR_EN}>Auto-translate from French</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-slate-500 mt-1">{getSourceLanguageLabel(translationSource as TranslationSourceType)}</p>
+          </div>
+
+          {translationSource === TranslationSourceType.MANUAL ? (
+            <div className="space-y-3 border-t pt-4">
+              {manualTranslations.map((translation) => (
+                <div key={translation.languageCode}>
+                  <Label htmlFor={`translation-name-${translation.languageCode}`}>{translation.languageCode}</Label>
+                  <Input
+                    id={`translation-name-${translation.languageCode}`}
+                    placeholder={`World name in ${translation.languageCode}`}
+                    value={translation.name}
+                    onChange={(e) => handleTranslationChange(translation.languageCode, "name", e.target.value)}
+                    className="mt-1"
+                  />
+                  <Label htmlFor={`translation-desc-${translation.languageCode}`} className="mt-2">Description</Label>
+                  <Textarea
+                    id={`translation-desc-${translation.languageCode}`}
+                    placeholder={`World description in ${translation.languageCode}`}
+                    value={translation.description}
+                    onChange={(e) => handleTranslationChange(translation.languageCode, "description", e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="border-t pt-4 rounded-md bg-blue-50 p-3">
+              <p className="text-sm text-blue-900">
+                The name/description in <strong>{translationSource === TranslationSourceType.EN_TO_FR_AR ? "English" : "French"}</strong> will be automatically translated to other languages by the system.
+              </p>
+            </div>
+          )}
         </div>
       </Card>
 

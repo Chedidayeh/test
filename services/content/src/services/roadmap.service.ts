@@ -1,7 +1,9 @@
-import { PrismaClient, ReadingLevel } from "@prisma/client";
+import { PrismaClient, ReadingLevel, LanguageCode } from "@prisma/client";
 import { logger } from "../utils/logger";
 import type { Roadmap } from "../types";
-import { AgeGroupStatus } from "@shared/types";
+import { AgeGroupStatus, TranslationSourceType, ManualTranslationEdit } from "@shared/types";
+import { getTranslationService } from "../translations/translation.service";
+import { TRANSLATION_CONFIG, TRANSLATION_STRATEGIES } from "../config/translation-config";
 
 export class RoadmapService {
   private prisma: PrismaClient;
@@ -190,31 +192,72 @@ export class RoadmapService {
     ageGroupId: string;
     themeId: string;
     readingLevel: ReadingLevel;
-    title?: string;
+    title?: string | null;
+    translationSource?: string;
+    translations?: ManualTranslationEdit[];
   }): Promise<Roadmap> {
     try {
       logger.info("Creating roadmap", {
         ageGroupId: data.ageGroupId,
         themeId: data.themeId,
+        translationSource: data.translationSource,
       });
 
-      const roadmap = await this.prisma.roadmap.create({
-        data,
-        include: {
-          theme: true,
-          ageGroup: true,
-          worlds: {
-            include: {
-              stories: true,
-            },
-            orderBy: { order: "asc" },
+      const { ageGroupId, themeId, readingLevel, title, translationSource, translations } = data;
+
+      // Create roadmap and translations in a transaction
+      const roadmap = await this.prisma.$transaction(async (tx) => {
+        // Create the roadmap first
+        const newRoadmap = await tx.roadmap.create({
+          data: {
+            ageGroupId,
+            themeId,
+            readingLevel,
+            title: title || null,
           },
-        },
-      });
+          include: {
+            theme: true,
+            ageGroup: true,
+            worlds: {
+              include: {
+                stories: true,
+              },
+              orderBy: { order: "asc" },
+            },
+          },
+        });
 
-      logger.info("Roadmap created successfully", {
-        roadmapId: roadmap.id,
-        ageGroupId: data.ageGroupId,
+        logger.info("Roadmap created successfully", {
+          roadmapId: newRoadmap.id,
+          ageGroupId: data.ageGroupId,
+        });
+
+        // Handle translations if translation source is provided
+        if (translationSource && TRANSLATION_CONFIG.ENABLE_AUTO_TRANSLATION) {
+          try {
+            const translationRecords = await this.handleTranslations(
+              tx,
+              newRoadmap.id,
+              "roadmapTranslation",
+              translationSource,
+              title || newRoadmap.title || "", // Only title field for Roadmap
+              translations,
+            );
+
+            logger.info("Translations created successfully", {
+              roadmapId: newRoadmap.id,
+              count: translationRecords.length,
+            });
+          } catch (translationError) {
+            logger.error("Error creating translations", {
+              roadmapId: newRoadmap.id,
+              error: String(translationError),
+            });
+            // Log but don't fail - roadmap is created
+          }
+        }
+
+        return newRoadmap;
       });
 
       return roadmap as Roadmap;
@@ -237,26 +280,70 @@ export class RoadmapService {
       readingLevel: ReadingLevel;
       title: string;
     }>,
+    translationSource?: string,
+    translations?: ManualTranslationEdit[],
   ): Promise<Roadmap> {
     try {
-      logger.info("Updating roadmap", { roadmapId });
+      logger.info("Updating roadmap", { roadmapId, translationSource });
 
-      const roadmap = await this.prisma.roadmap.update({
-        where: { id: roadmapId },
-        data,
-        include: {
-          theme: true,
-          ageGroup: true,
-          worlds: {
-            include: {
-              stories: true,
+      const roadmap = await this.prisma.$transaction(async (tx) => {
+        // Update the roadmap
+        const updatedRoadmap = await tx.roadmap.update({
+          where: { id: roadmapId },
+          data,
+          include: {
+            theme: true,
+            ageGroup: true,
+            worlds: {
+              include: {
+                stories: true,
+              },
+              orderBy: { order: "asc" },
             },
-            orderBy: { order: "asc" },
           },
-        },
+        });
+
+        logger.info("Roadmap updated successfully", { roadmapId });
+
+        // Handle translations if translation source is provided
+        if (translationSource && TRANSLATION_CONFIG.ENABLE_AUTO_TRANSLATION) {
+          try {
+            // Delete old translations
+            await tx.roadmapTranslation.deleteMany({
+              where: { roadmapId },
+            });
+
+            logger.info("Old translations deleted", { roadmapId });
+
+            // Get the title field for translation - use updated title if provided
+            const titleForTranslations = data.title || updatedRoadmap.title || "";
+
+            // Create new translations
+            const translationRecords = await this.handleTranslations(
+              tx,
+              roadmapId,
+              "roadmapTranslation",
+              translationSource,
+              titleForTranslations,
+              translations,
+            );
+
+            logger.info("Translations updated successfully", {
+              roadmapId,
+              count: translationRecords.length,
+            });
+          } catch (translationError) {
+            logger.error("Error updating translations", {
+              roadmapId,
+              error: String(translationError),
+            });
+            // Log but don't fail - roadmap is updated
+          }
+        }
+
+        return updatedRoadmap;
       });
 
-      logger.info("Roadmap updated successfully", { roadmapId });
       return roadmap as Roadmap;
     } catch (error) {
       logger.error("Error updating roadmap", {
@@ -296,5 +383,91 @@ export class RoadmapService {
       });
       throw error;
     }
+  }
+
+  /**
+   * Handle translations for roadmap (both MANUAL and AUTO modes)
+   * Roadmap has single field: title
+   */
+  private async handleTranslations(
+    tx: any, // Prisma transaction
+    roadmapId: string,
+    modelName: "roadmapTranslation",
+    translationSource: string,
+    sourceText: string,
+    manualTranslations?: ManualTranslationEdit[],
+  ): Promise<any[]> {
+    if (translationSource === TranslationSourceType.MANUAL && manualTranslations) {
+      // MANUAL mode: use provided translations
+      logger.info("[RoadmapService] Processing MANUAL translations", {
+        roadmapId,
+        count: manualTranslations.length,
+      });
+
+      const translationRecords = await tx.roadmapTranslation.createMany({
+        data: manualTranslations.map((t) => ({
+          roadmapId,
+          languageCode: t.languageCode as LanguageCode,
+          title: t.title || sourceText,
+        })),
+        skipDuplicates: true,
+      });
+
+      return translationRecords;
+    } else if (
+      translationSource === TranslationSourceType.EN_TO_FR_AR ||
+      translationSource === TranslationSourceType.FR_TO_AR_EN
+    ) {
+      // AUTO mode: use translation service
+      logger.info("[RoadmapService] Processing AUTO translations", {
+        roadmapId,
+        translationSource,
+      });
+
+      const strategy = TRANSLATION_STRATEGIES[translationSource];
+      const translationService = getTranslationService(this.prisma);
+
+      try {
+        const translations = await translationService.translateContent(
+          sourceText,
+          strategy.sourceLanguage,
+          strategy.targetLanguages,
+        );
+
+        // Include source language + target languages
+        const translationData = [
+          {
+            roadmapId,
+            languageCode: strategy.sourceLanguage,
+            title: sourceText,
+          },
+          ...Array.from(translations.entries()).map(([lang, text]) => ({
+            roadmapId,
+            languageCode: lang,
+            title: text,
+          })),
+        ];
+
+        const translationRecords = await tx.roadmapTranslation.createMany({
+          data: translationData,
+          skipDuplicates: true,
+        });
+
+        logger.info("[RoadmapService] AUTO translations created", {
+          roadmapId,
+          count: translationRecords.count,
+        });
+
+        return translationRecords || [];
+      } catch (error) {
+        logger.error("[RoadmapService] Error in AUTO translation", {
+          roadmapId,
+          error: String(error),
+        });
+        throw error;
+      }
+    }
+
+    return [];
   }
 }

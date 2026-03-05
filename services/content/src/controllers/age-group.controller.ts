@@ -4,7 +4,7 @@ import { sendSuccess, sendError } from "../utils/response";
 import { logger } from "../utils/logger";
 import { PrismaClient, AgeGroupStatus } from "@prisma/client";
 import { validateAgeGroupContentCompleteness } from "../utils/validation";
-import { ApiResponse, AgeGroup, AgeGroupContentValidationResult } from "@shared/types";
+import { ApiResponse, AgeGroup, AgeGroupContentValidationResult, TranslationSourceType, ManualTranslationEdit } from "@shared/types";
 
 const prisma = new PrismaClient();
 const ageGroupService = new AgeGroupService(prisma);
@@ -86,9 +86,9 @@ export class AgeGroupController {
    */
   async createAgeGroup(req: Request, res: Response<ApiResponse<AgeGroup>>): Promise<void> {
     try {
-      const { name, minAge, maxAge, status } = req.body;
+      const { name, minAge, maxAge, status, translationSource, translations } = req.body;
 
-      logger.info("Create age group request", { name });
+      logger.info("Create age group request", { name, translationSource });
 
       // Validate required fields
       if (!name || name.trim() === "") {
@@ -143,11 +143,41 @@ export class AgeGroupController {
         return;
       }
 
+      // Validate translation source if provided
+      let validTranslationSource = translationSource;
+      if (translationSource && !Object.values(TranslationSourceType).includes(translationSource)) {
+        sendError(
+          res,
+          `Invalid translation source. Must be one of: ${Object.values(TranslationSourceType).join(", ")}`,
+          400,
+        );
+        return;
+      }
+
+      // Validate translations array if provided
+      let validTranslations: ManualTranslationEdit[] = [];
+      if (translations && Array.isArray(translations)) {
+        // Validate each translation has required fields
+        for (const translation of translations) {
+          if (!translation.languageCode) {
+            sendError(res, "Each translation must have a languageCode", 400);
+            return;
+          }
+          if (!translation.name || translation.name.trim() === "") {
+            sendError(res, "Each translation must have a non-empty name field", 400);
+            return;
+          }
+        }
+        validTranslations = translations;
+      }
+
       const ageGroup = await ageGroupService.createAgeGroup({
         name: name.trim(),
         minAge: minAgeNum,
         maxAge: maxAgeNum,
         status: status || AgeGroupStatus.INACTIVE,
+        translationSource: validTranslationSource,
+        translations: validTranslations,
       });
 
       sendSuccess(res, ageGroup, 201);
@@ -165,9 +195,9 @@ export class AgeGroupController {
   async updateAgeGroup(req: Request, res: Response<ApiResponse<AgeGroup>>): Promise<void> {
     try {
       const { id } = req.params;
-      const { name, minAge, maxAge, status } = req.body;
+      const { name, minAge, maxAge, status, translationSource, translations } = req.body;
 
-      logger.info("Update age group request", { ageGroupId: id });
+      logger.info("Update age group request", { ageGroupId: id, translationSource });
 
       // Validate ID
       if (!id) {
@@ -176,10 +206,10 @@ export class AgeGroupController {
       }
 
       // Validate at least one field is provided
-      if (!name && minAge === undefined && maxAge === undefined && status === undefined) {
+      if (!name && minAge === undefined && maxAge === undefined && status === undefined && !translationSource && !translations) {
         sendError(
           res,
-          "At least one field (name, minAge, maxAge, status) must be provided",
+          "At least one field (name, minAge, maxAge, status, translationSource, translations) must be provided",
           400,
         );
         return;
@@ -297,6 +327,34 @@ export class AgeGroupController {
         }
       }
 
+      // Validate translation source if provided
+      let validTranslationSource = translationSource;
+      if (translationSource && !Object.values(TranslationSourceType).includes(translationSource)) {
+        sendError(
+          res,
+          `Invalid translation source. Must be one of: ${Object.values(TranslationSourceType).join(", ")}`,
+          400,
+        );
+        return;
+      }
+
+      // Validate translations array if provided
+      let validTranslations: ManualTranslationEdit[] = [];
+      if (translations && Array.isArray(translations)) {
+        // Validate each translation has required fields
+        for (const translation of translations) {
+          if (!translation.languageCode) {
+            sendError(res, "Each translation must have a languageCode", 400);
+            return;
+          }
+          if (!translation.name || translation.name.trim() === "") {
+            sendError(res, "Each translation must have a non-empty name field", 400);
+            return;
+          }
+        }
+        validTranslations = translations;
+      }
+
       // Validate age range if both are present
       const finalMinAge = updateData.minAge ?? existingAgeGroup.minAge;
       const finalMaxAge = updateData.maxAge ?? existingAgeGroup.maxAge;
@@ -312,6 +370,8 @@ export class AgeGroupController {
       const updatedAgeGroup = await ageGroupService.updateAgeGroup(
         id,
         updateData,
+        validTranslationSource,
+        validTranslations,
       );
 
       sendSuccess(res, updatedAgeGroup, 200);

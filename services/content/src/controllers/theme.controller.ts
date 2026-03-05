@@ -3,7 +3,7 @@ import { ThemeService } from "../services/theme.service";
 import { sendSuccess, sendError } from "../utils/response";
 import { logger } from "../utils/logger";
 import { PrismaClient } from "@prisma/client";
-import { ApiResponse, Theme } from "@shared/types";
+import { ApiResponse, Theme, TranslationSourceType, ManualTranslationEdit } from "@shared/types";
 
 const prisma = new PrismaClient();
 const themeService = new ThemeService(prisma);
@@ -69,9 +69,9 @@ export class ThemeController {
     res: Response<ApiResponse<Theme>>,
   ): Promise<void> {
     try {
-      const { name, description, imageUrl } = req.body;
+      const { name, description, imageUrl, translationSource, translations } = req.body;
 
-      logger.info("Create theme request", { name });
+      logger.info("Create theme request", { name, translationSource });
 
       // Validate required fields
       if (!name || name.trim() === "") {
@@ -119,10 +119,44 @@ export class ThemeController {
         return;
       }
 
+      // Validate translation source if provided
+      let validTranslationSource = translationSource;
+      if (translationSource && !Object.values(TranslationSourceType).includes(translationSource)) {
+        sendError(
+          res,
+          `Invalid translation source. Must be one of: ${Object.values(TranslationSourceType).join(", ")}`,
+          400,
+        );
+        return;
+      }
+
+      // Validate translations array if provided
+      let validTranslations: ManualTranslationEdit[] = [];
+      if (translations && Array.isArray(translations)) {
+        // Validate each translation has both name and description
+        for (const translation of translations) {
+          if (!translation.languageCode) {
+            sendError(res, "Each translation must have a languageCode", 400);
+            return;
+          }
+          if (!translation.name || translation.name.trim() === "") {
+            sendError(res, "Each translation must have a non-empty name field", 400);
+            return;
+          }
+          if (!translation.description || translation.description.trim() === "") {
+            sendError(res, "Each translation must have a non-empty description field", 400);
+            return;
+          }
+        }
+        validTranslations = translations;
+      }
+
       const theme = await themeService.createTheme({
         name: name.trim(),
         description: description.trim(),
         imageUrl: imageUrl && imageUrl.trim() !== "" ? imageUrl.trim() : null,
+        translationSource: validTranslationSource,
+        translations: validTranslations,
       });
 
       sendSuccess(res, theme, 201);
@@ -141,9 +175,9 @@ export class ThemeController {
   ): Promise<void> {
     try {
       const { id } = req.params;
-      const { name, description, imageUrl } = req.body;
+      const { name, description, imageUrl, translationSource, translations } = req.body;
 
-      logger.info("Update theme request", { themeId: id });
+      logger.info("Update theme request", { themeId: id, translationSource });
 
       if (!id) {
         sendError(res, "Theme ID is required", 400);
@@ -151,10 +185,10 @@ export class ThemeController {
       }
 
       // Validate at least one field is provided
-      if (!name && !description && imageUrl === undefined) {
+      if (!name && !description && imageUrl === undefined && !translationSource && !translations) {
         sendError(
           res,
-          "At least one field (name, description, imageUrl) must be provided",
+          "At least one field (name, description, imageUrl, translationSource, translations) must be provided",
           400,
         );
         return;
@@ -222,7 +256,44 @@ export class ThemeController {
         }
       }
 
-      const updatedTheme = await themeService.updateTheme(id, updateData);
+      // Validate translation source if provided
+      let validTranslationSource = translationSource;
+      if (translationSource && !Object.values(TranslationSourceType).includes(translationSource)) {
+        sendError(
+          res,
+          `Invalid translation source. Must be one of: ${Object.values(TranslationSourceType).join(", ")}`,
+          400,
+        );
+        return;
+      }
+
+      // Validate translations array if provided
+      let validTranslations: ManualTranslationEdit[] = [];
+      if (translations && Array.isArray(translations)) {
+        // Validate each translation has both name and description
+        for (const translation of translations) {
+          if (!translation.languageCode) {
+            sendError(res, "Each translation must have a languageCode", 400);
+            return;
+          }
+          if (!translation.name || translation.name.trim() === "") {
+            sendError(res, "Each translation must have a non-empty name field", 400);
+            return;
+          }
+          if (!translation.description || translation.description.trim() === "") {
+            sendError(res, "Each translation must have a non-empty description field", 400);
+            return;
+          }
+        }
+        validTranslations = translations;
+      }
+
+      const updatedTheme = await themeService.updateTheme(
+        id,
+        updateData,
+        validTranslationSource,
+        validTranslations,
+      );
 
       sendSuccess(res, updatedTheme, 200);
     } catch (error) {

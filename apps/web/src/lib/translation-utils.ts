@@ -1,0 +1,94 @@
+/**
+ * Shared translation utilities for manual and auto-translate modes
+ * Used across story creation/editing and age group management
+ */
+
+import { TranslationSourceType, ManualTranslationEdit } from "@shared/types";
+
+/**
+ * Get the source language code for a translation mode
+ * @param source - The translation source mode
+ * @returns Source language code (uppercase) or null for manual mode
+ */
+export function getSourceLanguageForMode(
+  source: TranslationSourceType
+): "EN" | "FR" | "AR" | null {
+  switch (source) {
+    case "en_to_fr_ar":
+      return "EN";
+    case "fr_to_ar_en":
+      return "FR";
+    case "manual":
+      return null; // All languages in manual mode
+    default:
+      console.warn(`Unknown translation source: ${source}`);
+      return null;
+  }
+}
+
+/**
+ * Build translations array based on translation source mode
+ * For AUTO mode: builds single translation from main field value using source language
+ * For MANUAL mode: returns all provided translations as-is
+ *
+ * @param translations - Provided manual translations
+ * @param translationSource - The translation source mode
+ * @param mainFieldValue - The main field value (string or object with title/description/content/question/text)
+ * @returns Array of translations or undefined
+ */
+export function buildTranslations(
+  translations: ManualTranslationEdit[] | undefined,
+  translationSource: TranslationSourceType,
+  mainFieldValue?: string | { title?: string; description?: string; content?: string; question?: string; text?: string; hints?: string[] }
+): ManualTranslationEdit[] | undefined {
+  const sourceLanguage = getSourceLanguageForMode(translationSource);
+
+  // For AUTO mode: build translation from main field value
+  if (sourceLanguage && mainFieldValue) {
+    if (typeof mainFieldValue === "string") {
+      // For single text fields (question, answer text, simple name)
+      return [{ languageCode: sourceLanguage, text: mainFieldValue }];
+    } else {
+      // For complex fields (title + description, title + content, question + hints)
+      return [{ languageCode: sourceLanguage, ...mainFieldValue }];
+    }
+  }
+
+  if (!translations || translations.length === 0) return undefined;
+
+  // If in auto-translate mode but no main field provided, filter provided translations to source language
+  if (sourceLanguage) {
+    return translations.filter((t) => t.languageCode === sourceLanguage);
+  }
+
+  // In MANUAL mode, return all translations
+  return translations;
+}
+
+export function getSourceLanguageLabel(source: TranslationSourceType): string {
+  switch (source) {
+    case "en_to_fr_ar":
+      return "Auto-translate from English";
+    case "fr_to_ar_en":
+      return "Auto-translate from French";
+    case "manual":
+      return "Manual translations";
+    default:
+      return "Unknown";
+  }
+}
+
+export function getTargetLanguages(source: TranslationSourceType): string[] {
+  switch (source) {
+    case "en_to_fr_ar":
+      return ["FR", "AR"];
+    case "fr_to_ar_en":
+      return ["AR", "EN"];
+    case "manual":
+      return ["EN", "FR", "AR"];
+    default:
+      return [];
+  }
+}
+
+export const ALL_LANGUAGES = ["EN", "FR", "AR"] as const;

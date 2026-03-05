@@ -77,9 +77,7 @@ export async function getStories(params?: StoryQueryParams) {
 }
 
 export async function getStoryById(storyId: string) {
-  const response = await apiRequest<ApiResponse<Story>>(
-    `/stories/${storyId}`,
-  );
+  const response = await apiRequest<ApiResponse<Story>>(`/stories/${storyId}`);
 
   if (isApiError(response)) {
     console.warn(
@@ -123,9 +121,8 @@ export async function getStoriesByWorld(worldId: string) {
 }
 
 export async function getStoriesCount() {
-  const response = await apiRequest<ApiResponse<{ count: number }>>(
-    `/stories/count`,
-  );
+  const response =
+    await apiRequest<ApiResponse<{ count: number }>>(`/stories/count`);
 
   if (isApiError(response)) {
     console.warn(
@@ -151,7 +148,9 @@ export async function getStoriesCount() {
  * @param storyIds - Array of story IDs to fetch
  * @returns Map of storyId -> Story for efficient lookup
  */
-export async function getStoriesByIds(storyIds: string[]): Promise<Map<string, Story>> {
+export async function getStoriesByIds(
+  storyIds: string[],
+): Promise<Map<string, Story>> {
   if (!storyIds || storyIds.length === 0) {
     return new Map();
   }
@@ -274,7 +273,7 @@ export async function getRoadmapsByAgeGroup(ageGroupId: string) {
  */
 export async function getRoadmapsByIds(roadmapIds: string[]) {
   if (!roadmapIds || roadmapIds.length === 0) {
-    return []
+    return [];
   }
 
   // Remove duplicates
@@ -293,7 +292,7 @@ export async function getRoadmapsByIds(roadmapIds: string[]) {
       "[Content Server API] Failed to fetch roadmaps by IDs:",
       response.error.message,
     );
-    return []
+    return [];
   }
 
   if (!response.success) {
@@ -302,7 +301,6 @@ export async function getRoadmapsByIds(roadmapIds: string[]) {
     );
     return [];
   }
-
 
   return response.data || [];
 }
@@ -335,9 +333,7 @@ export async function getWorlds() {
 }
 
 export async function getWorldById(worldId: string) {
-  const response = await apiRequest<ApiResponse<World>>(
-    `/worlds/${worldId}`,
-  );
+  const response = await apiRequest<ApiResponse<World>>(`/worlds/${worldId}`);
 
   if (isApiError(response)) {
     console.warn(
@@ -387,8 +383,7 @@ export async function getWorldsByRoadmap(roadmapId: string) {
  */
 // active age groups
 export async function getAgeGroups() {
-  const response =
-    await apiRequest<ApiResponse<AgeGroup[]>>("/age-groups");
+  const response = await apiRequest<ApiResponse<AgeGroup[]>>("/age-groups");
 
   if (isApiError(response)) {
     console.warn(
@@ -482,9 +477,7 @@ export async function getThemes() {
 }
 
 export async function getThemeById(themeId: string) {
-  const response = await apiRequest<ApiResponse<Theme>>(
-    `/themes/${themeId}`,
-  );
+  const response = await apiRequest<ApiResponse<Theme>>(`/themes/${themeId}`);
 
   if (isApiError(response)) {
     console.warn(
@@ -532,9 +525,7 @@ export async function getLevels() {
 }
 
 export async function getLevelById(levelId: string) {
-  const response = await apiRequest<ApiResponse<Level>>(
-    `/levels/${levelId}`,
-  );
+  const response = await apiRequest<ApiResponse<Level>>(`/levels/${levelId}`);
 
   if (isApiError(response)) {
     console.warn(
@@ -594,13 +585,15 @@ export async function createLevel(
     description?: string;
   }>,
 ) {
-  const response = await apiRequest<ApiResponse<Level>>(
-    `/levels`,
-    {
-      method: "POST",
-      body: JSON.stringify({ ...data, autoTranslateBadge, translationSource, translations }),
-    },
-  );
+  const response = await apiRequest<ApiResponse<Level>>(`/levels`, {
+    method: "POST",
+    body: JSON.stringify({
+      ...data,
+      autoTranslateBadge,
+      translationSource,
+      translations,
+    }),
+  });
 
   if (isApiError(response)) {
     console.error(
@@ -641,13 +634,10 @@ export async function updateLevel(
   autoTranslateBadge: boolean = false,
   translationSource?: string,
 ) {
-  const response = await apiRequest<ApiResponse<Level>>(
-    `/levels/${id}`,
-    {
-      method: "PUT",
-      body: JSON.stringify({ ...data, autoTranslateBadge, translationSource }),
-    },
-  );
+  const response = await apiRequest<ApiResponse<Level>>(`/levels/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({ ...data, autoTranslateBadge, translationSource }),
+  });
 
   if (isApiError(response)) {
     console.error(
@@ -697,7 +687,6 @@ export async function deleteLevel(id: string) {
   return { success: true as const, data: response.data };
 }
 
-
 /**
  * ============================================
  * Badge ENDPOINTS
@@ -726,9 +715,7 @@ export async function getBadges() {
 }
 
 export async function getBadgeById(badgeId: string) {
-  const response = await apiRequest<ApiResponse<Badge>>(
-    `/badges/${badgeId}`,
-  );
+  const response = await apiRequest<ApiResponse<Badge>>(`/badges/${badgeId}`);
 
   if (isApiError(response)) {
     console.warn(
@@ -779,15 +766,18 @@ export async function getBadgeByLevel(levelNumber: number) {
 
 // Age Group CRUD
 export async function createAgeGroup(
-  data: Omit<AgeGroup, "id" | "createdAt" | "updatedAt" | "roadmaps">,
+  data: Omit<
+    AgeGroup,
+    "id" | "createdAt" | "updatedAt" | "roadmaps" | "translations"
+  > & {
+    translationSource?: string;
+    translations?: Array<{ languageCode: string; name: string }>;
+  },
 ) {
-  const response = await apiRequest<ApiResponse<AgeGroup>>(
-    "/age-groups",
-    {
-      method: "POST",
-      body: JSON.stringify(data),
-    },
-  );
+  const response = await apiRequest<ApiResponse<AgeGroup>>("/age-groups", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
 
   if (isApiError(response)) {
     console.error(
@@ -812,7 +802,15 @@ export async function createAgeGroup(
 
 export async function updateAgeGroup(
   id: string,
-  data: Partial<Omit<AgeGroup, "id" | "createdAt" | "updatedAt" | "roadmaps">>,
+  data: Partial<
+    Omit<
+      AgeGroup,
+      "id" | "createdAt" | "updatedAt" | "roadmaps" | "translations"
+    >
+  > & {
+    translationSource?: string;
+    translations?: Array<{ languageCode: string; name: string }>;
+  },
 ) {
   const response = await apiRequest<ApiResponse<AgeGroup>>(
     `/age-groups/${id}`,
@@ -901,7 +899,13 @@ export async function validateAgeGroupReadiness(ageGroupId: string) {
 
 // Theme CRUD
 export async function createTheme(
-  data: Omit<Theme, "id" | "createdAt" | "updatedAt" | "roadmap">,
+  data: Omit<
+    Theme,
+    "id" | "createdAt" | "updatedAt" | "roadmap" | "translations"
+  > & {
+    translationSource?: string;
+    translations?: Array<{ languageCode: string; name: string }>;
+  },
 ) {
   const response = await apiRequest<ApiResponse<Theme>>("/themes", {
     method: "POST",
@@ -931,15 +935,17 @@ export async function createTheme(
 
 export async function updateTheme(
   id: string,
-  data: Partial<Omit<Theme, "id" | "createdAt" | "updatedAt" | "roadmap">>,
+  data: Partial<
+    Omit<Theme, "id" | "createdAt" | "updatedAt" | "roadmap" | "translations">
+  > & {
+    translationSource?: string;
+    translations?: Array<{ languageCode: string; name: string }>;
+  },
 ) {
-  const response = await apiRequest<ApiResponse<Theme>>(
-    `/themes/${id}`,
-    {
-      method: "PUT",
-      body: JSON.stringify(data),
-    },
-  );
+  const response = await apiRequest<ApiResponse<Theme>>(`/themes/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
 
   if (isApiError(response)) {
     console.error(
@@ -993,8 +999,17 @@ export async function deleteTheme(id: string) {
 export async function createRoadmap(
   data: Omit<
     Roadmap,
-    "id" | "createdAt" | "updatedAt" | "ageGroup" | "theme" | "worlds"
-  >,
+    | "id"
+    | "createdAt"
+    | "updatedAt"
+    | "ageGroup"
+    | "theme"
+    | "worlds"
+    | "translations"
+  > & {
+    translationSource?: string;
+    translations?: Array<{ languageCode: string; title: string }>;
+  },
 ) {
   const response = await apiRequest<ApiResponse<Roadmap>>("/roadmaps", {
     method: "POST",
@@ -1027,17 +1042,23 @@ export async function updateRoadmap(
   data: Partial<
     Omit<
       Roadmap,
-      "id" | "createdAt" | "updatedAt" | "ageGroup" | "theme" | "worlds"
+      | "id"
+      | "createdAt"
+      | "updatedAt"
+      | "ageGroup"
+      | "theme"
+      | "worlds"
+      | "translations"
     >
-  >,
+  > & {
+    translationSource?: string;
+    translations?: Array<{ languageCode: string; title: string }>;
+  },
 ) {
-  const response = await apiRequest<ApiResponse<Roadmap>>(
-    `/roadmaps/${id}`,
-    {
-      method: "PUT",
-      body: JSON.stringify(data),
-    },
-  );
+  const response = await apiRequest<ApiResponse<Roadmap>>(`/roadmaps/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
 
   if (isApiError(response)) {
     console.error(
@@ -1089,7 +1110,10 @@ export async function deleteRoadmap(id: string) {
 
 // World CRUD
 export async function createWorld(
-  data: Omit<World, "id" | "createdAt" | "updatedAt" | "roadmap" | "stories">,
+  data: Omit<World, "id" | "createdAt" | "updatedAt" | "roadmap" | "stories" | "translations"> & {
+    translationSource?: string;
+    translations?: Array<{ languageCode: string; name: string }>;
+  },
 ) {
   const response = await apiRequest<ApiResponse<World>>("/worlds", {
     method: "POST",
@@ -1120,16 +1144,16 @@ export async function createWorld(
 export async function updateWorld(
   id: string,
   data: Partial<
-    Omit<World, "id" | "createdAt" | "updatedAt" | "roadmap" | "stories">
-  >,
+    Omit<World, "id" | "createdAt" | "updatedAt" | "roadmap" | "stories" | "translations">
+  > & {
+    translationSource?: string;
+    translations?: Array<{ languageCode: string; name: string }>;
+  },
 ) {
-  const response = await apiRequest<ApiResponse<World>>(
-    `/worlds/${id}`,
-    {
-      method: "PUT",
-      body: JSON.stringify(data),
-    },
-  );
+  const response = await apiRequest<ApiResponse<World>>(`/worlds/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
 
   if (isApiError(response)) {
     console.error(

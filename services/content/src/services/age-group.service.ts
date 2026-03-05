@@ -1,6 +1,12 @@
-import { AgeGroupStatus, PrismaClient } from "@prisma/client";
+import { AgeGroupStatus, PrismaClient, LanguageCode } from "@prisma/client";
 import { logger } from "../utils/logger";
 import type { AgeGroup } from "../types";
+import { getTranslationService } from "../translations/translation.service";
+import { TranslationSourceType, ManualTranslationEdit } from "@shared/types";
+import {
+  TRANSLATION_CONFIG,
+  TRANSLATION_STRATEGIES,
+} from "../config/translation-config";
 
 export class AgeGroupService {
   private prisma: PrismaClient;
@@ -16,14 +22,21 @@ export class AgeGroupService {
     try {
       const ageGroups = await this.prisma.ageGroup.findMany({
         include: {
+          translations: true,
           roadmaps: {
             include: {
+              translations: true,
               worlds: {
                 include: {
+                  translations: true,
                   stories: true,
                 },
               },
-              theme: true,
+              theme: {
+                include: {
+                  translations: true,
+                },
+              },
               ageGroup: true,
             },
           },
@@ -132,20 +145,64 @@ export class AgeGroupService {
     minAge: number;
     maxAge: number;
     status: AgeGroupStatus;
+    translationSource?: string;
+    translations?: ManualTranslationEdit[];
   }): Promise<AgeGroup> {
     try {
-      logger.info("Creating age group", { name: data.name });
-
-      const ageGroup = await this.prisma.ageGroup.create({
-        data,
-        include: {
-          roadmaps: true,
-        },
+      logger.info("Creating age group", {
+        name: data.name,
+        translationSource: data.translationSource,
       });
 
-      logger.info("Age group created successfully", {
-        ageGroupId: ageGroup.id,
-        name: ageGroup.name,
+      const { name, minAge, maxAge, status, translationSource, translations } =
+        data;
+
+      // Create age group and translations in a transaction
+      const ageGroup = await this.prisma.$transaction(async (tx) => {
+        // Create the age group first
+        const newAgeGroup = await tx.ageGroup.create({
+          data: {
+            name,
+            minAge,
+            maxAge,
+            status,
+          },
+          include: {
+            roadmaps: true,
+          },
+        });
+
+        logger.info("Age group created successfully", {
+          ageGroupId: newAgeGroup.id,
+          name: newAgeGroup.name,
+        });
+
+        // Handle translations if translation source is provided
+        if (translationSource && TRANSLATION_CONFIG.ENABLE_AUTO_TRANSLATION) {
+          try {
+            const translationRecords = await this.handleTranslations(
+              tx,
+              newAgeGroup.id,
+              "ageGroupTranslation",
+              translationSource,
+              name, // Only name field for AgeGroup
+              translations,
+            );
+
+            logger.info("Translations created successfully", {
+              ageGroupId: newAgeGroup.id,
+              count: translationRecords.length,
+            });
+          } catch (translationError) {
+            logger.error("Error creating translations", {
+              ageGroupId: newAgeGroup.id,
+              error: String(translationError),
+            });
+            // Log but don't fail - age group is created
+          }
+        }
+
+        return newAgeGroup;
       });
 
       return ageGroup as AgeGroup;
@@ -169,20 +226,65 @@ export class AgeGroupService {
       maxAge: number;
       status: AgeGroupStatus;
     }>,
+    translationSource?: string,
+    translations?: ManualTranslationEdit[],
   ): Promise<AgeGroup> {
     try {
-      logger.info("Updating age group", { ageGroupId });
+      logger.info("Updating age group", { ageGroupId, translationSource });
 
-      const ageGroup = await this.prisma.ageGroup.update({
-        where: { id: ageGroupId },
-        data,
-        include: {
-          roadmaps: {
-            include: {
-              worlds: true,
+      const ageGroup = await this.prisma.$transaction(async (tx) => {
+        // Update the age group
+        const updatedAgeGroup = await tx.ageGroup.update({
+          where: { id: ageGroupId },
+          data,
+          include: {
+            roadmaps: {
+              include: {
+                worlds: true,
+              },
             },
           },
-        },
+        });
+
+        logger.info("Age group updated successfully", { ageGroupId });
+
+        // Handle translations if translation source is provided
+        if (translationSource && TRANSLATION_CONFIG.ENABLE_AUTO_TRANSLATION) {
+          try {
+            // Delete old translations
+            await tx.ageGroupTranslation.deleteMany({
+              where: { ageGroupId },
+            });
+
+            logger.info("Old translations deleted", { ageGroupId });
+
+            // Get the name field - use updated name if provided, otherwise keep existing
+            const nameForTranslations = data.name || updatedAgeGroup.name;
+
+            // Create new translations
+            const translationRecords = await this.handleTranslations(
+              tx,
+              ageGroupId,
+              "ageGroupTranslation",
+              translationSource,
+              nameForTranslations,
+              translations,
+            );
+
+            logger.info("Translations updated successfully", {
+              ageGroupId,
+              count: translationRecords.length,
+            });
+          } catch (translationError) {
+            logger.error("Error updating translations", {
+              ageGroupId,
+              error: String(translationError),
+            });
+            // Log but don't fail - age group is updated
+          }
+        }
+
+        return updatedAgeGroup;
       });
 
       logger.info("Age group updated successfully", { ageGroupId });
@@ -220,5 +322,93 @@ export class AgeGroupService {
       });
       throw error;
     }
+  }
+
+  /**
+   * Handle translations for age group (both MANUAL and AUTO modes)
+   */
+  private async handleTranslations(
+    tx: any, // Prisma transaction
+    ageGroupId: string,
+    modelName: "ageGroupTranslation",
+    translationSource: string,
+    sourceText: string,
+    manualTranslations?: ManualTranslationEdit[],
+  ): Promise<any[]> {
+    if (
+      translationSource === TranslationSourceType.MANUAL &&
+      manualTranslations
+    ) {
+      // MANUAL mode: use provided translations
+      logger.info("[AgeGroupService] Processing MANUAL translations", {
+        ageGroupId,
+        count: manualTranslations.length,
+      });
+
+      const translationRecords = await tx.ageGroupTranslation.createMany({
+        data: manualTranslations.map((t) => ({
+          ageGroupId,
+          languageCode: t.languageCode as LanguageCode,
+          name: t.name || sourceText,
+        })),
+        skipDuplicates: true,
+      });
+
+      return translationRecords;
+    } else if (
+      translationSource === TranslationSourceType.EN_TO_FR_AR ||
+      translationSource === TranslationSourceType.FR_TO_AR_EN
+    ) {
+      // AUTO mode: use translation service
+      logger.info("[AgeGroupService] Processing AUTO translations", {
+        ageGroupId,
+        translationSource,
+      });
+
+      const strategy = TRANSLATION_STRATEGIES[translationSource];
+      const translationService = getTranslationService(this.prisma);
+
+      try {
+        const translations = await translationService.translateContent(
+          sourceText,
+          strategy.sourceLanguage,
+          strategy.targetLanguages,
+        );
+
+        // Include source language + target languages
+        const translationData = [
+          {
+            ageGroupId,
+            languageCode: strategy.sourceLanguage,
+            name: sourceText,
+          },
+          ...Array.from(translations.entries()).map(([lang, text]) => ({
+            ageGroupId,
+            languageCode: lang,
+            name: text,
+          })),
+        ];
+
+        const translationRecords = await tx.ageGroupTranslation.createMany({
+          data: translationData,
+          skipDuplicates: true,
+        });
+
+        logger.info("[AgeGroupService] AUTO translations created", {
+          ageGroupId,
+          count: translationRecords.count,
+        });
+
+        return translationRecords || [];
+      } catch (error) {
+        logger.error("[AgeGroupService] Error in AUTO translation", {
+          ageGroupId,
+          error: String(error),
+        });
+        throw error;
+      }
+    }
+
+    return [];
   }
 }

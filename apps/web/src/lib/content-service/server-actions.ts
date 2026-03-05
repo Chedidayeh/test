@@ -7,7 +7,6 @@ import {
   Roadmap,
   World,
   Level,
-  Badge,
   ServiceResponse,
   CreateStoryWithChaptersInput,
   ApiResponse,
@@ -117,10 +116,25 @@ export async function fetchStoriesByIdsAction(storyIds: string[]): Promise<{
  */
 
 export async function createAgeGroupAction(
-  data: Omit<AgeGroup, "id" | "createdAt" | "updatedAt" | "roadmaps">,
+  data: Omit<
+    AgeGroup,
+    "id" | "createdAt" | "updatedAt" | "roadmaps" | "translations"
+  > & {
+    translationSource?: string;
+    translations?: Array<{ languageCode: string; name: string }>;
+  },
 ): Promise<ServiceResponse<AgeGroup>> {
   try {
-    const result = await createAgeGroup(data);
+    // Extract translation data
+    const { translationSource, translations, ...ageGroupData } = data;
+
+    // Pass translations to the API
+    const apiPayload = {
+      ...ageGroupData,
+      ...(translations && { translations, translationSource }),
+    };
+
+    const result = await createAgeGroup(apiPayload);
 
     if (!result.success) {
       return {
@@ -145,10 +159,27 @@ export async function createAgeGroupAction(
 
 export async function updateAgeGroupAction(
   id: string,
-  data: Partial<Omit<AgeGroup, "id" | "createdAt" | "updatedAt" | "roadmaps">>,
+  data: Partial<
+    Omit<
+      AgeGroup,
+      "id" | "createdAt" | "updatedAt" | "roadmaps" | "translations"
+    >
+  > & {
+    translationSource?: string;
+    translations?: Array<{ languageCode: string; name: string }>;
+  },
 ): Promise<ServiceResponse<AgeGroup>> {
   try {
-    const result = await updateAgeGroup(id, data);
+    // Extract translation data
+    const { translationSource, translations, ...ageGroupData } = data;
+
+    // Pass translations to the API
+    const apiPayload = {
+      ...ageGroupData,
+      ...(translations && { translations, translationSource }),
+    };
+
+    const result = await updateAgeGroup(id, apiPayload);
 
     if (!result.success) {
       return {
@@ -238,7 +269,13 @@ export async function validateAgeGroupReadinessAction(
  */
 
 export async function createThemeAction(
-  data: Omit<Theme, "id" | "createdAt" | "updatedAt" | "roadmap">,
+  data: Omit<
+    Theme,
+    "id" | "createdAt" | "updatedAt" | "roadmap" | "translations"
+  > & {
+    translationSource?: string;
+    translations?: Array<{ languageCode: string; name: string }>;
+  },
 ): Promise<ServiceResponse<Theme>> {
   try {
     const result = await createTheme(data);
@@ -265,7 +302,12 @@ export async function createThemeAction(
 
 export async function updateThemeAction(
   id: string,
-  data: Partial<Omit<Theme, "id" | "createdAt" | "updatedAt" | "roadmap">>,
+  data: Partial<
+    Omit<Theme, "id" | "createdAt" | "updatedAt" | "roadmap" | "translations">
+  > & {
+    translationSource?: string;
+    translations?: Array<{ languageCode: string; name: string }>;
+  },
 ): Promise<ServiceResponse<Theme>> {
   try {
     const result = await updateTheme(id, data);
@@ -325,8 +367,17 @@ export async function deleteThemeAction(
 export async function createRoadmapAction(
   data: Omit<
     Roadmap,
-    "id" | "createdAt" | "updatedAt" | "ageGroup" | "theme" | "worlds"
-  >,
+    | "id"
+    | "createdAt"
+    | "updatedAt"
+    | "ageGroup"
+    | "theme"
+    | "worlds"
+    | "translations"
+  > & {
+    translationSource?: string;
+    translations?: Array<{ languageCode: string; title: string }>;
+  },
 ): Promise<ServiceResponse<Roadmap>> {
   try {
     const result = await createRoadmap(data);
@@ -357,9 +408,18 @@ export async function updateRoadmapAction(
   data: Partial<
     Omit<
       Roadmap,
-      "id" | "createdAt" | "updatedAt" | "ageGroup" | "theme" | "worlds"
+      | "id"
+      | "createdAt"
+      | "updatedAt"
+      | "ageGroup"
+      | "theme"
+      | "worlds"
+      | "translations"
     >
-  >,
+  > & {
+    translationSource?: string;
+    translations?: Array<{ languageCode: string; title: string }>;
+  },
 ): Promise<ServiceResponse<Roadmap>> {
   try {
     const result = await updateRoadmap(id, data);
@@ -419,7 +479,13 @@ export async function deleteRoadmapAction(
  */
 
 export async function createWorldAction(
-  data: Omit<World, "id" | "createdAt" | "updatedAt" | "roadmap" | "stories">,
+  data: Omit<
+    World,
+    "id" | "createdAt" | "updatedAt" | "roadmap" | "stories" | "translations"
+  > & {
+    translationSource?: string;
+    translations?: Array<{ languageCode: string; name: string }>;
+  },
 ): Promise<ServiceResponse<World>> {
   try {
     const result = await createWorld(data);
@@ -447,8 +513,14 @@ export async function createWorldAction(
 export async function updateWorldAction(
   id: string,
   data: Partial<
-    Omit<World, "id" | "createdAt" | "updatedAt" | "roadmap" | "stories">
-  >,
+    Omit<
+      World,
+      "id" | "createdAt" | "updatedAt" | "roadmap" | "stories" | "translations"
+    >
+  > & {
+    translationSource?: string;
+    translations?: Array<{ languageCode: string; name: string }>;
+  },
 ): Promise<ServiceResponse<World>> {
   try {
     const result = await updateWorld(id, data);
@@ -631,7 +703,12 @@ export async function createLevelAction(
   }>,
 ): Promise<ServiceResponse<Level>> {
   try {
-    const result = await createLevel(data, autoTranslateBadge, translationSource, translations);
+    const result = await createLevel(
+      data,
+      autoTranslateBadge,
+      translationSource,
+      translations,
+    );
 
     if (!result.success) {
       return {
@@ -672,7 +749,12 @@ export async function updateLevelAction(
   translationSource?: string,
 ): Promise<ServiceResponse<Level>> {
   try {
-    const result = await updateLevel(id, data, autoTranslateBadge, translationSource);
+    const result = await updateLevel(
+      id,
+      data,
+      autoTranslateBadge,
+      translationSource,
+    );
 
     if (!result.success) {
       return {
@@ -719,5 +801,3 @@ export async function deleteLevelAction(
     };
   }
 }
-
-

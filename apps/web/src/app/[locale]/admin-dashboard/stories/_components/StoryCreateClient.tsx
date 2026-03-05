@@ -7,54 +7,10 @@ import type { CreateStoryWithChaptersInput, World, TranslationSourceType, Manual
 import { StoryFormData, storyFormSchema } from "../_schema/storySchemas";
 import { createStoryWithChaptersAction } from "@/src/lib/content-service/server-actions";
 import { StoryForm } from "./StoryForm";
+import { getSourceLanguageForMode, buildTranslations } from "@/src/lib/translation-utils";
 
 interface StoryCreateClientProps {
   worlds: World[];
-}
-
-/**
- * Helper function to transform translations based on translation source
- * For MANUAL mode: includes all provided translations
- * For AUTO mode: builds translations from main fields (title/description/question/text)
- */
-function buildTranslations(
-  translations: ManualTranslationEdit[] | undefined,
-  translationSource: TranslationSourceType,
-  mainFieldValue?: string | { title?: string; description?: string; question?: string }
-) {
-  const sourceLanguage = getSourceLanguageForMode(translationSource);
-  
-  // For AUTO mode: build translation from main field value
-  if (sourceLanguage && mainFieldValue) {
-    if (typeof mainFieldValue === "string") {
-      // For single text fields (question, answer text)
-      return [{ languageCode: sourceLanguage.toUpperCase(), text: mainFieldValue }];
-    } else {
-      // For complex fields (story/chapter with title + description/content)
-      return [{ languageCode: sourceLanguage.toUpperCase(), ...mainFieldValue }];
-    }
-  }
-  
-  if (!translations || translations.length === 0) return undefined;
-  
-  // If in auto-translate mode but no main field provided, filter provided translations to source language
-  if (sourceLanguage) {
-    return translations.filter((t) => t.languageCode === sourceLanguage.toUpperCase());
-  }
-  
-  // In MANUAL mode, return all translations
-  return translations;
-}
-
-function getSourceLanguageForMode(source: TranslationSourceType): string | null | undefined {
-  switch (source) {
-    case "en_to_fr_ar":
-      return "en";
-    case "fr_to_ar_en":
-      return "fr";
-    case "manual":
-      return null; // All languages in manual mode
-  }
 }
 
 export function StoryCreateClient({
@@ -79,7 +35,7 @@ export function StoryCreateClient({
         translationSource: validatedData.translationSource,
         translations: 
           validatedData.translationSource !== "manual"
-            ? [{ languageCode: getSourceLanguageForMode(validatedData.translationSource)?.toUpperCase() || "EN", title: validatedData.title, description: validatedData.description }]
+            ? [{ languageCode: getSourceLanguageForMode(validatedData.translationSource) || "EN", title: validatedData.title, description: validatedData.description }]
             : buildTranslations(validatedData.translations, validatedData.translationSource),
         chapters: validatedData.chapters.map((chapter) => ({
           content: chapter.content,
@@ -87,7 +43,7 @@ export function StoryCreateClient({
           order: chapter.order,
           translations:
             validatedData.translationSource !== "manual"
-              ? [{ languageCode: getSourceLanguageForMode(validatedData.translationSource)?.toUpperCase() || "EN", content: chapter.content }]
+              ? [{ languageCode: getSourceLanguageForMode(validatedData.translationSource) || "EN", content: chapter.content }]
               : buildTranslations(chapter.translations, validatedData.translationSource),
           ...(chapter.challenge && {
             challenge: {
@@ -98,7 +54,7 @@ export function StoryCreateClient({
               hints: chapter.challenge.hints || [],
               translations:
                 validatedData.translationSource !== "manual"
-                  ? [{ languageCode: getSourceLanguageForMode(validatedData.translationSource)?.toUpperCase() || "EN", question: chapter.challenge.question, hints: chapter.challenge.hints }]
+                  ? [{ languageCode: getSourceLanguageForMode(validatedData.translationSource) || "EN", question: chapter.challenge.question, hints: chapter.challenge.hints }]
                   : buildTranslations(chapter.challenge.translations, validatedData.translationSource),
               answers: chapter.challenge.answers.map((answer) => ({
                 text: answer.text,
@@ -106,7 +62,7 @@ export function StoryCreateClient({
                 order: answer.order || 0,
                 translations:
                   validatedData.translationSource !== "manual"
-                    ? [{ languageCode: getSourceLanguageForMode(validatedData.translationSource)?.toUpperCase() || "EN", text: answer.text }]
+                    ? [{ languageCode: getSourceLanguageForMode(validatedData.translationSource) || "EN", text: answer.text }]
                     : buildTranslations(answer.translations, validatedData.translationSource),
               })),
             },
