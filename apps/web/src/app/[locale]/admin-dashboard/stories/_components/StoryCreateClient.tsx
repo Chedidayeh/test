@@ -3,19 +3,27 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import type { CreateStoryWithChaptersInput, World, TranslationSourceType, ManualTranslationEdit } from "@shared/types";
+import type {
+  AgeGroup,
+  CreateStoryWithChaptersInput,
+  Roadmap,
+  World,
+} from "@shared/types";
 import { StoryFormData, storyFormSchema } from "../_schema/storySchemas";
 import { createStoryWithChaptersAction } from "@/src/lib/content-service/server-actions";
-import { StoryForm } from "./StoryForm";
-import { getSourceLanguageForMode, buildTranslations } from "@/src/lib/translation-utils";
+import {
+  getSourceLanguageForMode,
+  buildTranslations,
+} from "@/src/lib/translation-utils";
+import { NewStoryForm } from "./NewStoryForm";
 
 interface StoryCreateClientProps {
-  worlds: World[];
+    ageGroups : AgeGroup[];
+    roadmaps : Roadmap[];
+    worlds: World[];
 }
 
-export function StoryCreateClient({
-  worlds,
-}: StoryCreateClientProps) {
+export function StoryCreateClient({ ageGroups, roadmaps, worlds }: StoryCreateClientProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -33,18 +41,40 @@ export function StoryCreateClient({
         difficulty: validatedData.difficulty,
         order: validatedData.order,
         translationSource: validatedData.translationSource,
-        translations: 
+        translations:
           validatedData.translationSource !== "manual"
-            ? [{ languageCode: getSourceLanguageForMode(validatedData.translationSource) || "EN", title: validatedData.title, description: validatedData.description }]
-            : buildTranslations(validatedData.translations, validatedData.translationSource),
+            ? [
+                {
+                  languageCode:
+                    getSourceLanguageForMode(validatedData.translationSource) ||
+                    "EN",
+                  title: validatedData.title,
+                  description: validatedData.description,
+                },
+              ]
+            : buildTranslations(
+                validatedData.translations,
+                validatedData.translationSource,
+              ),
         chapters: validatedData.chapters.map((chapter) => ({
           content: chapter.content,
           imageUrl: chapter.imageUrl || undefined,
           order: chapter.order,
           translations:
             validatedData.translationSource !== "manual"
-              ? [{ languageCode: getSourceLanguageForMode(validatedData.translationSource) || "EN", content: chapter.content }]
-              : buildTranslations(chapter.translations, validatedData.translationSource),
+              ? [
+                  {
+                    languageCode:
+                      getSourceLanguageForMode(
+                        validatedData.translationSource,
+                      ) || "EN",
+                    content: chapter.content,
+                  },
+                ]
+              : buildTranslations(
+                  chapter.translations,
+                  validatedData.translationSource,
+                ),
           ...(chapter.challenge && {
             challenge: {
               type: chapter.challenge.type,
@@ -54,16 +84,39 @@ export function StoryCreateClient({
               hints: chapter.challenge.hints || [],
               translations:
                 validatedData.translationSource !== "manual"
-                  ? [{ languageCode: getSourceLanguageForMode(validatedData.translationSource) || "EN", question: chapter.challenge.question, hints: chapter.challenge.hints }]
-                  : buildTranslations(chapter.challenge.translations, validatedData.translationSource),
+                  ? [
+                      {
+                        languageCode:
+                          getSourceLanguageForMode(
+                            validatedData.translationSource,
+                          ) || "EN",
+                        question: chapter.challenge.question,
+                        hints: chapter.challenge.hints,
+                      },
+                    ]
+                  : buildTranslations(
+                      chapter.challenge.translations,
+                      validatedData.translationSource,
+                    ),
               answers: chapter.challenge.answers.map((answer) => ({
                 text: answer.text,
                 isCorrect: answer.isCorrect,
                 order: answer.order || 0,
                 translations:
                   validatedData.translationSource !== "manual"
-                    ? [{ languageCode: getSourceLanguageForMode(validatedData.translationSource) || "EN", text: answer.text }]
-                    : buildTranslations(answer.translations, validatedData.translationSource),
+                    ? [
+                        {
+                          languageCode:
+                            getSourceLanguageForMode(
+                              validatedData.translationSource,
+                            ) || "EN",
+                          text: answer.text,
+                        },
+                      ]
+                    : buildTranslations(
+                        answer.translations,
+                        validatedData.translationSource,
+                      ),
               })),
             },
           }),
@@ -81,14 +134,19 @@ export function StoryCreateClient({
         if (errorCode === "DUPLICATE_ORDER") {
           // Parse the order from the error message (e.g., "Order 1 is already used in this world")
           const orderMatch = errorMessage.match(/Order (\d+)/);
-          const duplicateOrder = orderMatch ? parseInt(orderMatch[1]) : validatedData.order;
+          const duplicateOrder = orderMatch
+            ? parseInt(orderMatch[1])
+            : validatedData.order;
 
           // Get the selected world to show taken orders
-          const selectedWorld = worlds.find((w) => w.id === validatedData.worldId);
-          const takenOrders = selectedWorld?.stories
-            ?.map((s) => s.order)
-            .sort((a, b) => a - b)
-            .join(", ") || `${duplicateOrder}`;
+          const selectedWorld = worlds.find(
+            (w) => w.id === validatedData.worldId,
+          );
+          const takenOrders =
+            selectedWorld?.stories
+              ?.map((s) => s.order)
+              .sort((a, b) => a - b)
+              .join(", ") || `${duplicateOrder}`;
 
           // Show polished error toast with actionable feedback
           toast.error(
@@ -96,11 +154,12 @@ export function StoryCreateClient({
             {
               description: `Taken orders: ${takenOrders}. Please choose a different order number.`,
               duration: 5000,
-            }
+            },
           );
         } else {
           toast.error("Failed to create story", {
-            description: errorMessage,
+            description:
+              "An unexpected error occurred. Verify your input and please try again.",
             duration: 4000,
           });
         }
@@ -113,9 +172,11 @@ export function StoryCreateClient({
         description: `"${validatedData.title}" has been added to ${selectedWorld?.name || "the world"}.`,
         duration: 4000,
       });
-      
+
       router.push("/admin-dashboard/stories");
     } catch (error) {
+      setIsLoading(false);
+
       console.error("Story creation error:", error);
       if (error instanceof Error) {
         toast.error("Validation failed", {
@@ -128,14 +189,13 @@ export function StoryCreateClient({
           duration: 4000,
         });
       }
-
-    } finally {
-      setIsLoading(false);
     }
   };
 
   return (
-    <StoryForm
+    <NewStoryForm
+      ageGroups={ageGroups}
+      roadmaps={roadmaps}
       worlds={worlds}
       onSubmit={handleSubmit}
       isLoading={isLoading}

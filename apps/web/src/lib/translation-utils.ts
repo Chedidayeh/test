@@ -3,7 +3,7 @@
  * Used across story creation/editing and age group management
  */
 
-import { TranslationSourceType, ManualTranslationEdit } from "@shared/types";
+import { TranslationSourceType, ManualTranslationEdit, LanguageCode } from "@shared/types";
 
 /**
  * Get the source language code for a translation mode
@@ -12,13 +12,13 @@ import { TranslationSourceType, ManualTranslationEdit } from "@shared/types";
  */
 export function getSourceLanguageForMode(
   source: TranslationSourceType
-): "EN" | "FR" | "AR" | null {
+): LanguageCode.EN | LanguageCode.FR | LanguageCode.AR | null {
   switch (source) {
-    case "en_to_fr_ar":
-      return "EN";
-    case "fr_to_ar_en":
-      return "FR";
-    case "manual":
+    case TranslationSourceType.EN_TO_FR_AR:
+      return LanguageCode.EN;
+    case TranslationSourceType.FR_TO_AR_EN:
+      return LanguageCode.FR;
+    case TranslationSourceType.MANUAL:
       return null; // All languages in manual mode
     default:
       console.warn(`Unknown translation source: ${source}`);
@@ -67,11 +67,11 @@ export function buildTranslations(
 
 export function getSourceLanguageLabel(source: TranslationSourceType): string {
   switch (source) {
-    case "en_to_fr_ar":
+    case TranslationSourceType.EN_TO_FR_AR:
       return "Auto-translate from English";
-    case "fr_to_ar_en":
+    case TranslationSourceType.FR_TO_AR_EN:
       return "Auto-translate from French";
-    case "manual":
+    case TranslationSourceType.MANUAL:
       return "Manual translations";
     default:
       return "Unknown";
@@ -80,15 +80,15 @@ export function getSourceLanguageLabel(source: TranslationSourceType): string {
 
 export function getTargetLanguages(source: TranslationSourceType): string[] {
   switch (source) {
-    case "en_to_fr_ar":
-      return ["FR", "AR"];
-    case "fr_to_ar_en":
-      return ["AR", "EN"];
-    case "manual":
-      return ["EN", "FR", "AR"];
+    case TranslationSourceType.EN_TO_FR_AR:
+      return [LanguageCode.FR, LanguageCode.AR];
+    case TranslationSourceType.FR_TO_AR_EN:
+      return [LanguageCode.AR, LanguageCode.EN];
+    case TranslationSourceType.MANUAL:
+      return [LanguageCode.EN, LanguageCode.FR, LanguageCode.AR];
     default:
       return [];
   }
 }
 
-export const ALL_LANGUAGES = ["EN", "FR", "AR"] as const;
+export const ALL_LANGUAGES = [LanguageCode.EN, LanguageCode.FR, LanguageCode.AR] as const;

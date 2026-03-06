@@ -7,8 +7,17 @@ import { StoryCreateClient } from "../_components/StoryCreateClient";
 export default async function NewStoryPage() {
   // Fetch data server-side
   const ageGroups = await getAgeGroupsForAdmin();
-  const roadmaps = ageGroups.map((group) => group.roadmaps).flat();
-  const worlds = roadmaps.map((roadmap) => roadmap.worlds).flat();
+  // filter age groups that have no roadmaps
+  const filteredAgeGroups = ageGroups.filter(
+    (group) => group.roadmaps.length > 0,
+  );
+
+  const roadmaps = filteredAgeGroups.map((group) => group.roadmaps).flat();
+  // filter roadmaps that have worlds
+  const filteredRoadmaps = roadmaps.filter(
+    (roadmap) => roadmap.worlds.length > 0,
+  );
+  const worlds = filteredRoadmaps.map((roadmap) => roadmap.worlds).flat();
 
   return (
     <div className="space-y-6">
@@ -22,14 +31,14 @@ export default async function NewStoryPage() {
         </Link>
         <div>
           <h1 className="text-2xl font-bold">Create New Story</h1>
-          <p className="text-slate-500 mt-1">
-            Add a new story to the platform
-          </p>
+          <p className="text-slate-500 mt-1">Add a new story to the platform</p>
         </div>
       </div>
 
       {/* Form */}
       <StoryCreateClient
+        ageGroups={filteredAgeGroups}
+        roadmaps={filteredRoadmaps}
         worlds={worlds}
       />
     </div>

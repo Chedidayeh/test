@@ -59,7 +59,7 @@ export default async function EditStoryPage({
       </div>
 
       {/* Form */}
-      <StoryEditClient worlds={worlds} story={story} />
+      <StoryEditClient ageGroups={ageGroups} roadmaps={roadmaps} worlds={worlds} story={story} />
     </div>
   );
 }
