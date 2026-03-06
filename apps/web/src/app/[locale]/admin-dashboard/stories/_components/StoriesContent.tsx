@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Edit2, Eye, Trash2 } from "lucide-react";
+import { Edit2, Eye, Loader2, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -21,6 +21,12 @@ import {
   fetchStoriesAction,
   deleteStoryAction,
 } from "@/src/lib/content-service/server-actions";
+import {
+  Dialog,
+  DialogOverlay,
+  DialogPortal,
+} from "@/src/components/ui/dialog";
+import { useTranslations } from "next-intl";
 
 interface StoriesContentProps {
   stories: Story[];
@@ -31,6 +37,8 @@ export function StoriesContent({
   stories: initialStories,
   pagination: initialPagination,
 }: StoriesContentProps) {
+    const t = useTranslations("CommonComponents");
+  
   const [stories, setStories] = useState<Story[]>(initialStories);
   const [pagination, setPagination] =
     useState<PaginationData>(initialPagination);
@@ -224,14 +232,20 @@ export function StoriesContent({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <Link href={`/story-preview-interface/${story.id}`} target="_blank">
+                <Link
+                  href={`/story-preview-interface/${story.id}`}
+                  target="_blank"
+                >
                   <DropdownMenuItem className="cursor-pointer">
                     <Eye className="mr-2 h-4 w-4" />
                     <span>Preview</span>
                   </DropdownMenuItem>
                 </Link>
                 <Link href={`/admin-dashboard/stories/edit/${story.id}`}>
-                  <DropdownMenuItem className="cursor-pointer">
+                  <DropdownMenuItem
+                    onClick={() => setIsLoading(true)}
+                    className="cursor-pointer"
+                  >
                     <Edit2 className="mr-2 h-4 w-4" />
                     <span>Edit</span>
                   </DropdownMenuItem>
@@ -265,6 +279,23 @@ export function StoriesContent({
         isLoading={isLoading}
         onConfirm={handleDelete}
       />
+
+      <Dialog open={isLoading}>
+        <DialogPortal>
+          <DialogOverlay className="bg-black/50 backdrop-blur-sm" />
+                <div className="fixed inset-0 z-99 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+        <div className="flex flex-col items-center gap-4">
+          <span className="inline-flex items-center gap-3">
+            <span
+              className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"
+              aria-hidden="true"
+            />
+            <span>{t("loading")}</span>
+          </span>
+        </div>
+      </div>
+        </DialogPortal>
+      </Dialog>
     </div>
   );
 }

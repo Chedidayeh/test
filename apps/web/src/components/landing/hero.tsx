@@ -8,6 +8,7 @@ import { FlipWords } from "../ui/flip-words";
 import { Session } from "next-auth";
 import { useTranslations } from "next-intl";
 import { useLocale } from "@/src/contexts/LocaleContext";
+import Link from "next/link";
 
 export default function Hero({ session }: { session: Session | null }) {
   const t = useTranslations("Hero");
@@ -38,24 +39,34 @@ export default function Hero({ session }: { session: Session | null }) {
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6 sm:pt-12">
-          <Button
-            className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4"
-            onClick={() => {
-              if (session?.user.newUser) {
-                router.push("/onboarding");
-              } else if (session?.user.newUser === false) {
-                router.push("/parent-dashboard");
-              } else {
-                loginModal.open();
-              }
-            }}
+          <Link
+            href={
+              session?.user?.newUser
+                ? "/onboarding"
+                : session?.user?.newUser === false 
+                  ? "/parent-dashboard"
+                  : ""
+            }
           >
-            {!session
-              ? t("cta.getStarted")
-              : session.user.newUser
-                ? t("cta.startAdventure")
-                : t("cta.parentDashboard")}
-          </Button>
+            <Button
+              className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4"
+              onClick={() => {
+                if (session?.user.newUser) {
+                  router.push("/onboarding");
+                } else if (session?.user.newUser === false) {
+                  router.push("/parent-dashboard");
+                } else {
+                  loginModal.open();
+                }
+              }}
+            >
+              {!session
+                ? t("cta.getStarted")
+                : session.user.newUser
+                  ? t("cta.startAdventure")
+                  : t("cta.parentDashboard")}
+            </Button>
+          </Link>
         </div>
 
         {/* Trust Badge */}
