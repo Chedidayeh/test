@@ -2,7 +2,7 @@
 import * as React from "react"
 
 import { Globe } from "lucide-react"
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { Button } from "../ui/button";
@@ -12,6 +12,7 @@ import { Button } from "../ui/button";
 export function Switcher() {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const locale = useLocale();
   const t = useTranslations('CommonComponents');
 
@@ -27,8 +28,12 @@ export function Switcher() {
     segments[1] = newLocale;
     const newPath = segments.join('/');
 
+    // Preserve search parameters when changing locale
+    const queryString = searchParams.toString();
+    const fullPath = queryString ? `${newPath}?${queryString}` : newPath;
+
     // Force a hard reload after changing the locale:
-    router.replace(newPath); // ensures new page fetches fresh data instantly
+    router.replace(fullPath); // ensures new page fetches fresh data instantly
     router.refresh(); // forces a refresh for server-side data
   };
 

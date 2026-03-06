@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
@@ -26,6 +27,7 @@ import {
   LanguageCode,
 } from "@shared/types";
 import { getSourceLanguageLabel } from "@/src/lib/translation-utils";
+import { getReadingLevelOptions } from "@/src/lib/reading-level-utils";
 
 interface RoadmapFormProps {
   roadmap?: Roadmap & { ageGroup?: AgeGroup; theme?: Theme };
@@ -43,6 +45,7 @@ export function RoadmapForm({
   onSubmit,
   isLoading = false,
 }: RoadmapFormProps) {
+  const t = useTranslations("RoadmapsLibrary.filterPanel");
   console.log("RoadmapForm render", { roadmap });
   const [translationSource, setTranslationSource] =
     useState<TranslationSourceType>(TranslationSourceType.MANUAL);
@@ -172,7 +175,8 @@ export function RoadmapForm({
     );
   };
 
-  const readingLevels = Object.values(ReadingLevel);
+  // Get reading level options with translated labels
+  const readingLevels = getReadingLevelOptions(t);
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
@@ -279,9 +283,8 @@ export function RoadmapForm({
                   </SelectTrigger>
                   <SelectContent>
                     {readingLevels.map((level) => (
-                      <SelectItem key={level} value={level}>
-                        {level.charAt(0).toUpperCase() +
-                          level.slice(1).toLowerCase()}
+                      <SelectItem key={level.value} value={level.value}>
+                        {level.label}
                       </SelectItem>
                     ))}
                   </SelectContent>

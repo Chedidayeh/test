@@ -424,7 +424,9 @@ export function RoadmapsContent({
       {/* Age Groups with Roadmaps */}
       {ageGroups.length > 0 ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {ageGroups.map((ageGroup) => {
+          {[...ageGroups]
+            .sort((a, b) => a.minAge - b.minAge || a.maxAge - b.maxAge)
+            .map((ageGroup) => {
             const ageGroupRoadmaps = roadmaps.filter(
               (r) => r.ageGroupId === ageGroup.id,
             );

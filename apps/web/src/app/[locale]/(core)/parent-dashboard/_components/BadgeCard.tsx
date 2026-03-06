@@ -2,9 +2,10 @@
 
 import { motion } from "framer-motion";
 import { Badge, Local, LanguageCode } from "@shared/types";
-import { useLocale } from "next-intl";
 import { LockIcon, StarIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useLocale } from "@/src/contexts/LocaleContext";
+import { getLanguageCode } from "@/src/lib/translation-utils";
 
 interface BadgeCardProps {
   badge: Badge;
@@ -29,17 +30,10 @@ export default function BadgeCard({
   showDetails = true,
 }: BadgeCardProps) {
   const t = useTranslations("ParentDashboard");
-  const locale = useLocale();
+  const {locale} = useLocale();
 
-  const getLanguageCode = () => {
-    const baseLocale = (locale || Local.EN).split("-")[0].toUpperCase();
-    if (baseLocale === "EN") return LanguageCode.EN;
-    if (baseLocale === "AR") return LanguageCode.AR;
-    if (baseLocale === "FR") return LanguageCode.FR;
-    return LanguageCode.EN;
-  };
 
-  const langCode = getLanguageCode();
+  const langCode = getLanguageCode(locale);
 
   const translation = badge.translations?.find((tr) => tr.languageCode === langCode);
   const localizedName = translation?.name || badge.name;

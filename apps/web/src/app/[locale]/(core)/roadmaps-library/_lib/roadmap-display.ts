@@ -7,13 +7,16 @@ import { Roadmap } from '@shared/types';
 export interface RoadmapDisplay {
   id: string;
   title: string;
+  themeName: string;
   category: string;
-  description: string;
+  themeDescription: string;
   coverImage: string;
   readingLevel: string;
-  ageGroup: string;
+  ageGroup: Roadmap["ageGroup"];
   worldCount: number;
   storyCount: number;
+  theme: Roadmap["theme"];
+  translations?: Roadmap["translations"];
 }
 
 /**
@@ -28,14 +31,17 @@ export function transformRoadmapForDisplay(roadmap: Roadmap): RoadmapDisplay {
 
   return {
     id: roadmap.id,
-    title: roadmap.theme.name + " - " + (roadmap.title || "Untitled Roadmap"),
+    title: roadmap.title || "Untitled Roadmap",
+    themeName: roadmap.theme.name,
     category: roadmap.theme.name, 
-    description: roadmap.theme.description || '',
+    themeDescription: roadmap.theme.description || '',
     coverImage: roadmap.theme.imageUrl || '/images/placeholder-roadmap.jpg',
     readingLevel: roadmap.readingLevel,
-    ageGroup: roadmap.ageGroup?.name || '',
+    ageGroup: roadmap.ageGroup,
     worldCount: roadmap.worlds.length,
     storyCount,
+    theme: roadmap.theme,
+    translations: roadmap.translations,
   };
 }
 

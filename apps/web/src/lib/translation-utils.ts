@@ -3,7 +3,12 @@
  * Used across story creation/editing and age group management
  */
 
-import { TranslationSourceType, ManualTranslationEdit, LanguageCode } from "@shared/types";
+import {
+  TranslationSourceType,
+  ManualTranslationEdit,
+  LanguageCode,
+  Local,
+} from "@shared/types";
 
 /**
  * Get the source language code for a translation mode
@@ -11,7 +16,7 @@ import { TranslationSourceType, ManualTranslationEdit, LanguageCode } from "@sha
  * @returns Source language code (uppercase) or null for manual mode
  */
 export function getSourceLanguageForMode(
-  source: TranslationSourceType
+  source: TranslationSourceType,
 ): LanguageCode.EN | LanguageCode.FR | LanguageCode.AR | null {
   switch (source) {
     case TranslationSourceType.EN_TO_FR_AR:
@@ -39,7 +44,16 @@ export function getSourceLanguageForMode(
 export function buildTranslations(
   translations: ManualTranslationEdit[] | undefined,
   translationSource: TranslationSourceType,
-  mainFieldValue?: string | { title?: string; description?: string; content?: string; question?: string; text?: string; hints?: string[] }
+  mainFieldValue?:
+    | string
+    | {
+        title?: string;
+        description?: string;
+        content?: string;
+        question?: string;
+        text?: string;
+        hints?: string[];
+      },
 ): ManualTranslationEdit[] | undefined {
   const sourceLanguage = getSourceLanguageForMode(translationSource);
 
@@ -91,4 +105,16 @@ export function getTargetLanguages(source: TranslationSourceType): string[] {
   }
 }
 
-export const ALL_LANGUAGES = [LanguageCode.EN, LanguageCode.FR, LanguageCode.AR] as const;
+export const getLanguageCode = (locale : Local) => {
+  const baseLocale = (locale || Local.EN).split("-")[0].toUpperCase();
+  if (baseLocale === LanguageCode.EN) return LanguageCode.EN;
+  if (baseLocale === LanguageCode.AR) return LanguageCode.AR;
+  if (baseLocale === LanguageCode.FR) return LanguageCode.FR;
+  return LanguageCode.EN;
+};
+
+export const ALL_LANGUAGES = [
+  LanguageCode.EN,
+  LanguageCode.FR,
+  LanguageCode.AR,
+] as const;

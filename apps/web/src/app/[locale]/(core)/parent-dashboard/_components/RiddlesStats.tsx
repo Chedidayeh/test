@@ -20,7 +20,9 @@ import { Progress, Story, Challenge, ChallengeAttempt, ChallengeStatus, Local, L
 import { calculateChallengeStats, getAggregatedChallengeStats, localizeChallengStats, LocalizedChallengeStats } from "../_lib/stats";
 import { fetchStoriesByIdsAction } from "@/src/lib/content-service/server-actions";
 import { useMemo, useState, useEffect } from "react";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations } from "next-intl";
+import { getLanguageCode } from "@/src/lib/translation-utils";
+import { useLocale } from "@/src/contexts/LocaleContext";
 
 interface RiddlesStatsProps {
   childProgress: Progress[];
@@ -28,18 +30,11 @@ interface RiddlesStatsProps {
 
 export default function RiddlesStats({ childProgress }: RiddlesStatsProps) {
   const t = useTranslations("ParentDashboard");
-  const locale = useLocale();
+  const {locale} = useLocale();
 
-  // Convert locale to LanguageCode for translations
-  const getLanguageCode = () => {
-    const baseLocale = (locale || Local.EN).split("-")[0].toUpperCase();
-    if (baseLocale === "EN") return LanguageCode.EN;
-    if (baseLocale === "AR") return LanguageCode.AR;
-    if (baseLocale === "FR") return LanguageCode.FR;
-    return LanguageCode.EN;
-  };
 
-  const langCode = getLanguageCode();
+
+  const langCode = getLanguageCode(locale);
 
   // Calculate challenge statistics from real progress data
   const challengeStats = useMemo(

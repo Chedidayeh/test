@@ -130,7 +130,11 @@ export class RoadmapService {
         },
         include: {
           translations: true,
-          theme: true,
+          theme: {
+            include:{
+              translations: true,
+            }
+          },
           ageGroup: true,
           worlds: {
             include: {

@@ -299,7 +299,14 @@
 			"ageGroupLabel": "Groupe d'âge",
 			"readingLevelLabel": "Niveau de lecture",
 			"clearAllFilters": "Effacer tous les filtres ({count})",
-			"activeCount": "{count} actif"
+			"activeCount": "{count} actif",
+			"readingLevels": {
+				"BEGINNER": "Débutant",
+				"EASY": "Facile",
+				"MEDIUM": "Moyen",
+				"HARD": "Difficile",
+				"ADVANCED": "Avancé"
+			}
 		},
 		"featuredCarousel": {
 			"startReading": "Commencer la lecture",

@@ -8,6 +8,7 @@ import { SessionProvider } from "next-auth/react";
 import { Toaster } from "../../components/ui/sonner";
 import { NextIntlClientProvider } from "next-intl";
 import { LocaleProvider } from "../../contexts/LocaleContext";
+import { Local } from "@shared/types";
 
 const fredoka = Fredoka({
   subsets: ["latin"],
@@ -42,7 +43,7 @@ export default async function RootLayout({
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
 }>) {
-  const { locale } = await params;
+  const { locale } = await params
 
   const isRTL = locale === "ar";
   return (
@@ -61,7 +62,7 @@ export default async function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
-              <LocaleProvider locale={locale}>
+              <LocaleProvider locale={locale as Local}>
                 <LoginProvider>{children}</LoginProvider>
                 <Toaster />
               </LocaleProvider>

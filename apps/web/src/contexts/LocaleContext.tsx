@@ -1,9 +1,10 @@
 // src/contexts/LocaleContext.tsx
 'use client';
+import { Local } from '@shared/types';
 import { createContext, useContext, ReactNode } from 'react';
 
 interface LocaleContextType {
-  locale: string;
+  locale: Local;
   isRTL: boolean;
 }
 
@@ -14,9 +15,9 @@ export function LocaleProvider({
   locale 
 }: { 
   children: ReactNode; 
-  locale: string; 
+  locale: Local; 
 }) {
-  const isRTL = locale === 'ar';
+  const isRTL = locale === Local.AR;
   
   return (
     <LocaleContext.Provider value={{ locale, isRTL }}>

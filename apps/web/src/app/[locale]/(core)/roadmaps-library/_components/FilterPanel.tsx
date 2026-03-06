@@ -14,6 +14,7 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { ReadingLevel } from "@shared/types";
 import { ChevronDown } from "lucide-react";
+import { getReadingLevelOptions } from "@/src/lib/reading-level-utils";
 
 interface FilterPanelProps {
   uniqueThemes: string[];
@@ -36,12 +37,8 @@ const FilterPanel = ({
   const [selectedAgeGroups, setSelectedAgeGroups] = useState<string[]>([]);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  const levels = ReadingLevel
-    ? Object.values(ReadingLevel).map((level) => ({
-        value: level,
-        label: level.charAt(0).toUpperCase() + level.slice(1),
-      }))
-    : [];
+  // Get reading level options with translated labels
+  const levels = getReadingLevelOptions(t);
 
   const handleCategoryToggle = (category: string) => {
     const updated = selectedCategories.includes(category)

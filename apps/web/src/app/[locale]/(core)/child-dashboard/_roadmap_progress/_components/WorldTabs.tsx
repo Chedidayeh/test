@@ -2,8 +2,10 @@
 
 import { motion } from "motion/react";
 import { Lock } from "lucide-react";
-import { World } from "@shared/types";
+import { LanguageCode, World } from "@shared/types";
 import { useTranslations } from "next-intl";
+import { useLocale } from "@/src/contexts/LocaleContext";
+import { getLanguageCode } from "@/src/lib/translation-utils";
 
 interface WorldTabsProps {
   worlds: World[];
@@ -18,6 +20,21 @@ export default function WorldTabs({
 }: WorldTabsProps) {
   const t = useTranslations("ChildDashboard");
   const selectedWorld = worlds.find((w) => w.id === selectedWorldId);
+  const { locale } = useLocale();
+
+  const langCode = getLanguageCode(locale);
+
+  const localizedWorld = (() => {
+    const translation = selectedWorld?.translations?.find(
+      (tr: { languageCode: LanguageCode }) => tr.languageCode === langCode,
+    );
+    return {
+      description:
+        translation?.description ||
+        selectedWorld?.description ||
+        selectedWorld?.description,
+    };
+  })();
 
   return (
     <div className="w-full">
@@ -28,7 +45,18 @@ export default function WorldTabs({
           <div className="flex flex-wrap gap-3 bg-card rounded-xl border p-3 max-w-max items-center justify-center ">
             {worlds.map((world) => {
               const isSelected = world.id === selectedWorldId;
-
+              const localizedWorld = (() => {
+                const translation = world?.translations?.find(
+                  (tr: { languageCode: LanguageCode }) =>
+                    tr.languageCode === langCode,
+                );
+                return {
+                  name:
+                    translation?.name ||
+                    world?.name ||
+                    world?.name,
+                };
+              })();
               return (
                 <motion.button
                   key={world.id}
@@ -58,7 +86,7 @@ export default function WorldTabs({
                     />
                   )}
 
-                  <span className="inline">{world.name}</span>
+                  <span className="inline">{localizedWorld.name}</span>
                 </motion.button>
               );
             })}
@@ -77,13 +105,14 @@ export default function WorldTabs({
           >
             <div className="flex-1 text-center">
               <p className="text-muted-foreground mb-3">
-                {selectedWorld.description}
+                {localizedWorld.description}
               </p>
 
               {/* Story Count */}
               <div className="mt-3 flex items-center justify-center gap-4">
                 <span className="text-muted-foreground">
-                  {selectedWorld.stories.length} {t("roadmapPage.worldTabs.storiesLabel")}
+                  {selectedWorld.stories.length}{" "}
+                  {t("roadmapPage.worldTabs.storiesLabel")}
                 </span>
               </div>
             </div>

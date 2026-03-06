@@ -287,7 +287,14 @@
 			"ageGroupLabel": "مجموعة العمر",
 			"readingLevelLabel": "مستوى القراءة",
 			"clearAllFilters": "مسح جميع المرشحات ({count})",
-			"activeCount": "{count} نشط"
+			"activeCount": "{count} نشط",
+			"readingLevels": {
+				"BEGINNER": "مبتدئ",
+				"EASY": "سهل",
+				"MEDIUM": "متوسط",
+				"HARD": "صعب",
+				"ADVANCED": "صعب جداً"
+			}
 		},
 		"featuredCarousel": {
 			"startReading": "ابدأ القراءة",

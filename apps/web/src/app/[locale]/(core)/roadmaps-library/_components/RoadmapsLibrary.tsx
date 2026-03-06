@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useState } from "react";
@@ -7,16 +6,10 @@ import SearchBar from "./SearchBar";
 import FilterPanel from "./FilterPanel";
 import FeaturedCarousel from "./FeaturedCarousel";
 import RoadmapCard from "./RoadmapCard";
-import {
-  Sheet,
-  SheetTrigger,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/src/components/ui/sheet";
-import { Button } from "@/src/components/ui/button";
-import { Roadmap, ChildProfile } from "@shared/types";
+import { Roadmap, ChildProfile, LanguageCode } from "@shared/types";
 import { transformRoadmapForDisplay } from "../_lib/roadmap-display";
+import { getLanguageCode } from "@/src/lib/translation-utils";
+import { useLocale } from "@/src/contexts/LocaleContext";
 
 interface Filters {
   categories: string[];
@@ -34,6 +27,11 @@ const RoadmapsLibrary = ({
   childrenList = [],
 }: RoadmapsLibraryProps) => {
   const t = useTranslations("RoadmapsLibrary");
+  const {locale} = useLocale();
+
+  const langCode = getLanguageCode(locale);
+
+
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<Filters>({
     categories: [],
@@ -47,14 +45,38 @@ const RoadmapsLibrary = ({
   // Create a map for quick lookup of original roadmaps
   const roadmapMap = new Map(roadmaps.map((r) => [r.id, r]));
 
-  // Get unique themes/categories from roadmaps
+  // Build localized theme names map
+  const localizedThemeNames = new Map<string, string>();
+  roadmaps.forEach((roadmap) => {
+    const themeTranslation = roadmap.theme.translations?.find(
+      (tr: { languageCode: LanguageCode }) => tr.languageCode === langCode
+    );
+    localizedThemeNames.set(
+      roadmap.theme.id,
+      themeTranslation?.name || roadmap.theme.name
+    );
+  });
+
+  // Build localized age group names map
+  const localizedAgeGroupNames = new Map<string, string>();
+  roadmaps.forEach((roadmap) => {
+    const ageGroupTranslation = roadmap.ageGroup.translations?.find(
+      (tr: { languageCode: LanguageCode }) => tr.languageCode === langCode
+    );
+    localizedAgeGroupNames.set(
+      roadmap.ageGroup.id,
+      ageGroupTranslation?.name || roadmap.ageGroup.name
+    );
+  });
+
+  // Get unique localized themes/categories from roadmaps
   const uniqueThemes = Array.from(
-    new Set(displayRoadmaps.map((r) => r.category)),
+    new Set(roadmaps.map((r) => localizedThemeNames.get(r.theme.id) || r.theme.name)),
   );
 
-  // Get unique age groups from roadmaps
+  // Get unique localized age groups from roadmaps
   const uniqueAgeGroups = Array.from(
-    new Set(displayRoadmaps.map((r) => r.ageGroup)),
+    new Set(roadmaps.map((r) => localizedAgeGroupNames.get(r.ageGroup.id) || r.ageGroup.name)),
   );
 
   const getFilteredRoadmaps = () => {
@@ -65,15 +87,19 @@ const RoadmapsLibrary = ({
       filtered = filtered.filter(
         (roadmap) =>
           roadmap.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          roadmap.description.toLowerCase().includes(searchQuery.toLowerCase()),
+          roadmap.themeDescription.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          roadmap.themeName.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     }
 
     // Filter by categories (themes)
     if (filters.categories.length > 0) {
-      filtered = filtered.filter((roadmap) =>
-        filters.categories.includes(roadmap.title),
-      );
+      filtered = filtered.filter((roadmap) => {
+        const originalRoadmap = roadmapMap.get(roadmap.id);
+        if (!originalRoadmap) return false;
+        const localizedThemeName = localizedThemeNames.get(originalRoadmap.theme.id);
+        return filters.categories.includes(localizedThemeName || originalRoadmap.theme.name);
+      });
     }
 
     // Filter by reading levels
@@ -85,9 +111,12 @@ const RoadmapsLibrary = ({
 
     // Filter by age groups
     if (filters.ageGroups.length > 0) {
-      filtered = filtered.filter((roadmap) =>
-        filters.ageGroups.includes(roadmap.ageGroup),
-      );
+      filtered = filtered.filter((roadmap) => {
+        const originalRoadmap = roadmapMap.get(roadmap.id);
+        if (!originalRoadmap) return false;
+        const localizedAgeGroupName = localizedAgeGroupNames.get(originalRoadmap.ageGroup.id);
+        return filters.ageGroups.includes(localizedAgeGroupName || originalRoadmap.ageGroup.name);
+      });
     }
 
     return filtered;
@@ -102,6 +131,8 @@ const RoadmapsLibrary = ({
   };
 
   const filteredRoadmaps = getFilteredRoadmaps();
+
+
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-8">

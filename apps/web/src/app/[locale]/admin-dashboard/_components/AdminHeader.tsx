@@ -5,6 +5,7 @@ import { Button } from "@/src/components/ui/button";
 import { ModeToggle } from "@/src/components/shared/ModeToggle";
 import { Session } from "next-auth";
 import Profile from "@/src/components/shared/Profile";
+import { Switcher } from "@/src/components/shared/Switcher";
 
 interface AdminHeaderProps {
   session: Session | null;
@@ -32,6 +33,8 @@ export function AdminHeader({ session }: AdminHeaderProps) {
           <Profile session={session!} />
 
           <ModeToggle />
+
+          <Switcher />
         </div>
       </div>
     </header>

@@ -3,9 +3,11 @@
 import { Button } from "@/src/components/ui/button";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { ChildProfile, Roadmap } from "@shared/types";
+import { ChildProfile, LanguageCode, Roadmap } from "@shared/types";
 import AllocateRoadmapDialog from "./AllocateRoadmapDialog";
 import { RoadmapDisplay } from "../_lib/roadmap-display";
+import { useLocale } from "@/src/contexts/LocaleContext";
+import { getLanguageCode } from "@/src/lib/translation-utils";
 
 interface RoadmapCardProps {
   roadmap: RoadmapDisplay;
@@ -19,7 +21,35 @@ const RoadmapCard = ({
   childrenList = [],
 }: RoadmapCardProps) => {
   const t = useTranslations("RoadmapsLibrary.roadmapCard");
-  const [imageError, setImageError] = useState(false);
+  const { locale, isRTL } = useLocale();
+
+  const langCode = getLanguageCode(locale);
+
+  // Localize theme name/description and roadmap title using translations arrays
+  const localizedTheme = (() => {
+    const translation = roadmap.theme.translations?.find(
+      (tr: { languageCode: LanguageCode }) => tr.languageCode === langCode,
+    );
+    return {
+      name: translation?.name || roadmap.theme.name,
+      description: translation?.description || roadmap.theme.description,
+    };
+  })();
+
+  const localizedRoadmapTitle = (() => {
+    const translation = roadmap.translations?.find(
+      (tr: { languageCode: LanguageCode }) => tr.languageCode === langCode,
+    );
+    return translation?.title ?? roadmap.title ?? "";
+  })();
+
+    const localizedAgeGroupName = (() => {
+    const translation = roadmap.ageGroup.translations?.find(
+      (tr: { languageCode: LanguageCode }) => tr.languageCode === langCode,
+    );
+    return translation?.name ?? roadmap.ageGroup.name ?? "";
+  })();
+
   const [allocateDialogOpen, setAllocateDialogOpen] = useState(false);
 
   return (
@@ -28,16 +58,15 @@ const RoadmapCard = ({
       <div className="relative h-48 overflow-hidden bg-muted">
         <img
           src={roadmap.coverImage}
-          alt={t("coverImageAlt", { title: roadmap.title })}
+          alt={t("coverImageAlt", { title: localizedRoadmapTitle })}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          onError={() => setImageError(true)}
         />
       </div>
 
       {/* Roadmap Info */}
       <div className="p-5">
         <h3 className="font-heading text-xl font-medium text-foreground line-clamp-2 mb-3">
-          {roadmap.title}
+          {localizedRoadmapTitle} - {localizedTheme.name}
         </h3>
 
         {/* Reading Level & Age Group */}
@@ -46,7 +75,7 @@ const RoadmapCard = ({
             {roadmap.readingLevel}
           </span>
           <span className="px-2 py-1 bg-primary/10 text-primary rounded-lg font-caption text-sm font-medium">
-            {roadmap.ageGroup}
+            {localizedAgeGroupName}
           </span>
         </div>
 

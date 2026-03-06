@@ -7,8 +7,9 @@ import { Button } from "@/src/components/ui/button";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { World, ChildProfile, Roadmap, RoleType, Local, LanguageCode } from "@shared/types";
-import { useLocale } from "next-intl";
 import { getEnrichedStoriesForWorld } from "../../_lib/helpers";
+import { getLanguageCode } from "@/src/lib/translation-utils";
+import { useLocale } from "@/src/contexts/LocaleContext";
 
 interface StoriesRoadmapProps {
   userRole: RoleType;
@@ -24,17 +25,10 @@ export default function StoriesRoadmap({
   childProfile,
 }: StoriesRoadmapProps) {
   const t = useTranslations("ChildDashboard");
-  const locale = useLocale();
+  const {locale} = useLocale();
 
-  const getLanguageCode = () => {
-    const baseLocale = (locale || Local.EN).split("-")[0].toUpperCase();
-    if (baseLocale === "EN") return LanguageCode.EN;
-    if (baseLocale === "AR") return LanguageCode.AR;
-    if (baseLocale === "FR") return LanguageCode.FR;
-    return LanguageCode.EN;
-  };
 
-  const langCode = getLanguageCode();
+  const langCode = getLanguageCode(locale);
 
   const getLocalizedStory = (story: World["stories"][0]) => {
     const translation = story.translations?.find((tr: { languageCode: LanguageCode }) => tr.languageCode === langCode);

@@ -62,11 +62,26 @@ export class AgeGroupService {
       const ageGroups = await this.prisma.ageGroup.findMany({
         where: { status: AgeGroupStatus.ACTIVE },
         include: {
+          translations: true,
           roadmaps: {
             include: {
-              ageGroup: true,
-              worlds: true,
-              theme: true,
+              translations: true,
+              worlds: {
+                include: {
+                  translations: true,
+                  stories: true,
+                },
+              },
+              theme: {
+                include: {
+                  translations: true,
+                },
+              },
+              ageGroup: {
+                include:{
+                  translations: true,
+                }
+              },
             },
           },
         },
