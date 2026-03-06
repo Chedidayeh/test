@@ -534,7 +534,7 @@
 		"storyNotCompleted": "القصة غير مكتملة. يرجى التحقق من الرابط والمحاولة مرة أخرى.",
 		"completionHeader": {
 			"title": "تمت القصة!",
-			"subtitle": "عمل رائع، {childName} لقد انتهيت من \"{storyTitle}\""
+			"subtitle": "عمل رائع، {childName} لقد أكملت قصة \"{storyTitle}\""
 		},
 		"progressCard": {
 			"starsEarned": "النجوم المكتسبة:",

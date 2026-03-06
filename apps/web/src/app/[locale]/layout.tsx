@@ -54,7 +54,7 @@ export default async function RootLayout({
         className={` ${isRTL ? tajawal.className : fredoka.className} antialiased bg-background  `}
       >
         <NextIntlClientProvider>
-          <NextTopLoader color="#F59E0B" showSpinner={false} />
+          <NextTopLoader color="#F59E0B"  showSpinner={false} />
           <SessionProvider>
             <ThemeProvider
               attribute="class"

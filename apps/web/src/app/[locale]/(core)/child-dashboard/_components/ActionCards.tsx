@@ -3,8 +3,10 @@
 
 import Link from "next/link";
 import { BookMarked, MapPlus } from "lucide-react";
-import { Progress, Roadmap, ProgressStatus, ChildProfile, Story, Chapter } from "@shared/types";
+import { Progress, Roadmap, ProgressStatus, ChildProfile, Story, Chapter, LanguageCode } from "@shared/types";
 import { useTranslations } from "next-intl";
+import { useLocale } from "@/src/contexts/LocaleContext";
+import { getLanguageCode } from "@/src/lib/translation-utils";
 
 interface StoryCardData {
   storyId: string;
@@ -27,6 +29,8 @@ const ActionCards = ({
   childProfile,
 }: ActionCardsProps) => {
     const t = useTranslations("ChildDashboard");
+      const { isRTL, locale } = useLocale();
+      const langCode = getLanguageCode(locale);
   
   // Helper function to find story details from roadmaps
   const findStoryDetails = (storyId: string): StoryCardData | null => {
@@ -35,12 +39,16 @@ const ActionCards = ({
         const story = world.stories.find((s) => s.id === storyId);
         if (story) {
           const totalChapters = story.chapters?.length || 1;
+          const translation = story.translations?.find(
+            (tr: { languageCode: LanguageCode }) => tr.languageCode === langCode,
+          );
+          const title = translation?.title || story.title;
 
           return {
             storyId: story.id,
-            title: story.title,
+            title,
             coverImage: roadmap.theme.imageUrl!,
-            coverAlt: story.title,
+            coverAlt: title,
             totalChapters,
             chapters: story.chapters || [],
           };
@@ -108,7 +116,7 @@ const ActionCards = ({
                         <BookMarked size={20} className="text-white" />
                       </div>
                       <div className="bg-primary/80 rounded-full px-3 py-1">
-                        <span className="font-data text-sm font-bold">
+                        <span className="font-data text-sm font-medium">
                           {progressChapters}/{storyData.totalChapters}
                         </span>
                       </div>

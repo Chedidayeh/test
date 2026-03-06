@@ -28,9 +28,10 @@ import {
 } from "@/src/components/ui/select";
 import { Session } from "next-auth";
 import { useTranslations } from "next-intl";
-import { AgeGroup, Theme } from "@shared/types";
+import { AgeGroup, LanguageCode, Theme } from "@shared/types";
 import { useLocale } from "@/src/contexts/LocaleContext";
 import { createChildProfileAction } from "@/src/lib/auth-service/server-actions";
+import { getLanguageCode } from "@/src/lib/translation-utils";
 
 export default function ParentOnboarding({
   session,
@@ -42,7 +43,10 @@ export default function ParentOnboarding({
   const user = session!.user;
   const router = useRouter();
   const t = useTranslations("Onboarding");
-  const { isRTL } = useLocale();
+  const { isRTL, locale } = useLocale();
+
+  const langCode = getLanguageCode(locale);
+
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<{
@@ -295,11 +299,22 @@ export default function ParentOnboarding({
                             />
                           </SelectTrigger>
                           <SelectContent>
-                            {ageGroups.map((age) => (
-                              <SelectItem key={age.id} value={age.id}>
-                                {age.name}
-                              </SelectItem>
-                            ))}
+                            {ageGroups.map((age) => {
+                              const localizedageGroupName = (() => {
+                                const translation = age.translations?.find(
+                                  (tr: { languageCode: LanguageCode }) =>
+                                    tr.languageCode === langCode,
+                                );
+                                return {
+                                  name: translation?.name || age.name,
+                                };
+                              })();
+                              return (
+                                <SelectItem key={age.id} value={age.id}>
+                                  {localizedageGroupName.name}
+                                </SelectItem>
+                              );
+                            })}
                           </SelectContent>
                         </Select>
                       )}
@@ -365,6 +380,15 @@ export default function ParentOnboarding({
                               const checked =
                                 Array.isArray(field.value) &&
                                 field.value.includes(theme.id);
+                              const localizedName = (() => {
+                                const translation = theme.translations?.find(
+                                  (tr: { languageCode: LanguageCode }) =>
+                                    tr.languageCode === langCode,
+                                );
+                                return {
+                                  name: translation?.name || theme.name,
+                                };
+                              })();
                               return (
                                 <div
                                   key={theme.id}
@@ -384,7 +408,7 @@ export default function ParentOnboarding({
                                     htmlFor={theme.id}
                                     className="cursor-pointer"
                                   >
-                                    {theme.name}
+                                    {localizedName.name}
                                   </label>
                                 </div>
                               );
@@ -456,7 +480,13 @@ export default function ParentOnboarding({
                 <p className="text-muted-foreground text-sm">
                   {t("ageGroupLabel")}:{" "}
                   <span className="font-medium text-foreground">
-                    {selectedAgeGroup?.name}
+                    {(() => {
+                      const translation = selectedAgeGroup?.translations?.find(
+                        (tr: { languageCode: LanguageCode }) =>
+                          tr.languageCode === langCode,
+                      );
+                      return translation?.name || selectedAgeGroup?.name;
+                    })()}
                   </span>
                 </p>
 

@@ -175,9 +175,9 @@ const StoryFlowNavigation = ({
           console.error("[Story Completion] Failed to complete story", {
             error: result.error,
           });
+          setIsSavingCheckpoint(false);
         }
       }
-      setIsSavingCheckpoint(false);
 
       return; // Exit after completion attempt
     }
@@ -257,7 +257,11 @@ const StoryFlowNavigation = ({
             onClick={handleBack}
             className="absolute left-2 sm:left-3 md:left-4 lg:left-8 text-xs sm:text-sm"
           >
-            {isRTL ? <ChevronRight size={18} className="sm:size-5" /> : <ChevronLeft size={18} className="sm:size-5" />}
+            {isRTL ? (
+              <ChevronRight size={18} className="sm:size-5" />
+            ) : (
+              <ChevronLeft size={18} className="sm:size-5" />
+            )}
             {showRiddle ? (
               <span className="sm:inline md:ml-2">
                 {t("storyFlowNavigation.returnToStory")}
@@ -302,7 +306,11 @@ const StoryFlowNavigation = ({
           {/* Stars earned in the game session */}
           <div className="absolute right-2 sm:right-3 md:right-4 lg:right-8 flex items-center gap-1 sm:gap-2 md:gap-4">
             <div className="flex items-center gap-0.5 sm:gap-1">
-              <Star size={16} className="sm:size-5 text-primary" fill="currentColor" />
+              <Star
+                size={16}
+                className="sm:size-5 text-primary"
+                fill="currentColor"
+              />
               <span className="font-heading font-semibold text-sm sm:text-base text-foreground">
                 {totalStarsEarned ||
                   currentProgress?.gameSession?.starsEarned ||
@@ -338,7 +346,11 @@ const StoryFlowNavigation = ({
               aria-label={t("storyFlowNavigation.previousButton")}
               className="text-xs sm:text-sm"
             >
-              {isRTL ? <ChevronRight size={18} className="sm:size-5" /> : <ChevronLeft size={18} className="sm:size-5" />}{" "}
+              {isRTL ? (
+                <ChevronRight size={18} className="sm:size-5" />
+              ) : (
+                <ChevronLeft size={18} className="sm:size-5" />
+              )}{" "}
               <span className="hidden md:inline">
                 {t("storyFlowNavigation.previousButton")}
               </span>
@@ -382,7 +394,9 @@ const StoryFlowNavigation = ({
                       remaining: timeRemaining,
                     })}
                   </span>
-                  <span className="inline md:hidden text-xs">{timeRemaining}s</span>
+                  <span className="inline md:hidden text-xs">
+                    {timeRemaining}s
+                  </span>
                 </>
               ) : (
                 <>

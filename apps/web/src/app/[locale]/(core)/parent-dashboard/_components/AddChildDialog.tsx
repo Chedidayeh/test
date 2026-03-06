@@ -33,10 +33,11 @@ import {
   SelectItem,
 } from "@/src/components/ui/select";
 
-import { AgeGroup, Theme } from "@shared/types";
+import { AgeGroup, LanguageCode, Theme } from "@shared/types";
 import { createChildProfileAction } from "@/src/lib/auth-service/server-actions";
 import { Session } from "next-auth";
 import { useLocale } from "@/src/contexts/LocaleContext";
+import { getLanguageCode } from "@/src/lib/translation-utils";
 
 interface AddChildDialogProps {
   session: Session;
@@ -59,7 +60,8 @@ export default function AddChildDialog({
 }: AddChildDialogProps) {
   const [step, setStep] = useState(1);
   const t = useTranslations("ParentDashboard");
-  const { isRTL } = useLocale();
+  const { isRTL, locale } = useLocale();
+  const langCode = getLanguageCode(locale);
 
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<{
@@ -296,11 +298,22 @@ export default function AddChildDialog({
                             />
                           </SelectTrigger>
                           <SelectContent>
-                            {ageGroups.map((ag) => (
-                              <SelectItem key={ag.id} value={ag.id}>
-                                {ag.name}
-                              </SelectItem>
-                            ))}
+                            {ageGroups.map((age) => {
+                              const localizedageGroupName = (() => {
+                                const translation = age.translations?.find(
+                                  (tr: { languageCode: LanguageCode }) =>
+                                    tr.languageCode === langCode,
+                                );
+                                return {
+                                  name: translation?.name || age.name,
+                                };
+                              })();
+                              return (
+                                <SelectItem key={age.id} value={age.id}>
+                                  {localizedageGroupName.name}
+                                </SelectItem>
+                              );
+                            })}
                           </SelectContent>
                         </Select>
                       )}
@@ -358,39 +371,52 @@ export default function AddChildDialog({
 
                 <FieldGroup className="space-y-3">
                   {availableThemes.length > 0 ? (
-                    availableThemes.map((theme) => (
-                      <div
-                        key={theme.id}
-                        className="flex items-center space-x-2"
-                      >
-                        <Controller
-                          control={childPreferencesForm.control}
-                          name="favoriteThemes"
-                          render={({ field }) => (
-                            <Checkbox
-                              id={`theme-${theme.id}`}
-                              checked={field.value?.includes(theme.id) || false}
-                              onCheckedChange={(checked) => {
-                                const current = field.value || [];
-                                if (checked) {
-                                  field.onChange([...current, theme.id]);
-                                } else {
-                                  field.onChange(
-                                    current.filter((id) => id !== theme.id),
-                                  );
-                                }
-                              }}
-                            />
-                          )}
-                        />
-                        <label
-                          htmlFor={`theme-${theme.id}`}
-                          className="text-sm font-medium cursor-pointer"
+                    availableThemes.map((theme) => {
+                      const localizedName = (() => {
+                        const translation = theme.translations?.find(
+                          (tr: { languageCode: LanguageCode }) =>
+                            tr.languageCode === langCode,
+                        );
+                        return {
+                          name: translation?.name || theme.name,
+                        };
+                      })();
+                      return (
+                        <div
+                          key={theme.id}
+                          className="flex items-center space-x-2"
                         >
-                          {theme.name}
-                        </label>
-                      </div>
-                    ))
+                          <Controller
+                            control={childPreferencesForm.control}
+                            name="favoriteThemes"
+                            render={({ field }) => (
+                              <Checkbox
+                                id={`theme-${theme.id}`}
+                                checked={
+                                  field.value?.includes(theme.id) || false
+                                }
+                                onCheckedChange={(checked) => {
+                                  const current = field.value || [];
+                                  if (checked) {
+                                    field.onChange([...current, theme.id]);
+                                  } else {
+                                    field.onChange(
+                                      current.filter((id) => id !== theme.id),
+                                    );
+                                  }
+                                }}
+                              />
+                            )}
+                          />
+                          <label
+                            htmlFor={`theme-${theme.id}`}
+                            className="text-sm font-medium cursor-pointer"
+                          >
+                            {localizedName.name}
+                          </label>
+                        </div>
+                      );
+                    })
                   ) : (
                     <p className="text-sm text-muted-foreground">
                       {t("addChildDialog.step2.noThemes")}
@@ -447,7 +473,7 @@ export default function AddChildDialog({
                 <h3 className="font-medium text-sm mb-2">
                   {t("addChildDialog.step3.title")}
                 </h3>
-                <div className="bg-muted/50 rounded-lg p-4 space-y-3 mt-4 text-left">
+                <div className="bg-muted/50 rounded-lg p-4 space-y-3 mt-4 text-center">
                   <div>
                     <p className="text-sm text-muted-foreground">
                       {t("addChildDialog.step3.nameLabel")}
@@ -461,25 +487,36 @@ export default function AddChildDialog({
                       {t("addChildDialog.step3.ageGroupLabel")}
                     </p>
                     <p className="font-medium">
-                      {selectedAgeGroup?.name || "N/A"}
+                      {(() => {
+                        const translation =
+                          selectedAgeGroup?.translations?.find(
+                            (tr: { languageCode: LanguageCode }) =>
+                              tr.languageCode === langCode,
+                          );
+                        return translation?.name || selectedAgeGroup?.name;
+                      })()}{" "}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">
                       {t("addChildDialog.step3.favoriteThemesLabel")}
                     </p>
-                    <div className="flex flex-wrap gap-1 mt-1">
+                    <div className="flex items-center justify-center gap-1 mt-1">
                       {formData.childPreferences.favoriteThemes?.map(
                         (themeId) => {
                           const theme = availableThemes.find(
                             (t) => t.id === themeId,
+                          );
+                          const translation = theme?.translations?.find(
+                            (tr: { languageCode: LanguageCode }) =>
+                              tr.languageCode === langCode,
                           );
                           return (
                             <span
                               key={themeId}
                               className="text-sm bg-primary/10 text-primary px-2 py-1 rounded"
                             >
-                              {theme?.name}
+                              {translation?.name || theme?.name}
                             </span>
                           );
                         },
@@ -511,7 +548,7 @@ export default function AddChildDialog({
                     {isLoading
                       ? t("addChildDialog.step3.creating")
                       : t("addChildDialog.step3.createButton")}
-                    { isRTL ? (
+                    {isRTL ? (
                       <ChevronLeft className="w-4 h-4 ml-2" />
                     ) : (
                       <ChevronRight className="w-4 h-4 mr-2" />
