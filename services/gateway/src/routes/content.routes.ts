@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import axios from "axios";
 import { logger } from "../utils/logger";
-import { forwardToContentService } from "../helpers/content.helpers";
+import { createStoryWithChapters, forwardToContentService } from "../helpers/content.helpers";
 import { API_BASE_URL_V1 } from "@shared/types";
 
 const router = Router();
@@ -12,7 +12,12 @@ const router = Router();
  * GET /api/v1/stories - fetch all stories
  * GET /api/v1/stories/:id - fetch single story
  */
+router.use("/stories/batch/create", (req: Request, res: Response) => {
+  logger.info("Received request to create story with chapters")
+  createStoryWithChapters(req, res);
+});
 router.use("/stories", (req: Request, res: Response) => {
+  logger.info("Received request to forward story request")
   forwardToContentService(req, res, `${API_BASE_URL_V1}/stories${req.path}`);
 });
 

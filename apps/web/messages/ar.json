@@ -472,6 +472,11 @@
 			"settings": "الإعدادات",
 			"help": "المساعدة"
 		},
+		"playAudio": {
+			"play": "استمع إلى القصة",
+			"pause": "إيقاف",
+			"loading": "جاري تحميل الصوت..."
+		},
 		"riddleInterface": {
 			"submitAnswer": "قم بالإجابة",
 			"needAHint": "هل تحتاج إلى تلميح؟",

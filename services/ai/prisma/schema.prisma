@@ -1,0 +1,43 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// TTSAudio: stores generated TTS recordings and metadata
+model TTSAudio {
+  id          String   @id @default(cuid())
+
+  // Optional foreign identifiers (stored as plain IDs so they can reference other services)
+  storyId     String?  // ID of the story this audio is for
+  chapterId   String?  // ID of the chapter this audio is for
+
+  // TTS metadata
+  languageCode String?
+  voice        String?
+  prompt       String?
+
+  // Location of the stored audio file (URL or path)
+  audioUrl     String
+  mimeType     String  @default("audio/wav")
+
+  // Optional technical metadata
+  durationMs   Int?
+  sizeBytes    Int?
+
+  // When the audio was generated and recorded
+  generatedAt  DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  @@index([storyId])
+  @@index([chapterId])
+}

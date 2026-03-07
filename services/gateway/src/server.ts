@@ -8,7 +8,7 @@ import cors from "cors";
 import { jwtMiddleware } from "./middleware/jwt.middleware";
 import { logger } from "./utils/logger";
 import { authServiceClient } from "./utils/auth-service";
-import { authRoutes, contentRoutes, progressRoutes } from "./routes";
+import { aiRoutes, authRoutes, contentRoutes, progressRoutes } from "./routes";
 import { API_BASE_URL_V1 } from "@shared/types";
 
 const app = express();
@@ -77,6 +77,16 @@ app.use(`${API_BASE_URL_V1}`, progressRoutes);
  * Content Service Routes (Protected)
  */
 app.use(`${API_BASE_URL_V1}`, contentRoutes);
+
+
+/**
+ * AI Service Routes (Protected)
+ */
+app.use(`${API_BASE_URL_V1}`, aiRoutes);
+
+
+
+
 
 // 404 handler
 app.use((req, res) => {

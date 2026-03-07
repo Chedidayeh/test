@@ -454,7 +454,7 @@
 			"starsEarned": "{count} étoiles",
 			"pageProgress": "Page {current} sur {total}",
 			"timerMessage": "Continuez à lire... ({remaining}s restantes)",
-			"completionMessage": "Histoire terminée ! 🎉",
+			"completionMessage": "Histoire terminée !",
 			"solveRiddle": "Résoudre l'énigme",
 			"challengeSolved": "Défi résolu !",
 			"challengeSkipped": "Défi ignoré !",
@@ -471,6 +471,11 @@
 			"slowSpeed": "Lent",
 			"settings": "Paramètres",
 			"help": "Aide"
+		},
+		"playAudio": {
+			"play": "Écouter l'histoire",
+			"pause": "Pause",
+			"loading": "Chargement de l'audio..."
 		},
 		"riddleInterface": {
 			"submitAnswer": "Soumettre la réponse",

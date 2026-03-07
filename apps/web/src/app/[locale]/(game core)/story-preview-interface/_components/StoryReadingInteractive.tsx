@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Volume2, Loader } from "lucide-react";
 import StoryContent from "./StoryContent";
 import Controls from "./Controls";
 import ReadingSettings from "./ReadingSettings";
@@ -15,10 +16,12 @@ import {
   ChallengeAttempt,
   Local,
   StoryTranslation,
+  TTSAudio,
 } from "@shared/types";
 import { getChapterByPageNumber } from "./storyDataTransform";
 import { useTranslations } from "next-intl";
 import { useLocale } from "@/src/contexts/LocaleContext";
+import { fetchTTSByChapterAction } from "@/src/lib/ai-service/server-actions";
 
 interface StoryReadingInteractiveProps {
   story: Story;
@@ -43,6 +46,12 @@ const StoryReadingInteractive = ({ story }: StoryReadingInteractiveProps) => {
 
   const [showRiddle, setShowRiddle] = useState(false);
   const currentChapter = getChapterByPageNumber(story, currentPage);
+
+  // TTS Audio state
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   // Local cache of challenge attempts by challengeId to prevent losing submissions on page navigation
   const [localChallengeAttempts, setLocalChallengeAttempts] = useState<
@@ -92,6 +101,49 @@ const StoryReadingInteractive = ({ story }: StoryReadingInteractiveProps) => {
       return story.title;
     }
   }, [story, locale]);
+
+  // Fetch TTS audio when chapter changes
+  useEffect(() => {
+    const fetchAudio = async () => {
+      if (!currentChapter?.id) return;
+
+      setIsLoadingAudio(true);
+      setAudioUrl(null);
+      setIsPlayingAudio(false);
+
+      try {
+        const response = await fetchTTSByChapterAction(currentChapter.id);
+        console.log("[TTS] Fetch response:", response);
+        if (response.success && response.data) {
+          // Handle both single TTSAudio object and array
+          const data = Array.isArray(response.data) ? response.data[0] : response.data;
+          if (data && typeof data === "object" && "audioUrl" in data) {
+            setAudioUrl((data as TTSAudio).audioUrl);
+          }
+        } else {
+          console.warn("[TTS] Failed to fetch audio:");
+        }
+      } catch (err) {
+        console.error("[TTS] Error fetching audio:", err);
+      } finally {
+        setIsLoadingAudio(false);
+      }
+    };
+
+    fetchAudio();
+  }, [currentChapter?.id]);
+
+  const handlePlayAudio = () => {
+    if (audioRef.current && audioUrl) {
+      if (isPlayingAudio) {
+        audioRef.current.pause();
+        setIsPlayingAudio(false);
+      } else {
+        audioRef.current.play();
+        setIsPlayingAudio(true);
+      }
+    }
+  };
 
   useEffect(() => {
     // Update challenge attempt state when current chapter changes
@@ -214,7 +266,7 @@ const StoryReadingInteractive = ({ story }: StoryReadingInteractiveProps) => {
 
                 {/* TTS Controls */}
                 <motion.div
-                  className="mt-6 sm:mt-8"
+                  className="mt-6 sm:mt-8 flex flex-col gap-4 sm:gap-6"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.35 }}
@@ -223,7 +275,42 @@ const StoryReadingInteractive = ({ story }: StoryReadingInteractiveProps) => {
                     isPlaying={isPlaying}
                     onPlayPause={handlePlayPause}
                   />
+
+                  {/* Audio Play Button */}
+                  <div className="flex items-center justify-center">
+                    <button
+                      onClick={handlePlayAudio}
+                      disabled={!audioUrl || isLoadingAudio}
+                      className={`flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition-all ${
+                        audioUrl && !isLoadingAudio
+                          ? "bg-accent hover:bg-accent/90 text-accent-foreground cursor-pointer"
+                          : "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
+                      }`}
+                      aria-label={isPlayingAudio ? "Pause audio" : "Play audio"}
+                    >
+                      {isLoadingAudio ? (
+                        <>
+                          <Loader size={18} className="animate-spin" />
+                          <span>{t("playAudio.loading")}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Volume2 size={18} />
+                          <span>{isPlayingAudio ? t("playAudio.pause") : t("playAudio.play")}</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </motion.div>
+
+                {/* Hidden Audio Element */}
+                <audio
+                  ref={audioRef}
+                  src={audioUrl || ""}
+                  onEnded={() => setIsPlayingAudio(false)}
+                  onPlay={() => setIsPlayingAudio(true)}
+                  onPause={() => setIsPlayingAudio(false)}
+                />
 
                 {/* Riddle Indicator */}
                 {shouldShowRiddleButton && (

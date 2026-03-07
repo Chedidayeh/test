@@ -454,7 +454,7 @@
 			"starsEarned": "{count} stars",
 			"pageProgress": "Page {current} of {total}",
 			"timerMessage": "Keep reading... ({remaining}s remaining)",
-			"completionMessage": "Story complete! 🎉",
+			"completionMessage": "Story complete!",
 			"solveRiddle": "Solve the riddle",
 			"challengeSolved": "Challenge solved!",
 			"challengeSkipped": "Challenge skipped!",
@@ -471,6 +471,11 @@
 			"slowSpeed": "Slow",
 			"settings": "Settings",
 			"help": "Help"
+		},
+		"playAudio": {
+			"play": "Play Story Audio",
+			"pause": "Pause Audio",
+			"loading": "Loading audio..."
 		},
 		"riddleInterface": {
 			"submitAnswer": "Submit Answer",

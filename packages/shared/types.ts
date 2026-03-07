@@ -22,9 +22,9 @@ export const API_BASE_URL_V1 = "/api/v1";
 // ============================================================================
 
 export enum TranslationSourceType {
-  EN_TO_FR_AR = "en_to_fr_ar",      // Auto-translate from English
-  FR_TO_AR_EN = "fr_to_ar_en",      // Auto-translate from French
-  MANUAL = "manual"                  // Manual translations
+  EN_TO_FR_AR = "en_to_fr_ar", // Auto-translate from English
+  FR_TO_AR_EN = "fr_to_ar_en", // Auto-translate from French
+  MANUAL = "manual", // Manual translations
 }
 
 export enum RoleType {
@@ -470,7 +470,7 @@ export interface AttemptAction {
   attemptId?: string;
   attempt?: ChallengeAttempt;
   // What was selected/used in this action
-  selectedAnswerId?: string; 
+  selectedAnswerId?: string;
   selectedAnswerText?: string; // Capture the full text of the answer they selected
   answerText?: string; // For open-ended questions, capture the text they entered
   // Context about this action
@@ -503,6 +503,34 @@ export interface ChildBadge {
   earnedAt: Date;
   createdAt: Date;
   updatedAt: Date;
+}
+
+// ===========================================================================
+// AI SERVICE TYPES
+// ===========================================================================
+
+export interface TTSAudio {
+  id: string;
+
+  storyId?: string| null ; // ID of the story this audio is for
+  chapterId?: string| null ; // ID of the chapter this audio is for
+
+  // TTS metadata
+  languageCode?: string | null; // e.g., "en", "fr", "ar"
+  voice?: string | null; //
+  prompt?: string | null;
+
+  // Location of the stored audio file (URL or path)
+  audioUrl: string;
+  mimeType: string;
+
+  // Optional technical metadata
+  durationMs?: number  | null; // Duration of the audio in milliseconds
+  sizeBytes?: number | null; // Size of the audio file in bytes
+
+  // When the audio was generated and recorded
+  generatedAt: Date;
+  createdAt: Date;
 }
 
 // ============================================================================
@@ -570,16 +598,15 @@ export interface CreateStoryWithChaptersInput {
     title?: string;
     description?: string;
   }>;
-  
+
   chapters: CreateChapterInput[];
 }
-
 
 export interface ManualTranslationEdit {
   languageCode: string;
   name?: string;
   description?: string;
-  title?: string ;
+  title?: string;
   content?: string;
   question?: string;
   text?: string;
