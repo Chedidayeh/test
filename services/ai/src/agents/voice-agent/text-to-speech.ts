@@ -1,7 +1,8 @@
 import "dotenv/config";
 import fs from "fs";
 import path from "path";
-import { LanguageCodes, VertexAITTSProvider } from "./provider";
+import { VertexAITTSProvider } from "./provider";
+import { TTSLanguageCodes } from "@shared/types";
 
 async function run() {
   const tts = new VertexAITTSProvider();
@@ -9,8 +10,7 @@ async function run() {
   const audio = await tts.synthesize(
     "تغادر الوادي محملاً بمعرفة جديدة وأمل متجدد. الواحة لم تكن مجرد مكان من الماء والنباتات؛ كانت درسًا في الإصرار والمجتمع والتناغم مع الطبيعة. ترحل ومعك بذور لتزرعها وأفكار لتشاركها، وتعلم أن هذا الفهم سيصحبك إلى كل مكان تذهب إليه.",
     {
-      voice: "Achernar",
-      languageCode: LanguageCodes.ARABIC,
+      languageCode: TTSLanguageCodes.ARABIC,
       prompt:
         "قم بسرد هذه القصة بالعربية بطريقة مشوقة وواضحة، كما لو كنت ترويها ككتاب صوتي.",
     }

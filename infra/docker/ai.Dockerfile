@@ -1,22 +1,25 @@
-# AI Service Dockerfile
-FROM node:18-alpine
+FROM node:18-slim
+
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Install production dependencies
-COPY services/ai/package.json services/ai/package-lock.json ./
-
+COPY services/ai/package*.json ./
 RUN npm install
 
-# Copy source code
+# Copy shared packages
+COPY packages/shared ./packages/shared
+
+COPY services/ai/prisma ./prisma
+RUN npx prisma generate
+
 COPY services/ai/src ./src
 COPY services/ai/tsconfig.json ./
 
-# Build TypeScript
+# Rewrite path alias for flat Docker layout
+RUN sed -i 's|../../packages/shared|./packages/shared|g' tsconfig.json
+
 RUN npm run build
 
-# Expose port
 EXPOSE 3005
-
-# Start service
 CMD ["npm", "run", "start"]

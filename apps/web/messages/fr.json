@@ -441,7 +441,7 @@
 			"navigation": "Navigation",
 			"navigationDesc": "Utilisez les flèches en bas pour vous déplacer entre les pages. Votre progression est sauvegardée automatiquement.",
 			"audioReading": "Lecture audio",
-			"audioReadingDesc": "Appuyez sur le bouton de lecture pour entendre l'histoire lue à haute voix. Ajustez la vitesse et la langue dans les contrôles.",
+			"audioReadingDesc": "Appuyez sur le bouton de lecture pour entendre l'histoire lue à haute voix. Ajustez la langue dans les contrôles.",
 			"riddles": "Énigmes",
 			"riddlesDesc": "Lorsque vous voyez un indicateur d'énigme, résolvez-la pour continuer l'histoire et gagner des étoiles !",
 			"gotIt": "D'accord !"

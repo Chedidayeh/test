@@ -198,6 +198,7 @@ export async function createStoryWithChaptersTransaction(
           world: true,
           chapters: {
             include: {
+              translations: true,
               challenge: {
                 include: {
                   answers: {

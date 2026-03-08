@@ -1,7 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Lightbulb, Star } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Lightbulb,
+  Loader,
+  Star,
+  Volume2,
+  Play,
+  Pause,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { ChallengeAttempt, ChallengeStatus } from "@shared/types";
 import { useRouter } from "next/navigation";
@@ -18,6 +27,10 @@ interface StoryFlowNavigationProps {
   onPageChange?: (page: number) => void;
   currentChallengeAttemptState: ChallengeAttempt | undefined;
   totalStarsEarned?: number;
+  audioUrl?: string | null;
+  isPlayingAudio?: boolean;
+  isLoadingAudio?: boolean;
+  handlePlayAudio?: () => void;
 }
 
 const StoryFlowNavigation = ({
@@ -30,6 +43,10 @@ const StoryFlowNavigation = ({
   onPageChange,
   currentChallengeAttemptState,
   totalStarsEarned = 0,
+  audioUrl,
+  isPlayingAudio,
+  isLoadingAudio,
+  handlePlayAudio,
 }: StoryFlowNavigationProps) => {
   const t = useTranslations("StoryReadingInterface");
   const { isRTL } = useLocale();
@@ -132,7 +149,37 @@ const StoryFlowNavigation = ({
           )}
 
           {/* Stars earned display */}
-          <div className="absolute right-2 sm:right-3 md:right-4 lg:right-8 flex items-center gap-1 sm:gap-2 md:gap-4">
+          <div className="absolute right-2 sm:right-3 md:right-4 lg:right-8 flex items-center gap-3 sm:gap-2 md:gap-4">
+            {audioUrl && (
+              <Button
+                variant={"accent"}
+                size={"sm"}
+                onClick={handlePlayAudio}
+                disabled={!audioUrl || isLoadingAudio}
+                aria-label={isPlayingAudio ? "Pause audio" : "Play audio"}
+              >
+                {isLoadingAudio ? (
+                  <>
+                    <Loader size={18} className="animate-spin" />
+                    <span className="hidden sm:inline">{t("playAudio.loading")}</span>
+                  </>
+                ) : isPlayingAudio ? (
+                  <>
+                    <Pause size={18} />
+                    <span className="hidden sm:inline">
+                      {t("playAudio.pause")}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Play size={18} />
+                    <span className="hidden sm:inline">
+                      {t("playAudio.play")}
+                    </span>
+                  </>
+                )}
+              </Button>
+            )}
             <div className="flex items-center gap-0.5 sm:gap-1">
               <Star
                 size={16}

@@ -3,21 +3,23 @@ import { utapi } from "../lib/uploadthing";
 import prisma from "../lib/prisma";
 import path from "path";
 import { logger } from "src/lib/logger";
+import {
+  ContentLanguageToTTSLanguageMap,
+  LanguageCode,
+  TTSLanguageCodes,
+} from "@shared/types";
 
 const provider = new VertexAITTSProvider();
 
 export interface SynthesizeOptions {
-  voice?: string;
-  languageCode?: string;
+  languageCode?: LanguageCode;
   prompt?: string;
   storyId?: string;
   chapterId?: string;
 }
 
 export interface SynthesizeResult {
-  audioBuffer: Buffer;
   audioUrl: string;
-  dbRecord: any;
 }
 
 export async function synthesizeText(
@@ -26,14 +28,57 @@ export async function synthesizeText(
 ): Promise<SynthesizeResult> {
   logger.debug("[TTS Service] Starting synthesis", {
     textLength: text.length,
-    voice: options.voice,
     languageCode: options.languageCode,
     prompt: options.prompt ? "provided" : "none",
     storyId: options.storyId,
     chapterId: options.chapterId,
   });
+
+  // If an audio already exists for the given identifiers, reuse it and skip generation
+  if (options.chapterId || options.storyId || options.languageCode) {
+    try {
+      const existing = await prisma.tTSAudio.findFirst({
+        where: {
+          chapterId: options.chapterId,
+          storyId: options.storyId,
+          languageCode: options.languageCode,
+        },
+        orderBy: { generatedAt: "desc" },
+      });
+
+      if (existing && existing.audioUrl) {
+        logger.info(
+          "[TTS Service] Found existing TTS audio, skipping generation",
+          {
+            id: existing.id,
+            audioUrl: existing.audioUrl,
+            chapterId: options.chapterId,
+            storyId: options.storyId,
+            languageCode: options.languageCode,
+          },
+        );
+
+        return { audioUrl: existing.audioUrl };
+      }
+    } catch (dbCheckErr) {
+      logger.warn(
+        "[TTS Service] Failed to check existing TTS audio; proceeding with generation",
+        { error: dbCheckErr },
+      );
+    }
+  }
+
+  // Convert content LanguageCode to TTS language code
+  const ttsLanguageCode = options.languageCode
+    ? ContentLanguageToTTSLanguageMap[options.languageCode] ||
+      TTSLanguageCodes.ENGLISH_US
+    : TTSLanguageCodes.ENGLISH_US;
+
   // Generate audio buffer (WAV)
-  const audioBuffer = await provider.synthesize(text, options as any);
+  const audioBuffer = await provider.synthesize(text, {
+    languageCode: ttsLanguageCode as TTSLanguageCodes,
+    prompt: options.prompt,
+  });
 
   // Step 1: Upload to uploadthing cloud storage
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -63,7 +108,6 @@ export async function synthesizeText(
         storyId: options.storyId || null,
         chapterId: options.chapterId || null,
         languageCode: options.languageCode || null,
-        voice: options.voice || null,
         prompt: options.prompt || null,
         audioUrl,
         mimeType: "audio/wav",
@@ -76,7 +120,7 @@ export async function synthesizeText(
     // Non-fatal: still return success if upload worked
   }
 
-  return { audioBuffer, audioUrl, dbRecord };
+  return { audioUrl };
 }
 
 export async function fetchByIdentifiers(chapterId: string) {

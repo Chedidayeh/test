@@ -441,7 +441,7 @@
 			"navigation": "Navigation",
 			"navigationDesc": "Use the arrows at the bottom to move between pages. Your progress is saved automatically.",
 			"audioReading": "Audio Reading",
-			"audioReadingDesc": "Press play to hear the story read aloud. Adjust speed and language in the controls.",
+			"audioReadingDesc": "Press play to hear the story read aloud. Adjust language in the controls.",
 			"riddles": "Riddles",
 			"riddlesDesc": "When you see a riddle indicator, solve it to continue the story and earn stars!",
 			"gotIt": "Got it!"

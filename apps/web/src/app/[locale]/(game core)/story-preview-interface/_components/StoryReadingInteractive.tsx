@@ -48,7 +48,7 @@ const StoryReadingInteractive = ({ story }: StoryReadingInteractiveProps) => {
   const currentChapter = getChapterByPageNumber(story, currentPage);
 
   // TTS Audio state
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  // const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -81,6 +81,7 @@ const StoryReadingInteractive = ({ story }: StoryReadingInteractiveProps) => {
       return {
         pageNumber: index + 1,
         text: translation?.content || chapter.content || "",
+        audioUrl: translation?.audioUrl || chapter.audioUrl,
         image: chapter.imageUrl,
         alt: `Page ${index + 1}`,
         hasRiddle: !!chapter.challenge,
@@ -103,38 +104,42 @@ const StoryReadingInteractive = ({ story }: StoryReadingInteractiveProps) => {
   }, [story, locale]);
 
   // Fetch TTS audio when chapter changes
-  useEffect(() => {
-    const fetchAudio = async () => {
-      if (!currentChapter?.id) return;
+  // useEffect(() => {
+  //   const fetchAudio = async () => {
+  //     if (!currentChapter?.id) return;
 
-      setIsLoadingAudio(true);
-      setAudioUrl(null);
-      setIsPlayingAudio(false);
+  //     setIsLoadingAudio(true);
+  //     setAudioUrl(null);
+  //     setIsPlayingAudio(false);
 
-      try {
-        const response = await fetchTTSByChapterAction(currentChapter.id);
-        console.log("[TTS] Fetch response:", response);
-        if (response.success && response.data) {
-          // Handle both single TTSAudio object and array
-          const data = Array.isArray(response.data) ? response.data[0] : response.data;
-          if (data && typeof data === "object" && "audioUrl" in data) {
-            setAudioUrl((data as TTSAudio).audioUrl);
-          }
-        } else {
-          console.warn("[TTS] Failed to fetch audio:");
-        }
-      } catch (err) {
-        console.error("[TTS] Error fetching audio:", err);
-      } finally {
-        setIsLoadingAudio(false);
-      }
-    };
+  //     try {
+  //       const response = await fetchTTSByChapterAction(currentChapter.id);
+  //       console.log("[TTS] Fetch response:", response);
+  //       if (response.success && response.data) {
+  //         // Handle both single TTSAudio object and array
+  //         const data = Array.isArray(response.data)
+  //           ? response.data[0]
+  //           : response.data;
+  //         if (data && typeof data === "object" && "audioUrl" in data) {
+  //           setAudioUrl((data as TTSAudio).audioUrl);
+  //         }
+  //       } else {
+  //         console.warn("[TTS] Failed to fetch audio:");
+  //       }
+  //     } catch (err) {
+  //       console.error("[TTS] Error fetching audio:", err);
+  //     } finally {
+  //       setIsLoadingAudio(false);
+  //     }
+  //   };
 
-    fetchAudio();
-  }, [currentChapter?.id]);
+  //   fetchAudio();
+  // }, [currentChapter?.id]);
+
+  const currentPageData = localizedPages[currentPage - 1];
 
   const handlePlayAudio = () => {
-    if (audioRef.current && audioUrl) {
+    if (audioRef.current && currentPageData?.audioUrl) {
       if (isPlayingAudio) {
         audioRef.current.pause();
         setIsPlayingAudio(false);
@@ -206,7 +211,6 @@ const StoryReadingInteractive = ({ story }: StoryReadingInteractiveProps) => {
   };
 
   // Get current page data
-  const currentPageData = localizedPages[currentPage - 1];
   const currentChallenge = currentChapter?.challenge || null;
 
   // Determine if riddle button should be shown
@@ -243,6 +247,10 @@ const StoryReadingInteractive = ({ story }: StoryReadingInteractiveProps) => {
         onPageChange={handlePageChange}
         currentChallengeAttemptState={currentChallengeAttemptState}
         totalStarsEarned={totalStarsEarned}
+        audioUrl={currentPageData?.audioUrl}
+        isPlayingAudio={isPlayingAudio}
+        isLoadingAudio={isLoadingAudio}
+        handlePlayAudio={handlePlayAudio}
       />
       {!showRiddle ? (
         <>
@@ -255,7 +263,7 @@ const StoryReadingInteractive = ({ story }: StoryReadingInteractiveProps) => {
               transition={{ duration: 0.28 }}
               className="flex-1 flex items-center justify-center"
             >
-              <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 max-w-4xl">
+              <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 pb-20 max-w-4xl">
                 {/* Story Content */}
                 <StoryContent
                   currentPage={currentPageData}
@@ -264,49 +272,17 @@ const StoryReadingInteractive = ({ story }: StoryReadingInteractiveProps) => {
                   highlightedWord={highlightedWord}
                 />
 
-                {/* TTS Controls */}
-                <motion.div
-                  className="mt-6 sm:mt-8 flex flex-col gap-4 sm:gap-6"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.35 }}
-                >
-                  <Controls
-                    isPlaying={isPlaying}
-                    onPlayPause={handlePlayPause}
-                  />
-
-                  {/* Audio Play Button */}
-                  <div className="flex items-center justify-center">
-                    <button
-                      onClick={handlePlayAudio}
-                      disabled={!audioUrl || isLoadingAudio}
-                      className={`flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition-all ${
-                        audioUrl && !isLoadingAudio
-                          ? "bg-accent hover:bg-accent/90 text-accent-foreground cursor-pointer"
-                          : "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
-                      }`}
-                      aria-label={isPlayingAudio ? "Pause audio" : "Play audio"}
-                    >
-                      {isLoadingAudio ? (
-                        <>
-                          <Loader size={18} className="animate-spin" />
-                          <span>{t("playAudio.loading")}</span>
-                        </>
-                      ) : (
-                        <>
-                          <Volume2 size={18} />
-                          <span>{isPlayingAudio ? t("playAudio.pause") : t("playAudio.play")}</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </motion.div>
+                <div className="fixed right-2 sm:right-4 md:right-6 lg:right-8 top-20 sm:top-24 md:top-28 lg:top-32 flex flex-col items-center gap-2 sm:gap-3 z-40">
+                  {/* <Controls
+                      isPlaying={isPlaying}
+                      onPlayPause={handlePlayPause}
+                    /> */}
+                </div>
 
                 {/* Hidden Audio Element */}
                 <audio
                   ref={audioRef}
-                  src={audioUrl || ""}
+                  src={currentPageData?.audioUrl || ""}
                   onEnded={() => setIsPlayingAudio(false)}
                   onPlay={() => setIsPlayingAudio(true)}
                   onPause={() => setIsPlayingAudio(false)}
@@ -316,7 +292,7 @@ const StoryReadingInteractive = ({ story }: StoryReadingInteractiveProps) => {
                 {shouldShowRiddleButton && (
                   <motion.div
                     layout
-                    className="mt-3 sm:mt-4 flex flex-col items-center gap-2 sm:gap-3"
+                    className="flex mt-4 flex-col items-center gap-2 sm:gap-3"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                   >
@@ -333,7 +309,7 @@ const StoryReadingInteractive = ({ story }: StoryReadingInteractiveProps) => {
                 {currentPageData.hasRiddle && currentChallengeAttemptState && (
                   <motion.div
                     layout
-                    className="mt-3 sm:mt-4 flex flex-col items-center gap-1 sm:gap-2"
+                    className="flex mt-4 flex-col items-center gap-1 sm:gap-2"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                   >

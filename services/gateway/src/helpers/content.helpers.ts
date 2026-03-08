@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 
 import axios from "axios";
 import { logger } from "../utils/logger";
-import { ApiResponse, Story, API_BASE_URL_V1, Chapter } from "@shared/types";
+import { ApiResponse, Story, API_BASE_URL_V1, Chapter, LanguageCode } from "@shared/types";
 
 const CONTENT_SERVICE_URL =
   process.env.CONTENT_SERVICE_URL || "http://localhost:3003";
@@ -77,41 +77,129 @@ export async function createStoryWithChapters(
       },
     );
 
-    logger.debug("Content service createStory response", {
+    logger.info("Content service createStory response", {
       status: response.status,
       hasData: !!response.data?.data,
     });
 
     if (response.status >= 200 && response.status < 300) {
-      // Fire-and-forget: extract first chapter and ask AI service to generate TTS
+      // Extract first chapter and generate TTS for each language (awaiting each)
       try {
         const story = response.data?.data as Story | undefined;
         const firstChapter = story?.chapters?.find((c: Chapter) => c.order === 1) || story?.chapters?.[0];
-
-        if (story && firstChapter && firstChapter.content) {
+        if (story && firstChapter) {
           const ttsUrl = `${AI_SERVICE_URL}${API_BASE_URL_V1}/tts`;
-          const ttsPayload = {
-            text: firstChapter.content,
-            voice: (req.body && req.body.voice) || undefined,
-            languageCode: (req.body && req.body.languageCode) || undefined,
-            prompt: (req.body && req.body.prompt) || undefined,
-            storyId: story.id,
-            chapterId: firstChapter.id,
-          };
+          const headers: Record<string, string> = { "Content-Type": "application/json" };
+          if (req.headers.authorization) headers["authorization"] = String(req.headers.authorization);
 
-          const ttsHeaders: Record<string, string> = { "Content-Type": "application/json" };
-          if (req.headers.authorization) ttsHeaders["authorization"] = String(req.headers.authorization);
+          // Generate TTS for each language translation
+          const translations = firstChapter.translations || [];
+          
+          // If no translations exist, use the chapter's base content with default language
+          if (translations.length === 0 && firstChapter.content) {
+            logger.info("No translations found for first chapter, generating TTS for base content")
+            const defaultLanguageCode = (req.body && req.body.languageCode) || LanguageCode.EN;
+            const ttsPayload = {
+              text: firstChapter.content,
+              languageCode: defaultLanguageCode,
+              prompt: (req.body && req.body.prompt) || undefined,
+              storyId: story.id,
+              chapterId: firstChapter.id,
+            };
 
-          // don't block response; log result or error
-          axios.post(ttsUrl, ttsPayload, { headers: ttsHeaders }).then((r) => {
-            logger.info("Triggered AI TTS for first chapter", { storyId: story.id, chapterId: firstChapter.id, status: r.status });
-          }).catch((err) => {
-            logger.error("Failed to trigger AI TTS for first chapter", { storyId: story.id, chapterId: firstChapter.id, error: String(err) });
-          });
+            try {
+              const r = await axios.post<ApiResponse<{ audioUrl: string }>>(ttsUrl, ttsPayload, { headers });
+              logger.info("Completed AI TTS for first chapter (default language)", { 
+                storyId: story.id, 
+                chapterId: firstChapter.id,
+                languageCode: defaultLanguageCode,
+                status: r.status 
+              });
+
+              // Update chapter base audio URL
+              if (r.data.success && r.data.data?.audioUrl) {
+                try {
+                  const updateUrl = `${CONTENT_SERVICE_URL}${API_BASE_URL_V1}/chapters/${firstChapter.id}/audio`;
+                    await axios.patch(updateUrl, {
+                    audioUrl: r.data.data.audioUrl,
+                  }, { headers });
+
+                  logger.info("Updated chapter base audio URL", {
+                    chapterId: firstChapter.id,
+                    audioUrl: r.data.data.audioUrl,
+                  });
+                } catch (updateErr) {
+                  logger.error("Failed to update chapter base audio URL", {
+                    chapterId: firstChapter.id,
+                    error: String(updateErr),
+                  });
+                }
+              }
+            } catch (err) {
+              logger.error("Failed to generate AI TTS for first chapter (default language)", { 
+                storyId: story.id, 
+                chapterId: firstChapter.id,
+                languageCode: defaultLanguageCode,
+                error: String(err) 
+              });
+            }
+          } else {
+            logger.info("Generating TTS for first chapter translations")
+            // Generate TTS for each translation (sequentially)
+            for (const translation of translations) {
+              const ttsPayload = {
+                text: translation.content,
+                languageCode: translation.languageCode,
+                prompt: (req.body && req.body.prompt) || undefined,
+                storyId: story.id,
+                chapterId: firstChapter.id,
+              };
+
+              try {
+                const r = await axios.post<ApiResponse<{ audioUrl: string }>>(ttsUrl, ttsPayload, { headers });
+                logger.info("Completed AI TTS for first chapter translation", { 
+                  storyId: story.id, 
+                  chapterId: firstChapter.id,
+                  languageCode: translation.languageCode,
+                  status: r.status 
+                });
+
+                // Update chapter translation with audio URL
+                if (r.data.success && r.data.data?.audioUrl) {
+                  try {
+                    const updateUrl = `${CONTENT_SERVICE_URL}${API_BASE_URL_V1}/chapters/${firstChapter.id}/audio`;
+                    await axios.patch(updateUrl, {
+                      audioUrl: r.data.data.audioUrl,
+                      languageCode: translation.languageCode,
+                    }, { headers });
+
+                    logger.info("Updated chapter translation audio URL", {
+                      chapterId: firstChapter.id,
+                      languageCode: translation.languageCode,
+                      audioUrl: r.data.data.audioUrl,
+                    });
+                  } catch (updateErr) {
+                    logger.error("Failed to update chapter translation audio URL", {
+                      chapterId: firstChapter.id,
+                      languageCode: translation.languageCode,
+                      error: String(updateErr),
+                    });
+                  }
+                }
+              } catch (err) {
+                logger.error("Failed to generate AI TTS for first chapter translation", { 
+                  storyId: story.id, 
+                  chapterId: firstChapter.id,
+                  languageCode: translation.languageCode,
+                  error: String(err) 
+                });
+              }
+            }
+          }
         }
 
       } catch (err) {
-        logger.error("Error while triggering AI TTS after content create", { error: String(err) });
+        logger.error("Error while generating AI TTS after content create", { error: String(err) });
       }
 
       return res.status(response.status).json(response.data);

@@ -1,30 +1,40 @@
 import { Request, Response } from "express";
 import * as ttsService from "../services/tts.service";
 import { logger } from "src/lib/logger";
-import { ApiResponse, TTSAudio } from "@shared/types";
+import { ApiResponse, TTSAudio, LanguageCode } from "@shared/types";
 
-export async function handleSynthesize(req: Request, res: Response
+export async function handleSynthesize(req: Request, res: Response<ApiResponse<{ audioUrl: string; }>>
 ) {
   try {
     logger.info("[TTS Controller] Received synthesis request", {
       textLength: typeof req.body.text === "string" ? req.body.text.length : 0,
-      voice: req.body.voice,
       languageCode: req.body.languageCode,
       prompt: req.body.prompt ? "provided" : "none",
       storyId: req.body.storyId,
       chapterId: req.body.chapterId,
     });
-    const { text, voice, languageCode, prompt, storyId, chapterId } = req.body;
+    const { text, languageCode, prompt, storyId, chapterId } = req.body;
 
     if (!text || typeof text !== "string") {
       logger.warn("[TTS Controller] TTS synthesis request missing or invalid 'text' field");
-      return res
-        .status(400)
-        .json({ error: "Missing or invalid 'text' in body" });
+      return res.status(400).json({
+        success: false,
+        error: { code: "INVALID_PARAM", message: "Missing or invalid 'text' in body" },
+        timestamp: new Date(),
+      } as ApiResponse<{ audioUrl: string }>);
+    }
+
+    // Validate languageCode if provided
+    if (languageCode && !Object.values(LanguageCode).includes(languageCode)) {
+      logger.warn("[TTS Controller] Invalid language code provided", { languageCode });
+      return res.status(400).json({
+        success: false,
+        error: { code: "INVALID_PARAM", message: `Invalid language code. Must be one of: ${Object.values(LanguageCode).join(", ")}` },
+        timestamp: new Date(),
+      } as ApiResponse<{ audioUrl: string }>);
     }
 
     const result = await ttsService.synthesizeText(text, {
-      voice,
       languageCode,
       prompt,
       storyId,
@@ -36,27 +46,35 @@ export async function handleSynthesize(req: Request, res: Response
         storyId,
         chapterId,
       });
-      return res.status(500).json({ success: false, error: { code: "SYNTHESIS_FAILED", message: "TTS synthesis failed" } });
+      return res.status(500).json({
+        success: false,
+        error: { code: "SYNTHESIS_FAILED", message: "TTS synthesis failed" },
+        timestamp: new Date(),
+      } as ApiResponse<{ audioUrl: string }>);
     }
 
     logger.info("[TTS Controller] TTS synthesis successful", {
       storyId,
       chapterId,
+      languageCode,
       audioUrl: result.audioUrl,
     });
 
     // Return audio URL and metadata (cloud storage URL)
-    return res.status(200).json({
+    const response: ApiResponse<{ audioUrl: string }> = {
       success: true,
-      data: {
-        audioUrl: result.audioUrl,
-        dbRecordId: result.dbRecord?.id,
-        mimeType: "audio/wav",
-      },
-    });
+      data: { audioUrl: result.audioUrl },
+      timestamp: new Date(),
+    };
+
+    return res.status(200).json(response);
   } catch (err: any) {
     logger.error("[TTS Controller] TTS error", { error: err });
-    return res.status(500).json({ success: false, error: { code: "INTERNAL_ERROR", message: err?.message || "Internal error" } });
+    return res.status(500).json({
+      success: false,
+      error: { code: "INTERNAL_ERROR", message: err?.message || "Internal error" },
+      timestamp: new Date(),
+    } as ApiResponse<{ audioUrl: string }>);
   }
 }
 

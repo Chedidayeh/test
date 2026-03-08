@@ -6,7 +6,14 @@ import { BookOpen, Lock, Zap } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { World, ChildProfile, Roadmap, RoleType, Local, LanguageCode } from "@shared/types";
+import {
+  World,
+  ChildProfile,
+  Roadmap,
+  RoleType,
+  Local,
+  LanguageCode,
+} from "@shared/types";
 import { getEnrichedStoriesForWorld } from "../../_lib/helpers";
 import { getLanguageCode } from "@/src/lib/translation-utils";
 import { useLocale } from "@/src/contexts/LocaleContext";
@@ -25,13 +32,14 @@ export default function StoriesRoadmap({
   childProfile,
 }: StoriesRoadmapProps) {
   const t = useTranslations("ChildDashboard");
-  const {locale} = useLocale();
-
+  const { locale, isRTL } = useLocale();
 
   const langCode = getLanguageCode(locale);
 
   const getLocalizedStory = (story: World["stories"][0]) => {
-    const translation = story.translations?.find((tr: { languageCode: LanguageCode }) => tr.languageCode === langCode);
+    const translation = story.translations?.find(
+      (tr: { languageCode: LanguageCode }) => tr.languageCode === langCode,
+    );
     return {
       title: translation?.title || story.title,
       description: translation?.description || story.description,
@@ -44,8 +52,11 @@ export default function StoriesRoadmap({
     childProfile,
   );
 
+  // Ensure stories are ordered by their `order` field before applying locking and rendering
+  const sortedStories = [...enrichedStories].sort((a, b) => a.order - b.order);
+
   // Apply within-world progressive locking: lock story if previous one in same world is not completed
-  const progressiveLockedStories = enrichedStories.map((story) => {
+  const progressiveLockedStories = sortedStories.map((story) => {
     // If already locked by cross-world logic, keep it locked
     if (story.status === "locked") {
       return story;
@@ -53,7 +64,7 @@ export default function StoriesRoadmap({
 
     // If this is not the first story in the world, check if previous story is completed
     if (story.order > 1) {
-      const previousStory = enrichedStories.find(
+      const previousStory = sortedStories.find(
         (s) => s.order === story.order - 1,
       );
       if (previousStory && previousStory.status !== "completed") {
@@ -110,6 +121,13 @@ export default function StoriesRoadmap({
               {/* Overlay Gradient */}
               <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-transparent" />
 
+              {/* Order Badge (position adjusts for RTL) */}
+              <div className={`absolute bottom-3 z-20 ${isRTL ? "left-3" : "right-3"}`}>
+                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-black/60 text-white rounded-full flex items-center justify-center font-semibold text-sm sm:text-base">
+                  {story.order}
+                </div>
+              </div>
+
               {/* Lock Icon - if locked */}
               {story.status === "locked" && (
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -134,23 +152,30 @@ export default function StoriesRoadmap({
                             : "bg-primary text-white"
                     }`}
                   >
-                    {story.status === "completed" && t("roadmapPage.storiesRoadmap.status.completed")}
+                    {story.status === "completed" &&
+                      t("roadmapPage.storiesRoadmap.status.completed")}
                     {story.status === "in_progress" &&
-                      t("roadmapPage.storiesRoadmap.status.inProgress", { percentage: story.completionPercentage })}
-                    {story.status === "locked" && t("roadmapPage.storiesRoadmap.status.locked")}
-                    {story.status === "not_started" && t("roadmapPage.storiesRoadmap.status.notStarted")}
+                      t("roadmapPage.storiesRoadmap.status.inProgress", {
+                        percentage: story.completionPercentage,
+                      })}
+                    {story.status === "locked" &&
+                      t("roadmapPage.storiesRoadmap.status.locked")}
+                    {story.status === "not_started" &&
+                      t("roadmapPage.storiesRoadmap.status.notStarted")}
                   </span>
                   <div className="md:flex items-center hidden gap-2 scale-95 opacity-100 group-hover:scale-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200">
                     <div className="flex items-center gap-1 text-white backdrop-blur-sm bg-accent rounded-2xl px-3 py-1">
                       <BookOpen className="w-4 h-4" />
                       <div className="text-sm">
-                        {story.chapters.length} {t("roadmapPage.storiesRoadmap.chapters")}
+                        {story.chapters.length}{" "}
+                        {t("roadmapPage.storiesRoadmap.chapters")}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 text-white backdrop-blur-sm bg-secondary rounded-2xl px-3 py-1">
                       <Zap className="w-4 h-4" />
                       <div className="text-sm">
-                        {story.challengeCount} {t("roadmapPage.storiesRoadmap.challenges")}
+                        {story.challengeCount}{" "}
+                        {t("roadmapPage.storiesRoadmap.challenges")}
                       </div>
                     </div>
                   </div>
@@ -174,7 +199,9 @@ export default function StoriesRoadmap({
                         href={`/story-reading-interface/${story.id}?childId=${childProfile.child.id}`}
                       >
                         <Button className="w-max">
-                          {t("roadmapPage.storiesRoadmap.buttons.continueReading")}
+                          {t(
+                            "roadmapPage.storiesRoadmap.buttons.continueReading",
+                          )}
                         </Button>
                       </Link>
                     )}

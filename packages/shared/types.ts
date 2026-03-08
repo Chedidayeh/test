@@ -38,6 +38,12 @@ export enum LanguageCode {
   FR = "FR",
 }
 
+export enum TTSLanguageCodes {
+  ENGLISH_US = "en-us",
+  ARABIC = "ar-001",
+  FRENSH = "fr-fr",
+};
+
 export enum Local {
   EN = "en",
   AR = "ar",
@@ -508,6 +514,20 @@ export interface ChildBadge {
 // ===========================================================================
 // AI SERVICE TYPES
 // ===========================================================================
+
+
+// map LanguageCodes to ContentService LanguageCode for easy reference
+export const TTSLanguageToContentLanguageMap: Record<string, LanguageCode> = {
+  "en-us": LanguageCode.EN,
+  "ar-001": LanguageCode.AR,
+  "fr-fr": LanguageCode.FR,
+};
+
+export const ContentLanguageToTTSLanguageMap: Record<LanguageCode | string, string> = {
+  [LanguageCode.EN]: TTSLanguageCodes.ENGLISH_US,
+  [LanguageCode.AR]: TTSLanguageCodes.ARABIC,
+  [LanguageCode.FR]: TTSLanguageCodes.FRENSH,
+};
 
 export interface TTSAudio {
   id: string;

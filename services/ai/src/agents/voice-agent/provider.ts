@@ -1,18 +1,12 @@
 import { VertexAI } from "@google-cloud/vertexai";
 import path from "path";
 import "dotenv/config";
+import { TTSLanguageCodes } from "@shared/types";
 
 export interface TTSOptions {
-  voice?: string;
-  languageCode?: string;
+  languageCode?: TTSLanguageCodes;
   prompt?: string;
 }
-
-export const LanguageCodes = {
-  ENGLISH_US: "en-us",
-  ARABIC: "ar-001",
-  FRENSH: "fr-fr",
-};
 
 const credentialsPath = path.resolve(
   process.cwd(),
@@ -39,8 +33,7 @@ export class VertexAITTSProvider {
 
   async synthesize(text: string, options: TTSOptions = {}): Promise<Buffer> {
     const {
-      voice = "Achernar",
-      languageCode = LanguageCodes.ENGLISH_US,
+      languageCode = TTSLanguageCodes.ENGLISH_US,
       prompt = "Narrate this story clearly and emotionally like an audiobook narrator.",
     } = options;
 
@@ -63,7 +56,7 @@ export class VertexAITTSProvider {
           languageCode,
           voiceConfig: {
             prebuiltVoiceConfig: {
-              voiceName: voice,
+              voiceName: "Achernar",
             },
           },
         },

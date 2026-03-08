@@ -29,35 +29,54 @@ function formatLog(
   const base = {
     timestamp,
     level,
-    service: "gateway",
     message,
   };
 
-  if (metadata) {
-    return JSON.stringify({ ...base, ...metadata });
+  const log = metadata ? { ...base, ...metadata } : base;
+  return JSON.stringify(log);
+}
+
+function getConsoleColor(level: LogLevel): string {
+  switch (level) {
+    case LogLevel.ERROR:
+      return "\x1b[31m"; // Red
+    case LogLevel.WARN:
+      return "\x1b[33m"; // Yellow
+    case LogLevel.INFO:
+      return "\x1b[35m"; // Purple
+    case LogLevel.DEBUG:
+      return "\x1b[36m"; // Cyan (changed so DEBUG is different)
+    default:
+      return "\x1b[0m"; // Reset
   }
-  return JSON.stringify(base);
 }
 
 export const logger = {
-  error: (message: string, metadata?: LogMetadata) => {
+  error: (message: string, metadata?: LogMetadata): void => {
     if (shouldLog(LogLevel.ERROR)) {
-      console.error(formatLog(LogLevel.ERROR, message, metadata));
+      const log = formatLog(LogLevel.ERROR, message, metadata);
+      console.error(getConsoleColor(LogLevel.ERROR) + log + "\x1b[0m");
     }
   },
-  warn: (message: string, metadata?: LogMetadata) => {
+
+  warn: (message: string, metadata?: LogMetadata): void => {
     if (shouldLog(LogLevel.WARN)) {
-      console.warn(formatLog(LogLevel.WARN, message, metadata));
+      const log = formatLog(LogLevel.WARN, message, metadata);
+      console.warn(getConsoleColor(LogLevel.WARN) + log + "\x1b[0m");
     }
   },
-  info: (message: string, metadata?: LogMetadata) => {
+
+  info: (message: string, metadata?: LogMetadata): void => {
     if (shouldLog(LogLevel.INFO)) {
-      console.log(formatLog(LogLevel.INFO, message, metadata));
+      const log = formatLog(LogLevel.INFO, message, metadata);
+      console.log(getConsoleColor(LogLevel.INFO) + log + "\x1b[0m");
     }
   },
-  debug: (message: string, metadata?: LogMetadata) => {
+
+  debug: (message: string, metadata?: LogMetadata): void => {
     if (shouldLog(LogLevel.DEBUG)) {
-      console.log(formatLog(LogLevel.DEBUG, message, metadata));
+      const log = formatLog(LogLevel.DEBUG, message, metadata);
+      console.debug(getConsoleColor(LogLevel.DEBUG) + log + "\x1b[0m");
     }
   },
 };
