@@ -8,7 +8,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "build": "tsc && tsc-alias",
-    "start": "node dist/src/server.js",
+    "start": "node services/ai/dist/src/server.js",
     "dev": "ts-node src/server.ts",
     "dev:watch": "ts-node-dev --respawn src/server.ts"
   },
