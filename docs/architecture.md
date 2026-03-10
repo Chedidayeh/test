@@ -1,8 +1,8 @@
-# Architecture Microservices — Readly
+# Architecture Microservices — Readdly
 
 ## Vue d'ensemble
 
-L'application Readly est organisée selon une architecture **microservices** avec API REST. Chaque service gère un domaine métier distinct et communique via HTTP. Une **API Gateway** centralise le routage et l'authentification.
+L'application Readdly est organisée selon une architecture **microservices** avec API REST. Chaque service gère un domaine métier distinct et communique via HTTP. Une **API Gateway** centralise le routage et l'authentification.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐

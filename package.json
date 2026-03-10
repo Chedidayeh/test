@@ -3,22 +3,34 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "workspaces": [
+    "services/*",
+    "packages/*",
+    "apps/*"
+  ],
   "directories": {
     "doc": "docs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "concurrently \"npm run dev:gateway\" \"npm run dev:content\" \"npm run dev:progress\" \"npm run dev:auth\" \"npm run dev:ai\"",
+    "dev:gateway": "npm --prefix services/gateway run dev",
+    "dev:content": "npm --prefix services/content run dev",
+    "dev:progress": "npm --prefix services/progress run dev",
+    "dev:auth": "npm --prefix services/auth run dev",
+    "dev:ai": "npm --prefix services/ai run dev",
+    "prisma:generate": "npm run prisma:generate:ai && npm run prisma:generate:auth && npm run prisma:generate:content && npm run prisma:generate:progress",
+    "prisma:generate:ai": "npm --prefix services/ai run prisma:generate",
+    "prisma:generate:auth": "npm --prefix services/auth run prisma:generate",
+    "prisma:generate:content": "npm --prefix services/content run prisma:generate",
+    "prisma:generate:progress": "npm --prefix services/progress run prisma:generate"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^25.2.3",
+    "concurrently": "^8.2.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3"
-  },
-  "dependencies": {
-    "express": "^5.2.1",
-    "http-proxy-middleware": "^3.0.5"
   }
 }

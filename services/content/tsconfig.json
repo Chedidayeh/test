@@ -6,7 +6,8 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
-      "@shared/*": ["../../packages/shared/*"]
+      "@shared/*": ["../../packages/shared/*"],
+      "@prisma/client": ["./prisma/generated/client"]
     },
     "strict": true,
     "esModuleInterop": true,

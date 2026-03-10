@@ -47,7 +47,7 @@ const Header = ({ session }: { session: Session | null }) => {
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
               <span className="font-heading text-white text-2xl font-bold">
-                Readly
+                Readdly
               </span>
             </Link>
 
@@ -75,7 +75,7 @@ const Header = ({ session }: { session: Session | null }) => {
             onClick={() => setMobileOpen(false)}
           >
             <span className="font-heading text-white text-lg font-bold">
-              Readly
+              Readdly
             </span>
           </Link>
 

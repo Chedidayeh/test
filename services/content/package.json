@@ -4,6 +4,9 @@
   "description": "Content Service - Manages stories, riddles, hints, and media",
   "main": "dist/server.js",
   "scripts": {
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
     "build": "tsc && tsc-alias",
     "start": "node dist/src/server.js",
     "dev": "ts-node src/server.ts",

@@ -22,7 +22,7 @@ const tajawal = Tajawal({
 });
 
 export const metadata: Metadata = {
-  title: "Readly - Stories that make you think!",
+  title: "Readdly - Stories that make you think!",
   description:
     "An interactive story-based riddle game for young readers aged 6-11. Read stories, solve riddles, and learn while having fun!",
   keywords: [

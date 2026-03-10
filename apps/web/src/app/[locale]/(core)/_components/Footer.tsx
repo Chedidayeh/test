@@ -13,7 +13,7 @@ const Footer = () => {
               href="/"
               className="font-heading z-10 text-xl font-bold hover:opacity-80 transition-opacity"
             >
-              Readly
+              Readdly
             </Link>
           </div>
 
@@ -42,7 +42,7 @@ const Footer = () => {
 
           <div className="order-3 w-full md:w-auto md:flex-none text-center md:text-right mt-3 md:mt-0">
             <div className="text-sm text-foreground/70">
-               {new Date().getFullYear()} Readly. All rights reserved.
+               {new Date().getFullYear()} Readdly. All rights reserved.
             </div>
           </div>
         </div>

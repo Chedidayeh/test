@@ -2,7 +2,7 @@
 
 ## Context
 
-L'application Readly adopte une architecture microservices avec 5 services principaux : Gateway, Content Service, Progress Service, AI Service, Auth Service.
+L'application Readdly adopte une architecture microservices avec 5 services principaux : Gateway, Content Service, Progress Service, AI Service, Auth Service.
 
 La question se pose : comment organiser la persistance des données ?
 

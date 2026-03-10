@@ -9,7 +9,7 @@ import { redirect } from "next/navigation";
 import { getParentWithProfiles } from "@/src/lib/progress-service/server-api";
 
 export const metadata: Metadata = {
-  title: "Story Library - Readly",
+  title: "Story Library - Readdly",
   description:
     "Discover and explore a magical collection of interactive stories for children. Browse by category, reading level, and progress status to find your next adventure.",
 };

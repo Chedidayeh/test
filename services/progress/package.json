@@ -1,9 +1,12 @@
 {
-  "name": "readly-progress-service",
+  "name": "readdly-progress-service",
   "version": "1.0.0",
   "description": "Progress Service - sessions and attempts",
   "main": "dist/server.js",
   "scripts": {
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
     "build": "tsc && tsc-alias",
     "start": "node dist/src/server.js",
     "dev": "ts-node src/server.ts",

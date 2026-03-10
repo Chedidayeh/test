@@ -15,16 +15,16 @@ const faqItems: FAQItem[] = [
   {
     id: "p1",
     category: "parent",
-    question: "Is Readly safe for my child?",
+    question: "Is Readdly safe for my child?",
     answer:
-      "Yes! Safety is our top priority. All stories are carefully curated and age-appropriate. We don't collect unnecessary personal data, use end-to-end encryption for all communications, and have robust parental controls. Your child can enjoy Readly with complete peace of mind.",
+      "Yes! Safety is our top priority. All stories are carefully curated and age-appropriate. We don't collect unnecessary personal data, use end-to-end encryption for all communications, and have robust parental controls. Your child can enjoy Readdly with complete peace of mind.",
   },
   {
     id: "p2",
     category: "parent",
-    question: "How does Readly adapt to my child's reading level?",
+    question: "How does Readdly adapt to my child's reading level?",
     answer:
-      "Readly uses AI to personalize every child's experience. When your child starts, they take a quick reading assessment. As they progress through stories and riddles, the platform learns their pace and interests, automatically adjusting story difficulty and hint complexity to keep them challenged but not frustrated.",
+      "Readdly uses AI to personalize every child's experience. When your child starts, they take a quick reading assessment. As they progress through stories and riddles, the platform learns their pace and interests, automatically adjusting story difficulty and hint complexity to keep them challenged but not frustrated.",
   },
   {
     id: "p3",
@@ -52,21 +52,21 @@ const faqItems: FAQItem[] = [
     category: "parent",
     question: "How much does it cost?",
     answer:
-      "Readly is free to get started with 5 stories and basic features. Premium Student ($9.99/month or $99/year) unlocks 50+ stories and adaptive learning. Premium Educator ($19.99/month or $199/year) includes classroom tools. All paid plans include a 14-day free trial with no credit card required.",
+      "Readdly is free to get started with 5 stories and basic features. Premium Student ($9.99/month or $99/year) unlocks 50+ stories and adaptive learning. Premium Educator ($19.99/month or $199/year) includes classroom tools. All paid plans include a 14-day free trial with no credit card required.",
   },
   {
     id: "p7",
     category: "parent",
-    question: "What age group is Readly for?",
+    question: "What age group is Readdly for?",
     answer:
-      "Readly is designed for children ages 6-11. Our algorithm ensures each child gets age-appropriate and reading-level-appropriate content, so a 6-year-old beginner and an 11-year-old advanced reader can both thrive on the same platform.",
+      "Readdly is designed for children ages 6-11. Our algorithm ensures each child gets age-appropriate and reading-level-appropriate content, so a 6-year-old beginner and an 11-year-old advanced reader can both thrive on the same platform.",
   },
   {
     id: "p8",
     category: "parent",
     question: "Can multiple children use one account?",
     answer:
-      "Yes! Family plans support up to 6 child profiles. Each child has their own reading level assessment, progress tracking, and personalized recommendations. This makes Readly perfect for families with kids of different ages.",
+      "Yes! Family plans support up to 6 child profiles. Each child has their own reading level assessment, progress tracking, and personalized recommendations. This makes Readdly perfect for families with kids of different ages.",
   },
   {
     id: "t1",
@@ -99,16 +99,16 @@ const faqItems: FAQItem[] = [
   {
     id: "t5",
     category: "teacher",
-    question: "Is there a way to integrate Readly into our LMS?",
+    question: "Is there a way to integrate Readdly into our LMS?",
     answer:
-      "Yes! Readly supports LMS integration via LTI 1.3. Connect Readly to Canvas, Google Classroom, Blackboard, or Schoology. Student grades automatically sync, and you can launch Readly directly from your course.",
+      "Yes! Readdly supports LMS integration via LTI 1.3. Connect Readdly to Canvas, Google Classroom, Blackboard, or Schoology. Student grades automatically sync, and you can launch Readdly directly from your course.",
   },
   {
     id: "t6",
     category: "teacher",
-    question: "What curriculum standards does Readly align with?",
+    question: "What curriculum standards does Readdly align with?",
     answer:
-      "Readly alignments include Common Core English Language Arts, Fountas & Pinnell Benchmark Levels, Guided Reading Levels, and Lexile ranges. All stories and riddles are tagged with these standards so you can ensure alignment with your curriculum.",
+      "Readdly alignments include Common Core English Language Arts, Fountas & Pinnell Benchmark Levels, Guided Reading Levels, and Lexile ranges. All stories and riddles are tagged with these standards so you can ensure alignment with your curriculum.",
   },
   {
     id: "t7",

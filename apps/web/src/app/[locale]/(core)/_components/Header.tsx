@@ -57,7 +57,7 @@ const Header = ({ userRole }: { userRole: RoleType | undefined }) => {
               href="/"
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
-              <span className="font-heading text-2xl font-bold">Readly</span>
+              <span className="font-heading text-2xl font-bold">Readdly</span>
             </Link>
 
             {/* Center Navigation (keeps nav visually centered) */}
@@ -100,7 +100,7 @@ const Header = ({ userRole }: { userRole: RoleType | undefined }) => {
             href="/"
             className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
-            <span className="font-heading text-lg font-bold">Readly</span>
+            <span className="font-heading text-lg font-bold">Readdly</span>
           </Link>
 
           {/* Right Actions */}

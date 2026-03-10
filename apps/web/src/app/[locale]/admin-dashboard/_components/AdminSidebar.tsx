@@ -113,7 +113,7 @@ export function AdminSidebar() {
                   R
                 </div>
                 <div>
-                  <h2 className="font-semibold">Readly Admin</h2>
+                  <h2 className="font-semibold">Readdly Admin</h2>
                   <p className="text-xs text-slate-500">Content Manager</p>
                 </div>
               </div>

@@ -66,7 +66,7 @@ export function About() {
                 Loved by Children
               </h1>
               <p className="text-lg md:text-xl mt-4 text-slate-300 max-w-3xl drop-shadow-md leading-relaxed">
-                Readly transforms reading from a task into an adventure. We
+                Readdly transforms reading from a task into an adventure. We
                 believe every child deserves engaging stories and personalized
                 learning experiences that match their unique pace and interests.
                 Our platform combines the best of literature with cutting-edge

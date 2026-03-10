@@ -7,7 +7,7 @@ import { getBadges, getAgeGroups } from "@/src/lib/content-service/server-api";
 import { RoleType } from "@shared/types";
 
 export const metadata: Metadata = {
-  title: "Parent Dashboard - Readly",
+  title: "Parent Dashboard - Readdly",
   description:
     "Monitor your children's reading progress, view achievements, and get AI-powered insights about their learning journey.",
 };

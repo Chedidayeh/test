@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ApiResponse, Chapter, ChapterTranslation, LanguageCode } from "@shared/types";
 import { logger } from "src/utils/logger";
-import { PrismaClient } from ".prisma/client/default";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 

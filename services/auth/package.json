@@ -1,16 +1,16 @@
 {
-  "name": "@readdly/auth-service",
+  "name": "readdly-auth-service",
   "version": "1.0.0",
   "description": "Authentication microservice for Readdly",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "ts-node src/server.ts",
-    "build": "tsc && tsc-alias",
-    "start": "node dist/src/server.js",
-    "test": "jest",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "build": "tsc && tsc-alias",
+    "start": "node dist/src/server.js",
+    "dev": "ts-node src/server.ts",
+    "test": "jest"
   },
   "keywords": [
     "auth",

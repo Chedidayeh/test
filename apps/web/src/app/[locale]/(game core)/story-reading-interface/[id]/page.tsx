@@ -10,7 +10,7 @@ import { getTranslations } from "next-intl/server";
 import MissingDataAlert from "@/src/components/shared/MissingDataAlert";
 
 export const metadata: Metadata = {
-  title: "Story Reading - Readly",
+  title: "Story Reading - Readdly",
   description:
     "Immerse yourself in interactive stories with text-to-speech, adjustable settings, and embedded riddles for an engaging learning experience.",
 };

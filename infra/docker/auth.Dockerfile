@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 COPY services/auth/package*.json ./
-RUN npm install
+RUN npm ci
 
 # Copy shared packages
 COPY packages/shared ./packages/shared

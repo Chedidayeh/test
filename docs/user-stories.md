@@ -1,4 +1,4 @@
-# User Stories — Readly (jeu de lecture)
+# User Stories — Readdly (jeu de lecture)
 
 ## 1. Enfant — Jouer une histoire et répondre à une devinette
 

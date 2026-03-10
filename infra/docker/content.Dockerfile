@@ -7,7 +7,7 @@ WORKDIR /app
 
 # Install production dependencies
 COPY services/content/package.json services/content/package-lock.json ./
-RUN npm install
+RUN npm ci
 
 # Copy shared packages
 COPY packages/shared ./packages/shared

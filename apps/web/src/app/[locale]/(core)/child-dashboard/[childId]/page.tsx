@@ -15,7 +15,7 @@ import { getTranslations } from "next-intl/server";
 import MissingDataAlert from "@/src/components/shared/MissingDataAlert";
 
 export const metadata: Metadata = {
-  title: "My Dashboard - Readly",
+  title: "My Dashboard - Readdly",
   description:
     "Track your reading progress, discover new stories, and celebrate your achievements in your personalized learning hub.",
 };

@@ -5,7 +5,7 @@ WORKDIR /app
 
 # Install production dependencies
 COPY services/gateway/package.json services/gateway/package-lock.json ./
-RUN npm install
+RUN npm ci
 
 # Copy shared packages
 COPY packages/shared ./packages/shared

@@ -67,7 +67,7 @@ const Footer = () => {
   const contactInfo = [
     { icon: MapPin, text: "123 Learning Street, Education City, EC 12345" },
     { icon: Phone, text: "+1 (555) 123-4567" },
-    { icon: Mail, text: "hello@readly.com" },
+    { icon: Mail, text: "hello@Readdly.com" },
   ];
 
   return (
@@ -78,7 +78,7 @@ const Footer = () => {
           {/* Brand Section */}
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <h3 className="text-2xl font-bold text-white">Readly</h3>
+              <h3 className="text-2xl font-bold text-white">Readdly</h3>
             </div>
             <p className="text-slate-400 text-sm leading-relaxed max-w-xs mb-6">
               Transforming young readers into confident learners through
@@ -173,7 +173,7 @@ const Footer = () => {
           {/* Copyright */}
           <div className="text-center md:text-right">
             <p className="text-xs md:text-sm text-slate-500">
-              <span className="text-primary">{currentYear} Readly</span>. All
+              <span className="text-primary">{currentYear} Readdly</span>. All
               rights reserved.
             </p>
           </div>

@@ -1,8 +1,6 @@
 import express, { Request, Response, Application } from "express";
 import dotenv from "dotenv";
-import path from "path";
 import ttsRouter from "./routes/tts.route";
-import { uploadRouter } from "./lib/uploadthing";
 import { API_BASE_URL_V1 } from "@shared/types";
 
 // Load env

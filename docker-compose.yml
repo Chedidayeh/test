@@ -54,6 +54,8 @@ services:
       - PORT=${AUTH_PORT}
       - NODE_ENV=${NODE_ENV}
       - DATABASE_URL=${AUTH_DATABASE_URL}
+      - GATEWAY_URL=${GATEWAY_URL}
+      - CHILD_LOGIN_CODE_ALPHABET=${CHILD_LOGIN_CODE_ALPHABET}
     networks:
       - story-network
     healthcheck:
@@ -79,6 +81,8 @@ services:
       - PORT=${CONTENT_PORT}  
       - NODE_ENV=${NODE_ENV}
       - DATABASE_URL=${CONTENT_DATABASE_URL}
+      - DEEPL_API_KEY=${DEEPL_API_KEY}
+      - ENABLE_AUTO_TRANSLATION=${ENABLE_AUTO_TRANSLATION}
     networks:
       - story-network
     healthcheck:
@@ -129,6 +133,10 @@ services:
       - PORT=${AI_PORT}
       - NODE_ENV=${NODE_ENV}
       - DATABASE_URL=${AI_DATABASE_URL}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+      - GOOGLE_PROJECT_ID=${GOOGLE_PROJECT_ID}
+      - UPLOADTHING_TOKEN=${UPLOADTHING_TOKEN}
+      - SERVICE_ACCOUNT_KEY=${SERVICE_ACCOUNT_KEY}
     networks:
       - story-network
     healthcheck:

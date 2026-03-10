@@ -1,4 +1,4 @@
-# API Contracts — Readly MVP v1
+# API Contracts — Readdly MVP v1
 
 ---
 

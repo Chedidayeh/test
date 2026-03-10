@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import { RoleType } from "@shared/types";
 import { getTranslations } from "next-intl/server";
 export const metadata: Metadata = {
-  title: "Story Reading - Readly",
+  title: "Story Reading - Readdly",
   description:
     "Immerse yourself in interactive stories with text-to-speech, adjustable settings, and embedded riddles for an engaging learning experience.",
 };
