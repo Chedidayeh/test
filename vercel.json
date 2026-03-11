@@ -1,5 +1,6 @@
 {
     "version": 3,
+    "buildCommand": "NEXT_SKIP_TURBOPACK=true npm run build:shared && NEXT_SKIP_TURBOPACK=true npm --prefix apps/web run build",
     "builds": [
         {
             "src": "apps/web/package.json",
@@ -12,12 +13,7 @@
             "dest": "/$1"
         }
     ],
-    "build": {
-        "env": {
-            "NEXT_SKIP_TURBOPACK": "true"
-        },
-        "commands": {
-            "build": "NEXT_SKIP_TURBOPACK=true npm run build:shared && NEXT_SKIP_TURBOPACK=true npm --prefix apps/web run build"
-        }
+    "env": {
+        "NEXT_SKIP_TURBOPACK": "true"
     }
 }
