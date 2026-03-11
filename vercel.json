@@ -1,8 +1,9 @@
 {
   "version": 2,
-  "buildCommand": "npm run build:shared && cd apps/web && npm run build",
-  "installCommand": "npm install",
+  "buildCommand": "npm run build:shared && npm --prefix apps/web run build",
+  "installCommand": "npm ci",
   "outputDirectory": "apps/web/.next",
-  "public": false,
-  "rewrites": []
+  "env": {
+    "NODE_ENV": "production"
+  }
 }
