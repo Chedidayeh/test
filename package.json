@@ -11,6 +11,12 @@
     "doc": "docs"
   },
   "scripts": {
+    "install:all": "concurrently \"npm run install:gateway\" \"npm run install:content\" \"npm run install:progress\" \"npm run install:auth\" \"npm run install:ai\"",
+    "install:auth": " npm --prefix services/auth install",
+    "install:content": " npm --prefix services/content install",
+    "install:progress": " npm --prefix services/progress install",
+    "install:gateway": " npm --prefix services/gateway install",
+    "install:ai": " npm --prefix services/ai install",
     "dev": "concurrently \"npm run dev:gateway\" \"npm run dev:content\" \"npm run dev:progress\" \"npm run dev:auth\" \"npm run dev:ai\"",
     "dev:gateway": "npm --prefix services/gateway run dev",
     "dev:content": "npm --prefix services/content run dev",
