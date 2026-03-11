@@ -1,0 +1,6 @@
+{
+  "buildCommand": "NEXT_SKIP_TURBOPACK=true npm run build:shared && NEXT_SKIP_TURBOPACK=true npm --prefix apps/web run build",
+  "env": {
+    "NEXT_SKIP_TURBOPACK": "true"
+  }
+}
