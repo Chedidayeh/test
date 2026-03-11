@@ -8,9 +8,6 @@
     "start": "next start",
     "lint": "eslint"
   },
-  "engines": {
-    "node": "20.x"
-  },
   "dependencies": {
     "@readdly/shared-types": "*",
     "@base-ui/react": "^1.1.0",
@@ -53,5 +50,5 @@
     "tailwindcss": "^4",
     "tw-animate-css": "^1.4.0",
     "typescript": "^5"
-  }
+    }
 }
