@@ -4,7 +4,7 @@
  */
 
 import { signOut } from "@/src/auth";
-import { API_BASE_URL_V1 } from "@shared/types";
+import { API_BASE_URL_V1 } from "@readdly/shared-types";
 
 export async function handleLogout() {
   try {

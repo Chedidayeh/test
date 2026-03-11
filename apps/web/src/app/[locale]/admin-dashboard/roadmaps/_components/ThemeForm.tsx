@@ -8,7 +8,7 @@ import { Label } from "@/src/components/ui/label";
 import { Card } from "@/src/components/ui/card";
 import { Textarea } from "@/src/components/ui/textarea";
 import { themeSchema, ThemeFormData } from "../schemas/roadmapSchemas";
-import { Theme, TranslationSourceType, ManualTranslationEdit, LanguageCode } from "@shared/types";
+import { Theme, TranslationSourceType, ManualTranslationEdit, LanguageCode } from "@readdly/shared-types";
 import { getSourceLanguageLabel } from "@/src/lib/translation-utils";
 import {
   Select,

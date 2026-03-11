@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { LevelContent } from './_components/LevelContent'
-import { Level } from '@shared/types'
+import { Level } from '@readdly/shared-types'
 
 interface LevelPageProps {
   levels: Level[]

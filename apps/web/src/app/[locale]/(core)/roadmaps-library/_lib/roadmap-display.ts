@@ -1,4 +1,4 @@
-import { Roadmap } from '@shared/types';
+import { Roadmap } from '@readdly/shared-types';
 
 /**
  * Display format for roadmap cards

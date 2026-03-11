@@ -15,7 +15,7 @@ import type {
   Badge,
   CreateStoryWithChaptersInput,
   AgeGroupContentValidationResult,
-} from "@shared/types";
+} from "@readdly/shared-types";
 import { apiRequest, buildQueryString, isApiError } from "../helpers";
 
 interface PaginationParams {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Progress, ChildProfile } from "@shared/types";
+import { Progress, ChildProfile } from "@readdly/shared-types";
 import {
   Table,
   TableBody,

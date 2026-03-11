@@ -3,7 +3,7 @@ import { ThemeService } from "../services/theme.service";
 import { sendSuccess, sendError } from "../utils/response";
 import { logger } from "../utils/logger";
 import { PrismaClient } from "@prisma/client";
-import { ApiResponse, Theme, TranslationSourceType, ManualTranslationEdit } from "@shared/types";
+import { ApiResponse, Theme, TranslationSourceType, ManualTranslationEdit } from "@shared/src/types";
 
 const prisma = new PrismaClient();
 const themeService = new ThemeService(prisma);

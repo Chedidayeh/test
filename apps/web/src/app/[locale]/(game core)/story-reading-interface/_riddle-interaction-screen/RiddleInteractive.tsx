@@ -16,7 +16,7 @@ import {
   ChallengeType,
   ChallengeAttempt,
   Local,
-} from "@shared/types";
+} from "@readdly/shared-types";
 import { submitChallengeAnswerAction } from "@/src/lib/progress-service/server-actions";
 import type { SubmitChallengeAnswerRequest } from "@/src/lib/progress-service/server-api";
 import { useTranslations } from "next-intl";

@@ -12,7 +12,7 @@ import {
   SheetTitle,
 } from "@/src/components/ui/sheet";
 import { Button } from "@/src/components/ui/button";
-import { ReadingLevel } from "@shared/types";
+import { ReadingLevel } from "@readdly/shared-types";
 import { ChevronDown } from "lucide-react";
 import { getReadingLevelOptions } from "@/src/lib/reading-level-utils";
 

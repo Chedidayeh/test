@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import axios from "axios";
 import { logger } from "../utils/logger";
-import { ApiResponse, User, Child, API_BASE_URL_V1 } from "@shared/types";
+import { ApiResponse, User, Child, API_BASE_URL_V1 } from "@shared/src/types";
 
 const router = Router();
 

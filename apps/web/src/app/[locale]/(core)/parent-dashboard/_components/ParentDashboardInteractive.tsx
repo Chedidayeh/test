@@ -5,7 +5,7 @@ import ChildSidebar from "./ChildSidebar";
 import DashboardTabs from "./DashboardTabs";
 import OverviewTab from "./OverviewTab";
 import AchievementsTab from "./AchievementsTab";
-import { Badge, ParentUser, AgeGroup, RoleType } from "@shared/types";
+import { Badge, ParentUser, AgeGroup, RoleType } from "@readdly/shared-types";
 import TimeAnalyticsTab from "./TimeAnalyticsTab";
 import RiddleAnalyticsTab from "./RiddleAnalyticsTab";
 import { refetchParentDataAction } from "@/src/lib/progress-service/server-actions";

@@ -25,7 +25,7 @@ import {
   TranslationSourceType,
   ManualTranslationEdit,
   LanguageCode,
-} from "@shared/types";
+} from "@readdly/shared-types";
 import { getSourceLanguageLabel } from "@/src/lib/translation-utils";
 import { getReadingLevelOptions } from "@/src/lib/reading-level-utils";
 

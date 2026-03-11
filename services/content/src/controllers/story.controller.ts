@@ -9,7 +9,7 @@ import {
   editStoryWithChaptersTransaction,
   validateStoryCreationInput,
 } from "../utils/transaction.helper";
-import { ApiResponse, CreateStoryWithChaptersInput, Story } from "@shared/types";
+import { ApiResponse, CreateStoryWithChaptersInput, Story } from "@shared/src/types";
 
 const prisma = new PrismaClient();
 const storyService = new StoryService(prisma);

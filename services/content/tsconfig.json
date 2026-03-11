@@ -7,7 +7,7 @@
     "baseUrl": "./",
     "paths": {
       "@shared/*": ["../../packages/shared/*"],
-      "@prisma/client": ["./prisma/generated/client"]
+      // "@prisma/client": ["./prisma/generated/client"]
     },
     "strict": true,
     "esModuleInterop": true,

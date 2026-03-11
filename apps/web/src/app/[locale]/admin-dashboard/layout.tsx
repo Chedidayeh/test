@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { AdminSidebar } from "./_components/AdminSidebar";
 import { AdminHeader } from "./_components/AdminHeader";
 import { redirect } from "next/navigation";
-import { RoleType } from "@shared/types";
+import { RoleType } from "@readdly/shared-types";
 import { auth } from "@/src/auth";
 
 export default async function AdminLayout({

@@ -7,7 +7,7 @@
  * Pattern follows content-service/server-api.ts for consistency.
  */
 
-import type { ApiResponse, Child, TTSAudio } from "@shared/types";
+import type { ApiResponse, Child, TTSAudio } from "@readdly/shared-types";
 import { apiRequest, isApiError } from "../helpers";
 
 

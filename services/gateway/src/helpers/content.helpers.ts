@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 
 import axios from "axios";
 import { logger } from "../utils/logger";
-import { ApiResponse, Story, API_BASE_URL_V1, Chapter, LanguageCode } from "@shared/types";
+import { ApiResponse, Story, API_BASE_URL_V1, Chapter, LanguageCode } from "@shared/src/types";
 
 const CONTENT_SERVICE_URL =
   process.env.CONTENT_SERVICE_URL || "http://localhost:3003";

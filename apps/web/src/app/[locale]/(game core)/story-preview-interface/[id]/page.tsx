@@ -4,7 +4,7 @@ import MissingDataAlert from "@/src/components/shared/MissingDataAlert";
 import { getStoryById } from "@/src/lib/content-service/server-api";
 import { auth } from "@/src/auth";
 import { redirect } from "next/navigation";
-import { RoleType } from "@shared/types";
+import { RoleType } from "@readdly/shared-types";
 import { getTranslations } from "next-intl/server";
 export const metadata: Metadata = {
   title: "Story Reading - Readdly",

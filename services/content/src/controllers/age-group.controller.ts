@@ -4,7 +4,7 @@ import { sendSuccess, sendError } from "../utils/response";
 import { logger } from "../utils/logger";
 import { PrismaClient, AgeGroupStatus } from "@prisma/client";
 import { validateAgeGroupContentCompleteness } from "../utils/validation";
-import { ApiResponse, AgeGroup, AgeGroupContentValidationResult, TranslationSourceType, ManualTranslationEdit } from "@shared/types";
+import { ApiResponse, AgeGroup, AgeGroupContentValidationResult, TranslationSourceType, ManualTranslationEdit } from "@shared/src/types";
 
 const prisma = new PrismaClient();
 const ageGroupService = new AgeGroupService(prisma);

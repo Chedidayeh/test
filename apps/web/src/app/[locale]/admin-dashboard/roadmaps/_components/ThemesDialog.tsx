@@ -21,7 +21,7 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table";
 import { ThemeForm } from "./ThemeForm";
-import { Theme, Roadmap } from "@shared/types";
+import { Theme, Roadmap } from "@readdly/shared-types";
 import { ThemeFormData } from "../schemas/roadmapSchemas";
 import { toast } from "sonner";
 

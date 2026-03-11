@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@readdly/shared-types": "*",
     "@base-ui/react": "^1.1.0",
     "@hookform/resolvers": "^5.2.2",
     "@tabler/icons-react": "^3.36.1",
@@ -39,6 +40,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20.19.33",
     "@types/react": "^19",

@@ -1,4 +1,4 @@
-import { ChallengeType, TranslationSourceType } from "@shared/types";
+import { ChallengeType, TranslationSourceType } from "@readdly/shared-types";
 import { z } from "zod";
 
 /**

@@ -3,7 +3,7 @@ import {
   AgeGroupStatus,
   TranslationSourceType,
   ManualTranslationEdit,
-} from "@shared/types";
+} from "@readdly/shared-types";
 import { z } from "zod";
 
 const ageGroupTranslationEditSchema = z.object({

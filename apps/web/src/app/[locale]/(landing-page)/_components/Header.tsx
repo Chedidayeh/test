@@ -9,7 +9,7 @@ import { Session } from "next-auth";
 import Profile from "@/src/components/shared/Profile";
 import { LoginForm } from "@/src/components/shared/login-form";
 import { Switcher } from "@/src/components/shared/Switcher";
-import { RoleType } from "@shared/types";
+import { RoleType } from "@readdly/shared-types";
 import { Button } from "@/src/components/ui/button";
 
 const Header = ({ session }: { session: Session | null }) => {

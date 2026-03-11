@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/src/components/ui/dialog";
-import { Progress, Story, Challenge, ChallengeAttempt, ChallengeStatus, Local, LanguageCode } from "@shared/types";
+import { Progress, Story, Challenge, ChallengeAttempt, ChallengeStatus, Local, LanguageCode } from "@readdly/shared-types";
 import { calculateChallengeStats, getAggregatedChallengeStats, localizeChallengStats, LocalizedChallengeStats } from "../_lib/stats";
 import { fetchStoriesByIdsAction } from "@/src/lib/content-service/server-actions";
 import { useMemo, useState, useEffect } from "react";

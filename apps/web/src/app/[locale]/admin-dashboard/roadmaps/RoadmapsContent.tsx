@@ -39,7 +39,7 @@ import {
   ThemeFormData,
   WorldFormData,
 } from "./schemas/roadmapSchemas";
-import { AgeGroup, Roadmap, World, Theme, ReadingLevel } from "@shared/types";
+import { AgeGroup, Roadmap, World, Theme, ReadingLevel } from "@readdly/shared-types";
 import {
   createAgeGroupAction,
   updateAgeGroupAction,

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
-import { Story } from "@shared/types";
+import { Story } from "@readdly/shared-types";
 import { StoryPage } from "./storyDataTransform";
 import { useRouter } from "next/navigation";
 import { Button } from "@/src/components/ui/button";

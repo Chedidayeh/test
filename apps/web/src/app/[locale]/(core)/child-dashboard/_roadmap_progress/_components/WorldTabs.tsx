@@ -2,7 +2,7 @@
 
 import { motion } from "motion/react";
 import { Lock } from "lucide-react";
-import { LanguageCode, World } from "@shared/types";
+import { LanguageCode, World } from "@readdly/shared-types";
 import { useTranslations } from "next-intl";
 import { useLocale } from "@/src/contexts/LocaleContext";
 import { getLanguageCode } from "@/src/lib/translation-utils";

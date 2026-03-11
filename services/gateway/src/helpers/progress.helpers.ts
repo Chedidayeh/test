@@ -17,7 +17,7 @@ import {
   SessionCheckpoint,
   AdminDashboardStats,
   API_BASE_URL_V1,
-} from "@shared/types";
+} from "@shared/src/types";
 
 const PROGRESS_SERVICE_URL =
   process.env.PROGRESS_SERVICE_URL || "http://localhost:3004";

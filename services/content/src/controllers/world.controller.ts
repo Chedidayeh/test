@@ -3,7 +3,7 @@ import { WorldService } from "../services/world.service";
 import { sendSuccess, sendError } from "../utils/response";
 import { logger } from "../utils/logger";
 import { PrismaClient } from "@prisma/client";
-import { ApiResponse, World, TranslationSourceType, ManualTranslationEdit } from "@shared/types";
+import { ApiResponse, World, TranslationSourceType, ManualTranslationEdit } from "@shared/src/types";
 
 const prisma = new PrismaClient();
 const worldService = new WorldService(prisma);

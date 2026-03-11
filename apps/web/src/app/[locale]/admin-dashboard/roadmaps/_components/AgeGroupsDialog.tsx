@@ -21,7 +21,7 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table";
 import { AgeGroupForm } from "./AgeGroupForm";
-import { AgeGroup, Roadmap } from "@shared/types";
+import { AgeGroup, Roadmap } from "@readdly/shared-types";
 import { AgeGroupFormData } from "../schemas/roadmapSchemas";
 import { toast } from "sonner";
 

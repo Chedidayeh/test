@@ -1,4 +1,4 @@
-import { User, ChildProfile, ParentUser } from "@shared/types";
+import { User, ChildProfile, ParentUser } from "@shared/src/types";
 import { logger } from "../utils/logger";
 
 /**

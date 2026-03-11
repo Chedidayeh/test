@@ -1,7 +1,7 @@
 import express, { Request, Response, Application } from "express";
 import dotenv from "dotenv";
 import ttsRouter from "./routes/tts.route";
-import { API_BASE_URL_V1 } from "@shared/types";
+import { API_BASE_URL_V1 } from "@shared/src/types";
 
 // Load env
 dotenv.config();

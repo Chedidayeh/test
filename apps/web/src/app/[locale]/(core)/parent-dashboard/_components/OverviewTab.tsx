@@ -4,7 +4,7 @@ import Link from "next/link";
 import { TabsContent } from "@/src/components/ui/tabs";
 import { Button } from "@/src/components/ui/button";
 import StatsCards from "./StatsCards";
-import { ChildProfile } from "@shared/types";
+import { ChildProfile } from "@readdly/shared-types";
 import {
   getStoriesCompleted,
   getTotalReadingTime,

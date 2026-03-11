@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { RequestContext, RoleType } from "@shared/types";
+import { RequestContext, RoleType } from "@shared/src/types";
 
 /**
  * Auth middleware to verify JWT token from gateway

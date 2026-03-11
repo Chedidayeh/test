@@ -1,4 +1,4 @@
-import { API_BASE_URL_V1, RoleType } from "@shared/types";
+import { API_BASE_URL_V1, RoleType } from "@readdly/shared-types";
 import type { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 

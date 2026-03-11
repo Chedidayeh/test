@@ -11,7 +11,7 @@ import {
   CreateStoryWithChaptersInput,
   ApiResponse,
   AgeGroupContentValidationResult,
-} from "@shared/types";
+} from "@readdly/shared-types";
 import {
   getStories,
   StoryQueryParams,

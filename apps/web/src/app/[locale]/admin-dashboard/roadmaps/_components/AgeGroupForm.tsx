@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { ageGroupSchema, AgeGroupFormData } from "../schemas/roadmapSchemas";
-import { AgeGroup, AgeGroupContentValidationResult, AgeGroupStatus, TranslationSourceType, ManualTranslationEdit, LanguageCode } from "@shared/types";
+import { AgeGroup, AgeGroupContentValidationResult, AgeGroupStatus, TranslationSourceType, ManualTranslationEdit, LanguageCode } from "@readdly/shared-types";
 import { validateAgeGroupReadinessAction } from "@/src/lib/content-service/server-actions";
 import { AgeGroupReadinessChecker } from "./AgeGroupReadinessChecker";
 import { getSourceLanguageLabel } from "@/src/lib/translation-utils";

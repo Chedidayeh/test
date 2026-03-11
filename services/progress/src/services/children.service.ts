@@ -9,7 +9,7 @@ import {
   ChallengeType,
   SessionCheckpoint,
   AttemptAction,
-} from "@shared/types";
+} from "@shared/src/types";
 
 const prisma = new PrismaClient();
 

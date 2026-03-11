@@ -7,10 +7,10 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "build": "tsc && tsc-alias",
-    "start": "node dist/src/server.js",
+    "build": "tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
+    "start": "node dist/services/auth/src/server.js",
     "dev": "ts-node src/server.ts",
-    "test": "jest"
+    "dev:watch": "ts-node-dev --respawn src/server.ts"
   },
   "keywords": [
     "auth",

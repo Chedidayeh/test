@@ -9,7 +9,7 @@ import { jwtMiddleware } from "./middleware/jwt.middleware";
 import { logger } from "./utils/logger";
 import { authServiceClient } from "./utils/auth-service";
 import { aiRoutes, authRoutes, contentRoutes, progressRoutes } from "./routes";
-import { API_BASE_URL_V1 } from "@shared/types";
+import { API_BASE_URL_V1 } from "@shared/src/types";
 
 const app = express();
 

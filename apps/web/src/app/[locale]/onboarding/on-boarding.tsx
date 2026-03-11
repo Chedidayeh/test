@@ -28,7 +28,7 @@ import {
 } from "@/src/components/ui/select";
 import { Session } from "next-auth";
 import { useTranslations } from "next-intl";
-import { AgeGroup, LanguageCode, Theme } from "@shared/types";
+import { AgeGroup, LanguageCode, Theme } from "@readdly/shared-types";
 import { useLocale } from "@/src/contexts/LocaleContext";
 import { createChildProfileAction } from "@/src/lib/auth-service/server-actions";
 import { getLanguageCode } from "@/src/lib/translation-utils";

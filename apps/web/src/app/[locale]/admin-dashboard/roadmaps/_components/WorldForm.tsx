@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { worldSchema, WorldFormData } from "../schemas/roadmapSchemas";
-import { World, Roadmap, TranslationSourceType, ManualTranslationEdit, LanguageCode } from "@shared/types";
+import { World, Roadmap, TranslationSourceType, ManualTranslationEdit, LanguageCode } from "@readdly/shared-types";
 import { getSourceLanguageLabel } from "@/src/lib/translation-utils";
 
 interface WorldFormProps {

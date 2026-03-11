@@ -17,7 +17,7 @@ import {
   ChallengeAttempt,
   Local,
   StoryTranslation,
-} from "@shared/types";
+} from "@readdly/shared-types";
 import {
   transformStoryToPages,
   getChapterByPageNumber,

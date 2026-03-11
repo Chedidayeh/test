@@ -8,7 +8,7 @@ import ReadingSettings from "./ReadingSettings";
 import { CircleQuestionMark, Settings, X } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import StoryFlowNavigation from "./StoryFlowNavigation";
-import { Local, Story, StoryTranslation } from "@shared/types";
+import { Local, Story, StoryTranslation } from "@readdly/shared-types";
 import { transformStoryToPages } from "./storyDataTransform";
 import { useTranslations } from "next-intl";
 import { useLocale } from "@/src/contexts/LocaleContext";

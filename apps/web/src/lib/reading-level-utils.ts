@@ -1,4 +1,4 @@
-import { ReadingLevel } from "@shared/types";
+import { ReadingLevel } from "@readdly/shared-types";
 
 /**
  * Get the translated label for a ReadingLevel enum value

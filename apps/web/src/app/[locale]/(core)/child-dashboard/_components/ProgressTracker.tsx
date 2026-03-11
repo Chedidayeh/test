@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
-import { Badge, Level } from "@shared/types";
+import { Badge, Level } from "@readdly/shared-types";
 import { CheckIcon, Star, StarIcon, Zap } from "lucide-react";
 import { useState } from "react";
 import { useTranslations } from "next-intl";

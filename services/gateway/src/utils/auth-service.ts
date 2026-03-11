@@ -1,6 +1,6 @@
 import axios from "axios";
 import { logger } from "./logger";
-import { API_BASE_URL_V1, RoleType } from "@shared/types";
+import { API_BASE_URL_V1, RoleType } from "@shared/src/types";
 
 export interface VerifyTokenResponse {
   valid: boolean;

@@ -2,7 +2,7 @@ import { PrismaClient, LanguageCode } from "@prisma/client";
 import { logger } from "../utils/logger";
 import type { Theme } from "../types";
 import { getTranslationService } from "../translations/translation.service";
-import { TranslationSourceType, ManualTranslationEdit } from "@shared/types";
+import { TranslationSourceType, ManualTranslationEdit } from "@shared/src/types";
 import { TRANSLATION_CONFIG, TRANSLATION_STRATEGIES } from "../config/translation-config";
 
 export class ThemeService {

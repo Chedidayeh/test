@@ -7,7 +7,7 @@ import Link from "next/link";
 import { CheckIcon, ChevronRightIcon, LockIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/src/components/ui/button";
-import { LanguageCode, Roadmap } from "@shared/types";
+import { LanguageCode, Roadmap } from "@readdly/shared-types";
 import { useLocale } from "@/src/contexts/LocaleContext";
 import { getLanguageCode } from "@/src/lib/translation-utils";
 

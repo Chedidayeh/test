@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { logger } from "./logger";
-import { AgeGroupContentValidationResult, MissingContent } from "@shared/types";
+import { AgeGroupContentValidationResult, MissingContent } from "@shared/src/types";
 
 
 /**

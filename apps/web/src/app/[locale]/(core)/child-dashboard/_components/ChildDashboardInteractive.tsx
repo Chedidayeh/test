@@ -11,7 +11,7 @@ import {
   Roadmap,
   ProgressStatus,
   RoleType,
-} from "@shared/types";
+} from "@readdly/shared-types";
 import {
   getStoriesCompleted,
   getTotalReadingTime,

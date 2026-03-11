@@ -10,7 +10,7 @@ import {
   ChallengeStatus,
   Progress,
   Story,
-} from "@shared/types";
+} from "@readdly/shared-types";
 import { StoryPage } from "./storyDataTransform";
 import {
   saveCheckpointAction,

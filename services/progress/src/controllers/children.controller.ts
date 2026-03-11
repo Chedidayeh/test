@@ -10,7 +10,7 @@ import {
   ChallengeStatus,
   ChallengeType,
   SessionCheckpoint,
-} from "@shared/types";
+} from "@shared/src/types";
 
 export class ChildrenController {
   /**

@@ -16,7 +16,7 @@ import { Checkbox } from "../ui/checkbox";
 import { toast } from "sonner";
 import { Session } from "next-auth";
 import Link from "next/link";
-import { RoleType } from "@shared/types";
+import { RoleType } from "@readdly/shared-types";
 
 export default function Profile({ session }: { session: Session }) {
   const [closeDialog, setCloseDialog] = React.useState(false);

@@ -8,7 +8,7 @@ import {
   ChallengeType,
   AgeGroup,
   Roadmap,
-} from "@shared/types";
+} from "@readdly/shared-types";
 import {
   storyFormSchema,
   storyBasicFormSchema,

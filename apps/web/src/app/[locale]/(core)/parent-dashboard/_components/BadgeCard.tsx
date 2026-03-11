@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Badge, Local, LanguageCode } from "@shared/types";
+import { Badge, Local, LanguageCode } from "@readdly/shared-types";
 import { LockIcon, StarIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useLocale } from "@/src/contexts/LocaleContext";

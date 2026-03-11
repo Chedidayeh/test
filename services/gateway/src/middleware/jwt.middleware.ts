@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { logger } from "../utils/logger";
 import { authServiceClient, VerifyTokenResponse } from "../utils/auth-service";
 import { requiresAuth } from "../config/routes.config";
-import { RoleType } from "@shared/types";
+import { RoleType } from "@shared/src/types";
 
 export interface AuthenticatedRequest extends Request {
   user?: {

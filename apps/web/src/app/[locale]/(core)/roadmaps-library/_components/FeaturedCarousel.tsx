@@ -3,7 +3,7 @@
 "use client";
 
 import { Button } from "@/src/components/ui/button";
-import { LanguageCode, Roadmap } from "@shared/types";
+import { LanguageCode, Roadmap } from "@readdly/shared-types";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";

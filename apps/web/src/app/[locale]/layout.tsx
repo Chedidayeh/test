@@ -8,7 +8,7 @@ import { SessionProvider } from "next-auth/react";
 import { Toaster } from "../../components/ui/sonner";
 import { NextIntlClientProvider } from "next-intl";
 import { LocaleProvider } from "../../contexts/LocaleContext";
-import { Local } from "@shared/types";
+import { Local } from "@readdly/shared-types";
 
 const fredoka = Fredoka({
   subsets: ["latin"],

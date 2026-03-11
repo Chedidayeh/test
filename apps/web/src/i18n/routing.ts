@@ -1,4 +1,4 @@
-import { Local } from '@shared/types';
+import { Local } from '@readdly/shared-types';
 import {defineRouting} from 'next-intl/routing';
  
 export const routing = defineRouting({

@@ -19,9 +19,9 @@ import type {
   ApiResponse,
   PaginationMeta,
   PaginatedResponse,
-} from "@shared/types";
+} from "@shared/src/types";
 
-import { ChallengeType } from "@shared/types";
+import { ChallengeType } from "@shared/src/types";
 
 // Re-export all shared types for convenience
 export type {

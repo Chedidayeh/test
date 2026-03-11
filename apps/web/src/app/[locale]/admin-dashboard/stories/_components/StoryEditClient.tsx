@@ -9,7 +9,7 @@ import type {
   Story,
   AgeGroup,
   Roadmap,
-} from "@shared/types";
+} from "@readdly/shared-types";
 import { StoryFormData, storyFormSchema } from "../_schema/storySchemas";
 import { editStoryWithChaptersAction } from "@/src/lib/content-service/server-actions";
 import {

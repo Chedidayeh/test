@@ -1,5 +1,5 @@
 import { LanguageCode } from "@prisma/client";
-import { TranslationSourceType } from "@shared/types";
+import { TranslationSourceType } from "@shared/src/types";
 
 /**
  * Global Translation Configuration

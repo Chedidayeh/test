@@ -6,7 +6,7 @@ import SearchBar from "./SearchBar";
 import FilterPanel from "./FilterPanel";
 import FeaturedCarousel from "./FeaturedCarousel";
 import RoadmapCard from "./RoadmapCard";
-import { Roadmap, ChildProfile, LanguageCode } from "@shared/types";
+import { Roadmap, ChildProfile, LanguageCode } from "@readdly/shared-types";
 import { transformRoadmapForDisplay } from "../_lib/roadmap-display";
 import { getLanguageCode } from "@/src/lib/translation-utils";
 import { useLocale } from "@/src/contexts/LocaleContext";

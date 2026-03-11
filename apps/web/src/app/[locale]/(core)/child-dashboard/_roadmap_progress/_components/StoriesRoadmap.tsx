@@ -13,7 +13,7 @@ import {
   RoleType,
   Local,
   LanguageCode,
-} from "@shared/types";
+} from "@readdly/shared-types";
 import { getEnrichedStoriesForWorld } from "../../_lib/helpers";
 import { getLanguageCode } from "@/src/lib/translation-utils";
 import { useLocale } from "@/src/contexts/LocaleContext";

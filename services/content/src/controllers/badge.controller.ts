@@ -3,7 +3,7 @@ import { BadgeService } from "../services/badge.service";
 import { sendSuccess, sendError, sendPaginated } from "../utils/response";
 import { logger } from "../utils/logger";
 import { PrismaClient } from "@prisma/client";
-import { ApiResponse, Badge } from "@shared/types";
+import { ApiResponse, Badge } from "@shared/src/types";
 
 const prisma = new PrismaClient();
 const badgeService = new BadgeService(prisma);

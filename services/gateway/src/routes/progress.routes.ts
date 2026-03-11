@@ -15,7 +15,7 @@ import {
   forwardAllocateRoadmapToChild,
   forwardGetDashboardStats,
 } from "../helpers/progress.helpers";
-import { API_BASE_URL_V1 } from "@shared/types";
+import { API_BASE_URL_V1 } from "@shared/src/types";
 
 const router = Router();
 

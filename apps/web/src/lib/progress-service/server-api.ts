@@ -25,7 +25,7 @@ import type {
   ChallengeStatus,
   SessionCheckpoint,
   AdminDashboardStats,
-} from "@shared/types";
+} from "@readdly/shared-types";
 import { apiRequest, buildQueryString, isApiError } from "../helpers";
 
 export interface PaginationParams {

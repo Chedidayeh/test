@@ -9,7 +9,7 @@ import {
   getRoadmapsByIds,
 } from "@/src/lib/content-service/server-api";
 import { redirect } from "next/navigation";
-import { ProgressStatus } from "@shared/types";
+import { ProgressStatus } from "@readdly/shared-types";
 import { auth } from "@/src/auth";
 import { getTranslations } from "next-intl/server";
 import MissingDataAlert from "@/src/components/shared/MissingDataAlert";

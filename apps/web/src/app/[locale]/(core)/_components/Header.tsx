@@ -8,7 +8,7 @@ import { ModeToggle } from "@/src/components/shared/ModeToggle";
 import { useSession } from "next-auth/react";
 import Profile from "@/src/components/shared/Profile";
 import { LoginForm } from "@/src/components/shared/login-form";
-import { RoleType } from "@shared/types";
+import { RoleType } from "@readdly/shared-types";
 import { useTranslations } from "next-intl";
 import { Switcher } from "@/src/components/shared/Switcher";
 import RoleIndicator from "@/src/components/shared/RoleIndicator";

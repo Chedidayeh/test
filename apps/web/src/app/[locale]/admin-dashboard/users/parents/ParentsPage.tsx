@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { User } from "@shared/types";
+import { User } from "@readdly/shared-types";
 import { DataTable, Column, PaginationData } from "../../_components/DataTable";
 import { FilterBar } from "../../_components/FilterBar";
 import { ConfirmDialog } from "../../_components/ConfirmDialog";

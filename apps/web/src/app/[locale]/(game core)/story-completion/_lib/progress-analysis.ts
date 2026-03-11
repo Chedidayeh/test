@@ -3,7 +3,7 @@
  * Analyzes child's current progress and determines next level/badge acquisition
  */
 
-import { ChildBadge, Badge, Level } from "@shared/types";
+import { ChildBadge, Badge, Level } from "@readdly/shared-types";
 
 export interface LevelProgressAnalysis {
   currentLevel: number;

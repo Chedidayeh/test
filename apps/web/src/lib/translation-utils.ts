@@ -8,7 +8,7 @@ import {
   ManualTranslationEdit,
   LanguageCode,
   Local,
-} from "@shared/types";
+} from "@readdly/shared-types";
 
 /**
  * Get the source language code for a translation mode

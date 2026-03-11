@@ -11,7 +11,7 @@
  * 4. Return only matched ChildProfile[] with child property populated
  */
 
-import { ChildProfile, Child } from "@shared/types";
+import { ChildProfile, Child } from "@shared/src/types";
 import { logger } from "../utils/logger";
 
 export class ChildProfileMatcher {

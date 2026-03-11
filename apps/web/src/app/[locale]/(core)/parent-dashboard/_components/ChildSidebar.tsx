@@ -7,7 +7,7 @@ import {
   AvatarImage,
 } from "@/src/components/ui/avatar";
 import { Button } from "@/src/components/ui/button";
-import { ParentUser, AgeGroup, RoleType } from "@shared/types";
+import { ParentUser, AgeGroup, RoleType } from "@readdly/shared-types";
 import type { ClassValue } from "clsx";
 import { clsx } from "clsx";
 import { Plus } from "lucide-react";

@@ -2,12 +2,12 @@ import { VertexAITTSProvider } from "../agents/voice-agent/provider";
 import { utapi } from "../lib/uploadthing";
 import prisma from "../lib/prisma";
 import path from "path";
-import { logger } from "src/lib/logger";
+import { logger } from "../lib/logger";
 import {
   ContentLanguageToTTSLanguageMap,
   LanguageCode,
   TTSLanguageCodes,
-} from "@shared/types";
+} from "@shared/src/types";
 
 const provider = new VertexAITTSProvider();
 

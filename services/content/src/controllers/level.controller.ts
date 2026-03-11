@@ -4,7 +4,7 @@ import { BadgeService } from "../services/badge.service";
 import { sendSuccess, sendError, sendPaginated } from "../utils/response";
 import { logger } from "../utils/logger";
 import { PrismaClient, LanguageCode } from "@prisma/client";
-import { ApiResponse, Level } from "@shared/types";
+import { ApiResponse, Level } from "@shared/src/types";
 import { getTranslationStrategy } from "../config/translation-config";
 
 const prisma = new PrismaClient();

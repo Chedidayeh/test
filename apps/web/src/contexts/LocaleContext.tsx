@@ -1,6 +1,6 @@
 // src/contexts/LocaleContext.tsx
 'use client';
-import { Local } from '@shared/types';
+import { Local } from '@readdly/shared-types';
 import { createContext, useContext, ReactNode } from 'react';
 
 interface LocaleContextType {

@@ -1,6 +1,6 @@
 "use server";
 
-import { ChildProfile, GameSession, SessionCheckpoint, ParentUser } from "@shared/types";
+import { ChildProfile, GameSession, SessionCheckpoint, ParentUser } from "@readdly/shared-types";
 import {
   getAllChildren,
   PaginationParams,

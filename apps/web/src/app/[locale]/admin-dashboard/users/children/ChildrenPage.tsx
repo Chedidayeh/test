@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { DataTable, Column } from "../../_components/DataTable";
 import { FilterBar } from "../../_components/FilterBar";
 import { ConfirmDialog } from "../../_components/ConfirmDialog";
-import { ChildProfile, ProgressStatus } from "@shared/types";
+import { ChildProfile, ProgressStatus } from "@readdly/shared-types";
 import { fetchChildrenAction } from "@/src/lib/progress-service/server-actions";
 import Link from "next/link";
 

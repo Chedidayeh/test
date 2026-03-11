@@ -6,7 +6,7 @@ import { motion } from "motion/react";
 import { Button } from "@/src/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { ChildProfile, Roadmap, RoleType, Local, LanguageCode } from "@shared/types";
+import { ChildProfile, Roadmap, RoleType, Local, LanguageCode } from "@readdly/shared-types";
 import WorldTabs from "./_components/WorldTabs";
 import StoriesRoadmap from "./_components/StoriesRoadmap";
 import { useLocale } from "@/src/contexts/LocaleContext";

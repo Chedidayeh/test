@@ -1,6 +1,6 @@
 import NextAuth from "next-auth";
 import authConfig from "./auth.config";
-import { RoleType } from "@shared/types";
+import { RoleType } from "@readdly/shared-types";
 
 declare module "next-auth" {
   interface User {

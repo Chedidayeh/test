@@ -1,5 +1,5 @@
 import { auth } from "@/src/auth";
-import { RoleType } from "@shared/types";
+import { RoleType } from "@readdly/shared-types";
 import { redirect } from "next/navigation";
 import { ReactNode } from "react";
 

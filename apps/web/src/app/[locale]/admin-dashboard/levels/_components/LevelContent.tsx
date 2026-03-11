@@ -25,7 +25,7 @@ import { toast } from "sonner";
 import { Column, DataTable, PaginationData } from "../../_components/DataTable";
 import { FilterBar } from "../../_components/FilterBar";
 import { ConfirmDialog } from "../../_components/ConfirmDialog";
-import { Level, TranslationSourceType } from "@shared/types";
+import { Level, TranslationSourceType } from "@readdly/shared-types";
 import {
   createLevelAction,
   updateLevelAction,

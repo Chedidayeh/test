@@ -1,7 +1,7 @@
 import { Child, PrismaClient, RoleType, User } from "@prisma/client";
 import { hashPassword, comparePassword } from "../utils/hashing";
 import { logger } from "../utils/logger";
-import { User as U } from "@shared/types";
+import { User as U } from "@shared/src/types";
 
 export class UserService {
   private prisma: PrismaClient;

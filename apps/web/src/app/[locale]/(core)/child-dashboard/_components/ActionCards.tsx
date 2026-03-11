@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { BookMarked, MapPlus } from "lucide-react";
-import { Progress, Roadmap, ProgressStatus, ChildProfile, Story, Chapter, LanguageCode } from "@shared/types";
+import { Progress, Roadmap, ProgressStatus, ChildProfile, Story, Chapter, LanguageCode } from "@readdly/shared-types";
 import { useTranslations } from "next-intl";
 import { useLocale } from "@/src/contexts/LocaleContext";
 import { getLanguageCode } from "@/src/lib/translation-utils";

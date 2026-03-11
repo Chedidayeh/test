@@ -2,7 +2,7 @@ import express, { Request, Response, Application } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import childrenRoutes from "./routes/children.routes";
-import { API_BASE_URL_V1 } from "@shared/types";
+import { API_BASE_URL_V1 } from "@shared/src/types";
 
 dotenv.config();
 

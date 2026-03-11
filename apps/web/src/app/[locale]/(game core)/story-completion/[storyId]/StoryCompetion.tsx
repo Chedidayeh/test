@@ -17,7 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/ui/card";
-import { ChildProfile, LanguageCode, Progress, Story } from "@shared/types";
+import { ChildProfile, LanguageCode, Progress, Story } from "@readdly/shared-types";
 import { LevelProgressAnalysis } from "../_lib/progress-analysis";
 import { useLocale } from "@/src/contexts/LocaleContext";
 import { getLanguageCode } from "@/src/lib/translation-utils";

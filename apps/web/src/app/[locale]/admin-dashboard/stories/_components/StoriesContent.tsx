@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { Column, DataTable, PaginationData } from "../../_components/DataTable";
 import { FilterBar } from "../../_components/FilterBar";
 import { ConfirmDialog } from "../../_components/ConfirmDialog";
-import { Chapter, Story } from "@shared/types";
+import { Chapter, Story } from "@readdly/shared-types";
 import {
   fetchStoriesAction,
   deleteStoryAction,

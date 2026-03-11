@@ -7,7 +7,7 @@
  * Wraps `ai-service` server-api calls for use in Server Components / Actions
  */
 
-import { ServiceResponse, TTSAudio } from "@shared/types";
+import { ServiceResponse, TTSAudio } from "@readdly/shared-types";
 import { getTTSByChapterId } from "./server-api";
 
 export async function fetchTTSByChapterAction(

@@ -17,7 +17,7 @@ import {
   Local,
   StoryTranslation,
   TTSAudio,
-} from "@shared/types";
+} from "@readdly/shared-types";
 import { getChapterByPageNumber } from "./storyDataTransform";
 import { useTranslations } from "next-intl";
 import { useLocale } from "@/src/contexts/LocaleContext";

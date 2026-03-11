@@ -1,5 +1,5 @@
 import { Response } from "express";
-import type { ApiResponse, PaginationMeta } from "@shared/types";
+import type { ApiResponse, PaginationMeta } from "@shared/src/types";
 
 /**
  * Send a successful response

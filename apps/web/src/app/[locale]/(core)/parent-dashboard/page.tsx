@@ -4,7 +4,7 @@ import { auth } from "@/src/auth";
 import { redirect } from "next/navigation";
 import { getParentWithProfiles } from "@/src/lib/progress-service/server-api";
 import { getBadges, getAgeGroups } from "@/src/lib/content-service/server-api";
-import { RoleType } from "@shared/types";
+import { RoleType } from "@readdly/shared-types";
 
 export const metadata: Metadata = {
   title: "Parent Dashboard - Readdly",

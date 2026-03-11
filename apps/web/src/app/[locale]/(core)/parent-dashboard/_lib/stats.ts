@@ -14,7 +14,7 @@ import {
   LanguageCode,
   type Story,
   type Chapter,
-} from "@shared/types";
+} from "@readdly/shared-types";
 
 // ============================================================================
 // TYPES

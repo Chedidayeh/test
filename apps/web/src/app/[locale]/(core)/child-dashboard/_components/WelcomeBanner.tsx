@@ -7,7 +7,7 @@ import {
   TrophyIcon,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { Badge } from "@shared/types";
+import { Badge } from "@readdly/shared-types";
 import { useTranslations } from "next-intl";
 
 interface WelcomeBannerProps {

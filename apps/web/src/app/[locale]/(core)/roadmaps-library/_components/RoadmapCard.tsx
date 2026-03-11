@@ -3,7 +3,7 @@
 import { Button } from "@/src/components/ui/button";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { ChildProfile, LanguageCode, Roadmap } from "@shared/types";
+import { ChildProfile, LanguageCode, Roadmap } from "@readdly/shared-types";
 import AllocateRoadmapDialog from "./AllocateRoadmapDialog";
 import { RoadmapDisplay } from "../_lib/roadmap-display";
 import { useLocale } from "@/src/contexts/LocaleContext";

@@ -12,7 +12,7 @@ import {
   Pause,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { ChallengeAttempt, ChallengeStatus } from "@shared/types";
+import { ChallengeAttempt, ChallengeStatus } from "@readdly/shared-types";
 import { useRouter } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
 import { useTranslations } from "next-intl";

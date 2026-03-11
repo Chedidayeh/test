@@ -1,5 +1,5 @@
 import { Pause, Play, Puzzle, Clock } from "lucide-react";
-import { ChallengeType } from "@shared/types";
+import { ChallengeType } from "@readdly/shared-types";
 import { useTranslations } from "next-intl";
 
 

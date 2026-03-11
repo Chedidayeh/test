@@ -3,7 +3,7 @@ import { RoadmapService } from "../services/roadmap.service";
 import { sendSuccess, sendError } from "../utils/response";
 import { logger } from "../utils/logger";
 import { PrismaClient } from "@prisma/client";
-import { ApiResponse, Roadmap, TranslationSourceType, ManualTranslationEdit } from "@shared/types";
+import { ApiResponse, Roadmap, TranslationSourceType, ManualTranslationEdit } from "@shared/src/types";
 
 const prisma = new PrismaClient();
 const roadmapService = new RoadmapService(prisma);

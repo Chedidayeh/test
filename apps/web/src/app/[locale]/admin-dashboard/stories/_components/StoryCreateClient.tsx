@@ -8,7 +8,7 @@ import type {
   CreateStoryWithChaptersInput,
   Roadmap,
   World,
-} from "@shared/types";
+} from "@readdly/shared-types";
 import { StoryFormData, storyFormSchema } from "../_schema/storySchemas";
 import { createStoryWithChaptersAction } from "@/src/lib/content-service/server-actions";
 import {

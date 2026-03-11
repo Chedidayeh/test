@@ -9,7 +9,7 @@ import { Session } from "next-auth";
  */
 
 import { createChildProfile, getParents, loginUser, registerUser } from "./server-api";
-import { ApiResponse, User } from "@shared/types";
+import { ApiResponse, User } from "@readdly/shared-types";
 import { unstable_update } from "@/src/auth";
 
 interface PaginationParams {

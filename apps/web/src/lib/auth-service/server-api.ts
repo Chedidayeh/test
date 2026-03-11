@@ -7,7 +7,7 @@
  * Pattern follows content-service/server-api.ts for consistency.
  */
 
-import type { ApiResponse, Child, User } from "@shared/types";
+import type { ApiResponse, Child, User } from "@readdly/shared-types";
 import { getBadgeByLevel } from "../content-service/server-api";
 import { apiRequest, buildQueryString, isApiError } from "../helpers";
 

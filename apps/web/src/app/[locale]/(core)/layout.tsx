@@ -2,7 +2,7 @@ import Header from "./_components/Header";
 import MobileRoleIndicator from "@/src/components/shared/MobileRoleIndicator";
 import { auth } from "@/src/auth";
 import { redirect } from "next/navigation";
-import { RoleType } from "@shared/types";
+import { RoleType } from "@readdly/shared-types";
 
 export default async function Layout({
   children,

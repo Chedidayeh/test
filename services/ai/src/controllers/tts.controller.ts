@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import * as ttsService from "../services/tts.service";
-import { logger } from "src/lib/logger";
-import { ApiResponse, TTSAudio, LanguageCode } from "@shared/types";
+import { logger } from "../lib/logger";
+import { ApiResponse, TTSAudio, LanguageCode } from "@shared/src/types";
 
 export async function handleSynthesize(req: Request, res: Response<ApiResponse<{ audioUrl: string; }>>
 ) {

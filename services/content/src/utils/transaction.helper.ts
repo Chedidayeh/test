@@ -7,7 +7,7 @@
 import { PrismaClient, LanguageCode } from "@prisma/client";
 import { logger } from "./logger";
 import type { Story } from "../types";
-import { CreateStoryWithChaptersInput, ChallengeType, TranslationSourceType } from "@shared/types";
+import { CreateStoryWithChaptersInput, ChallengeType, TranslationSourceType } from "@shared/src/types";
 import {
   buildTranslationRecords,
   getTranslationStrategyForSource,

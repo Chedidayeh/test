@@ -15,7 +15,7 @@ import {
   ChallengeType,
   ChallengeAttempt,
   Local,
-} from "@shared/types";
+} from "@readdly/shared-types";
 import { useLocale } from "@/src/contexts/LocaleContext";
 import { useTranslations } from "next-intl";
 

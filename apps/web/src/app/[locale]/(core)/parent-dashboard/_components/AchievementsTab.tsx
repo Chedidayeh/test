@@ -2,7 +2,7 @@
 
 import { TabsContent } from "@/src/components/ui/tabs";
 import BadgeCard from "./BadgeCard";
-import { Badge, ChildProfile } from "@shared/types";
+import { Badge, ChildProfile } from "@readdly/shared-types";
 import Link from "next/link";
 import { Button } from "@/src/components/ui/button";
 import { useTranslations } from "next-intl";

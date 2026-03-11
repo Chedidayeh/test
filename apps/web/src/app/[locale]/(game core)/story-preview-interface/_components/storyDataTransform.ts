@@ -1,4 +1,4 @@
-import { Story, Chapter } from "@shared/types";
+import { Story, Chapter } from "@readdly/shared-types";
 
 /**
  * StoryPage interface represents a single readable page in the UI

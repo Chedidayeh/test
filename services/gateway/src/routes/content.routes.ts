@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import axios from "axios";
 import { logger } from "../utils/logger";
 import { createStoryWithChapters, forwardToContentService } from "../helpers/content.helpers";
-import { API_BASE_URL_V1 } from "@shared/types";
+import { API_BASE_URL_V1 } from "@shared/src/types";
 
 const router = Router();
 

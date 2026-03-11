@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { ChildProfile, Roadmap } from "@shared/types";
+import { ChildProfile, Roadmap } from "@readdly/shared-types";
 import {
   Dialog,
   DialogContent,

@@ -2,7 +2,7 @@ import * as deepl from "deepl-node";
 import { LanguageCode } from "@prisma/client";
 import { logger } from "./logger";
 import { TRANSLATION_CONFIG } from "../config/translation-config";
-import { Local } from "@shared/types";
+import { Local } from "@shared/src/types";
 
 /**
  * Translation Agent

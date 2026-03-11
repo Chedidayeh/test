@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/src/components/ui/table";
-import { AgeGroupContentValidationResult } from "@shared/types";
+import { AgeGroupContentValidationResult } from "@readdly/shared-types";
 
 
 

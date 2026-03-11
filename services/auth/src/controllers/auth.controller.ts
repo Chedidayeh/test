@@ -4,7 +4,7 @@ import { jwtService } from "../services/jwt.service";
 import { generateChildLoginCode } from "../utils/generator";
 import { logger } from "../utils/logger";
 import { PrismaClient, RoleType } from "@prisma/client";
-import { ApiResponse, Child, User } from "@shared/types";
+import { ApiResponse, Child, User } from "@shared/src/types";
 
 const prisma = new PrismaClient();
 const userService = new UserService(prisma);

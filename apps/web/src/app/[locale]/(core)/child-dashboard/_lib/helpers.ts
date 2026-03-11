@@ -1,5 +1,5 @@
 // helpers functions for child progress in roadmap
-import { ChildProfile, Story, World, Progress, ProgressStatus, Roadmap } from "@shared/types";
+import { ChildProfile, Story, World, Progress, ProgressStatus, Roadmap } from "@readdly/shared-types";
 
 /**
  * Get progress record for a specific story
