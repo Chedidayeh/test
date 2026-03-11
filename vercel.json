@@ -1,18 +1,6 @@
 {
-    "buildCommand": "NEXT_SKIP_TURBOPACK=true npm run build:shared && NEXT_SKIP_TURBOPACK=true npm --prefix apps/web run build",
-    "builds": [
-        {
-            "src": "apps/web/package.json",
-            "use": "@vercel/next"
-        }
-    ],
-    "routes": [
-        {
-            "src": "/(.*)",
-            "dest": "/$1"
-        }
-    ],
-    "env": {
-        "NEXT_SKIP_TURBOPACK": "true"
-    }
+  "buildCommand": "NEXT_SKIP_TURBOPACK=true npm run build:shared && NEXT_SKIP_TURBOPACK=true npm --prefix apps/web run build",
+  "env": {
+    "NEXT_SKIP_TURBOPACK": "true"
+  }
 }
