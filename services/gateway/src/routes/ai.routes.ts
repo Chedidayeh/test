@@ -7,7 +7,7 @@ import { API_BASE_URL_V1, ApiResponse, TTSAudio } from "@shared/src/types";
 const router = Router();
 
 // AI service base URL (AI microservice)
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || "http://localhost:3005";
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL
 
 /**
  * GET /api/v1/tts/chapterId/:chapterId - fetch TTS audio metadata for a chapter

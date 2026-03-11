@@ -6,10 +6,10 @@ import { ApiResponse, User, Child, API_BASE_URL_V1 } from "@shared/src/types";
 const router = Router();
 
 const AUTH_SERVICE_URL =
-  process.env.AUTH_SERVICE_URL || "http://localhost:3002";
+  process.env.AUTH_SERVICE_URL;
 
 const PROGRESS_SERVICE_URL =
-  process.env.PROGRESS_SERVICE_URL || "http://localhost:3003";
+  process.env.PROGRESS_SERVICE_URL
 
 /**
  * Get parent by ID

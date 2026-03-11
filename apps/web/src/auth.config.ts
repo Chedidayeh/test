@@ -16,7 +16,7 @@ declare module "next-auth" {
 }
 
 const GATEWAY_URL =
-  process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:3001";
+  process.env.NEXT_PUBLIC_GATEWAY_URL
 
 export default {
   providers: [

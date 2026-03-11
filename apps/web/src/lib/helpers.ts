@@ -29,9 +29,9 @@ function getGatewayUrl(): string {
   // In production, use internal service URL
   // In development, use localhost
   if (process.env.NODE_ENV === "production") {
-    return process.env.INTERNAL_GATEWAY_URL || "http://localhost:3001";
+    return process.env.INTERNAL_GATEWAY_URL!
   }
-  return process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:3001";
+  return process.env.NEXT_PUBLIC_GATEWAY_URL!
 }
 
 /**

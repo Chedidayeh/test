@@ -5,8 +5,8 @@ import { logger } from "../utils/logger";
 import { ApiResponse, Story, API_BASE_URL_V1, Chapter, LanguageCode } from "@shared/src/types";
 
 const CONTENT_SERVICE_URL =
-  process.env.CONTENT_SERVICE_URL || "http://localhost:3003";
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || "http://localhost:3005";
+  process.env.CONTENT_SERVICE_URL
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL
 /**
  * Helper function to forward requests to the content service
  */

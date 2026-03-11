@@ -20,11 +20,11 @@ import {
 } from "@shared/src/types";
 
 const PROGRESS_SERVICE_URL =
-  process.env.PROGRESS_SERVICE_URL || "http://localhost:3004";
+  process.env.PROGRESS_SERVICE_URL
 const AUTH_SERVICE_URL =
-  process.env.AUTH_SERVICE_URL || "http://localhost:3002";
+  process.env.AUTH_SERVICE_URL
 const CONTENT_SERVICE_URL =
-  process.env.CONTENT_SERVICE_URL || "http://localhost:3003";
+  process.env.CONTENT_SERVICE_URL
 /**
  * Helper function to fetch a specific child by ID
  * Orchestrates Progress Service (child profile) and Auth Service (child data)

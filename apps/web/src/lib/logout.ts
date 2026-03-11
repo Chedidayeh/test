@@ -9,7 +9,7 @@ import { API_BASE_URL_V1 } from "@readdly/shared-types";
 export async function handleLogout() {
   try {
     // Call Gateway logout endpoint to delete session
-    const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:3001";
+    const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL
     try {
       await fetch(`${gatewayUrl}${API_BASE_URL_V1}/auth/logout`, {
         method: "POST",
