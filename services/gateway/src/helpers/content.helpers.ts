@@ -2,11 +2,17 @@ import { Request, Response } from "express";
 
 import axios from "axios";
 import { logger } from "../utils/logger";
-import { ApiResponse, Story, API_BASE_URL_V1, Chapter, LanguageCode } from "@shared/src/types";
+import {
+  ApiResponse,
+  Story,
+  API_BASE_URL_V1,
+  Chapter,
+  LanguageCode,
+} from "@shared/src/types";
+import { queueTTSGeneration } from "src/inngest/tts-agent/tts.queue";
 
-const CONTENT_SERVICE_URL =
-  process.env.CONTENT_SERVICE_URL
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL
+export const CONTENT_SERVICE_URL = process.env.CONTENT_SERVICE_URL;
+export const AI_SERVICE_URL = process.env.AI_SERVICE_URL;
 /**
  * Helper function to forward requests to the content service
  */
@@ -83,125 +89,30 @@ export async function createStoryWithChapters(
     });
 
     if (response.status >= 200 && response.status < 300) {
-      // Extract first chapter and generate TTS for each language (awaiting each)
+      // Step 2: Trigger TTS generation for ALL chapters via AI service (async, non-blocking)
+      // This happens in the background without blocking the API response
       try {
         const story = response.data?.data as Story | undefined;
-        const firstChapter = story?.chapters?.find((c: Chapter) => c.order === 1) || story?.chapters?.[0];
-        if (story && firstChapter) {
-          const ttsUrl = `${AI_SERVICE_URL}${API_BASE_URL_V1}/tts`;
-          const headers: Record<string, string> = { "Content-Type": "application/json" };
-          if (req.headers.authorization) headers["authorization"] = String(req.headers.authorization);
 
-          // Generate TTS for each language translation
-          const translations = firstChapter.translations || [];
-          
-          // If no translations exist, use the chapter's base content with default language
-          if (translations.length === 0 && firstChapter.content) {
-            logger.info("No translations found for first chapter, generating TTS for base content")
-            const defaultLanguageCode = (req.body && req.body.languageCode) || LanguageCode.EN;
-            const ttsPayload = {
-              text: firstChapter.content,
-              languageCode: defaultLanguageCode,
-              prompt: (req.body && req.body.prompt) || undefined,
-              storyId: story.id,
-              chapterId: firstChapter.id,
-            };
-
-            try {
-              const r = await axios.post<ApiResponse<{ audioUrl: string }>>(ttsUrl, ttsPayload, { headers });
-              logger.info("Completed AI TTS for first chapter (default language)", { 
-                storyId: story.id, 
-                chapterId: firstChapter.id,
-                languageCode: defaultLanguageCode,
-                status: r.status 
-              });
-
-              // Update chapter base audio URL
-              if (r.data.success && r.data.data?.audioUrl) {
-                try {
-                  const updateUrl = `${CONTENT_SERVICE_URL}${API_BASE_URL_V1}/chapters/${firstChapter.id}/audio`;
-                    await axios.patch(updateUrl, {
-                    audioUrl: r.data.data.audioUrl,
-                  }, { headers });
-
-                  logger.info("Updated chapter base audio URL", {
-                    chapterId: firstChapter.id,
-                    audioUrl: r.data.data.audioUrl,
-                  });
-                } catch (updateErr) {
-                  logger.error("Failed to update chapter base audio URL", {
-                    chapterId: firstChapter.id,
-                    error: String(updateErr),
-                  });
-                }
-              }
-            } catch (err) {
-              logger.error("Failed to generate AI TTS for first chapter (default language)", { 
-                storyId: story.id, 
-                chapterId: firstChapter.id,
-                languageCode: defaultLanguageCode,
-                error: String(err) 
-              });
-            }
+        if (story && story.chapters && story.chapters.length > 0) {
+          // Only trigger TTS generation when client requested audio generation
+          if (req.body?.generateAudio) {
+            // Trigger TTS generation for all chapters in AI service (fire-and-forget)
+            await triggerTTSGenerationForAllChapters(story);
           } else {
-            logger.info("Generating TTS for first chapter translations")
-            // Generate TTS for each translation (sequentially)
-            for (const translation of translations) {
-              const ttsPayload = {
-                text: translation.content,
-                languageCode: translation.languageCode,
-                prompt: (req.body && req.body.prompt) || undefined,
-                storyId: story.id,
-                chapterId: firstChapter.id,
-              };
-
-              try {
-                const r = await axios.post<ApiResponse<{ audioUrl: string }>>(ttsUrl, ttsPayload, { headers });
-                logger.info("Completed AI TTS for first chapter translation", { 
-                  storyId: story.id, 
-                  chapterId: firstChapter.id,
-                  languageCode: translation.languageCode,
-                  status: r.status 
-                });
-
-                // Update chapter translation with audio URL
-                if (r.data.success && r.data.data?.audioUrl) {
-                  try {
-                    const updateUrl = `${CONTENT_SERVICE_URL}${API_BASE_URL_V1}/chapters/${firstChapter.id}/audio`;
-                    await axios.patch(updateUrl, {
-                      audioUrl: r.data.data.audioUrl,
-                      languageCode: translation.languageCode,
-                    }, { headers });
-
-                    logger.info("Updated chapter translation audio URL", {
-                      chapterId: firstChapter.id,
-                      languageCode: translation.languageCode,
-                      audioUrl: r.data.data.audioUrl,
-                    });
-                  } catch (updateErr) {
-                    logger.error("Failed to update chapter translation audio URL", {
-                      chapterId: firstChapter.id,
-                      languageCode: translation.languageCode,
-                      error: String(updateErr),
-                    });
-                  }
-                }
-              } catch (err) {
-                logger.error("Failed to generate AI TTS for first chapter translation", { 
-                  storyId: story.id, 
-                  chapterId: firstChapter.id,
-                  languageCode: translation.languageCode,
-                  error: String(err) 
-                });
-              }
-            }
+            logger.info(
+              "[Gateway] Skipping TTS trigger because generateAudio=false",
+            );
           }
         }
-
       } catch (err) {
-        logger.error("Error while generating AI TTS after content create", { error: String(err) });
+        logger.error("Error while triggering TTS after content create", {
+          error: String(err),
+        });
+        // Non-fatal: story was created successfully, TTS trigger failure shouldn't break response
       }
 
+      // Return story immediately (TTS triggered in background)
       return res.status(response.status).json(response.data);
     }
 
@@ -209,13 +120,11 @@ export async function createStoryWithChapters(
       logger.warn("Content service returned 404 for createStoryWithChapters", {
         url: contentUrl,
       });
-      return res
-        .status(404)
-        .json({
-          success: false,
-          error: { code: "NOT_FOUND", message: "Resource not found" },
-          timestamp: new Date(),
-        });
+      return res.status(404).json({
+        success: false,
+        error: { code: "NOT_FOUND", message: "Resource not found" },
+        timestamp: new Date(),
+      });
     }
 
     logger.error("Content service returned error for createStoryWithChapters", {
@@ -227,15 +136,254 @@ export async function createStoryWithChapters(
     logger.error("Error forwarding createStoryWithChapters", {
       error: String(error),
     });
-    return res
-      .status(503)
-      .json({
+    return res.status(503).json({
+      success: false,
+      error: {
+        code: "SERVICE_UNAVAILABLE",
+        message: "Content service unavailable",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+export async function editStoryWithChapters(
+  req: Request,
+  res: Response<ApiResponse<Story>>,
+) {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      logger.warn("Edit story request missing ID in URL");
+      return res.status(400).json({
         success: false,
         error: {
-          code: "SERVICE_UNAVAILABLE",
-          message: "Content service unavailable",
+          code: "INVALID_PARAM",
+          message: "Story ID is required in URL",
         },
         timestamp: new Date(),
       });
+    }
+    // Step 1: Call content service to edit story with chapters
+    const contentUrl = `${CONTENT_SERVICE_URL}${API_BASE_URL_V1}/stories/${id}/batch/edit`;
+
+    logger.info("Forwarding editStoryWithChapters to content service", {
+      url: contentUrl,
+      chapters: Array.isArray(req.body?.chapters)
+        ? req.body.chapters.length
+        : undefined,
+    });
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...(req.headers.authorization
+        ? { Authorization: String(req.headers.authorization) }
+        : {}),
+    };
+
+    const response = await axios.put<ApiResponse<Story>>(contentUrl, req.body, {
+      headers,
+      validateStatus: () => true,
+    });
+
+    logger.info("Content service editStory response", {
+      status: response.status,
+      hasData: !!response.data?.data,
+    });
+
+    if (response.status >= 200 && response.status < 300) {
+      // Step 2: Trigger TTS generation for ALL chapters via AI service (async, non-blocking)
+      // This happens in the background without blocking the API response
+      try {
+        const story = response.data?.data as Story | undefined;
+
+        if (story && story.chapters && story.chapters.length > 0) {
+          // Only trigger TTS generation when client requested audio generation
+          if (req.body?.generateAudio) {
+            // Trigger TTS generation for all chapters in AI service (fire-and-forget)
+            await triggerTTSGenerationForAllChapters(story);
+          } else {
+            logger.info(
+              "[Gateway] Skipping TTS trigger because generateAudio=false",
+            );
+          }
+        }
+      } catch (err) {
+        logger.error("Error while triggering TTS after content edit", {
+          error: String(err),
+        });
+        // Non-fatal: story was edited successfully, TTS trigger failure shouldn't break response
+      }
+
+      // Return story immediately (TTS triggered in background)
+      return res.status(response.status).json(response.data);
+    }
+
+    if (response.status === 404) {
+      logger.warn("Content service returned 404 for editStoryWithChapters", {
+        url: contentUrl,
+      });
+      return res.status(404).json({
+        success: false,
+        error: { code: "NOT_FOUND", message: "Resource not found" },
+        timestamp: new Date(),
+      });
+    }
+
+    logger.error("Content service returned error for editStoryWithChapters", {
+      status: response.status,
+      body: response.data,
+    });
+    return res.status(response.status).json(response.data);
+  } catch (error) {
+    logger.error("Error forwarding editStoryWithChapters", {
+      error: String(error),
+    });
+    return res.status(503).json({
+      success: false,
+      error: {
+        code: "SERVICE_UNAVAILABLE",
+        message: "Content service unavailable",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+/**
+ * Trigger TTS generation for ALL story chapters
+ * Queues TTS requests for each chapter and translation
+ * The AI service (Inngest) handles concurrent processing in the background
+ */
+async function triggerTTSGenerationForAllChapters(story: Story): Promise<void> {
+  try {
+    if (!story || !story.chapters || story.chapters.length === 0) {
+      logger.warn("[Gateway] No chapters found for TTS generation");
+      return;
+    }
+
+    logger.info("[Gateway] Triggering TTS generation for all chapters", {
+      storyId: story.id,
+      chapterCount: story.chapters.length,
+      totalTranslations: story.chapters.reduce(
+        (sum, ch) => sum + (ch.translations?.length || 0),
+        0,
+      ),
+    });
+
+    let queuedCount = 0;
+    let errorCount = 0;
+
+    // Build array of all TTS requests to execute in parallel
+    const ttsPromises: Promise<void>[] = [];
+
+    // Process each chapter and collect all TTS requests
+    for (const chapter of story.chapters) {
+      if (!chapter) continue;
+
+      const translations = chapter.translations || [];
+
+      // If no translations exist, trigger for base content with default language
+      if (translations.length === 0 && chapter.content) {
+        ttsPromises.push(
+          (async () => {
+            try {
+              logger.info("[Gateway] No translations found, queuing TTS for chapter base content", {
+                storyId: story.id,
+                chapterId: chapter.id,
+                chapterOrder: chapter.order,
+              });
+              // Trigger TTS generation for base content with default language (e.g., English)
+              await queueTTSGeneration(chapter.content, {
+                languageCode: LanguageCode.EN,
+                storyId: story.id,
+                chapterId: chapter.id,
+              });
+
+              queuedCount++;
+              logger.debug("[Gateway] TTS queued for chapter (base content)", {
+                storyId: story.id,
+                chapterId: chapter.id,
+                chapterOrder: chapter.order,
+                languageCode: LanguageCode.EN,
+              });
+            } catch (err) {
+              errorCount++;
+              logger.error(
+                "[Gateway] Failed to queue TTS for chapter base content",
+                {
+                  storyId: story.id,
+                  chapterId: chapter.id,
+                  chapterOrder: chapter.order,
+                  error: String(err),
+                },
+              );
+            }
+          })(),
+        );
+      } else {
+        // Trigger TTS for each translation
+        for (const translation of translations) {
+          ttsPromises.push(
+            (async () => {
+              try {
+                logger.info("[Gateway] Queuing TTS for chapter translation", {
+                  storyId: story.id,
+                  chapterId: chapter.id,
+                  chapterOrder: chapter.order,
+                  languageCode: translation.languageCode,
+                });
+                await queueTTSGeneration(translation.content, {
+                  languageCode: translation.languageCode,
+                  storyId: story.id,
+                  chapterId: chapter.id,
+                });
+
+                queuedCount++;
+                logger.debug("[Gateway] TTS queued for chapter translation", {
+                  storyId: story.id,
+                  chapterId: chapter.id,
+                  chapterOrder: chapter.order,
+                  languageCode: translation.languageCode,
+                });
+              } catch (err) {
+                errorCount++;
+                logger.error(
+                  "[Gateway] Failed to queue TTS for chapter translation",
+                  {
+                    storyId: story.id,
+                    chapterId: chapter.id,
+                    chapterOrder: chapter.order,
+                    languageCode: translation.languageCode,
+                    error: String(err),
+                  },
+                );
+              }
+            })(),
+          );
+        }
+      }
+    }
+
+    // Execute all TTS requests in parallel
+    logger.debug("[Gateway] Queuing TTS requests in parallel", {
+      storyId: story.id,
+      totalRequests: ttsPromises.length,
+    });
+
+    await Promise.all(ttsPromises);
+
+    logger.info("[Gateway] Completed queuing TTS for all chapters", {
+      storyId: story.id,
+      queuedCount,
+      errorCount,
+      totalAttempted: queuedCount + errorCount,
+      parallelRequests: ttsPromises.length,
+    });
+  } catch (err) {
+    logger.error("[Gateway] Error triggering TTS generation for all chapters", {
+      error: String(err),
+    });
   }
 }

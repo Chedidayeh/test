@@ -45,6 +45,7 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { motion, AnimatePresence } from "framer-motion";
+import { Switch } from "@/src/components/ui/switch";
 
 interface NewStoryFormProps {
   ageGroups: AgeGroup[];
@@ -108,6 +109,7 @@ const getInitialFormData = (data?: any): StoryFormData => {
       difficulty: data.difficulty || 1,
       order: data.order || 1,
       translationSource: data.translationSource || TranslationSourceType.MANUAL,
+      generateAudio: data.generateAudio || false,
       chapters: (data.chapters || []).map((chapter: any) => ({
         content: chapter.content || "",
         imageUrl: chapter.imageUrl || "",
@@ -143,6 +145,7 @@ const getInitialFormData = (data?: any): StoryFormData => {
     difficulty: 1,
     order: 1,
     translationSource: TranslationSourceType.MANUAL,
+    generateAudio: false,
     chapters: [
       {
         content: "",
@@ -701,13 +704,13 @@ export function NewStoryForm({
         <AnimatePresence>
           {Object.keys(errors).length > 0 && (
             <motion.div
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3 }}
-                  className="fixed top-4 right-4 z-50 w-full max-w-md"
-                >
-                  <Card className="p-4 border-red-200 bg-red-50 shadow-lg pointer-events-auto">
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="fixed top-4 right-4 z-50 w-full max-w-md"
+            >
+              <Card className="p-4 border-red-200 bg-red-50 shadow-lg pointer-events-auto">
                 <div className="flex gap-3">
                   <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
                   <div>
@@ -990,6 +993,23 @@ function StoryDetailsStep({
           </div>
         </Card>
       )}
+
+      {/* Generate audio files toggle button */}
+      <div>
+        <label className="block text-sm font-medium mb-2">
+          Audio files generation
+        </label>
+        <Switch
+          checked={formData.generateAudio}
+          onCheckedChange={(checked) => onFieldChange("generateAudio", checked)}
+          className="data-[state=checked]:bg-primary"
+        />
+
+        <p className="text-sm text-primary mt-2">
+          Toggle whether audio files should be generated for the story. If
+          enabled, audio files will be created for each chapter content.{" "}
+        </p>
+      </div>
 
       {/* Translation Source */}
       <div>

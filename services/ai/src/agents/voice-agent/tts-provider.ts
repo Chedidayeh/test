@@ -1,18 +1,19 @@
 import { VertexAI } from "@google-cloud/vertexai";
 import path from "path";
 import "dotenv/config";
-import { TTSLanguageCodes } from "@shared/src/types";
+import { TTSLanguageCodes } from "@readdly/shared-types";
 
 export interface TTSOptions {
   languageCode?: TTSLanguageCodes;
   prompt?: string;
 }
 
-const credentialsPath = path.resolve(
-  process.cwd(),
-  "src",
-  "service_account.json",
-);
+const prompts = {
+  [TTSLanguageCodes.ENGLISH_US]: "Narrate this story in english clearly and emotionally like an audiobook narrator.",
+  [TTSLanguageCodes.ARABIC]: "قم بسرد هذه القصة بالعربية بطريقة مشوقة وواضحة، كما لو كنت ترويها ككتاب صوتي.",
+  [TTSLanguageCodes.FRENCH]: "Racontez cette histoire en français clairement et émotionnellement comme un narrateur de livre audio.",
+}
+
 
 export class VertexAITTSProvider {
   private model: any;
@@ -22,7 +23,7 @@ export class VertexAITTSProvider {
       project: process.env.GOOGLE_PROJECT_ID,
       location: "us-central1",
       googleAuthOptions: {
-        keyFilename: credentialsPath,
+        credentials: JSON.parse(process.env.SERVICE_ACCOUNT_KEY as string),
       },
     });
 
@@ -34,7 +35,7 @@ export class VertexAITTSProvider {
   async synthesize(text: string, options: TTSOptions = {}): Promise<Buffer> {
     const {
       languageCode = TTSLanguageCodes.ENGLISH_US,
-      prompt = "Narrate this story clearly and emotionally like an audiobook narrator.",
+      prompt = prompts[languageCode] || prompts[TTSLanguageCodes.ENGLISH_US],
     } = options;
 
     const request = {

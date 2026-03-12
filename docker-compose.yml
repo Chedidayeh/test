@@ -20,6 +20,8 @@ services:
       - CONTENT_SERVICE_URL=${CONTENT_SERVICE_URL}
       - AI_SERVICE_URL=${AI_SERVICE_URL}
       - PROGRESS_SERVICE_URL=${PROGRESS_SERVICE_URL}
+      - INNGEST_API_KEY=${INNGEST_API_KEY}
+      - INNGEST_EVENT_KEY=${INNGEST_EVENT_KEY}
     depends_on:
       auth-service:
         condition: service_started
@@ -137,6 +139,8 @@ services:
       - GOOGLE_PROJECT_ID=${GOOGLE_PROJECT_ID}
       - UPLOADTHING_TOKEN=${UPLOADTHING_TOKEN}
       - SERVICE_ACCOUNT_KEY=${SERVICE_ACCOUNT_KEY}
+      - INNGEST_API_KEY=${INNGEST_API_KEY}
+      - INNGEST_EVENT_KEY=${INNGEST_EVENT_KEY}
     networks:
       - story-network
     healthcheck:

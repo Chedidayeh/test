@@ -612,6 +612,7 @@ export interface CreateStoryWithChaptersInput {
   description?: string | null;
   difficulty: number;
   order: number;
+  generateAudio: boolean;
   translationSource: TranslationSourceType;
   translations?: Array<{
     languageCode: string;

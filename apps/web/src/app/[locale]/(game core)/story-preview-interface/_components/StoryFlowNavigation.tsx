@@ -62,13 +62,19 @@ const StoryFlowNavigation = ({
 
   const handlePreviousPage = () => {
     if (currentPage > 1 && onPageChange) {
+      if (isPlayingAudio) {
+        handlePlayAudio?.(); 
+      }
+
       onPageChange(currentPage - 1);
       // Timer will automatically disable since we're no longer on the checkpointed page
     }
   };
 
   const handleNextPage = () => {
-    // Check if this is the last page
+    if (isPlayingAudio) {
+      handlePlayAudio?.(); 
+    } // Check if this is the last page
     const isLastPage = currentPage === totalPages;
 
     // Handle story completion when on the last page
@@ -161,7 +167,9 @@ const StoryFlowNavigation = ({
                 {isLoadingAudio ? (
                   <>
                     <Loader size={18} className="animate-spin" />
-                    <span className="hidden sm:inline">{t("playAudio.loading")}</span>
+                    <span className="hidden sm:inline">
+                      {t("playAudio.loading")}
+                    </span>
                   </>
                 ) : isPlayingAudio ? (
                   <>

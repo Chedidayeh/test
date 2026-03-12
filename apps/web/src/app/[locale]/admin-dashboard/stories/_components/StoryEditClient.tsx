@@ -42,6 +42,7 @@ export function StoryEditClient({ ageGroups, roadmaps, worlds, story }: StoryEdi
         description: validatedData.description,
         difficulty: validatedData.difficulty,
         order: validatedData.order,
+        generateAudio: validatedData.generateAudio,
         translationSource: validatedData.translationSource,
         translations:
           validatedData.translationSource !== "manual"

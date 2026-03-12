@@ -703,6 +703,7 @@ export async function editStoryWithChaptersTransaction(
           world: true,
           chapters: {
             include: {
+              translations: true,
               challenge: {
                 include: {
                   answers: {

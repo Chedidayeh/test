@@ -1,12 +1,20 @@
 import { Router } from "express";
-import { handleSynthesize, getTTSByChapterId } from "../controllers/tts.controller";
+import { handleSynthesize } from "../agents/voice-agent/controllers/tts.controller";
 
 const router = Router();
 
-// POST /tts
+/**
+ * TTS Routes
+ * 
+ * POST /api/v1/tts - Queue TTS generation (async, non-blocking)
+ *   Request body: { text, languageCode?, storyId?, chapterId?, prompt? }
+ *   Response: 202 Accepted { success: true, data: { eventId } }
+ *   Note: Audio generation happens asynchronously in the background
+ * 
+ */
+
+// POST /tts - Queue TTS generation
 router.post("/tts", handleSynthesize);
 
-// GET /tts/chapterId/:chapterId
-router.get("/tts/chapterId/:chapterId", getTTSByChapterId);
 
 export default router;

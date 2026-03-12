@@ -203,6 +203,7 @@ export const storyFormSchema = z.object({
   title: z.string().min(3, "Story title must be at least 3 characters"),
   description: z.string().min(10, "Description must be at least 10 characters").optional().or(z.literal("")),
   difficulty: z.number().int().min(1).max(5),
+  generateAudio: z.boolean().default(false),
   order: z.number().int().min(1),
   translationSource: z.nativeEnum(TranslationSourceType).default(TranslationSourceType.MANUAL),
   chapters: z.array(chapterFormSchema).min(1, "At least one chapter is required"),

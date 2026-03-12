@@ -7,15 +7,24 @@ import express from "express";
 import cors from "cors";
 import { jwtMiddleware } from "./middleware/jwt.middleware";
 import { logger } from "./utils/logger";
-import { authServiceClient } from "./utils/auth-service";
 import { aiRoutes, authRoutes, contentRoutes, progressRoutes } from "./routes";
 import { API_BASE_URL_V1 } from "@shared/src/types";
+import { inngest } from "./inngest/inngest";
+import { functions } from "./inngest";
+import { serve } from "inngest/express";
 
 const app = express();
 
 // Middleware: CORS and JSON parsing
-app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+
+app.use(
+  // Expose the middleware on our recommended path at `/api/inngest`.
+  "/api/inngest",
+  serve({ client: inngest, functions: functions })
+);
 
 // app.use((req, res, next) => {
 //   logger.info(`${req.method} ${req.path}`, {

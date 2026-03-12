@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import ttsRouter from "./routes/tts.route";
 import { API_BASE_URL_V1 } from "@shared/src/types";
 
+
 // Load env
 dotenv.config();
 
@@ -12,6 +13,8 @@ const NODE_ENV = process.env.NODE_ENV || "development";
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+
 
 // TTS endpoint
 app.use(`${API_BASE_URL_V1}`, ttsRouter);

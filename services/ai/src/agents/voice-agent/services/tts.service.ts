@@ -1,8 +1,8 @@
-import { VertexAITTSProvider } from "../agents/voice-agent/provider";
-import { utapi } from "../lib/uploadthing";
-import prisma from "../lib/prisma";
+import { VertexAITTSProvider } from "../tts-provider";
+import { utapi } from "../../../lib/uploadthing";
+import prisma from "../../../lib/prisma";
 import path from "path";
-import { logger } from "../lib/logger";
+import { logger } from "../../../lib/logger";
 import {
   ContentLanguageToTTSLanguageMap,
   LanguageCode,
@@ -12,10 +12,9 @@ import {
 const provider = new VertexAITTSProvider();
 
 export interface SynthesizeOptions {
-  languageCode?: LanguageCode;
-  prompt?: string;
-  storyId?: string;
-  chapterId?: string;
+  languageCode: LanguageCode;
+  storyId: string;
+  chapterId: string;
 }
 
 export interface SynthesizeResult {
@@ -24,18 +23,18 @@ export interface SynthesizeResult {
 
 export async function synthesizeText(
   text: string,
-  options: SynthesizeOptions = {},
+  options: SynthesizeOptions,
 ): Promise<SynthesizeResult> {
   logger.debug("[TTS Service] Starting synthesis", {
     textLength: text.length,
     languageCode: options.languageCode,
-    prompt: options.prompt ? "provided" : "none",
     storyId: options.storyId,
     chapterId: options.chapterId,
   });
 
-  // If an audio already exists for the given identifiers, reuse it and skip generation
-  if (options.chapterId || options.storyId || options.languageCode) {
+  // Check if audio already exists - BEFORE attempting generation
+  // All three identifiers are required to match an existing record
+  if (options.chapterId && options.storyId && options.languageCode) {
     try {
       const existing = await prisma.tTSAudio.findFirst({
         where: {
@@ -55,18 +54,51 @@ export async function synthesizeText(
             chapterId: options.chapterId,
             storyId: options.storyId,
             languageCode: options.languageCode,
+            generatedAt: existing.generatedAt,
           },
         );
 
         return { audioUrl: existing.audioUrl };
+      } else if (existing && !existing.audioUrl) {
+        logger.debug(
+          "[TTS Service] Audio record exists but audioUrl is missing; regenerating",
+          {
+            id: existing.id,
+            chapterId: options.chapterId,
+            storyId: options.storyId,
+            languageCode: options.languageCode,
+          },
+        );
       }
     } catch (dbCheckErr) {
       logger.warn(
         "[TTS Service] Failed to check existing TTS audio; proceeding with generation",
-        { error: dbCheckErr },
+        {
+          error: String(dbCheckErr),
+          chapterId: options.chapterId,
+          storyId: options.storyId,
+          languageCode: options.languageCode,
+        },
       );
     }
+  } else {
+    logger.debug(
+      "[TTS Service] Missing required identifiers for audio lookup",
+      {
+        hasChapterId: !!options.chapterId,
+        hasStoryId: !!options.storyId,
+        hasLanguageCode: !!options.languageCode,
+      },
+    );
   }
+
+  // Log that we're proceeding with generation
+  logger.info("[TTS Service] Proceeding with audio generation", {
+    textLength: text.length,
+    chapterId: options.chapterId,
+    storyId: options.storyId,
+    languageCode: options.languageCode,
+  });
 
   // Convert content LanguageCode to TTS language code
   const ttsLanguageCode = options.languageCode
@@ -77,7 +109,6 @@ export async function synthesizeText(
   // Generate audio buffer (WAV)
   const audioBuffer = await provider.synthesize(text, {
     languageCode: ttsLanguageCode as TTSLanguageCodes,
-    prompt: options.prompt,
   });
 
   // Step 1: Upload to uploadthing cloud storage
@@ -85,6 +116,8 @@ export async function synthesizeText(
   const filename = `tts-${timestamp}.wav`;
 
   // Convert buffer to a Blob-like object for uploadthing
+  // ignore this TypeScript error since uploadthing expects a File or Blob, and Node doesn't have File/Blob natively
+  // @ts-ignore
   const file = new File([audioBuffer], filename, { type: "audio/wav" });
 
   let audioUrl = "";
@@ -108,7 +141,6 @@ export async function synthesizeText(
         storyId: options.storyId || null,
         chapterId: options.chapterId || null,
         languageCode: options.languageCode || null,
-        prompt: options.prompt || null,
         audioUrl,
         mimeType: "audio/wav",
         sizeBytes: audioBuffer.length,
@@ -123,21 +155,6 @@ export async function synthesizeText(
   return { audioUrl };
 }
 
-export async function fetchByIdentifiers(chapterId: string) {
-  logger.debug("[TTS Service] Fetching TTS by chapterId:", { chapterId });
-
-  const audio = await prisma.tTSAudio.findFirst({
-    where: { chapterId },
-    orderBy: { generatedAt: "desc" },
-  });
-  if (!audio) {
-    logger.info("[TTS Service] No TTS audio found for chapterId", {
-      chapterId,
-    });
-    return null;
-  }
-  return audio;
-}
 
 // update default export to include new function
-export default { synthesizeText, fetchByIdentifiers };
+export default { synthesizeText };

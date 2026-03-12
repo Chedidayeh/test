@@ -58,7 +58,6 @@ const ChildDashboardInteractive = ({
   const minutes = readingTimeMinutes % 60;
   const readingTimeSubtitle =
     minutes > 0 ? `(${hours}h ${minutes}m)` : `(${hours}h)`;
-
   return (
     <>
       {seeRoadmap ? (
@@ -92,7 +91,7 @@ const ChildDashboardInteractive = ({
             />
 
             {/* Action Cards */}
-            {hasInProgressStories && (
+            {hasInProgressStories && userRole === RoleType.PARENT && (
               <ActionCards
                 currentProgresses={currentProgresses}
                 roadmaps={roadmaps}
@@ -134,7 +133,7 @@ const ChildDashboardInteractive = ({
               />
 
               {/* Action Cards */}
-              {hasInProgressStories && (
+              {hasInProgressStories && userRole === RoleType.PARENT && (
                 <ActionCards
                   currentProgresses={currentProgresses}
                   roadmaps={roadmaps}

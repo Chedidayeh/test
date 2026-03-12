@@ -1,7 +1,7 @@
 import "dotenv/config";
 import fs from "fs";
 import path from "path";
-import { VertexAITTSProvider } from "./provider";
+import { VertexAITTSProvider } from "./tts-provider";
 import { TTSLanguageCodes } from "@shared/src/types";
 
 async function run() {

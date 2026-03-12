@@ -8,6 +8,8 @@ import {
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import MissingDataAlert from "@/src/components/shared/MissingDataAlert";
+import { auth } from "@/src/auth";
+import { RoleType } from "@readdly/shared-types";
 
 export const metadata: Metadata = {
   title: "Story Reading - Readdly",
@@ -23,6 +25,15 @@ export default async function page({
   searchParams: Promise<{ childId: string }>;
 }) {
   const t = await getTranslations("StoryReadingInterface");
+
+  const session = await auth();
+  if (!session) {
+    redirect("/");
+  }
+
+  if (session.user.role !== RoleType.ADMIN) {
+    redirect("/");
+  }
 
   const { id } = await params;
   const { childId } = (await searchParams) as {

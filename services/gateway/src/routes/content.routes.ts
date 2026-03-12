@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import axios from "axios";
 import { logger } from "../utils/logger";
-import { createStoryWithChapters, forwardToContentService } from "../helpers/content.helpers";
+import { createStoryWithChapters, editStoryWithChapters, forwardToContentService } from "../helpers/content.helpers";
 import { API_BASE_URL_V1 } from "@shared/src/types";
 
 const router = Router();
@@ -9,13 +9,27 @@ const router = Router();
 
 /**
  * Stories Routes
+ * 
+ * POST /api/v1/stories/batch/create - Create story with chapters (async TTS generation)
+ *   Request body: { title, chapters: [...], languageCode, prompt }
+ *   Response: 200 { success: true, data: Story }
+ *   Note: TTS generation is queued in the background and runs asynchronously
+ * 
  * GET /api/v1/stories - fetch all stories
  * GET /api/v1/stories/:id - fetch single story
  */
 router.use("/stories/batch/create", (req: Request, res: Response) => {
-  logger.info("Received request to create story with chapters")
+  logger.info("Received request to create story with chapters (TTS generation will be async)")
   createStoryWithChapters(req, res);
 });
+
+router.use("/stories/:id/batch/edit", (req: Request, res: Response) => {
+  logger.info("Received request to edit story with chapters (TTS generation will be async)")
+  editStoryWithChapters(req, res);
+});
+
+
+
 router.use("/stories", (req: Request, res: Response) => {
   logger.info("Received request to forward story request")
   forwardToContentService(req, res, `${API_BASE_URL_V1}/stories${req.path}`);

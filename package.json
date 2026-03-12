@@ -33,7 +33,6 @@
     "build:progress": "npm --prefix services/progress run build",
     "build:gateway": "npm --prefix services/gateway run build",
     "build": "npm run build:shared && npm --prefix apps/web run build",
-    "start": "npm --prefix apps/web start",
     "prisma:generate": "npm run prisma:generate:ai && npm run prisma:generate:auth && npm run prisma:generate:content && npm run prisma:generate:progress",
     "prisma:generate:ai": "npm --prefix services/ai run prisma:generate",
     "prisma:generate:auth": "npm --prefix services/auth run prisma:generate",

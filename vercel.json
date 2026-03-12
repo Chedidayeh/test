@@ -1,9 +1,0 @@
-{
-  "root": "apps/web",
-  "buildCommand": "npm --prefix ../.. run build:shared && npm run build",
-  "installCommand": "npm --prefix ../.. install",
-  "outputDirectory": ".next",
-  "env": {
-    "NEXT_SKIP_TURBOPACK": "true"
-  }
-}
