@@ -1,7 +1,8 @@
 {
-  "buildCommand": "npm run build:shared && npm --prefix apps/web run build",
-  "installCommand": "npm install",
-  "outputDirectory": "apps/web/.next",
+  "root": "apps/web",
+  "buildCommand": "npm --prefix ../.. run build:shared && npm run build",
+  "installCommand": "npm --prefix ../.. install",
+  "outputDirectory": ".next",
   "env": {
     "NEXT_SKIP_TURBOPACK": "true"
   }
