@@ -26,6 +26,7 @@
     "dev:progress": "npm --prefix services/progress run dev",
     "dev:auth": "npm --prefix services/auth run dev",
     "dev:ai": "npm --prefix services/ai run dev",
+    "build:all": "concurrently \"npm run build:gateway\" \"npm run build:content\" \"npm run build:progress\" \"npm run build:auth\" \"npm run build:ai\"",
     "build:shared": "npm --prefix packages/shared run build",
     "build:auth": "npm --prefix services/auth run build",
     "build:ai": "npm --prefix services/ai run build",
@@ -37,7 +38,13 @@
     "prisma:generate:ai": "npm --prefix services/ai run prisma:generate",
     "prisma:generate:auth": "npm --prefix services/auth run prisma:generate",
     "prisma:generate:content": "npm --prefix services/content run prisma:generate",
-    "prisma:generate:progress": "npm --prefix services/progress run prisma:generate"
+    "prisma:generate:progress": "npm --prefix services/progress run prisma:generate",
+    "start:all": "concurrently \"npm run start:gateway\" \"npm run start:content\" \"npm run start:progress\" \"npm run start:auth\" \"npm run start:ai\"",
+    "start:gateway": "npm --prefix services/gateway run start",
+    "start:content": "npm --prefix services/content run start",
+    "start:progress": "npm --prefix services/progress run start",
+    "start:auth": "npm --prefix services/auth run start",
+    "start:ai": "npm --prefix services/ai run start"
   },
   "keywords": [],
   "author": "",
