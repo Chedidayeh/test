@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "@/src/components/ui/table";
 import { Badge } from "@/src/components/ui/badge";
+import { Loader } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -164,20 +165,24 @@ export default function RiddlesStats({ childProgress }: RiddlesStatsProps) {
   /**
    * Get all challenge attempts for a specific challenge
    * Extracts attempts from progress data by looping through game sessions
+   * Note: Attempts are already deduplicated at the source (stats.ts level)
    */
   const getChallengeAttempts = (challengeId: string): ChallengeAttempt[] => {
-    const attempts: ChallengeAttempt[] = [];
+    const attemptsMap = new Map<string, ChallengeAttempt>();
     
     childProgress?.forEach((progress) => {
       if (progress.gameSession?.challengeAttempts) {
         const challengeAttempts = progress.gameSession.challengeAttempts.filter(
           (attempt) => attempt.challengeId === challengeId
         );
-        attempts.push(...challengeAttempts);
+        challengeAttempts.forEach((attempt) => {
+          // Additional safeguard: deduplicate by ID
+          attemptsMap.set(attempt.id, attempt);
+        });
       }
     });
     
-    return attempts.sort((a, b) => a.attemptNumber - b.attemptNumber);
+    return Array.from(attemptsMap.values()).sort((a, b) => a.attemptNumber - b.attemptNumber);
   };
 
   /**
@@ -303,7 +308,12 @@ export default function RiddlesStats({ childProgress }: RiddlesStatsProps) {
             💡 <span className="font-medium">{t("riddleStatistics.tipPrefix")}</span> {t("riddleStatistics.tip")}
           </p>
         </div>
-        {challengeStats.length === 0 ? (
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <Loader size={20} className="animate-spin text-primary mb-3" />
+            <p className="text-sm text-muted-foreground">{t("riddleStatistics.loading")}</p>
+          </div>
+        ) : challengeStats.length === 0 ? (
           <p className="text-sm text-muted-foreground py-4">{t("riddleStatistics.noAttempts")}</p>
         ) : (
           <Table>
@@ -468,7 +478,16 @@ export default function RiddlesStats({ childProgress }: RiddlesStatsProps) {
                         {attempt.actions && attempt.actions.length > 0 && (
                           <div className="space-y-2 pt-2">
                             <div className="space-y-2">
-                              {attempt.actions.map((action) => (
+                              {attempt.actions
+                                .filter((action) => {
+                                  // Only show actions with actual content
+                                  return action.selectedAnswerText || action.answerText || action.isCorrect !== null;
+                                })
+                                .filter((action, index, self) => {
+                                  // Deduplicate by attemptNumberAtAction - keep only first occurrence
+                                  return self.findIndex(a => a.attemptNumberAtAction === action.attemptNumberAtAction) === index;
+                                })
+                                .map((action) => (
                                 <div key={action.id} className="bg-white dark:bg-gray-950 p-2 rounded border text-sm space-y-1">
                                   <p className="font-medium">
                                    {t("riddleStatistics.modal.attemptLabel", { n: action.attemptNumberAtAction })}

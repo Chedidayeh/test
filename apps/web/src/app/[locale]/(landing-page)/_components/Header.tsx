@@ -55,12 +55,12 @@ const Header = ({ session }: { session: Session | null }) => {
             <div className="flex-shrink-0 flex items-center gap-3">
               {session?.user.role === RoleType.ADMIN && (
                 <Link href={"/admin-dashboard"}>
-                  <Button size={"sm"}>Admin Dashboard</Button>
+                  <Button size={"sm"}>Admin</Button>
                 </Link>
               )}
-              {user ? <Profile session={session} /> : <LoginForm />}{" "}
               <ModeToggle />
               <Switcher />
+              {user ? <Profile session={session} /> : <LoginForm />}{" "}
             </div>
           </div>
         </div>
@@ -80,9 +80,9 @@ const Header = ({ session }: { session: Session | null }) => {
           </Link>
 
           <div className="flex items-center gap-2">
-            {user ? <Profile session={session} /> : <LoginForm />}{" "}
             <ModeToggle />
             <Switcher />
+            {user ? <Profile session={session} /> : <LoginForm />}{" "}
           </div>
         </div>
       </header>

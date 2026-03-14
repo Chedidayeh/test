@@ -31,7 +31,7 @@ export default async function page({
     redirect("/");
   }
 
-  if (session.user.role !== RoleType.ADMIN) {
+  if (session.user.role === RoleType.ADMIN) {
     redirect("/");
   }
 

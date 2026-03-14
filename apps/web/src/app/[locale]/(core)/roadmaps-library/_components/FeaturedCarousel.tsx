@@ -88,7 +88,7 @@ const FeaturedCarousel = ({ roadmaps }: { roadmaps: Roadmap[] }) => {
                 </p>
 
                 {/* Action Button */}
-                <Button className="max-w-max">{t("startReading")}</Button>
+                <Button size={"sm"} className="max-w-max">{t("startReading")}</Button>
               </div>
             </div>
           );
@@ -113,7 +113,7 @@ const FeaturedCarousel = ({ roadmaps }: { roadmaps: Roadmap[] }) => {
       </button>
 
       {/* Dots Indicator */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2">
+      <div className="absolute bottom-2 md:bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2">
         {roadmaps.map((_, index) => (
           <button
             key={index}

@@ -103,38 +103,6 @@ const StoryReadingInteractive = ({ story }: StoryReadingInteractiveProps) => {
     }
   }, [story, locale]);
 
-  // Fetch TTS audio when chapter changes
-  // useEffect(() => {
-  //   const fetchAudio = async () => {
-  //     if (!currentChapter?.id) return;
-
-  //     setIsLoadingAudio(true);
-  //     setAudioUrl(null);
-  //     setIsPlayingAudio(false);
-
-  //     try {
-  //       const response = await fetchTTSByChapterAction(currentChapter.id);
-  //       console.log("[TTS] Fetch response:", response);
-  //       if (response.success && response.data) {
-  //         // Handle both single TTSAudio object and array
-  //         const data = Array.isArray(response.data)
-  //           ? response.data[0]
-  //           : response.data;
-  //         if (data && typeof data === "object" && "audioUrl" in data) {
-  //           setAudioUrl((data as TTSAudio).audioUrl);
-  //         }
-  //       } else {
-  //         console.warn("[TTS] Failed to fetch audio:");
-  //       }
-  //     } catch (err) {
-  //       console.error("[TTS] Error fetching audio:", err);
-  //     } finally {
-  //       setIsLoadingAudio(false);
-  //     }
-  //   };
-
-  //   fetchAudio();
-  // }, [currentChapter?.id]);
 
   const currentPageData = localizedPages[currentPage - 1];
 
@@ -331,7 +299,7 @@ const StoryReadingInteractive = ({ story }: StoryReadingInteractiveProps) => {
             </motion.div>
           </AnimatePresence>
 
-          <div className="fixed right-2 sm:right-4 md:right-6 lg:right-8 bottom-20 sm:bottom-24 md:bottom-28 lg:bottom-32 flex flex-col gap-2 sm:gap-3 z-40">
+          <div className="fixed right-2 sm:right-4 md:right-6 lg:right-8 bottom-20 sm:bottom-24 md:bottom-28 lg:bottom-32 flex md:flex-col gap-2 sm:gap-3 z-40">
             {/* Settings Button */}
             <motion.button
               onClick={() => setShowSettings(true)}

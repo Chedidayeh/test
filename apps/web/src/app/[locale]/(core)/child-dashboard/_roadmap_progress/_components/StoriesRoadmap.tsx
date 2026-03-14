@@ -188,7 +188,7 @@ export default function StoriesRoadmap({
                       <Link
                         href={`/story-replaying-interface/${story.id}?childId=${childProfile.child.id}`}
                       >
-                        <Button variant={"accent"} className="w-max">
+                        <Button size={"sm"} variant={"accent"} className="w-max">
                           {t("roadmapPage.storiesRoadmap.buttons.readAgain")}
                         </Button>
                       </Link>
@@ -198,7 +198,7 @@ export default function StoriesRoadmap({
                       <Link
                         href={`/story-reading-interface/${story.id}?childId=${childProfile.child.id}`}
                       >
-                        <Button className="w-max">
+                        <Button size={"sm"} className="w-max">
                           {t(
                             "roadmapPage.storiesRoadmap.buttons.continueReading",
                           )}
@@ -210,7 +210,7 @@ export default function StoriesRoadmap({
                       <Link
                         href={`/story-reading-interface/${story.id}?childId=${childProfile.child.id}`}
                       >
-                        <Button className="w-max">
+                        <Button size={"sm"}  className="w-max">
                           {t("roadmapPage.storiesRoadmap.buttons.startReading")}
                         </Button>
                       </Link>
@@ -224,10 +224,10 @@ export default function StoriesRoadmap({
                     const localized = getLocalizedStory(story);
                     return (
                       <>
-                        <h3 className="font-heading text-lg font-bold text-white mb-1">
+                        <h3 className="font-heading md:text-lg font-bold text-white mb-1">
                           {localized.title}
                         </h3>
-                        <p className="text-sm text-gray-200 line-clamp-2">
+                        <p className="text-xs md:text-sm text-gray-200 line-clamp-2">
                           {localized.description}
                         </p>
                       </>

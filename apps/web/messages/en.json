@@ -417,6 +417,7 @@
 		"stepOf": "Step {step} of {total}"
 	},
 	"StoryReadingInterface": {
+		"saving": "Saving...",
 		"missingRequiredParameters": "The story ID and child ID are required to load the story.",
 		"storyNotFound": "The requested story could not be found. Please verify the story ID and try again.",
 		"unableToStartStory": "Unable to start the story for the child. Check the parameters and try again.",

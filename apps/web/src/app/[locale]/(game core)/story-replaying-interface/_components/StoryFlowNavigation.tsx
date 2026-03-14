@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader, Pause, Play } from "lucide-react";
 import { motion } from "framer-motion";
 import { Story } from "@readdly/shared-types";
 import { StoryPage } from "./storyDataTransform";
@@ -9,12 +9,21 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
 import { useTranslations } from "next-intl";
 import { useLocale } from "@/src/contexts/LocaleContext";
+import {
+  Dialog,
+  DialogOverlay,
+  DialogPortal,
+} from "@/src/components/ui/dialog";
 interface StoryFlowNavigationProps {
   storyTitle?: string;
   currentPage?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
   childId: string;
+  audioUrl?: string | null;
+  isPlayingAudio?: boolean;
+  isLoadingAudio?: boolean;
+  handlePlayAudio?: () => void;
 }
 
 const StoryFlowNavigation = ({
@@ -23,26 +32,40 @@ const StoryFlowNavigation = ({
   totalPages = 10,
   onPageChange,
   childId,
+  audioUrl,
+  isPlayingAudio,
+  isLoadingAudio,
+  handlePlayAudio,
 }: StoryFlowNavigationProps) => {
   const t = useTranslations("StoryReadingInterface");
   const { isRTL } = useLocale();
+  const [isSaving, setIsSaving] = useState(false);
 
   const router = useRouter();
   // No server operations or timer logic needed
 
   const handleBack = () => {
+    setIsSaving(true);
+
     // Return to previous page or close if first page
     router.push("/child-dashboard/" + childId);
   };
 
   const handlePreviousPage = () => {
     if (currentPage > 1 && onPageChange) {
+      if (isPlayingAudio) {
+        handlePlayAudio?.();
+      }
       onPageChange(currentPage - 1);
     }
   };
 
   const handleNextPage = () => {
+    if (isPlayingAudio) {
+      handlePlayAudio?.();
+    }
     if (currentPage === totalPages) {
+      setIsSaving(true);
       router.push("/child-dashboard/" + childId);
     }
     // Simply navigate to next page if available
@@ -67,7 +90,7 @@ const StoryFlowNavigation = ({
           <Button
             variant={"outline"}
             onClick={handleBack}
-            className="absolute left-2 sm:left-3 md:left-4 lg:left-8 text-xs sm:text-sm"
+            className={`absolute ${isRTL ? "right-2 sm:right-3 md:right-4 lg:right-8" : "left-2 sm:left-3 md:left-4 lg:left-8"} text-xs sm:text-sm`}
           >
             {isRTL ? (
               <ChevronRight size={18} className="sm:size-5" />
@@ -83,6 +106,42 @@ const StoryFlowNavigation = ({
           <h1 className="font-heading text-lg md:text-xl text-foreground truncate max-w-50 md:max-w-96">
             {storyTitle}
           </h1>
+          <div
+            className={`absolute ${isRTL ? "left-2 sm:left-3 md:left-4 lg:left-8" : "right-2 sm:right-3 md:right-4 lg:right-8"} flex items-center gap-3 sm:gap-2 md:gap-4`}
+          >
+            {audioUrl && (
+              <Button
+                variant={"accent"}
+                size={"sm"}
+                onClick={handlePlayAudio}
+                disabled={!audioUrl || isLoadingAudio}
+                aria-label={isPlayingAudio ? "Pause audio" : "Play audio"}
+              >
+                {isLoadingAudio ? (
+                  <>
+                    <Loader size={18} className="animate-spin" />
+                    <span className="hidden sm:inline">
+                      {t("playAudio.loading")}
+                    </span>
+                  </>
+                ) : isPlayingAudio ? (
+                  <>
+                    <Pause size={18} />
+                    <span className="hidden sm:inline">
+                      {t("playAudio.pause")}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Play size={18} />
+                    <span className="hidden sm:inline">
+                      {t("playAudio.play")}
+                    </span>
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Progress Bar */}
@@ -157,6 +216,22 @@ const StoryFlowNavigation = ({
           </Button>
         </div>
       </motion.div>
+      <Dialog open={isSaving}>
+        <DialogPortal>
+          <DialogOverlay className="bg-black/50 backdrop-blur-sm" />
+          <div className="fixed inset-0 z-99 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-4">
+              <span className="inline-flex items-center gap-3">
+                <span
+                  className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"
+                  aria-hidden="true"
+                />
+                <span>{t("saving")}</span>
+              </span>
+            </div>
+          </div>
+        </DialogPortal>
+      </Dialog>
     </div>
   );
 };

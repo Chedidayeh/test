@@ -50,6 +50,7 @@ export default function Hero({ session }: { session: Session | null }) {
           >
             <Button
               className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4"
+              size={"sm"}
               onClick={() => {
                 if (session?.user.newUser) {
                   router.push("/onboarding");

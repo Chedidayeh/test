@@ -83,13 +83,6 @@ const ChildDashboardInteractive = ({
               readingTimeSubtitle={readingTimeSubtitle}
             />
 
-            {/* Progress Tracker */}
-            <ProgressTracker
-              currentStars={child.totalStars || 0}
-              levels={levels}
-              currentLevel={child.currentLevel || 1}
-            />
-
             {/* Action Cards */}
             {hasInProgressStories && userRole === RoleType.PARENT && (
               <ActionCards
@@ -104,6 +97,13 @@ const ChildDashboardInteractive = ({
               roadmaps={roadmaps}
               setSelectedRoadmap={setSelectedRoadmap}
               setSeeRoadmap={setSeeRoadmap}
+            />
+
+            {/* Progress Tracker */}
+            <ProgressTracker
+              currentStars={child.totalStars || 0}
+              levels={levels}
+              currentLevel={child.currentLevel || 1}
             />
           </div>
 

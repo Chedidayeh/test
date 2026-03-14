@@ -339,7 +339,7 @@ export function calculateChallengeStats(
     _storyId: string;
     _chapterId: string | null;
   }
-  const allAttempts: AttemptWithContext[] = [];
+  const attemptMap = new Map<string, AttemptWithContext>();
 
   for (const progress of progressArray) {
     if (
@@ -348,13 +348,18 @@ export function calculateChallengeStats(
     ) {
       // Attach story and chapter info from parent Progress and GameSession
       for (const attempt of progress.gameSession.challengeAttempts) {
-        (attempt as unknown as AttemptWithContext)._storyId = progress.storyId;
-        (attempt as unknown as AttemptWithContext)._chapterId =
-          progress.gameSession.chapterId || null;
-        allAttempts.push(attempt as unknown as AttemptWithContext);
+        // Deduplicate by attempt ID - only keep the first occurrence
+        if (!attemptMap.has(attempt.id)) {
+          (attempt as unknown as AttemptWithContext)._storyId = progress.storyId;
+          (attempt as unknown as AttemptWithContext)._chapterId =
+            progress.gameSession.chapterId || null;
+          attemptMap.set(attempt.id, attempt as unknown as AttemptWithContext);
+        }
       }
     }
   }
+
+  const allAttempts = Array.from(attemptMap.values());
 
   if (allAttempts.length === 0) {
     return [];

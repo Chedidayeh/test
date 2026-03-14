@@ -2,7 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Lightbulb, Star } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Lightbulb,
+  Loader,
+  Pause,
+  Play,
+  Star,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import {
@@ -19,6 +27,11 @@ import {
 } from "@/src/lib/progress-service/server-actions";
 import { Button } from "@/src/components/ui/button";
 import { useLocale } from "@/src/contexts/LocaleContext";
+import {
+  Dialog,
+  DialogOverlay,
+  DialogPortal,
+} from "@/src/components/ui/dialog";
 interface StoryFlowNavigationProps {
   storyTitle?: string;
   currentPage?: number;
@@ -33,6 +46,10 @@ interface StoryFlowNavigationProps {
   story?: Story;
   totalStarsEarned?: number;
   childId: string;
+  audioUrl?: string | null;
+  isPlayingAudio?: boolean;
+  isLoadingAudio?: boolean;
+  handlePlayAudio?: () => void;
 }
 
 const StoryFlowNavigation = ({
@@ -48,11 +65,16 @@ const StoryFlowNavigation = ({
   pages = [],
   story,
   totalStarsEarned = 0,
+  audioUrl,
+  isPlayingAudio,
+  isLoadingAudio,
+  handlePlayAudio,
   childId,
 }: StoryFlowNavigationProps) => {
   const t = useTranslations("StoryReadingInterface");
   const { isRTL } = useLocale();
   const router = useRouter();
+  const [isSaving, setIsSaving] = useState(false);
   const [isSavingCheckpoint, setIsSavingCheckpoint] = useState(false);
   const MIN_READ_TIME = 3; // Minimum time in seconds before allowing next page
 
@@ -111,6 +133,7 @@ const StoryFlowNavigation = ({
     } else {
       // Pause the game session before navigating back to dashboard
       if (currentProgress?.gameSession?.id) {
+        setIsSaving(true);
         setIsSavingCheckpoint(true);
         const result = await pauseGameSessionAction(
           currentProgress.gameSession.id,
@@ -124,6 +147,7 @@ const StoryFlowNavigation = ({
           });
           router.push("/child-dashboard/" + childId);
         } else {
+          setIsSaving(false);
           console.error("[Game Pause] Failed to pause game session", {
             error: result.error,
           });
@@ -134,12 +158,18 @@ const StoryFlowNavigation = ({
 
   const handlePreviousPage = () => {
     if (currentPage > 1 && onPageChange) {
+      if (isPlayingAudio) {
+        handlePlayAudio?.();
+      }
       onPageChange(currentPage - 1);
       // Timer will automatically disable since we're no longer on the checkpointed page
     }
   };
 
   const handleNextPage = async () => {
+    if (isPlayingAudio) {
+      handlePlayAudio?.();
+    }
     // Check if minimum read time has passed (only if timer is active)
     if (isTimerActive && timeRemaining > 0) {
       console.log(
@@ -156,6 +186,8 @@ const StoryFlowNavigation = ({
     // Handle story completion when on the last page
     if (isLastPage) {
       if (currentProgress?.gameSession?.id) {
+        setIsSaving(true);
+
         setIsSavingCheckpoint(true);
         const result = await completeStoryAction(
           currentProgress.gameSession.id,
@@ -175,6 +207,8 @@ const StoryFlowNavigation = ({
           console.error("[Story Completion] Failed to complete story", {
             error: result.error,
           });
+          setIsSaving(false);
+
           setIsSavingCheckpoint(false);
         }
       }
@@ -255,7 +289,7 @@ const StoryFlowNavigation = ({
           <Button
             variant={"outline"}
             onClick={handleBack}
-            className="absolute left-2 sm:left-3 md:left-4 lg:left-8 text-xs sm:text-sm"
+            className={`absolute ${isRTL ? "right-2 sm:right-3 md:right-4 lg:right-8" : "left-2 sm:left-3 md:left-4 lg:left-8"} text-xs sm:text-sm`}
           >
             {isRTL ? (
               <ChevronRight size={18} className="sm:size-5" />
@@ -304,7 +338,9 @@ const StoryFlowNavigation = ({
           )}
 
           {/* Stars earned in the game session */}
-          <div className="absolute right-2 sm:right-3 md:right-4 lg:right-8 flex items-center gap-1 sm:gap-2 md:gap-4">
+          <div
+            className={`absolute ${isRTL ? "left-2 sm:left-3 md:left-4 lg:left-8" : "right-2 sm:right-3 md:right-4 lg:right-8"} flex items-center gap-3 sm:gap-2 md:gap-4`}
+          >
             <div className="flex items-center gap-0.5 sm:gap-1">
               <Star
                 size={16}
@@ -317,6 +353,38 @@ const StoryFlowNavigation = ({
                   0}
               </span>
             </div>
+            {audioUrl && (
+              <Button
+                variant={"accent"}
+                size={"sm"}
+                onClick={handlePlayAudio}
+                disabled={!audioUrl || isLoadingAudio}
+                aria-label={isPlayingAudio ? "Pause audio" : "Play audio"}
+              >
+                {isLoadingAudio ? (
+                  <>
+                    <Loader size={18} className="animate-spin" />
+                    <span className="hidden sm:inline">
+                      {t("playAudio.loading")}
+                    </span>
+                  </>
+                ) : isPlayingAudio ? (
+                  <>
+                    <Pause size={18} />
+                    <span className="hidden sm:inline">
+                      {t("playAudio.pause")}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Play size={18} />
+                    <span className="hidden sm:inline">
+                      {t("playAudio.play")}
+                    </span>
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -336,7 +404,7 @@ const StoryFlowNavigation = ({
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.28 }}
-          className={`absolute bottom-0 left-0 border-t right-0 bg-card shadow-warm-lg transition-smooth pointer-events-auto`}
+          className={`fixed bottom-0 left-0 right-0 border-t bg-card shadow-warm-md transition-smooth pointer-events-auto z-50`}
         >
           <div className="relative flex items-center justify-between px-2 sm:px-4 md:px-8 lg:px-16 xl:px-24 py-3 sm:py-4 min-h-16 sm:min-h-20">
             {/* Previous Button */}
@@ -437,6 +505,23 @@ const StoryFlowNavigation = ({
           </div>
         </motion.div>
       )}
+
+      <Dialog open={isSaving}>
+        <DialogPortal>
+          <DialogOverlay className="bg-black/50 backdrop-blur-sm" />
+          <div className="fixed inset-0 z-99 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-4">
+              <span className="inline-flex items-center gap-3">
+                <span
+                  className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"
+                  aria-hidden="true"
+                />
+                <span>{t("saving")}</span>
+              </span>
+            </div>
+          </div>
+        </DialogPortal>
+      </Dialog>
     </div>
   );
 };

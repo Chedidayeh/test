@@ -15,7 +15,7 @@ export default async function Home() {
 
   return (
     <div>
-      <div className="min-h-screen flex flex-col items-center justify-center ">
+      <div className="h-150  md: flex flex-col items-center justify-center ">
         <div
           className=" fixed inset-0 h-screen bg-cover bg-center bg-no-repeat -z-20 pointer-events-none"
           style={{ backgroundImage: "url('/landing-page/bg.jpg')" }}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import StoryContent from "./StoryContent";
@@ -27,7 +27,7 @@ import { useLocale } from "@/src/contexts/LocaleContext";
 
 interface StoryReadingInteractiveProps {
   story: Story;
-  currentProgress: Progress
+  currentProgress: Progress;
   childId: string;
 }
 
@@ -59,7 +59,7 @@ const StoryReadingInteractive = ({
   childId,
 }: StoryReadingInteractiveProps) => {
   const t = useTranslations("StoryReadingInterface");
-  const {locale} = useLocale();
+  const { locale } = useLocale();
 
   // Initialize page from checkpoint, or default to 1
   const initialPage = getPageNumberFromChapterId(
@@ -83,6 +83,12 @@ const StoryReadingInteractive = ({
   const [showRiddle, setShowRiddle] = useState(false);
   const currentChapter = getChapterByPageNumber(story, currentPage);
 
+  // TTS Audio state
+  // const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
   // Local cache of challenge attempts by challengeId to prevent losing submissions on page navigation
   const [localChallengeAttempts, setLocalChallengeAttempts] = useState<
     Record<string, ChallengeAttempt>
@@ -97,36 +103,55 @@ const StoryReadingInteractive = ({
     currentProgress?.gameSession?.starsEarned || 0,
   );
 
-    // Locale-aware pages: pick translated chapter content/title when available
-    const localizedPages = useMemo(() => {
-      const baseLocale = (locale || Local.EN).split("-")[0].toUpperCase(); // EN, AR, FR
-      if (!story.chapters || story.chapters.length === 0) return [];
-  
-      const sortedChapters = [...story.chapters].sort((a, b) => a.order - b.order);
-  
-      return sortedChapters.map((chapter, index) => {
-        const translation = chapter.translations?.find((t) => t.languageCode === baseLocale);
-        return {
-          pageNumber: index + 1,
-          text: translation?.content || chapter.content || "",
-          image: chapter.imageUrl,
-          alt: `Page ${index + 1}`,
-          hasRiddle: !!chapter.challenge,
-        };
-      });
-    }, [story, locale]);
-  
-    // Localized story title based on current locale
-    const localizedTitle = useMemo(() => {
-      try {
-        const baseLocale = (locale || Local.EN).split("-")[0];
-        const langKey = baseLocale.toUpperCase(); // EN, AR, FR
-        const translation = story.translations?.find((t: StoryTranslation) => t.languageCode === langKey);
-        return translation?.title || story.title;
-      } catch {
-        return story.title;
+  // Locale-aware pages: pick translated chapter content/title when available
+  const localizedPages = useMemo(() => {
+    const baseLocale = (locale || Local.EN).split("-")[0].toUpperCase(); // EN, AR, FR
+    if (!story.chapters || story.chapters.length === 0) return [];
+
+    const sortedChapters = [...story.chapters].sort(
+      (a, b) => a.order - b.order,
+    );
+
+    return sortedChapters.map((chapter, index) => {
+      const translation = chapter.translations?.find(
+        (t) => t.languageCode === baseLocale,
+      );
+      return {
+        pageNumber: index + 1,
+        text: translation?.content || chapter.content || "",
+        audioUrl: translation?.audioUrl || chapter.audioUrl,
+        image: chapter.imageUrl,
+        alt: `Page ${index + 1}`,
+        hasRiddle: !!chapter.challenge,
+      };
+    });
+  }, [story, locale]);
+
+  // Localized story title based on current locale
+  const localizedTitle = useMemo(() => {
+    try {
+      const baseLocale = (locale || Local.EN).split("-")[0];
+      const langKey = baseLocale.toUpperCase(); // EN, AR, FR
+      const translation = story.translations?.find(
+        (t: StoryTranslation) => t.languageCode === langKey,
+      );
+      return translation?.title || story.title;
+    } catch {
+      return story.title;
+    }
+  }, [story, locale]);
+
+  const handlePlayAudio = () => {
+    if (audioRef.current && currentPageData?.audioUrl) {
+      if (isPlayingAudio) {
+        audioRef.current.pause();
+        setIsPlayingAudio(false);
+      } else {
+        audioRef.current.play();
+        setIsPlayingAudio(true);
       }
-    }, [story, locale]);
+    }
+  };
 
   useEffect(() => {
     // Update challenge attempt state when current chapter changes
@@ -206,9 +231,13 @@ const StoryReadingInteractive = ({
   // Show button only if challenge is not attempted
   const shouldShowRiddleButton =
     currentPageData.hasRiddle &&
-    (currentChallengeAttemptState?.status === ChallengeStatus.NOT_ATTEMPTED || currentChallengeAttemptState?.status === ChallengeStatus.INCORRECT);
+    (currentChallengeAttemptState?.status === ChallengeStatus.NOT_ATTEMPTED ||
+      currentChallengeAttemptState?.status === ChallengeStatus.INCORRECT);
   // Callback to update challenge attempt when submitted from riddle component
-  const handleChallengeSubmitted = (updatedAttempt: ChallengeAttempt, starsEarned?: number) => {
+  const handleChallengeSubmitted = (
+    updatedAttempt: ChallengeAttempt,
+    starsEarned?: number,
+  ) => {
     setCurrentChallengeAttemptState(updatedAttempt);
     // Also cache it locally so we don't lose it on page navigation
     setLocalChallengeAttempts((prev) => ({
@@ -238,6 +267,10 @@ const StoryReadingInteractive = ({
         currentChallengeAttemptState={currentChallengeAttemptState}
         totalStarsEarned={totalStarsEarned}
         childId={childId}
+        audioUrl={currentPageData?.audioUrl}
+        isPlayingAudio={isPlayingAudio}
+        isLoadingAudio={isLoadingAudio}
+        handlePlayAudio={handlePlayAudio}
       />
       {!showRiddle ? (
         <>
@@ -251,7 +284,7 @@ const StoryReadingInteractive = ({
               className="flex-1 flex items-center justify-center"
             >
               {/* middle content */}
-            <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 max-w-4xl">
+              <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 pb-20 max-w-4xl">
                 {/* Story Content */}
                 <StoryContent
                   currentPage={currentPageData}
@@ -260,24 +293,27 @@ const StoryReadingInteractive = ({
                   highlightedWord={highlightedWord}
                 />
 
-                {/* TTS Controls */}
-                <motion.div
-                  className="mt-6 sm:mt-8"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.35 }}
-                >
-                  <Controls
-                    isPlaying={isPlaying}
-                    onPlayPause={handlePlayPause}
-                  />
-                </motion.div>
+                <div className="fixed right-2 sm:right-4 md:right-6 lg:right-8 top-20 sm:top-24 md:top-28 lg:top-32 flex flex-col items-center gap-2 sm:gap-3 z-40">
+                  {/* <Controls
+                      isPlaying={isPlaying}
+                      onPlayPause={handlePlayPause}
+                    /> */}
+                </div>
+
+                {/* Hidden Audio Element */}
+                <audio
+                  ref={audioRef}
+                  src={currentPageData?.audioUrl || ""}
+                  onEnded={() => setIsPlayingAudio(false)}
+                  onPlay={() => setIsPlayingAudio(true)}
+                  onPause={() => setIsPlayingAudio(false)}
+                />
 
                 {/* Riddle Indicator */}
                 {shouldShowRiddleButton && (
                   <motion.div
                     layout
-                    className="mt-3 sm:mt-4 flex flex-col items-center gap-2 sm:gap-3"
+                    className="flex mt-4 flex-col items-center gap-2 sm:gap-3"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                   >
@@ -294,7 +330,7 @@ const StoryReadingInteractive = ({
                 {currentPageData.hasRiddle && currentChallengeAttemptState && (
                   <motion.div
                     layout
-                    className="mt-3 sm:mt-4 flex flex-col items-center gap-1 sm:gap-2"
+                    className="flex mt-4 flex-col items-center gap-1 sm:gap-2"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                   >
@@ -316,7 +352,7 @@ const StoryReadingInteractive = ({
             </motion.div>
           </AnimatePresence>
 
-          <div className="fixed right-2 sm:right-4 md:right-6 lg:right-8 bottom-20 sm:bottom-24 md:bottom-28 lg:bottom-32 flex flex-col gap-2 sm:gap-3 z-40">
+          <div className="fixed right-2 sm:right-4 md:right-6 lg:right-8 bottom-20 sm:bottom-24 md:bottom-28 lg:bottom-32 flex md:flex-col gap-2 sm:gap-3 z-40">
             {/* Settings Button */}
             <motion.button
               onClick={() => setShowSettings(true)}

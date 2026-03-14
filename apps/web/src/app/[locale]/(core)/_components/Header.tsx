@@ -19,10 +19,11 @@ import {
   SheetClose,
 } from "@/src/components/ui/sheet";
 import { useLocale } from "@/src/contexts/LocaleContext";
+import { Separator } from "@/src/components/ui/separator";
 
 const Header = ({ userRole }: { userRole: RoleType | undefined }) => {
   const t = useTranslations("CoreHeader");
-  const {isRTL} = useLocale();
+  const { isRTL } = useLocale();
   const pathname = usePathname();
 
   const navItems = [
@@ -104,9 +105,8 @@ const Header = ({ userRole }: { userRole: RoleType | undefined }) => {
           </Link>
 
           {/* Right Actions */}
-          <div className="flex items-center gap-2">
-            <ModeToggle />
-            <Profile session={session.data!} />
+          <div className="flex items-center gap-1">
+            <RoleIndicator role={userRole!} />
 
             <Sheet>
               <SheetTrigger asChild>
@@ -138,11 +138,14 @@ const Header = ({ userRole }: { userRole: RoleType | undefined }) => {
                   })}
 
                   {/* Divider */}
-                  <div className="border-t border-black/10 my-2"></div>
+                  <Separator />
 
                   {/* Switcher */}
-                  <div className="pt-2">
+                  <div className="flex items-center gap-2 pt-2">
+                    <Profile session={session.data!} />
+
                     <Switcher />
+                    <ModeToggle />
                   </div>
                 </nav>
               </SheetContent>

@@ -129,7 +129,7 @@ export function LoginForm({ className, hideTrigger = false, open, onOpenChange }
     <Dialog open={open} onOpenChange={onOpenChange}>
       {!hideTrigger && (
         <DialogTrigger asChild>
-          <Button id="about">{t("buttonLogin")}</Button>
+          <Button size={"sm"} id="about">{t("buttonLogin")}</Button>
         </DialogTrigger>
       )}
       <DialogTitle></DialogTitle>

@@ -63,7 +63,7 @@ const StoryFlowNavigation = ({
   const handlePreviousPage = () => {
     if (currentPage > 1 && onPageChange) {
       if (isPlayingAudio) {
-        handlePlayAudio?.(); 
+        handlePlayAudio?.();
       }
 
       onPageChange(currentPage - 1);
@@ -73,8 +73,9 @@ const StoryFlowNavigation = ({
 
   const handleNextPage = () => {
     if (isPlayingAudio) {
-      handlePlayAudio?.(); 
-    } // Check if this is the last page
+      handlePlayAudio?.();
+    } 
+    // Check if this is the last page
     const isLastPage = currentPage === totalPages;
 
     // Handle story completion when on the last page
@@ -106,7 +107,7 @@ const StoryFlowNavigation = ({
             variant={"outline"}
             onClick={handleBack}
             aria-label="Back"
-            className="absolute left-2 sm:left-3 md:left-4 lg:left-8 text-xs sm:text-sm"
+            className={`absolute ${isRTL ? "right-2 sm:right-3 md:right-4 lg:right-8" : "left-2 sm:left-3 md:left-4 lg:left-8"} text-xs sm:text-sm`}
           >
             {isRTL ? (
               <ChevronRight size={18} className="sm:size-5" />
@@ -155,7 +156,17 @@ const StoryFlowNavigation = ({
           )}
 
           {/* Stars earned display */}
-          <div className="absolute right-2 sm:right-3 md:right-4 lg:right-8 flex items-center gap-3 sm:gap-2 md:gap-4">
+          <div className={`absolute ${isRTL ? "left-2 sm:left-3 md:left-4 lg:left-8" : "right-2 sm:right-3 md:right-4 lg:right-8"} flex items-center gap-3 sm:gap-2 md:gap-4`}>
+            <div className="flex items-center gap-0.5 sm:gap-1">
+              <Star
+                size={16}
+                className="sm:size-5 text-primary"
+                fill="currentColor"
+              />
+              <span className="font-heading font-semibold text-sm sm:text-base text-foreground">
+                {totalStarsEarned}
+              </span>
+            </div>
             {audioUrl && (
               <Button
                 variant={"accent"}
@@ -188,16 +199,6 @@ const StoryFlowNavigation = ({
                 )}
               </Button>
             )}
-            <div className="flex items-center gap-0.5 sm:gap-1">
-              <Star
-                size={16}
-                className="sm:size-5 text-primary"
-                fill="currentColor"
-              />
-              <span className="font-heading font-semibold text-sm sm:text-base text-foreground">
-                {totalStarsEarned}
-              </span>
-            </div>
           </div>
         </div>
 
@@ -217,7 +218,7 @@ const StoryFlowNavigation = ({
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.28 }}
-          className={`absolute bottom-0 left-0 border-t right-0 bg-card shadow-warm-lg transition-smooth pointer-events-auto`}
+          className={`fixed bottom-0 left-0 right-0 border-t bg-card shadow-warm-md transition-smooth pointer-events-auto z-50`}
         >
           <div className="relative flex items-center justify-between px-2 sm:px-4 md:px-8 lg:px-16 xl:px-24 py-3 sm:py-4 min-h-16 sm:min-h-20">
             {/* Previous Button */}

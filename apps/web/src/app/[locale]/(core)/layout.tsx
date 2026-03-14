@@ -1,5 +1,4 @@
 import Header from "./_components/Header";
-import MobileRoleIndicator from "@/src/components/shared/MobileRoleIndicator";
 import { auth } from "@/src/auth";
 import { redirect } from "next/navigation";
 import { RoleType } from "@readdly/shared-types";
@@ -23,7 +22,6 @@ export default async function Layout({
   return (
     <div>
       <Header userRole={userRole} />
-      {userRole && <MobileRoleIndicator role={userRole} />}
 
       {children}
     </div>

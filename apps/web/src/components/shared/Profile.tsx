@@ -208,7 +208,14 @@ export default function Profile({ session }: { session: Session }) {
                         </>
                       )}
                     </Button>
-                    <Button>Admin</Button>
+                    {session?.user?.role === RoleType.ADMIN && (
+                      <Link href="/admin-dashboard">
+                        <Button>
+                          <Layout className="w-4 h-4" />
+                          admin{" "}
+                        </Button>
+                      </Link>
+                    )}{" "}
                   </div>
                 </div>
 

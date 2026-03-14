@@ -417,6 +417,7 @@
 		"stepOf": "Étape {step} sur {total}"
 	},
 	"StoryReadingInterface": {
+		"saving": "Enregistrement...",
 		"missingRequiredParameters": "Les paramètres requis sont manquants. Veuillez vérifier le lien et réessayer.",
 		"storyNotFound": "La story demandée n'a pas pu être trouvée. Veuillez vérifier l'ID de la story et réessayer.",
 		"unableToStartStory": "Impossible de démarrer la story pour l'enfant. Vérifiez les paramètres et réessayez.",
