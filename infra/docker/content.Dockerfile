@@ -1,18 +1,20 @@
-# Content Service Dockerfile
 FROM node:18-slim
 
 RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Install production dependencies
-COPY services/content/package.json services/content/package-lock.json ./
-RUN npm ci
+# Copy package.json
+COPY services/content/package*.json ./services/content/
 
-# Copy shared packages
+# Copy shared package
 COPY packages/shared ./packages/shared
 
-# Copy Prisma schema
+# Install dependencies inside content service
+WORKDIR /app/services/content
+RUN npm install
+
+# Copy prisma
 COPY services/content/prisma ./prisma
 RUN npx prisma generate
 
@@ -20,15 +22,13 @@ RUN npx prisma generate
 COPY services/content/src ./src
 COPY services/content/tsconfig.json ./
 
-# Rewrite path alias for flat Docker layout
-RUN sed -i 's|../../packages/shared|./packages/shared|g' tsconfig.json
+# Go back to root
+WORKDIR /app
 
-# Build TypeScript
-RUN npm run build
+# Build service
+RUN cd services/content && npm run build
 
-# Expose port
 EXPOSE 3003
 
-
-# Start service
+WORKDIR /app/services/content
 CMD ["npm", "run", "start"]

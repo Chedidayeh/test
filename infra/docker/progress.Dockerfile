@@ -1,18 +1,20 @@
-# Progress Service Dockerfile
 FROM node:18-slim
 
 RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Install production dependencies
-COPY services/progress/package.json services/progress/package-lock.json ./
-RUN npm ci
+# Copy package.json
+COPY services/progress/package*.json ./services/progress/
 
-# Copy shared packages
+# Copy shared package
 COPY packages/shared ./packages/shared
 
-# Copy Prisma schema
+# Install dependencies inside progress service
+WORKDIR /app/services/progress
+RUN npm install
+
+# Copy prisma
 COPY services/progress/prisma ./prisma
 RUN npx prisma generate
 
@@ -20,15 +22,13 @@ RUN npx prisma generate
 COPY services/progress/src ./src
 COPY services/progress/tsconfig.json ./
 
-# Rewrite path alias for flat Docker layout
-RUN sed -i 's|../../packages/shared|./packages/shared|g' tsconfig.json
+# Go back to root
+WORKDIR /app
 
-# Build TypeScript
-RUN npm run build
+# Build service
+RUN cd services/progress && npm run build
 
-# Expose port
 EXPOSE 3004
 
-
-# Start service
+WORKDIR /app/services/progress
 CMD ["npm", "run", "start"]

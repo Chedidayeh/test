@@ -4,22 +4,31 @@ RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY services/ai/package*.json ./
-RUN npm ci
+# Copy package.json
+COPY services/ai/package*.json ./services/ai/
 
-# Copy shared packages
+# Copy shared package
 COPY packages/shared ./packages/shared
 
+# Install dependencies inside ai service
+WORKDIR /app/services/ai
+RUN npm install
+
+# Copy prisma
 COPY services/ai/prisma ./prisma
 RUN npx prisma generate
 
+# Copy source code
 COPY services/ai/src ./src
 COPY services/ai/tsconfig.json ./
 
-# Rewrite path alias for flat Docker layout
-RUN sed -i 's|../../packages/shared|./packages/shared|g' tsconfig.json
+# Go back to root
+WORKDIR /app
 
-RUN npm run build
+# Build service
+RUN cd services/ai && npm run build
 
 EXPOSE 3005
+
+WORKDIR /app/services/ai
 CMD ["npm", "run", "start"]

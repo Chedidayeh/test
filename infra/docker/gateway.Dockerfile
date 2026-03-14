@@ -1,28 +1,31 @@
-# Gateway Service Dockerfile
 FROM node:18-slim
+
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Install production dependencies
-COPY services/gateway/package.json services/gateway/package-lock.json ./
-RUN npm ci
+# Copy package.json
+COPY services/gateway/package*.json ./services/gateway/
 
-# Copy shared packages
+# Copy shared package
 COPY packages/shared ./packages/shared
+
+# Install dependencies inside gateway service
+WORKDIR /app/services/gateway
+RUN npm install
+
 
 # Copy source code
 COPY services/gateway/src ./src
 COPY services/gateway/tsconfig.json ./
 
-# Rewrite path alias for flat Docker layout
-RUN sed -i 's|../../packages/shared|./packages/shared|g' tsconfig.json
+# Go back to root
+WORKDIR /app
 
-# Build TypeScript
-RUN npm run build
+# Build service
+RUN cd services/gateway && npm run build
 
-# Expose port
 EXPOSE 3001
 
-
-# Start service
+WORKDIR /app/services/gateway
 CMD ["npm", "run", "start"]

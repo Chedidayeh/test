@@ -4,22 +4,31 @@ RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY services/auth/package*.json ./
-RUN npm ci
+# Copy package.json
+COPY services/auth/package*.json ./services/auth/
 
-# Copy shared packages
+# Copy shared package
 COPY packages/shared ./packages/shared
 
+# Install dependencies inside auth service
+WORKDIR /app/services/auth
+RUN npm install
+
+# Copy prisma
 COPY services/auth/prisma ./prisma
 RUN npx prisma generate
 
+# Copy source code
 COPY services/auth/src ./src
 COPY services/auth/tsconfig.json ./
 
-# Rewrite path alias for flat Docker layout
-RUN sed -i 's|../../packages/shared|./packages/shared|g' tsconfig.json
+# Go back to root
+WORKDIR /app
 
-RUN npm run build
+# Build service
+RUN cd services/auth && npm run build
 
 EXPOSE 3002
+
+WORKDIR /app/services/auth
 CMD ["npm", "run", "start"]
