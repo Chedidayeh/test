@@ -9,7 +9,7 @@ import {
   Chapter,
   LanguageCode,
 } from "@shared/src/types";
-import { queueTTSGeneration } from "src/inngest/tts-agent/tts.queue";
+import { queueTTSGeneration } from "../inngest/tts-agent/tts.queue";
 
 export const CONTENT_SERVICE_URL = process.env.CONTENT_SERVICE_URL;
 export const AI_SERVICE_URL = process.env.AI_SERVICE_URL;

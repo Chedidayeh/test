@@ -1,8 +1,8 @@
 
-import { logger } from "src/utils/logger";
 import { TTS_GENERATE_REQUESTED, TTSGenerateRequestedEvent } from "../events";
 import { LanguageCode } from "@shared/src/types";
 import { inngest } from "../inngest";
+import { logger } from "../../utils/logger";
 
 /**
  * Queue a TTS generation request to Inngest

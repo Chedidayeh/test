@@ -1,12 +1,12 @@
-import { logger } from "src/utils/logger";
 import { TTS_GENERATE_REQUESTED, TTSGenerateRequestedEvent } from "../events";
 import { inngest } from "../inngest";
 import axios from "axios";
 import {
   AI_SERVICE_URL,
   CONTENT_SERVICE_URL,
-} from "src/helpers/content.helpers";
+} from "../../helpers/content.helpers";
 import { API_BASE_URL_V1, ApiResponse, LanguageCode } from "@shared/src/types";
+import { logger } from "../../utils/logger";
 
 /**
  * Inngest function: Generate TTS audio in the background
