@@ -1,7 +1,7 @@
 import { VertexAI } from "@google-cloud/vertexai";
 import path from "path";
 import "dotenv/config";
-import { TTSLanguageCodes } from "@readdly/shared-types";
+import { TTSLanguageCodes } from "@shared/src/types";
 
 export interface TTSOptions {
   languageCode?: TTSLanguageCodes;
