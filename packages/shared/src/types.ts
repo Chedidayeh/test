@@ -293,6 +293,7 @@ export interface Challenge {
   chapterId: string;
   type: ChallengeType;
   question: string;
+  audioUrl?: string;
   description?: string;
   baseStars: number;
   order: number;
@@ -310,6 +311,7 @@ export interface ChallengeTranslation {
   languageCode: LanguageCode;
   question: string;
   description?: string;
+  audioUrl?: string;
   hints: string[];
   createdAt: Date;
   updatedAt: Date;

@@ -24,7 +24,6 @@ enum LanguageCode {
   FR
 }
 
-
 // Age Group: Defines target audience for content
 model AgeGroup {
   id     String @id @default(cuid())
@@ -32,16 +31,16 @@ model AgeGroup {
   minAge Int
   maxAge Int
 
-  status AgeGroupStatus @default(ACTIVE)
+  status       AgeGroupStatus        @default(ACTIVE)
   translations AgeGroupTranslation[]
-  roadmaps Roadmap[]
+  roadmaps     Roadmap[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model AgeGroupTranslation {
-  id         String @id @default(cuid())
+  id         String   @id @default(cuid())
   ageGroupId String
   ageGroup   AgeGroup @relation(fields: [ageGroupId], references: [id], onDelete: Cascade)
 
@@ -51,22 +50,21 @@ model AgeGroupTranslation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([ageGroupId, languageCode])
   @@unique([ageGroupId, languageCode])
+  @@index([ageGroupId, languageCode])
 }
 
 model Theme {
-  id          String    @id @default(cuid())
-  name        String    @unique // e.g., "Adventure", "Mystery", "Fantasy"
-  description String
-  imageUrl    String?
-  roadmaps    Roadmap[]
+  id           String             @id @default(cuid())
+  name         String             @unique // e.g., "Adventure", "Mystery", "Fantasy"
+  description  String
+  imageUrl     String?
+  roadmaps     Roadmap[]
   translations ThemeTranslation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
 
 model ThemeTranslation {
   id      String @id @default(cuid())
@@ -80,8 +78,8 @@ model ThemeTranslation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([themeId, languageCode])
   @@unique([themeId, languageCode])
+  @@index([themeId, languageCode])
 }
 
 enum ReadingLevel {
@@ -91,7 +89,6 @@ enum ReadingLevel {
   HARD
   ADVANCED
 }
-
 
 // Roadmap: Fixed progression graph for an age group
 model Roadmap {
@@ -107,7 +104,7 @@ model Roadmap {
   readingLevel ReadingLevel @default(BEGINNER)
 
   translations RoadmapTranslation[]
-  worlds World[]
+  worlds       World[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -116,9 +113,9 @@ model Roadmap {
 }
 
 model RoadmapTranslation {
-  id          String  @id @default(cuid())
-  roadmapId    String
-  roadmap      Roadmap @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  roadmapId String
+  roadmap   Roadmap @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
 
   languageCode LanguageCode @default(EN)
   title        String?
@@ -126,8 +123,8 @@ model RoadmapTranslation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([roadmapId, languageCode])
   @@unique([roadmapId, languageCode])
+  @@index([roadmapId, languageCode])
 }
 
 // World: Collection of related stories within a roadmap
@@ -142,7 +139,7 @@ model World {
   order       Int // Order in roadmap
 
   translations WorldTranslation[]
-  stories Story[]
+  stories      Story[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -162,8 +159,8 @@ model WorldTranslation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([worldId, languageCode])
   @@unique([worldId, languageCode])
+  @@index([worldId, languageCode])
 }
 
 // Story: Individual story within a world
@@ -199,8 +196,8 @@ model StoryTranslation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([storyId, languageCode])
   @@unique([storyId, languageCode])
+  @@index([storyId, languageCode])
 }
 
 // Chapter: Sections of a story with reading content and challenges
@@ -236,8 +233,8 @@ model ChapterTranslation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([chapterId, languageCode])
   @@unique([chapterId, languageCode])
+  @@index([chapterId, languageCode])
 }
 
 // Challenge Types enumeration
@@ -255,11 +252,13 @@ model Challenge {
   chapterId String  @unique
   chapter   Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
-  type        ChallengeType
-  question    String
-  baseStars   Int           @default(20) // Base stars for solving
-  order       Int // Order in chapter
-  hints       String[] // Array of hints for the challenge
+  type     ChallengeType
+  question String
+  audioUrl String?
+
+  baseStars Int      @default(20) // Base stars for solving
+  order     Int // Order in chapter
+  hints     String[] // Array of hints for the challenge
 
   translations ChallengeTranslation[]
   answers      Answer[]
@@ -277,13 +276,15 @@ model ChallengeTranslation {
 
   languageCode LanguageCode @default(EN)
   question     String
-  hints        String[]
+  audioUrl     String?
+
+  hints String[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([challengeId, languageCode])
   @@unique([challengeId, languageCode])
+  @@index([challengeId, languageCode])
 }
 
 // Answer: Possible answers for challenges
@@ -315,8 +316,8 @@ model AnswerTranslation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([answerId, languageCode])
   @@unique([answerId, languageCode])
+  @@index([answerId, languageCode])
 }
 
 // Level
@@ -360,6 +361,6 @@ model BadgeTranslation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([badgeId, languageCode])
   @@unique([badgeId, languageCode])
+  @@index([badgeId, languageCode])
 }

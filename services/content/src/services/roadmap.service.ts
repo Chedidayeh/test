@@ -1,6 +1,6 @@
 import { PrismaClient, ReadingLevel, LanguageCode } from "@prisma/client";
 import { logger } from "../utils/logger";
-import type { Roadmap } from "../types";
+import type { Roadmap } from "@shared/src/types";
 import { AgeGroupStatus, TranslationSourceType, ManualTranslationEdit } from "@shared/src/types";
 import { getTranslationService } from "../translations/translation.service";
 import { TRANSLATION_CONFIG, TRANSLATION_STRATEGIES } from "../config/translation-config";

@@ -1,6 +1,6 @@
 import { AgeGroupStatus, PrismaClient, LanguageCode } from "@prisma/client";
 import { logger } from "../utils/logger";
-import type { AgeGroup } from "../types";
+import type { AgeGroup } from "@shared/src/types";
 import { getTranslationService } from "../translations/translation.service";
 import { TranslationSourceType, ManualTranslationEdit } from "@shared/src/types";
 import {

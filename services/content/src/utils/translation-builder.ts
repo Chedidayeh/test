@@ -7,7 +7,6 @@
 import { LanguageCode } from "@prisma/client";
 import { TranslationSourceType } from "@shared/src/types";
 import {
-  TRANSLATION_CONFIG,
   TRANSLATION_STRATEGIES,
   TranslationStrategy,
   TranslationStrategyType,

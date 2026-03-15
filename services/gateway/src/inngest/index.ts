@@ -1,7 +1,7 @@
-import { generateTTSAudio } from "./tts-agent/tts.function";
+import { generateTTSAudio, generateStoryTranslations } from "./agents/function";
 
 /**
- * Inngest functions for AI service
+ * Inngest functions for Gateway service
  * Each function handles a specific background job/event
  */
-export const functions = [generateTTSAudio];
+export const functions = [generateTTSAudio, generateStoryTranslations];

@@ -10,7 +10,7 @@ import { Local } from "@shared/src/types";
  * Handles retries, error management, and logging
  */
 
-const authKey = process.env.DEEPL_API_KEY || "b7990e35-af18-449e-8d89-5c44eca0e21e:fx";
+const authKey = process.env.DEEPL_API_KEY!
 const deeplClient = new deepl.DeepLClient(authKey);
 
 export class TranslationAgent {

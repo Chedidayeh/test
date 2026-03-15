@@ -27,6 +27,11 @@ router.put("/:id/batch/edit", (req, res) =>
   storyController.editStoryWithChapters(req, res),
 );
 
+// POST - execute translations for a story asynchronously
+router.post("/:id/translations/execute", (req, res) =>
+  storyController.executeStoryTranslations(req, res),
+);
+
 // DELETE story by ID
 router.delete("/:id", (req, res) => storyController.deleteStory(req, res));
 

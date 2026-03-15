@@ -8,8 +8,12 @@ import {
   API_BASE_URL_V1,
   Chapter,
   LanguageCode,
+  CreateStoryWithChaptersInput,
 } from "@shared/src/types";
-import { queueTTSGeneration } from "../inngest/tts-agent/tts.queue";
+import {
+  queueTTSGeneration,
+  queueTranslationForStory,
+} from "../inngest/agents/queue";
 
 export const CONTENT_SERVICE_URL = process.env.CONTENT_SERVICE_URL;
 export const AI_SERVICE_URL = process.env.AI_SERVICE_URL;
@@ -74,14 +78,12 @@ export async function createStoryWithChapters(
         : {}),
     };
 
-    const response = await axios.post<ApiResponse<Story>>(
-      contentUrl,
-      req.body,
-      {
-        headers,
-        validateStatus: () => true,
-      },
-    );
+    const input: CreateStoryWithChaptersInput = req.body;
+
+    const response = await axios.post<ApiResponse<Story>>(contentUrl, input, {
+      headers,
+      validateStatus: () => true,
+    });
 
     logger.info("Content service createStory response", {
       status: response.status,
@@ -95,15 +97,17 @@ export async function createStoryWithChapters(
         const story = response.data?.data as Story | undefined;
 
         if (story && story.chapters && story.chapters.length > 0) {
+          // trigger Translation for the story in the background (fire-and-forget)
+          await triggerTranslationForStory(story.id, input);
           // Only trigger TTS generation when client requested audio generation
-          if (req.body?.generateAudio) {
-            // Trigger TTS generation for all chapters in AI service (fire-and-forget)
-            await triggerTTSGenerationForAllChapters(story);
-          } else {
-            logger.info(
-              "[Gateway] Skipping TTS trigger because generateAudio=false",
-            );
-          }
+          // if (input.generateAudio) {
+          //   // Trigger TTS generation for all chapters in AI service (fire-and-forget)
+          //   await triggerTTSGenerationForAllChapters(story);
+          // } else {
+          //   logger.info(
+          //     "[Gateway] Skipping TTS trigger because generateAudio=false",
+          //   );
+          // }
         }
       } catch (err) {
         logger.error("Error while triggering TTS after content create", {
@@ -199,15 +203,9 @@ export async function editStoryWithChapters(
         const story = response.data?.data as Story | undefined;
 
         if (story && story.chapters && story.chapters.length > 0) {
-          // Only trigger TTS generation when client requested audio generation
-          if (req.body?.generateAudio) {
-            // Trigger TTS generation for all chapters in AI service (fire-and-forget)
-            await triggerTTSGenerationForAllChapters(story);
-          } else {
-            logger.info(
-              "[Gateway] Skipping TTS trigger because generateAudio=false",
-            );
-          }
+          // Trigger translation for the story in the background (fire-and-forget)
+          const input: CreateStoryWithChaptersInput = req.body;
+          await triggerTranslationForStory(story.id, input);
         }
       } catch (err) {
         logger.error("Error while triggering TTS after content edit", {
@@ -251,139 +249,45 @@ export async function editStoryWithChapters(
   }
 }
 
-/**
- * Trigger TTS generation for ALL story chapters
- * Queues TTS requests for each chapter and translation
- * The AI service (Inngest) handles concurrent processing in the background
- */
-async function triggerTTSGenerationForAllChapters(story: Story): Promise<void> {
+async function triggerTranslationForStory(
+  storyId: string,
+  input: CreateStoryWithChaptersInput,
+): Promise<void> {
   try {
-    if (!story || !story.chapters || story.chapters.length === 0) {
-      logger.warn("[Gateway] No chapters found for TTS generation");
+    if (!storyId) {
+      logger.warn("[Gateway] No story ID provided for translation trigger");
       return;
     }
 
-    logger.info("[Gateway] Triggering TTS generation for all chapters", {
-      storyId: story.id,
-      chapterCount: story.chapters.length,
-      totalTranslations: story.chapters.reduce(
-        (sum, ch) => sum + (ch.translations?.length || 0),
-        0,
-      ),
-    });
-
-    let queuedCount = 0;
-    let errorCount = 0;
-
-    // Build array of all TTS requests to execute in parallel
-    const ttsPromises: Promise<void>[] = [];
-
-    // Process each chapter and collect all TTS requests
-    for (const chapter of story.chapters) {
-      if (!chapter) continue;
-
-      const translations = chapter.translations || [];
-
-      // If no translations exist, trigger for base content with default language
-      if (translations.length === 0 && chapter.content) {
-        ttsPromises.push(
-          (async () => {
-            try {
-              logger.info("[Gateway] No translations found, queuing TTS for chapter base content", {
-                storyId: story.id,
-                chapterId: chapter.id,
-                chapterOrder: chapter.order,
-              });
-              // Trigger TTS generation for base content with default language (e.g., English)
-              await queueTTSGeneration(chapter.content, {
-                languageCode: LanguageCode.EN,
-                storyId: story.id,
-                chapterId: chapter.id,
-              });
-
-              queuedCount++;
-              logger.debug("[Gateway] TTS queued for chapter (base content)", {
-                storyId: story.id,
-                chapterId: chapter.id,
-                chapterOrder: chapter.order,
-                languageCode: LanguageCode.EN,
-              });
-            } catch (err) {
-              errorCount++;
-              logger.error(
-                "[Gateway] Failed to queue TTS for chapter base content",
-                {
-                  storyId: story.id,
-                  chapterId: chapter.id,
-                  chapterOrder: chapter.order,
-                  error: String(err),
-                },
-              );
-            }
-          })(),
-        );
-      } else {
-        // Trigger TTS for each translation
-        for (const translation of translations) {
-          ttsPromises.push(
-            (async () => {
-              try {
-                logger.info("[Gateway] Queuing TTS for chapter translation", {
-                  storyId: story.id,
-                  chapterId: chapter.id,
-                  chapterOrder: chapter.order,
-                  languageCode: translation.languageCode,
-                });
-                await queueTTSGeneration(translation.content, {
-                  languageCode: translation.languageCode,
-                  storyId: story.id,
-                  chapterId: chapter.id,
-                });
-
-                queuedCount++;
-                logger.debug("[Gateway] TTS queued for chapter translation", {
-                  storyId: story.id,
-                  chapterId: chapter.id,
-                  chapterOrder: chapter.order,
-                  languageCode: translation.languageCode,
-                });
-              } catch (err) {
-                errorCount++;
-                logger.error(
-                  "[Gateway] Failed to queue TTS for chapter translation",
-                  {
-                    storyId: story.id,
-                    chapterId: chapter.id,
-                    chapterOrder: chapter.order,
-                    languageCode: translation.languageCode,
-                    error: String(err),
-                  },
-                );
-              }
-            })(),
-          );
-        }
-      }
+    if (!input.translationSource) {
+      logger.info(
+        "[Gateway] No translation source specified, skipping translation trigger",
+        { storyId },
+      );
+      return;
     }
 
-    // Execute all TTS requests in parallel
-    logger.debug("[Gateway] Queuing TTS requests in parallel", {
-      storyId: story.id,
-      totalRequests: ttsPromises.length,
+    logger.info("[Gateway] Triggering translation for story", {
+      storyId,
+      translationSource: input.translationSource,
     });
 
-    await Promise.all(ttsPromises);
+    // Queue the translation event to Inngest
+    // This is fire-and-forget: returns immediately without waiting for translation to complete
+    await queueTranslationForStory(storyId, input);
 
-    logger.info("[Gateway] Completed queuing TTS for all chapters", {
-      storyId: story.id,
-      queuedCount,
-      errorCount,
-      totalAttempted: queuedCount + errorCount,
-      parallelRequests: ttsPromises.length,
+    logger.info("[Gateway] Translation event queued successfully", {
+      storyId,
+      translationSource: input.translationSource,
     });
   } catch (err) {
-    logger.error("[Gateway] Error triggering TTS generation for all chapters", {
+    logger.error("[Gateway] Failed to queue translation event", {
+      storyId,
+      translationSource: input.translationSource,
       error: String(err),
     });
+    // Non-fatal: story was created successfully, translation trigger failure shouldn't break response
   }
 }
+
+

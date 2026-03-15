@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { logger } from "../utils/logger";
-import type { Story, StoryQuery } from "../types";
+import type { Story } from "@shared/src/types";
+import { StoryQuery } from "../types";
 
 export class StoryService {
   private prisma: PrismaClient;

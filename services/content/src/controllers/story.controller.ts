@@ -9,7 +9,14 @@ import {
   editStoryWithChaptersTransaction,
   validateStoryCreationInput,
 } from "../utils/transaction.helper";
-import { ApiResponse, CreateStoryWithChaptersInput, Story } from "@shared/src/types";
+import {
+  executeStoryTranslationsTransaction,
+} from "../utils/translation-execution.helper";
+import {
+  ApiResponse,
+  CreateStoryWithChaptersInput,
+  Story,
+} from "@shared/src/types";
 
 const prisma = new PrismaClient();
 const storyService = new StoryService(prisma);
@@ -18,13 +25,22 @@ export class StoryController {
   /**
    * Get all stories with pagination and filters
    */
-  async getStories(req: Request, res: Response<ApiResponse<Story[]>>): Promise<void> {
+  async getStories(
+    req: Request,
+    res: Response<ApiResponse<Story[]>>,
+  ): Promise<void> {
     try {
       const query: StoryQuery = {
-        limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
-        offset: req.query.offset ? parseInt(req.query.offset as string) : undefined,
+        limit: req.query.limit
+          ? parseInt(req.query.limit as string)
+          : undefined,
+        offset: req.query.offset
+          ? parseInt(req.query.offset as string)
+          : undefined,
         worldId: req.query.worldId as string,
-        difficulty: req.query.difficulty ? parseInt(req.query.difficulty as string) : undefined,
+        difficulty: req.query.difficulty
+          ? parseInt(req.query.difficulty as string)
+          : undefined,
         isMandatory: req.query.isMandatory
           ? req.query.isMandatory === "true"
           : undefined,
@@ -47,7 +63,10 @@ export class StoryController {
   /**
    * Get a single story by ID with all details
    */
-  async getStoryById(req: Request, res: Response<ApiResponse<Story>>): Promise<void> {
+  async getStoryById(
+    req: Request,
+    res: Response<ApiResponse<Story>>,
+  ): Promise<void> {
     try {
       const { id } = req.params;
 
@@ -67,7 +86,9 @@ export class StoryController {
 
       sendSuccess(res, story, 200);
     } catch (error) {
-      logger.error("Error in getStoryById controller", { error: String(error) });
+      logger.error("Error in getStoryById controller", {
+        error: String(error),
+      });
       sendError(res, String(error), 500, "Failed to fetch story");
     }
   }
@@ -75,7 +96,10 @@ export class StoryController {
   /**
    * Get stories by world ID
    */
-  async getStoriesByWorld(req: Request, res: Response<ApiResponse<Story[]>>): Promise<void> {
+  async getStoriesByWorld(
+    req: Request,
+    res: Response<ApiResponse<Story[]>>,
+  ): Promise<void> {
     try {
       const { worldId } = req.params;
 
@@ -100,14 +124,21 @@ export class StoryController {
   /**
    * Get multiple stories by their IDs (query param: ?ids=id1,id2,id3)
    */
-  async getStoriesByIds(req: Request, res: Response<ApiResponse<Story[]>>): Promise<void> {
+  async getStoriesByIds(
+    req: Request,
+    res: Response<ApiResponse<Story[]>>,
+  ): Promise<void> {
     try {
       const { ids } = req.query;
 
       logger.info("Get stories by IDs request", { ids });
 
       if (!ids || typeof ids !== "string") {
-        sendError(res, "IDs query parameter is required (comma-separated)", 400);
+        sendError(
+          res,
+          "IDs query parameter is required (comma-separated)",
+          400,
+        );
         return;
       }
 
@@ -129,14 +160,13 @@ export class StoryController {
     }
   }
 
-
   /**
    * Create a story with chapters, challenges, and answers atomically
    * All nested data created together or entire transaction rolls back on error
    */
   async createStoryWithChapters(
     req: Request,
-    res: Response<ApiResponse<Story>>
+    res: Response<ApiResponse<Story>>,
   ): Promise<void> {
     try {
       const input: CreateStoryWithChaptersInput = req.body;
@@ -156,7 +186,7 @@ export class StoryController {
           validationError instanceof Error
             ? validationError.message
             : "Validation failed",
-          400
+          400,
         );
         return;
       }
@@ -170,7 +200,7 @@ export class StoryController {
           res,
           `World with ID '${input.worldId}' not found`,
           404,
-          "INVALID_WORLD"
+          "INVALID_WORLD",
         );
         return;
       }
@@ -178,14 +208,14 @@ export class StoryController {
       // Check if story order is already used in this world
       const orderExists = await storyService.isOrderUsedInWorld(
         input.worldId,
-        input.order
+        input.order,
       );
       if (orderExists) {
         sendError(
           res,
           `Order ${input.order} is already used in this world`,
           409,
-          "DUPLICATE_ORDER"
+          "DUPLICATE_ORDER",
         );
         return;
       }
@@ -196,7 +226,8 @@ export class StoryController {
       logger.info("Story with chapters created successfully", {
         storyId: result.id,
         chaptersCreated: result.chapters.length,
-        challengesCreated: result.chapters.filter(c => c.challenge !== null).length,
+        challengesCreated: result.chapters.filter((c) => c.challenge !== null)
+          .length,
         answersCreated: result.chapters.reduce((acc, chapter) => {
           return acc + (chapter.challenge?.answers.length || 0);
         }, 0),
@@ -211,7 +242,7 @@ export class StoryController {
         res,
         error instanceof Error ? error.message : String(error),
         500,
-        "Failed to create story"
+        "Failed to create story",
       );
     }
   }
@@ -222,7 +253,7 @@ export class StoryController {
    */
   async editStoryWithChapters(
     req: Request,
-    res: Response<ApiResponse<Story>>
+    res: Response<ApiResponse<Story>>,
   ): Promise<void> {
     try {
       const { id } = req.params;
@@ -247,8 +278,10 @@ export class StoryController {
       } catch (validationError) {
         sendError(
           res,
-          validationError instanceof Error ? validationError.message : "Validation failed",
-          400
+          validationError instanceof Error
+            ? validationError.message
+            : "Validation failed",
+          400,
         );
         return;
       }
@@ -270,7 +303,77 @@ export class StoryController {
         res,
         error instanceof Error ? error.message : String(error),
         500,
-        "Failed to edit story"
+        "Failed to edit story",
+      );
+    }
+  }
+
+  /**
+   * Execute translations for an existing story
+   * Generates translations for story, chapters, challenges, and answers
+   * Does NOT modify story structure, only creates/updates translation records
+   */
+  async executeStoryTranslations(
+    req: Request,
+    res: Response<ApiResponse<Story>>,
+  ): Promise<void> {
+    try {
+      const { id } = req.params;
+      const body = req.body as CreateStoryWithChaptersInput;
+
+      logger.info("Execute story translations request", {
+        storyId: id,
+        translationSource: body.translationSource,
+        hasTranslations: !!body.translations && body.translations.length > 0,
+      });
+
+      // Validate story exists
+      const story = await storyService.getStoryById(id);
+      if (!story) {
+        sendError(res, `Story with ID '${id}' not found`, 404);
+        return;
+      }
+
+      // Validate translation source is provided
+      if (!body.translationSource) {
+        sendError(
+          res,
+          "Translation source is required to execute translations",
+          400,
+        );
+        return;
+      }
+
+      // Validate story has translatable content
+      if (!story.chapters || story.chapters.length === 0) {
+        sendError(res, "Story has no chapters to translate", 400);
+        return;
+      }
+
+      // Execute translation transaction
+      const translatedStory = await executeStoryTranslationsTransaction(
+        prisma,
+        id,
+        body,
+      );
+
+      logger.info("Story translations executed successfully", {
+        storyId: translatedStory.id,
+        translationSource: body.translationSource,
+        storyTranslationsCount: translatedStory.translations?.length || 0,
+        chaptersCount: translatedStory.chapters.length,
+      });
+
+      sendSuccess(res, translatedStory, 200);
+    } catch (error) {
+      logger.error("Error in executeStoryTranslations controller", {
+        error: String(error),
+      });
+      sendError(
+        res,
+        error instanceof Error ? error.message : String(error),
+        500,
+        "Failed to execute story translations",
       );
     }
   }
@@ -278,7 +381,10 @@ export class StoryController {
   /**
    * Delete a story by ID
    */
-  async deleteStory(req: Request, res: Response<ApiResponse<{id: string}>>): Promise<void> {
+  async deleteStory(
+    req: Request,
+    res: Response<ApiResponse<{ id: string }>>,
+  ): Promise<void> {
     try {
       const { id } = req.params;
 
@@ -308,7 +414,7 @@ export class StoryController {
         res,
         error instanceof Error ? error.message : String(error),
         500,
-        "Failed to delete story"
+        "Failed to delete story",
       );
     }
   }
