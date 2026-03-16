@@ -10,7 +10,12 @@ import {
   AI_SERVICE_URL,
   CONTENT_SERVICE_URL,
 } from "../../helpers/content.helpers";
-import { API_BASE_URL_V1, ApiResponse, LanguageCode, Story } from "@shared/src/types";
+import {
+  API_BASE_URL_V1,
+  ApiResponse,
+  LanguageCode,
+  Story,
+} from "@shared/src/types";
 import { logger } from "../../utils/logger";
 import { triggerTTSGenerationForAllChapters } from "./queue";
 
@@ -20,7 +25,7 @@ import { triggerTTSGenerationForAllChapters } from "./queue";
  */
 function deserializeStory(data: any): Story {
   if (!data) return data;
-  
+
   // Convert createdAt and updatedAt strings to Date objects
   const story = {
     ...data,
@@ -48,11 +53,12 @@ function deserializeStory(data: any): Story {
             ...ch.challenge,
             createdAt: new Date(ch.challenge.createdAt),
             updatedAt: new Date(ch.challenge.updatedAt),
-            answers: ch.challenge.answers?.map((ans: any) => ({
-              ...ans,
-              createdAt: new Date(ans.createdAt),
-              updatedAt: new Date(ans.updatedAt),
-            })) || [],
+            answers:
+              ch.challenge.answers?.map((ans: any) => ({
+                ...ans,
+                createdAt: new Date(ans.createdAt),
+                updatedAt: new Date(ans.updatedAt),
+              })) || [],
           }
         : undefined,
     }));
@@ -128,9 +134,25 @@ export const generateStoryTranslations = inngest.createFunction(
         result: result.data.data,
       });
 
-      // Deserialize response and trigger TTS generation
+      // Deserialize response
       const story = deserializeStory(result.data.data);
-      await triggerTTSGenerationForAllChapters(story);
+
+      // Only trigger TTS generation if explicitly requested via generateAudio flag
+      if (eventData.generateAudio) {
+        logger.info("[Translation Handler] Triggering TTS generation", {
+          storyId: eventData.storyId,
+          generateAudio: eventData.generateAudio,
+        });
+        await triggerTTSGenerationForAllChapters(story);
+      } else {
+        logger.info(
+          "[Translation Handler] Skipping TTS generation - generateAudio flag not set",
+          {
+            storyId: eventData.storyId,
+            generateAudio: eventData.generateAudio,
+          },
+        );
+      }
 
       return {
         success: true,
@@ -168,19 +190,23 @@ export const generateTTSAudio = inngest.createFunction(
       chapterId: eventData.chapterId,
       languageCode: eventData.languageCode,
       textLength: eventData.text.length,
+
+      challengeQuestion: eventData.challengeQuestion,
     });
 
     try {
       // Retry logic: use step.run for resilient execution with retries
       const result = await step.run("synthesize-text", async () => {
         logger.debug("[TTS Handler] Calling synthesizeText");
-        return await axios.post<ApiResponse<{ audioUrl: string }>>(
+        return await axios.post<ApiResponse<{ audioUrl: string; challengeAudioUrl: string | undefined }>>(
           `${AI_SERVICE_URL}${API_BASE_URL_V1}/tts`,
           {
             text: eventData.text,
             languageCode: eventData.languageCode,
             storyId: eventData.storyId,
             chapterId: eventData.chapterId,
+            challengeId: eventData.challengeId,
+            challengeQuestion: eventData.challengeQuestion,
           },
           {
             headers: { "Content-Type": "application/json" },
@@ -205,9 +231,11 @@ export const generateTTSAudio = inngest.createFunction(
         chapterId: eventData.chapterId,
         languageCode: eventData.languageCode,
         audioUrl: result.data.data?.audioUrl,
+        challengeAudioUrl: result.data.data?.challengeAudioUrl,
       });
 
       const audioUrl = result.data.data?.audioUrl;
+      const challengeAudioUrl = result.data.data?.challengeAudioUrl;
 
       // Step 2: Update chapter audio in content service
       await step.run("update-chapter-audio", async () => {
@@ -227,6 +255,7 @@ export const generateTTSAudio = inngest.createFunction(
           updateUrl,
           {
             audioUrl,
+            challengeAudioUrl,
             languageCode: eventData.languageCode,
           },
           {
@@ -256,6 +285,7 @@ export const generateTTSAudio = inngest.createFunction(
           chapterId: eventData.chapterId,
           languageCode: eventData.languageCode,
           audioUrl,
+          challengeAudioUrl,
         });
       });
 

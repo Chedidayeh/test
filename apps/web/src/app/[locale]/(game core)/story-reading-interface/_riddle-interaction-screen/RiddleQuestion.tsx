@@ -4,7 +4,6 @@ import { Pause, Play, Puzzle, Clock } from "lucide-react";
 import { ChallengeType } from "@readdly/shared-types";
 import { useTranslations } from "next-intl";
 
-
 interface RiddleQuestionProps {
   question: string;
   storyImage: string;
@@ -15,6 +14,7 @@ interface RiddleQuestionProps {
   isAudioPlaying: boolean;
   elapsedTime?: number;
   challengeType?: ChallengeType;
+  hasAudio?: boolean;
 }
 
 const RiddleQuestion = ({
@@ -27,9 +27,10 @@ const RiddleQuestion = ({
   isAudioPlaying,
   elapsedTime = 0,
   challengeType,
+  hasAudio = false,
 }: RiddleQuestionProps) => {
   const t = useTranslations("StoryReadingInterface.riddleInterface");
-  
+
   const getTypeLabel = (type?: ChallengeType): string => {
     switch (type) {
       case "TRUE_FALSE":
@@ -49,29 +50,29 @@ const RiddleQuestion = ({
   return (
     <div className="bg-card rounded-xl shadow-warm-lg p-4 sm:p-6">
       {/* Riddle Counter */}
-      <div className="flex items-center justify-between mb-4 sm:mb-6">
-        <div className="flex items-center gap-2">
-          <Puzzle size={20} className="sm:size-6 text-secondary" />
-          <span className="font-heading text-sm sm:text-lg text-foreground">
-            {t("riddleQuestion.riddleCounter", { current: riddleNumber, total: totalRiddles })}
-          </span>
-        </div>
-        <button
-          onClick={onAudioPlay}
-          className="p-2 sm:p-3 rounded-full bg-secondary text-white hover:scale-105 transition-smooth shadow-warm flex-shrink-0"
-          aria-label={isAudioPlaying ? t("riddleQuestion.stopAudio") : t("riddleQuestion.playAudio")}
-        >
-          {isAudioPlaying ? <Pause size={18} className="sm:size-5" /> : <Play size={18} className="sm:size-5" />}
-        </button>
+      <div className="flex items-center justify-center mb-6">
+        {hasAudio && (
+          <button
+            onClick={onAudioPlay}
+            className="p-3 rounded-full bg-secondary text-white hover:scale-105 transition-smooth shadow-warm"
+            aria-label={
+              isAudioPlaying
+                ? t("riddleQuestion.stopAudio")
+                : t("riddleQuestion.playAudio")
+            }
+          >
+            {isAudioPlaying ? <Pause size={20} /> : <Play size={20} />}
+          </button>
+        )}
       </div>
 
       {/* Elapsed Time Display */}
-      <div className="mb-4 sm:mb-6 flex items-center gap-2 p-2 sm:p-3 bg-secondary/10 rounded-lg w-fit">
+      {/* <div className="mb-4 sm:mb-6 flex items-center gap-2 p-2 sm:p-3 bg-secondary/10 rounded-lg w-fit">
         <Clock size={18} className="sm:size-5 text-secondary" />
         <span className="font-heading text-sm sm:text-lg text-foreground">
           {t("riddleQuestion.timeDisplay", { seconds: elapsedTime })}
         </span>
-      </div>
+      </div> */}
 
       {/* Story Context Image */}
       {/* <div className="relative w-full h-48 md:h-64 rounded-xl overflow-hidden mb-6 shadow-warm">

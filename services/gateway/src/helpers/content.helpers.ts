@@ -91,32 +91,27 @@ export async function createStoryWithChapters(
     });
 
     if (response.status >= 200 && response.status < 300) {
-      // Step 2: Trigger TTS generation for ALL chapters via AI service (async, non-blocking)
-      // This happens in the background without blocking the API response
+      // Step 2: Trigger translation and TTS generation (async, non-blocking)
+      // Only triggers if client specified a translation source
       try {
         const story = response.data?.data as Story | undefined;
 
         if (story && story.chapters && story.chapters.length > 0) {
-          // trigger Translation for the story in the background (fire-and-forget)
+          const input: CreateStoryWithChaptersInput = req.body;
+          
+          // Trigger translation for the story in the background (fire-and-forget)
+          // The generateAudio flag will be checked by the translation handler (Inngest)
+          // to determine whether to trigger TTS generation
           await triggerTranslationForStory(story.id, input);
-          // Only trigger TTS generation when client requested audio generation
-          // if (input.generateAudio) {
-          //   // Trigger TTS generation for all chapters in AI service (fire-and-forget)
-          //   await triggerTTSGenerationForAllChapters(story);
-          // } else {
-          //   logger.info(
-          //     "[Gateway] Skipping TTS trigger because generateAudio=false",
-          //   );
-          // }
         }
       } catch (err) {
-        logger.error("Error while triggering TTS after content create", {
+        logger.error("Error while triggering translation after content create", {
           error: String(err),
         });
-        // Non-fatal: story was created successfully, TTS trigger failure shouldn't break response
+        // Non-fatal: story was created successfully, translation trigger failure shouldn't break response
       }
 
-      // Return story immediately (TTS triggered in background)
+      // Return story immediately (translation/TTS triggered in background)
       return res.status(response.status).json(response.data);
     }
 

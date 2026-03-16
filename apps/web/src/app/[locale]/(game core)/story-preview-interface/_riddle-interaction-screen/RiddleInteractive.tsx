@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import RiddleQuestion from "./RiddleQuestion";
 import TextInputAnswer from "./TextInputAnswer";
 import MultipleChoiceAnswer from "./MultipleChoiceAnswer";
@@ -38,6 +38,7 @@ interface Riddle {
   storyImage?: string;
   storyImageAlt: string;
   starsReward: number;
+  questionAudioUrl?: string;
 }
 
 interface RiddleInteractiveProps {
@@ -98,6 +99,7 @@ const RiddleInteractive = ({
       storyImage: storyImage,
       storyImageAlt: storyImageAlt,
       starsReward: challenge.baseStars,
+      questionAudioUrl: challengeTranslation?.audioUrl || challenge.audioUrl,
     };
 
     return riddle;
@@ -122,9 +124,10 @@ const RiddleInteractive = ({
     message: "",
     isVisible: false,
   });
-  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(true);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const totalHints = currentRiddle.hints.length;
   const availableHints = totalHints - hintsUsed;
@@ -413,9 +416,16 @@ const RiddleInteractive = ({
     onClose?.();
   };
 
-  const handleAudioPlay = () => {
-    setIsAudioPlaying(!isAudioPlaying);
-    setTimeout(() => setIsAudioPlaying(false), 3000);
+  const handlePlayAudio = () => {
+    if (audioRef.current && currentRiddle.questionAudioUrl) {
+      if (isPlayingAudio) {
+        audioRef.current.pause();
+        setIsPlayingAudio(false);
+      } else {
+        audioRef.current.play();
+        setIsPlayingAudio(true);
+      }
+    }
   };
 
   return (
@@ -439,12 +449,22 @@ const RiddleInteractive = ({
             storyImageAlt={currentRiddle.storyImageAlt}
             riddleNumber={1}
             totalRiddles={3}
-            onAudioPlay={handleAudioPlay}
-            isAudioPlaying={isAudioPlaying}
+            onAudioPlay={handlePlayAudio}
+            isAudioPlaying={isPlayingAudio}
             elapsedTime={elapsedTime}
             challengeType={currentRiddle.type}
+            hasAudio={!!currentRiddle.questionAudioUrl}
           />
         </div>
+
+        {/* Hidden Audio Element */}
+        <audio
+          ref={audioRef}
+          src={currentRiddle.questionAudioUrl || ""}
+          onEnded={() => setIsPlayingAudio(false)}
+          onPlay={() => setIsPlayingAudio(true)}
+          onPause={() => setIsPlayingAudio(false)}
+        />
 
         {/* Answer Input */}
         <div className="mt-4 sm:mt-6 bg-card rounded-xl shadow-warm-lg p-4 sm:p-6">
@@ -502,7 +522,7 @@ const RiddleInteractive = ({
 
       {/* Floating Hint Button */}
       {totalHints > 0 && (
-        <div className="fixed right-2 sm:right-4 md:right-6 lg:right-8 bottom-20 sm:bottom-24 md:bottom-28 lg:bottom-32 z-50 pointer-events-none">
+        <div className="fixed right-2 sm:right-4 md:right-6 lg:right-8 top-22 sm:top-24 md:top-28 lg:top-32 z-50 pointer-events-none">
           <button
             onClick={handleShowHintPanel}
             className="pointer-events-auto flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 bg-secondary text-white rounded-full shadow-warm hover:scale-105 transition-smooth disabled:opacity-50 text-xs sm:text-sm shrink-0"

@@ -353,7 +353,7 @@ const StoryFlowNavigation = ({
                   0}
               </span>
             </div>
-            {audioUrl && (
+            {audioUrl && showRiddle==false && (
               <Button
                 variant={"accent"}
                 size={"sm"}

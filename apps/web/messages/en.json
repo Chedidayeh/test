@@ -455,11 +455,11 @@
 			"starsEarned": "{count} stars",
 			"pageProgress": "Page {current} of {total}",
 			"timerMessage": "Keep reading... ({remaining}s remaining)",
-			"completionMessage": "Story complete!",
+			"completionMessage": "Story completed",
 			"solveRiddle": "Solve the riddle",
-			"challengeSolved": "Challenge solved!",
-			"challengeSkipped": "Challenge skipped!",
-			"riddleTime": "It's riddle time!",
+			"challengeSolved": "Challenge solved",
+			"challengeSkipped": "Challenge skipped",
+			"riddleTime": "It's riddle time",
 			"riddleTimeText": "Once you read this page, click Solve the riddle button to continue the story"
 		},
 		"storyControls": {

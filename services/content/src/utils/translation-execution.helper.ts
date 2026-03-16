@@ -61,6 +61,86 @@ interface AnswerTranslationResult {
 }
 
 /**
+ * Enriched challenge record with chapter context
+ * Used in MANUAL mode to correctly map translations to each challenge
+ */
+interface EnrichedChallengeRecord {
+  challengeId: string;
+  chapterId: string;
+  chapIdx: number;
+  record: TranslationRecord;
+  inputChapter: any; // Input chapter containing challenge data
+  storyChapter: Chapter; // Story chapter for reference
+}
+
+/**
+ * Enriched answer record with chapter and challenge context
+ * Used in MANUAL mode to correctly map translations to each answer
+ */
+interface EnrichedAnswerRecord {
+  answerId: string;
+  chapterId: string;
+  challengeId: string;
+  chapIdx: number;
+  ansIdx: number;
+  record: TranslationRecord;
+  inputChapter: any; // Input chapter containing challenge
+  inputChallenge: any; // Input challenge containing answers
+  storyChapter: Chapter; // Story chapter for reference
+  storyChallenge: Challenge; // Story challenge for reference
+}
+
+/**
+ * Build mapping of chapters from input and story by ID
+ * Handles matching chapters by order within the story to support AUTO mode robustness
+ * when story structure changes (new chapters added/deleted)
+ *
+ * @param inputChapters Chapters from the edit input
+ * @param storyChapters Chapters from the current story in database
+ * @returns Map of story chapterId to matched input chapter with metadata
+ */
+function buildChapterContextMap(
+  inputChapters: any[],
+  storyChapters: Chapter[],
+): Map<string, { inputChapter: any; chapIdx: number; storyChapter: Chapter }> {
+  const contextMap = new Map<string, { inputChapter: any; chapIdx: number; storyChapter: Chapter }>();
+
+  for (let chapIdx = 0; chapIdx < storyChapters.length; chapIdx++) {
+    const storyChapter = storyChapters[chapIdx] as Chapter;
+    const inputChapter = inputChapters[chapIdx];
+
+    if (!inputChapter) {
+      logger.warn("Input chapter not found for story chapter", {
+        chapIdx,
+        storyChapterId: storyChapter.id,
+        totalStoryChapters: storyChapters.length,
+        totalInputChapters: inputChapters.length,
+      });
+      continue; // Skip chapters without input data
+    }
+
+    contextMap.set(storyChapter.id, {
+      inputChapter,
+      chapIdx,
+      storyChapter,
+    });
+
+    logger.debug("Chapter context mapped", {
+      storyChapterId: storyChapter.id,
+      chapIdx,
+      hasInputChallenge: !!inputChapter.challenge,
+    });
+  }
+
+  logger.info("Chapter context map built", {
+    mappedChapters: contextMap.size,
+    totalStoryChapters: storyChapters.length,
+  });
+
+  return contextMap;
+}
+
+/**
  * Execute translations for an existing story
  * Phase 1: Fetch story structure with all nested relations
  * Phase 2: Generate translations via DeepL for all content
@@ -99,8 +179,10 @@ export async function executeStoryTranslationsTransaction(
         world: true,
         chapters: {
           include: {
+            translations: true,
             challenge: {
               include: {
+                translations: true,
                 answers: {
                   orderBy: { order: "asc" },
                 },
@@ -126,6 +208,7 @@ export async function executeStoryTranslationsTransaction(
       ),
     });
 
+
     // Extract translatable content from existing story
     const storyTranslationRecord = extractStoryTranslationRecord(
       story as Story,
@@ -133,27 +216,129 @@ export async function executeStoryTranslationsTransaction(
     const chapterRecords = story.chapters.map((ch, idx) =>
       extractChapterTranslationRecord(ch as Chapter),
     );
+
+    // Extract challenge records WITH chapter context for correct mapping in MANUAL mode
+    // Enhanced for AUTO mode robustness: Still creates records even if input chapter doesn't match
     const challengeRecords = story.chapters
       .map((chapter, chapIdx) => {
+        if (!chapter.challenge) {
+          logger.debug("Story chapter has no challenge", {
+            chapterId: chapter.id,
+            chapIdx,
+          });
+          return null;
+        }
+
         const inputChapter = input.chapters[chapIdx];
-        if (!chapter.challenge || !inputChapter?.challenge) return null;
+
+        // For AUTO mode robustness: Create record even if input chapter missing
+        // AUTO mode doesn't need input challenge data - it generates from story content
+        // MANUAL mode will use fallback to story data if input is missing
+        if (!inputChapter) {
+          logger.warn("Input chapter not found for story chapter", {
+            chapterId: chapter.id,
+            chapIdx,
+            totalStoryChapters: story.chapters.length,
+            totalInputChapters: input.chapters.length,
+          });
+
+          // Still create record for AUTO mode processing
+          return {
+            challengeId: chapter.challenge.id,
+            chapterId: chapter.id,
+            chapIdx,
+            record: extractChallengeTranslationRecord(
+              chapter.challenge as Challenge,
+              undefined, // No input challenge data
+            ),
+            inputChapter: undefined, // Signal that input is missing
+            storyChapter: chapter as Chapter,
+          } as EnrichedChallengeRecord;
+        }
+
+        // Input chapter exists, use it
         return {
           challengeId: chapter.challenge.id,
+          chapterId: chapter.id,
+          chapIdx,
           record: extractChallengeTranslationRecord(
             chapter.challenge as Challenge,
             inputChapter.challenge,
           ),
-        };
+          inputChapter,
+          storyChapter: chapter as Chapter,
+        } as EnrichedChallengeRecord;
       })
-      .filter((r) => r !== null);
+      .filter((r) => r !== null) as EnrichedChallengeRecord[];
 
+    logger.info("Challenge records extracted with context", {
+      storyId,
+      challengeCount: challengeRecords.length,
+      mismatchWarnings: challengeRecords.filter((r) => !r.inputChapter).length,
+    });
+
+    // Extract answer records WITH chapter and challenge context
+    // Enhanced for AUTO mode robustness: Still creates records even if input chapter doesn't match
+    // This ensures each answer is properly associated with its challenge and chapter
     const answerRecords = story.chapters.flatMap((chapter, chapIdx) => {
+      if (!chapter.challenge) {
+        logger.debug("Story chapter has no challenge, skipping answers", {
+          chapterId: chapter.id,
+          chapIdx,
+        });
+        return [];
+      }
+
       const inputChapter = input.chapters[chapIdx];
-      if (!chapter.challenge || !inputChapter?.challenge) return [];
-      return chapter.challenge.answers.map((answer, ansIdx) => ({
-        answerId: answer.id,
-        record: extractAnswerTranslationRecord(answer as Answer),
-      }));
+      const inputChallenge = inputChapter?.challenge;
+
+      return chapter.challenge.answers.map((answer, ansIdx) => {
+        // For AUTO mode robustness: Create record even if input challenge missing
+        // AUTO mode doesn't need input answer data - it generates from story content
+        // MANUAL mode will use fallback to story data if input is missing
+        if (!inputChallenge) {
+          logger.debug("Input challenge not found for story challenge", {
+            answerId: answer.id,
+            ansIdx,
+            challengeId: chapter.challenge!.id,
+            chapterId: chapter.id,
+            chapIdx,
+          });
+
+          return {
+            answerId: answer.id,
+            chapterId: chapter.id,
+            challengeId: chapter.challenge!.id,
+            chapIdx,
+            ansIdx,
+            record: extractAnswerTranslationRecord(answer as Answer),
+            inputChapter: undefined, // Signal that input chapter is missing
+            inputChallenge: undefined, // Signal that input challenge is missing
+            storyChapter: chapter as Chapter,
+            storyChallenge: chapter.challenge as Challenge,
+          } as EnrichedAnswerRecord;
+        }
+
+        // Input challenge exists, use it
+        return {
+          answerId: answer.id,
+          chapterId: chapter.id,
+          challengeId: chapter.challenge!.id,
+          chapIdx,
+          ansIdx,
+          record: extractAnswerTranslationRecord(answer as Answer),
+          inputChapter,
+          inputChallenge,
+          storyChapter: chapter as Chapter,
+          storyChallenge: chapter.challenge as Challenge,
+        } as EnrichedAnswerRecord;
+      });
+    });
+
+    logger.info("Answer records extracted with context", {
+      storyId,
+      answerCount: answerRecords.length,
+      mismatchWarnings: answerRecords.filter((r) => !r.inputChallenge).length,
     });
 
     // ========== PHASE 2: GENERATE TRANSLATIONS ==========
@@ -169,17 +354,42 @@ export async function executeStoryTranslationsTransaction(
         : getTranslationStrategyForSource(input.translationSource);
 
     // Filter input to source language for AUTO modes
-    const filteredTranslations = buildTranslationRecords(
+    let filteredTranslations = buildTranslationRecords(
       input.translations,
       input.translationSource,
     );
 
+    // Handle empty translations based on mode
     if (!filteredTranslations || filteredTranslations.length === 0) {
-      logger.warn("No translations to process after filtering", {
+      // MANUAL mode: Skip translation execution, use base content
+      if (input.translationSource === TranslationSourceType.MANUAL) {
+        logger.info("MANUAL mode with no translations - skipping translation execution", {
+          storyId,
+          translationSource: input.translationSource,
+        });
+        return story as Story;
+      }
+
+      // AUTO mode: Extract base content from story to use as translation source
+      // This allows DeepL to translate from base language to target languages
+      logger.info(
+        "AUTO mode with no input translations - extracting base content for DeepL",
+        {
+          storyId,
+          translationSource: input.translationSource,
+        },
+      );
+
+      // Extract translation records from story's base content
+      const storyTranslationRecord = extractStoryTranslationRecord(story as Story);
+      
+      // Set as source for DeepL translation (will translate to target languages)
+      filteredTranslations = [storyTranslationRecord];
+      
+      logger.debug("Created source language record from story base content", {
         storyId,
-        translationSource: input.translationSource,
+        sourceLanguage: storyTranslationRecord.languageCode,
       });
-      throw new Error("No valid translations provided for execution");
     }
 
     // Build translation results for each entity type
@@ -240,15 +450,89 @@ export async function executeStoryTranslationsTransaction(
       });
 
       // Challenge translations from input.chapters[].challenge?.translations
-      challengeTranslationResults = challengeRecords.map((ch) => {
-        // Find the corresponding input chapter that has this challenge
-        let inputChallengeTranslations: any[] = [];
-        for (const inputChapter of input.chapters) {
-          if (inputChapter.challenge && inputChapter.challenge.translations) {
-            inputChallengeTranslations = inputChapter.challenge.translations;
-            break;
-          }
+      // FIXED: Now uses enriched challenge records that carry chapter context
+      // Each challenge gets ONLY its own chapter's translations, not the first chapter found
+      // Enhanced for AUTO mode: Handles missing input chapters gracefully
+      challengeTranslationResults = challengeRecords.map((ch: EnrichedChallengeRecord) => {
+        // Use the chapter context carried in the enriched record
+        const inputChapterWithChallenge = ch.inputChapter;
+
+        // Handle case where input chapter is missing (AUTO mode robustness)
+        if (!inputChapterWithChallenge) {
+          logger.debug(
+            "Challenge missing input chapter data - using story fallback",
+            {
+              challengeId: ch.challengeId,
+              chapterId: ch.chapterId,
+              chapIdx: ch.chapIdx,
+              mode: input.translationSource,
+            },
+          );
+
+          // Return translations using fallback to record data
+          return {
+            challengeId: ch.challengeId,
+            result: {
+              sourceLanguage: null,
+              targetLanguages: filteredTranslations.map(
+                (t: any) => t.languageCode,
+              ),
+              records: new Map(
+                filteredTranslations.map((t: any) => [
+                  t.languageCode,
+                  {
+                    languageCode: t.languageCode,
+                    question: ch.record.question,
+                  },
+                ]),
+              ),
+            },
+          } as ChallengeTranslationResult;
         }
+
+        if (!inputChapterWithChallenge?.challenge?.translations) {
+          logger.debug("Challenge has no translations from input", {
+            challengeId: ch.challengeId,
+            chapterId: ch.chapterId,
+            chapIdx: ch.chapIdx,
+          });
+
+          // Return translations using fallback to record data
+          return {
+            challengeId: ch.challengeId,
+            result: {
+              sourceLanguage: null,
+              targetLanguages: filteredTranslations.map(
+                (t: any) => t.languageCode,
+              ),
+              records: new Map(
+                filteredTranslations.map((t: any) => [
+                  t.languageCode,
+                  {
+                    languageCode: t.languageCode,
+                    question: ch.record.question,
+                  },
+                ]),
+              ),
+            },
+          } as ChallengeTranslationResult;
+        }
+
+        // Use THIS challenge's chapter's translations
+        const inputChallengeTranslations =
+          inputChapterWithChallenge.challenge.translations;
+
+        logger.debug(
+          "Mapping challenge translations from input chapter",
+          {
+            challengeId: ch.challengeId,
+            chapterId: ch.chapterId,
+            chapIdx: ch.chapIdx,
+            translationLanguages: inputChallengeTranslations.map(
+              (t: any) => t.languageCode,
+            ),
+          },
+        );
 
         return {
           challengeId: ch.challengeId,
@@ -278,18 +562,122 @@ export async function executeStoryTranslationsTransaction(
       });
 
       // Answer translations from input.chapters[].challenge?.answers[].translations
-      answerTranslationResults = answerRecords.map((ans) => {
-        // Collect all answer translations from all input chapters
-        let inputAnswerTranslations: any[] = [];
-        for (const inputChapter of input.chapters) {
-          if (inputChapter.challenge?.answers) {
-            for (const inputAnswer of inputChapter.challenge.answers) {
-              if (inputAnswer.translations) {
-                inputAnswerTranslations.push(...inputAnswer.translations);
-              }
-            }
-          }
+      // FIXED: Now uses enriched answer records that carry chapter and challenge context
+      // Each answer gets ONLY its own challenge's translations, not pooled from all chapters
+      // Enhanced for AUTO mode: Handles missing input challenges gracefully
+      answerTranslationResults = answerRecords.map((ans: EnrichedAnswerRecord) => {
+        // Use the challenge and chapter context carried in the enriched record
+        const inputChallenge = ans.inputChallenge;
+
+        // Handle case where input challenge is missing (AUTO mode robustness)
+        if (!inputChallenge) {
+          logger.debug(
+            "Answer missing input challenge data - using story fallback",
+            {
+              answerId: ans.answerId,
+              ansIdx: ans.ansIdx,
+              challengeId: ans.challengeId,
+              chapterId: ans.chapterId,
+              mode: input.translationSource,
+            },
+          );
+
+          // Return translations using fallback to record data
+          return {
+            answerId: ans.answerId,
+            result: {
+              sourceLanguage: null,
+              targetLanguages: filteredTranslations.map(
+                (t: any) => t.languageCode,
+              ),
+              records: new Map(
+                filteredTranslations.map((t: any) => [
+                  t.languageCode,
+                  {
+                    languageCode: t.languageCode,
+                    text: ans.record.text,
+                  },
+                ]),
+              ),
+            },
+          } as AnswerTranslationResult;
         }
+
+        if (!inputChallenge?.answers) {
+          logger.debug("Challenge has no answers in input", {
+            answerId: ans.answerId,
+            challengeId: ans.challengeId,
+            chapterId: ans.chapterId,
+          });
+
+          // Return translations using fallback to record data
+          return {
+            answerId: ans.answerId,
+            result: {
+              sourceLanguage: null,
+              targetLanguages: filteredTranslations.map(
+                (t: any) => t.languageCode,
+              ),
+              records: new Map(
+                filteredTranslations.map((t: any) => [
+                  t.languageCode,
+                  {
+                    languageCode: t.languageCode,
+                    text: ans.record.text,
+                  },
+                ]),
+              ),
+            },
+          } as AnswerTranslationResult;
+        }
+
+        // Find THIS specific answer from the input challenge (by order, since IDs don't exist yet)
+        const inputAnswer = inputChallenge.answers[ans.ansIdx];
+
+        if (!inputAnswer?.translations) {
+          logger.debug("Answer has no translations from input", {
+            answerId: ans.answerId,
+            ansIdx: ans.ansIdx,
+            challengeId: ans.challengeId,
+            chapterId: ans.chapterId,
+          });
+
+          // Return translations using fallback to record data
+          return {
+            answerId: ans.answerId,
+            result: {
+              sourceLanguage: null,
+              targetLanguages: filteredTranslations.map(
+                (t: any) => t.languageCode,
+              ),
+              records: new Map(
+                filteredTranslations.map((t: any) => [
+                  t.languageCode,
+                  {
+                    languageCode: t.languageCode,
+                    text: ans.record.text,
+                  },
+                ]),
+              ),
+            },
+          } as AnswerTranslationResult;
+        }
+
+        // Use THIS answer's translations from its input challenge
+        const inputAnswerTranslations = inputAnswer.translations;
+
+        logger.debug(
+          "Mapping answer translations from input challenge",
+          {
+            answerId: ans.answerId,
+            ansIdx: ans.ansIdx,
+            challengeId: ans.challengeId,
+            chapterId: ans.chapterId,
+            translationLanguages: inputAnswerTranslations.map(
+              (t: any) => t.languageCode,
+            ),
+          },
+        );
 
         return {
           answerId: ans.answerId,

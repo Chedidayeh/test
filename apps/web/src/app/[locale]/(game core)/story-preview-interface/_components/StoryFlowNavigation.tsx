@@ -167,7 +167,7 @@ const StoryFlowNavigation = ({
                 {totalStarsEarned}
               </span>
             </div>
-            {audioUrl && (
+            {audioUrl && showRiddle=== false && (
               <Button
                 variant={"accent"}
                 size={"sm"}

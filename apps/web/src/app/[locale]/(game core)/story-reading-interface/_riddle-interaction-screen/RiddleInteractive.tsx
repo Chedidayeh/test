@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
 import RiddleQuestion from "./RiddleQuestion";
 import TextInputAnswer from "./TextInputAnswer";
 import MultipleChoiceAnswer from "./MultipleChoiceAnswer";
@@ -41,6 +40,7 @@ interface Riddle {
   storyImage?: string;
   storyImageAlt: string;
   starsReward: number;
+  questionAudioUrl?: string;
 }
 
 interface RiddleInteractiveProps {
@@ -65,48 +65,57 @@ const RiddleInteractive = ({
 }: RiddleInteractiveProps) => {
   const t = useTranslations("StoryReadingInterface.riddleInterface");
 
-    // Transform Challenge to Riddle format
-    const { locale } = useLocale();
-  
-    const transformChallengeToRiddle = (challenge: Challenge): Riddle => {
-      const baseLocale = (locale || Local.EN).split("-")[0].toUpperCase();
-  
-      // pick challenge-level translation if present
-      const challengeTranslation = challenge.translations?.find((t) => t.languageCode === baseLocale);
-  
-      // Build choices with localized text when available
-      const choices = challenge.answers?.map((answer) => {
-        const answerTranslation = answer.translations?.find((t) => t.languageCode === baseLocale);
-        return {
-          id: answer.id,
-          text: answerTranslation?.text || answer.text,
-        };
-      });
-  
-      // Determine correct answer text (localized if possible)
-      const correctAnswerRaw = challenge.answers?.find((a) => a.isCorrect) || null;
-      const correctAnswerTranslation = correctAnswerRaw
-        ? correctAnswerRaw.translations?.find((t) => t.languageCode === baseLocale)
-        : null;
-      const correctAnswerText = correctAnswerTranslation?.text || correctAnswerRaw?.text || "";
-  
-      // Build hints (use translated hints array if present)
-      const hintsArray = challengeTranslation?.hints || challenge.hints || [];
-  
-      const riddle: Riddle = {
-        id: challenge.id,
-        question: challengeTranslation?.question || challenge.question,
-        type: challenge.type as ChallengeType,
-        correctAnswer: correctAnswerText,
-        choices: choices,
-        hints: hintsArray.map((hint) => ({ text: hint })),
-        storyImage: storyImage,
-        storyImageAlt: storyImageAlt,
-        starsReward: challenge.baseStars,
+  // Transform Challenge to Riddle format
+  const { locale } = useLocale();
+
+  const transformChallengeToRiddle = (challenge: Challenge): Riddle => {
+    const baseLocale = (locale || Local.EN).split("-")[0].toUpperCase();
+
+    // pick challenge-level translation if present
+    const challengeTranslation = challenge.translations?.find(
+      (t) => t.languageCode === baseLocale,
+    );
+
+    // Build choices with localized text when available
+    const choices = challenge.answers?.map((answer) => {
+      const answerTranslation = answer.translations?.find(
+        (t) => t.languageCode === baseLocale,
+      );
+      return {
+        id: answer.id,
+        text: answerTranslation?.text || answer.text,
       };
-  
-      return riddle;
+    });
+
+    // Determine correct answer text (localized if possible)
+    const correctAnswerRaw =
+      challenge.answers?.find((a) => a.isCorrect) || null;
+    const correctAnswerTranslation = correctAnswerRaw
+      ? correctAnswerRaw.translations?.find(
+          (t) => t.languageCode === baseLocale,
+        )
+      : null;
+    const correctAnswerText =
+      correctAnswerTranslation?.text || correctAnswerRaw?.text || "";
+
+    // Build hints (use translated hints array if present)
+    const hintsArray = challengeTranslation?.hints || challenge.hints || [];
+
+    const riddle: Riddle = {
+      id: challenge.id,
+      question: challengeTranslation?.question || challenge.question,
+      type: challenge.type as ChallengeType,
+      correctAnswer: correctAnswerText,
+      choices: choices,
+      hints: hintsArray.map((hint) => ({ text: hint })),
+      storyImage: storyImage,
+      storyImageAlt: storyImageAlt,
+      starsReward: challenge.baseStars,
+      questionAudioUrl: challengeTranslation?.audioUrl || challenge.audioUrl,
     };
+
+    return riddle;
+  };
 
   // Use challenge data if provided, otherwise use fallback
   const [currentRiddle] = useState<Riddle>(() => {
@@ -127,6 +136,9 @@ const RiddleInteractive = ({
     message: "",
     isVisible: false,
   });
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(true);
@@ -456,6 +468,18 @@ const RiddleInteractive = ({
     setTimeout(() => setIsAudioPlaying(false), 3000);
   };
 
+  const handlePlayAudio = () => {
+    if (audioRef.current && currentRiddle.questionAudioUrl) {
+      if (isPlayingAudio) {
+        audioRef.current.pause();
+        setIsPlayingAudio(false);
+      } else {
+        audioRef.current.play();
+        setIsPlayingAudio(true);
+      }
+    }
+  };
+
   return (
     <div className="pt-16 sm:pt-20 pb-20 sm:pb-24 md:pb-28 lg:pb-32">
       <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 max-w-5xl">
@@ -477,12 +501,22 @@ const RiddleInteractive = ({
             storyImageAlt={currentRiddle.storyImageAlt}
             riddleNumber={1}
             totalRiddles={3}
-            onAudioPlay={handleAudioPlay}
-            isAudioPlaying={isAudioPlaying}
+            onAudioPlay={handlePlayAudio}
+            isAudioPlaying={isPlayingAudio}
             elapsedTime={elapsedTime}
             challengeType={currentRiddle.type}
+            hasAudio={!!currentRiddle.questionAudioUrl}
           />
         </div>
+
+        {/* Hidden Audio Element */}
+        <audio
+          ref={audioRef}
+          src={currentRiddle.questionAudioUrl || ""}
+          onEnded={() => setIsPlayingAudio(false)}
+          onPlay={() => setIsPlayingAudio(true)}
+          onPause={() => setIsPlayingAudio(false)}
+        />
 
         {/* Answer Input */}
         <div className="mt-4 sm:mt-6 bg-card rounded-xl shadow-warm-lg p-4 sm:p-6">
@@ -540,7 +574,7 @@ const RiddleInteractive = ({
 
       {/* Floating Hint Button */}
       {totalHints > 0 && (
-        <div className="fixed right-2 sm:right-4 md:right-6 lg:right-8 bottom-20 sm:bottom-24 md:bottom-28 lg:bottom-32 z-50 pointer-events-none">
+        <div className="fixed right-2 sm:right-4 md:right-6 lg:right-8 top-22 sm:top-24 md:top-28 lg:top-32 z-50 pointer-events-none">
           <button
             onClick={handleShowHintPanel}
             className="pointer-events-auto flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 bg-secondary text-white rounded-full shadow-warm hover:scale-105 transition-smooth disabled:opacity-50 text-xs sm:text-sm flex-shrink-0"

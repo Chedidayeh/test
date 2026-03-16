@@ -20,6 +20,7 @@ model TTSAudio {
   // Optional foreign identifiers (stored as plain IDs so they can reference other services)
   storyId     String?  // ID of the story this audio is for
   chapterId   String?  // ID of the chapter this audio is for
+  challengeId String?  // ID of the challenge this audio is for (if applicable)
 
   // TTS metadata
   languageCode String?

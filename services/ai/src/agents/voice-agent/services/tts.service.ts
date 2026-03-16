@@ -15,6 +15,7 @@ export interface SynthesizeOptions {
   languageCode: LanguageCode;
   storyId: string;
   chapterId: string;
+  challengeId?: string;
 }
 
 export interface SynthesizeResult {
@@ -30,18 +31,30 @@ export async function synthesizeText(
     languageCode: options.languageCode,
     storyId: options.storyId,
     chapterId: options.chapterId,
+    challengeId: options.challengeId,
   });
 
   // Check if audio already exists - BEFORE attempting generation
-  // All three identifiers are required to match an existing record
+  // All identifiers (storyId, chapterId, languageCode, and optional challengeId) are used to match an existing record
   if (options.chapterId && options.storyId && options.languageCode) {
     try {
+      const whereClause : any = {
+        chapterId: options.chapterId,
+        storyId: options.storyId,
+        languageCode: options.languageCode,
+      };
+
+      // Include challengeId in the query to separate chapter audio from challenge audio
+      // If challengeId is provided, match records WITH that challengeId
+      // If NOT provided, match records where challengeId is null (chapter audio only)
+      if (options.challengeId) {
+        whereClause.challengeId = options.challengeId;
+      } else {
+        whereClause.challengeId = null; // Explicitly match null for chapter audio
+      }
+
       const existing = await prisma.tTSAudio.findFirst({
-        where: {
-          chapterId: options.chapterId,
-          storyId: options.storyId,
-          languageCode: options.languageCode,
-        },
+        where: whereClause,
         orderBy: { generatedAt: "desc" },
       });
 
@@ -53,6 +66,7 @@ export async function synthesizeText(
             audioUrl: existing.audioUrl,
             chapterId: options.chapterId,
             storyId: options.storyId,
+            challengeId: options.challengeId,
             languageCode: options.languageCode,
             generatedAt: existing.generatedAt,
           },
@@ -66,6 +80,7 @@ export async function synthesizeText(
             id: existing.id,
             chapterId: options.chapterId,
             storyId: options.storyId,
+            challengeId: options.challengeId,
             languageCode: options.languageCode,
           },
         );
@@ -77,6 +92,7 @@ export async function synthesizeText(
           error: String(dbCheckErr),
           chapterId: options.chapterId,
           storyId: options.storyId,
+          challengeId: options.challengeId,
           languageCode: options.languageCode,
         },
       );
@@ -88,6 +104,7 @@ export async function synthesizeText(
         hasChapterId: !!options.chapterId,
         hasStoryId: !!options.storyId,
         hasLanguageCode: !!options.languageCode,
+        hasChallengeId: !!options.challengeId,
       },
     );
   }
@@ -97,6 +114,7 @@ export async function synthesizeText(
     textLength: text.length,
     chapterId: options.chapterId,
     storyId: options.storyId,
+    challengeId: options.challengeId,
     languageCode: options.languageCode,
   });
 
@@ -140,13 +158,19 @@ export async function synthesizeText(
       data: {
         storyId: options.storyId || null,
         chapterId: options.chapterId || null,
+        challengeId: options.challengeId || null,
         languageCode: options.languageCode || null,
         audioUrl,
         mimeType: "audio/wav",
         sizeBytes: audioBuffer.length,
       },
     });
-    logger.info("[TTS Service] DB record created", { id: dbRecord.id });
+    logger.info("[TTS Service] DB record created", { 
+      id: dbRecord.id,
+      storyId: options.storyId,
+      chapterId: options.chapterId,
+      challengeId: options.challengeId,
+    });
   } catch (dbErr) {
     logger.error("[TTS Service] Failed to save DB record", { error: dbErr });
     // Non-fatal: still return success if upload worked

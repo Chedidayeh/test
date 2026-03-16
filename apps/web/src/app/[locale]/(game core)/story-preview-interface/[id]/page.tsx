@@ -17,7 +17,7 @@ export default async function page({
 }: {
   params: Promise<{ id: string }>;
 }) {
-    const t = await getTranslations("StoryReadingInterface");
+  const t = await getTranslations("StoryReadingInterface");
 
   const session = await auth();
   if (!session) {
@@ -29,16 +29,12 @@ export default async function page({
   const { id } = await params;
 
   if (!id) {
-    return (
-      <MissingDataAlert message={t("missingRequiredParameters")} />
-    );
+    return <MissingDataAlert message={t("missingRequiredParameters")} />;
   }
 
   const story = await getStoryById(id);
   if (!story) {
-    return (
-      <MissingDataAlert message={t("storyNotFound")} />
-    );
+    return <MissingDataAlert message={t("storyNotFound")} />;
   }
 
   return (

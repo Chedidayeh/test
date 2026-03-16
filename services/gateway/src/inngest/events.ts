@@ -24,4 +24,6 @@ export interface TTSGenerateRequestedEvent {
   languageCode: LanguageCode;
   storyId: string;
   chapterId: string;
+  challengeId?: string;
+  challengeQuestion?: string;
 }

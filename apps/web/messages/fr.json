@@ -455,11 +455,11 @@
 			"starsEarned": "{count} étoiles",
 			"pageProgress": "Page {current} sur {total}",
 			"timerMessage": "Continuez à lire... ({remaining}s restantes)",
-			"completionMessage": "Histoire terminée !",
+			"completionMessage": "Histoire terminée",
 			"solveRiddle": "Résoudre l'énigme",
-			"challengeSolved": "Défi résolu !",
-			"challengeSkipped": "Défi ignoré !",
-			"riddleTime": "C'est l'heure de l'énigme !",
+			"challengeSolved": "Défi résolu",
+			"challengeSkipped": "Défi ignoré",
+			"riddleTime": "C'est l'heure de l'énigme",
 			"riddleTimeText": "Une fois que vous avez lu cette page, cliquez sur le bouton Résoudre l'énigme pour continuer l'histoire"
 		},
 		"storyControls": {

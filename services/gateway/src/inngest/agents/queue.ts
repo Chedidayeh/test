@@ -1,6 +1,15 @@
-
-import { TTS_GENERATE_REQUESTED, TTSGenerateRequestedEvent, TRANSLATION_STORY_REQUESTED, TranslationStoryRequestedEvent } from "../events";
-import { LanguageCode, TranslationSourceType, CreateStoryWithChaptersInput, Story } from "@shared/src/types";
+import {
+  TTS_GENERATE_REQUESTED,
+  TTSGenerateRequestedEvent,
+  TRANSLATION_STORY_REQUESTED,
+  TranslationStoryRequestedEvent,
+} from "../events";
+import {
+  LanguageCode,
+  TranslationSourceType,
+  CreateStoryWithChaptersInput,
+  Story,
+} from "@shared/src/types";
 import { inngest } from "../inngest";
 import { logger } from "../../utils/logger";
 
@@ -14,10 +23,13 @@ export async function queueTranslationForStory(
   input: CreateStoryWithChaptersInput,
 ): Promise<{ eventId: string }> {
   try {
-    logger.debug("[Translation Queue] Queueing story translation from gateway", {
-      storyId,
-      translationSource: input.translationSource,
-    });
+    logger.debug(
+      "[Translation Queue] Queueing story translation from gateway",
+      {
+        storyId,
+        translationSource: input.translationSource,
+      },
+    );
 
     const eventData: TranslationStoryRequestedEvent = {
       storyId,
@@ -55,6 +67,8 @@ export async function queueTTSGeneration(
     languageCode: LanguageCode;
     storyId: string;
     chapterId: string;
+    challengeId?: string;
+    challengeQuestion?: string;
   },
 ): Promise<{ eventId: string }> {
   try {
@@ -63,6 +77,7 @@ export async function queueTTSGeneration(
       languageCode: options?.languageCode,
       storyId: options?.storyId,
       chapterId: options?.chapterId,
+      challengeQuestion: options?.challengeQuestion,
     });
 
     const eventData: TTSGenerateRequestedEvent = {
@@ -70,6 +85,8 @@ export async function queueTTSGeneration(
       languageCode: options?.languageCode,
       storyId: options?.storyId,
       chapterId: options?.chapterId,
+      challengeId: options?.challengeId,
+      challengeQuestion: options?.challengeQuestion,
     };
 
     // Send event to Inngest (non-blocking)
@@ -82,6 +99,8 @@ export async function queueTTSGeneration(
       eventId: result.ids?.[0],
       storyId: options?.storyId,
       chapterId: options?.chapterId,
+      languageCode: options?.languageCode,
+      challengeQuestion: options?.challengeQuestion,
     });
 
     return {
@@ -97,14 +116,14 @@ export async function queueTTSGeneration(
   }
 }
 
-
-
 /**
  * Trigger TTS generation for ALL story chapters
  * Queues TTS requests for each chapter and translation
  * The AI service (Inngest) handles concurrent processing in the background
  */
-export async function triggerTTSGenerationForAllChapters(story: Story): Promise<void> {
+export async function triggerTTSGenerationForAllChapters(
+  story: Story,
+): Promise<void> {
   try {
     if (!story || !story.chapters || story.chapters.length === 0) {
       logger.warn("[Gateway] No chapters found for TTS generation");
@@ -130,10 +149,11 @@ export async function triggerTTSGenerationForAllChapters(story: Story): Promise<
     for (const chapter of story.chapters) {
       if (!chapter) continue;
 
-      const translations = chapter.translations || [];
+      const chapterTranslations = chapter.translations || [];
+      const challengeTranslations = chapter.challenge?.translations || [];
 
       // If no translations exist, trigger for base content with default language
-      if (translations.length === 0 && chapter.content) {
+      if (chapterTranslations.length === 0 && chapter.content) {
         ttsPromises.push(
           (async () => {
             try {
@@ -150,6 +170,8 @@ export async function triggerTTSGenerationForAllChapters(story: Story): Promise<
                 languageCode: LanguageCode.EN,
                 storyId: story.id,
                 chapterId: chapter.id,
+                challengeId: chapter.challenge?.id || undefined,
+                challengeQuestion: chapter.challenge?.question || undefined,
               });
 
               queuedCount++;
@@ -175,7 +197,12 @@ export async function triggerTTSGenerationForAllChapters(story: Story): Promise<
         );
       } else {
         // Trigger TTS for each translation
-        for (const translation of translations) {
+        for (const translation of chapterTranslations) {
+          // Find matching challenge translation for this language
+          const challengeTranslation = challengeTranslations.find(
+            (ct) => ct.languageCode === translation.languageCode,
+          );
+
           ttsPromises.push(
             (async () => {
               try {
@@ -184,11 +211,15 @@ export async function triggerTTSGenerationForAllChapters(story: Story): Promise<
                   chapterId: chapter.id,
                   chapterOrder: chapter.order,
                   languageCode: translation.languageCode,
+                  hasChallengeTranslation: !!challengeTranslation,
                 });
                 await queueTTSGeneration(translation.content, {
                   languageCode: translation.languageCode,
                   storyId: story.id,
                   chapterId: chapter.id,
+                  challengeId: chapter.challenge?.id || undefined,
+                  challengeQuestion:
+                    challengeTranslation?.question || undefined,
                 });
 
                 queuedCount++;
@@ -197,6 +228,8 @@ export async function triggerTTSGenerationForAllChapters(story: Story): Promise<
                   chapterId: chapter.id,
                   chapterOrder: chapter.order,
                   languageCode: translation.languageCode,
+                  challengeQuestion:
+                    challengeTranslation?.question || undefined,
                 });
               } catch (err) {
                 errorCount++;

@@ -40,29 +40,20 @@ export default async function page({
     childId: string;
   };
   if (!id || !childId) {
-    return (
-      <MissingDataAlert message={t("missingRequiredParameters")} />
-    );
+    return <MissingDataAlert message={t("missingRequiredParameters")} />;
   }
 
   const story = await getStoryById(id);
   if (!story) {
-    return (
-      <MissingDataAlert message={t("storyNotFound")} />
-    )
+    return <MissingDataAlert message={t("storyNotFound")} />;
   }
 
   const currentProgress = await startStory(childId, id); // returned progress contains the current game session
   if (!currentProgress) {
-    return (
-      <MissingDataAlert message={t("unableToStartStory")} />
-    );
+    return <MissingDataAlert message={t("unableToStartStory")} />;
   }
   // create new checkpoint session
-  const checkpoint = await createNewCheckpointSession(
-    currentProgress.gameSession!.id,
-  );
-  console.log("Created new checkpoint session:", checkpoint);
+  await createNewCheckpointSession(currentProgress.gameSession!.id);
 
   let mode: "start" | "continue" | "replay";
 
@@ -72,7 +63,6 @@ export default async function page({
     mode = "continue";
   } else {
     mode = "start";
-    // create new checkpoint session
   }
   if (mode === "replay") {
     redirect(`/story-replaying-interface/${id}?childId=${childId}`);

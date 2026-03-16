@@ -458,8 +458,8 @@
 			"completionMessage": "تمت القصة",
 			"solveRiddle": "حل اللغز",
 			"challengeSolved": "تحدي تم حله",
-			"challengeSkipped": "تحدي تم تخطيه. استمر في القراءة! ",
-			"riddleTime": "حان وقت اللغز!",
+			"challengeSkipped": "تحدي تم تخطيه. استمر في القراءة ",
+			"riddleTime": "حان وقت اللغز",
 			"riddleTimeText": "بمجرد قراءة هذه الصفحة، انقر على حل اللغز"
 		},
 		"storyControls": {
