@@ -134,14 +134,14 @@ const FeedbackDisplay2 = ({
                 <Button
                   variant={"outline"}
                   onClick={() => onContinue("skipped")}
-                  className="text-xs sm:text-sm flex-1"
+                  className="text-xs sm:text-sm flex-1 max-w-max"
                 >
                   {t("feedbackDisplay.skipButton")}
                 </Button>
                 <Button
                   variant={"secondary"}
                   onClick={onTryAgain}
-                  className="text-xs sm:text-sm flex-1"
+                  className="text-xs sm:text-sm flex-1 max-w-max"
                 >
                   {t("feedbackDisplay.tryAgainButton")}
                 </Button>

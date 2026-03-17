@@ -66,7 +66,16 @@ export interface SubmitChallengeAnswerRequest {
     attemptNumberAtAction: number; // Which attempt number they were on
     isCorrect?: boolean; // Whether the submitted answer was correct (for ANSWER_SUBMITTED)
   }[];
+
+  // LLM validation context (for open-ended challenges like RIDDLE, CHOOSE_ENDING, MORAL_DECISION)
+  storyId?: string; // ID of the story
+  chapterId?: string; // ID of the chapter
+  storyContent?: string; // Full story/chapter text for LLM context
+  question?: string; // The challenge question
+  correctAnswers?: string[]; // Array of correct answers for LLM validation
+  childAnswer?: string; // What the child answered (for LLM validation)
 }
+
 
 /**
  * Response from challenge answer submission
@@ -77,6 +86,13 @@ export interface SubmitChallengeAnswerResponse {
   attempt?: ChallengeAttempt;
   starEvent?: StarEvent;
   totalStarsEarned?: number;
+  // Optional LLM validation result for open-ended challenges
+  llmValidation?: {
+    correct: boolean;
+    confidence: number;
+    reason: string;
+    message: string;
+  };
   error?: string;
 }
 

@@ -1,6 +1,7 @@
 import express, { Request, Response, Application } from "express";
 import dotenv from "dotenv";
 import ttsRouter from "./routes/tts.route";
+import validationRouter from "./routes/validation.route";
 import { API_BASE_URL_V1 } from "@shared/src/types";
 
 
@@ -18,6 +19,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // TTS endpoint
 app.use(`${API_BASE_URL_V1}`, ttsRouter);
+
+// Answer validation endpoint
+app.use(`${API_BASE_URL_V1}`, validationRouter);
 
 // Simple request logging
 app.use((req: Request, _res, next) => {

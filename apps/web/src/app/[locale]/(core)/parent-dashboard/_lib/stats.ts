@@ -673,8 +673,8 @@ export function getAverageReadingTimePerDay(
 
 /**
  * Get current reading streak (consecutive days)
- * Counts consecutive days from today going backwards where child had at least one completed checkpoint
- * Checkpoints are accessed through Progress → GameSession → SessionCheckpoint
+ * Counts consecutive days from end of time entries backwards where child had reading activity
+ * Uses same logic as calculateDailyTimeStats for consistency
  * @param profile - ChildProfile data
  * @returns Number of consecutive days with reading activity
  */
@@ -687,65 +687,19 @@ export function getCurrentStreak(profile: ChildProfile | undefined): number {
     return 0;
   }
 
-  // Collect all completed checkpoints from progress objects
-  const allCheckpoints: SessionCheckpoint[] = [];
-  for (const progress of profile.progress) {
-    if (
-      !progress.gameSession?.checkpoints ||
-      !Array.isArray(progress.gameSession.checkpoints)
-    ) {
-      continue;
-    }
+  // Calculate time entries from progress (same as other stats functions)
+  const timeEntries = calculateTimeEntries(profile.progress);
 
-    // Only count checkpoints that have been paused (completed)
-    const completedCheckpoints = progress.gameSession.checkpoints.filter(
-      (cp) => cp.pausedAt !== null,
-    );
-    allCheckpoints.push(...completedCheckpoints);
-  }
-
-  if (allCheckpoints.length === 0) {
+  if (!timeEntries || timeEntries.length === 0) {
     return 0;
   }
 
-  // Get unique dates from completed checkpoints using pausedAt
-  const checkpointDates = new Set(
-    allCheckpoints.map((checkpoint: SessionCheckpoint) => {
-      const date = new Date(checkpoint.pausedAt!);
-      return date.toISOString().split("T")[0]; // YYYY-MM-DD format
-    }),
-  );
-
-  // Sort dates in descending order
-  const sortedDates = Array.from(checkpointDates).sort().reverse();
-
-  if (sortedDates.length === 0) {
-    return 0;
-  }
-
-  // Count consecutive days from today backwards
+  // Count consecutive days with reading from end backwards
   let streak = 0;
-  const currentDate = new Date();
-  currentDate.setHours(0, 0, 0, 0);
-
-  // Check if today has a checkpoint
-  const todayString = currentDate.toISOString().split("T")[0];
-  const checkingDate = new Date(currentDate);
-
-  // If no checkpoint today, start from yesterday
-  if (!checkpointDates.has(todayString)) {
-    checkingDate.setDate(checkingDate.getDate() - 1);
-  }
-
-  // Count consecutive days
-  for (const checkpointDate of sortedDates) {
-    const checkingDateString = checkingDate.toISOString().split("T")[0];
-
-    if (checkpointDate === checkingDateString) {
+  for (let i = timeEntries.length - 1; i >= 0; i--) {
+    if (timeEntries[i].minutes > 0) {
       streak++;
-      checkingDate.setDate(checkingDate.getDate() - 1);
-    } else if (new Date(checkpointDate) < checkingDate) {
-      // Gap found, streak is broken
+    } else {
       break;
     }
   }

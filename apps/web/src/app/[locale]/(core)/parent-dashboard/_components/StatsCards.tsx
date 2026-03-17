@@ -113,6 +113,12 @@ export default function StatsCards({
   const readingTimeSubtitle =
     minutes > 0 ? `(${hours}h ${minutes}m)` : `(${hours}h)`;
 
+    // format average per day 
+    const avgHours = Math.floor(averagePerDay / 60);
+    const avgMinutes = averagePerDay % 60;
+    const averagePerDaySubtitle =
+      avgMinutes > 0 ? `(${avgHours}h ${avgMinutes}m)` : `(${avgHours}h)`;
+
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -157,7 +163,7 @@ export default function StatsCards({
           label={t("stats.averagePerDay")}
           value={averagePerDay}
           suffix={t("stats.minutes")}
-          readingTimeSubtitle={readingTimeSubtitle}
+          readingTimeSubtitle={averagePerDaySubtitle}
           suffixColor="text-green-500"
           borderColor="border-green-200 dark:border-green-200/50"
           color="bg-linear-to-br from-green-200/20 to-green-200/20"

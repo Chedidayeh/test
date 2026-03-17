@@ -21,7 +21,6 @@ import {
 import { getChapterByPageNumber } from "./storyDataTransform";
 import { useTranslations } from "next-intl";
 import { useLocale } from "@/src/contexts/LocaleContext";
-import { fetchTTSByChapterAction } from "@/src/lib/ai-service/server-actions";
 
 interface StoryReadingInteractiveProps {
   story: Story;

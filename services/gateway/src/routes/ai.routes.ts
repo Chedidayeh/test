@@ -7,80 +7,29 @@ import { API_BASE_URL_V1, ApiResponse, TTSAudio } from "@shared/src/types";
 const router = Router();
 
 // AI service base URL (AI microservice)
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL;
 
-/**
- * GET /api/v1/tts/chapterId/:chapterId - fetch TTS audio metadata for a chapter
- */
-router.get("/tts/chapterId/:chapterId", async (req: Request, res: Response<ApiResponse<TTSAudio>>) => {
-  try {
-    const { chapterId } = req.params;
-    logger.info("[Gateway] TTS fetch request received", { chapterId });
+// POST /api/v1/validate-answer - Forward validation request to AI service
+router.use(`/validate-answer`, async (req: Request, res: Response) => {
+	try {
+		if (!AI_SERVICE_URL) {
+			logger.error("AI_SERVICE_URL not configured");
+			return res.status(500).json({ success: false, error: "AI service not configured" });
+		}
 
-    if (!chapterId || typeof chapterId !== "string") {
-      logger.warn("[Gateway] Invalid chapterId param", { chapterId });
-      return res.status(400).json({
-        success: false,
-        error: { code: "INVALID_PARAM", message: "Missing or invalid 'chapterId' param" },
-      } as ApiResponse<TTSAudio>);
-    }
+		const url = `${AI_SERVICE_URL}${API_BASE_URL_V1}/validate-answer`;
+		const response = await axios.post(url, req.body, { timeout: 60000 });
 
-    const headers: Record<string, string> = {};
-    if (req.headers.authorization)
-      headers["authorization"] = String(req.headers.authorization);
+		return res.status(response.status).json(response.data);
+	} catch (error) {
+		logger.error("Error forwarding validate-answer", { error: error instanceof Error ? error.message : String(error) });
 
-    const url = `${AI_SERVICE_URL}${API_BASE_URL_V1}/tts/chapterId/${encodeURIComponent(chapterId)}`;
-    logger.info("[Gateway] Proxying to AI service", { url });
+		if (axios.isAxiosError(error) && error.response) {
+			return res.status(error.response.status).json(error.response.data);
+		}
 
-    const resp = await axios.get(url, { headers });
-    logger.info("[Gateway] AI service response received", {
-      status: resp.status,
-    });
-
-    return res.status(resp.status).json(resp.data as ApiResponse<TTSAudio>);
-  } catch (err: any) {
-    const errorMsg = err?.response?.data || err?.message || "Unknown error";
-    const status = err?.response?.status || 500;
-    logger.error("[Gateway] AI TTS fetch proxy error", {
-      status,
-      error: errorMsg,
-      url: `${AI_SERVICE_URL}${API_BASE_URL_V1}/tts/chapterId/${req.params.chapterId}`,
-    });
-    const data = err?.response?.data || { success: false, error: { code: "SERVICE_ERROR", message: "AI service error" } };
-    return res.status(status).json(data as ApiResponse<TTSAudio>);
-  }
-});
-
-/**
- * POST /api/v1/tts - Text-to-Speech synthesis (proxies to AI service)
- */
-router.post("/tts", async (req: Request, res: Response) => {
-  try {
-    const { text, voice, languageCode, prompt, storyId, chapterId } = req.body;
-
-    if (!text || typeof text !== "string") {
-      return res
-        .status(400)
-        .json({ error: "Missing or invalid 'text' in body" });
-    }
-
-    const headers: Record<string, string> = {};
-    if (req.headers.authorization)
-      headers["authorization"] = String(req.headers.authorization);
-
-    const resp = await axios.post(
-      `${AI_SERVICE_URL}${API_BASE_URL_V1}/tts`,
-      { text, voice, languageCode, prompt, storyId, chapterId },
-      { headers },
-    );
-
-    return res.status(resp.status).json(resp.data);
-  } catch (err: any) {
-    logger.error("AI TTS proxy error", err?.message || err);
-    const status = err?.response?.status || 500;
-    const data = err?.response?.data || { error: "AI service error" };
-    return res.status(status).json(data);
-  }
+		return res.status(500).json({ success: false, error: "Failed to contact AI service" });
+	}
 });
 
 export default router;

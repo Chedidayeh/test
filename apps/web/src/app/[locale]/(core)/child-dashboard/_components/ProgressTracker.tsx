@@ -114,7 +114,7 @@ const ProgressTracker = ({
 
       {/* Levels List */}
       <div className="space-y-3 flex-1">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
           {t("progressTracker.levelsLabel")}
         </p>
         {sortedLevels.map((level, index) => {
@@ -157,7 +157,7 @@ const ProgressTracker = ({
                   </div>
                   <div className="flex-1 min-w-0">
                     <p
-                      className={`font-bold text-sm ${
+                      className={`font-medium text-sm ${
                         isCompleted
                           ? "text-foreground"
                           : isCurrent
@@ -175,7 +175,7 @@ const ProgressTracker = ({
                 </div>
 
                 {/* Expanded Badge Info */}
-                {hoveredLevel === level.id && badge && (
+                {hoveredLevel === level.id && badge && isCompleted && (
                   <div className="mt-3 pt-3 border-t border-primary/20">
                     <div className="flex items-center gap-2 text-sm">
                       {badge.iconUrl ? (
@@ -189,7 +189,7 @@ const ProgressTracker = ({
                       )}
                       <div>
                         <p className="text-xs text-muted-foreground">{t("progressTracker.badgeLabel")}</p>
-                        <p className="font-semibold text-foreground">
+                        <p className="font-medium text-foreground">
                           {badge.name}
                         </p>
                         {badge.description && (

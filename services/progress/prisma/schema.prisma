@@ -26,8 +26,8 @@ model ChildProfile {
   currentLevel      Int      @default(1)
   totalStars        Int      @default(0)
 
-  progress Progress[]
-  badges   ChildBadge[]
+  progress                    Progress[]
+  badges                      ChildBadge[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

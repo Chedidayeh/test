@@ -48,6 +48,10 @@ interface RiddleInteractiveProps {
   storyImage?: string;
   storyImageAlt?: string;
   gameSessionId?: string;
+  // LLM validation context
+  storyId?: string;
+  chapterId?: string;
+  storyContent?: string;
   onChallengeSubmitted?: (
     attempt: ChallengeAttempt,
     starsEarned?: number,
@@ -60,6 +64,9 @@ const RiddleInteractive = ({
   storyImage,
   storyImageAlt = "Story image",
   gameSessionId,
+  storyId,
+  chapterId,
+  storyContent,
   onChallengeSubmitted,
   onClose,
 }: RiddleInteractiveProps) => {
@@ -139,7 +146,7 @@ const RiddleInteractive = ({
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  // const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(true);
   const [actions, setActions] = useState<
@@ -214,6 +221,13 @@ const RiddleInteractive = ({
         skipped: isSkipped,
         status: status,
         actions: attemptActions,
+        // LLM validation context
+        storyId,
+        chapterId,
+        storyContent,
+        question: currentRiddle.question,
+        correctAnswers: [currentRiddle.correctAnswer],
+        childAnswer: answerText || "",
       });
 
       if (result.success) {
@@ -255,7 +269,7 @@ const RiddleInteractive = ({
     }
   };
 
-  const checkAnswer = (answer: string) => {
+  const checkAnswer = async (answer: string) => {
     const currentAttempt = attempts + 1;
     setAttempts(currentAttempt);
 
@@ -266,6 +280,12 @@ const RiddleInteractive = ({
     let selectedAnswerId: string | undefined;
     let answerText: string | undefined;
     let selectedAnswerText: string | undefined;
+
+    // Determine if LLM validation will be used for this challenge type
+    const shouldValidateWithLLM =
+      currentRiddle.type === ChallengeType.RIDDLE ||
+      currentRiddle.type === ChallengeType.CHOOSE_ENDING ||
+      currentRiddle.type === ChallengeType.MORAL_DECISION;
 
     // Type-specific validation logic
     switch (currentRiddle.type) {
@@ -337,21 +357,77 @@ const RiddleInteractive = ({
       attemptNumber: currentAttempt,
       action: actionData,
       totalActionsAfterSubmit: updatedActions.length,
+      willValidateWithLLM: shouldValidateWithLLM,
     });
 
-    if (isCorrect) {
-      stopTimerAndLog("solved");
-      // Submit the challenge attempt to backend with all accumulated actions
+    // For LLM-validated challenges: await server response and use LLM result for feedback
+    if (shouldValidateWithLLM) {
+      stopTimerAndLog(isCorrect ? "solved" : "incorrect");
+
+      // Await the server response which includes LLM validation
+      try {
+        const result = await submitChallengeAnswerActionWithFeedback(
+          selectedAnswerId,
+          answerText,
+          isCorrect,
+          false,
+          isCorrect ? ChallengeStatus.SOLVED : ChallengeStatus.INCORRECT,
+          currentAttempt,
+          updatedActions,
+        );
+
+        // Use LLM validation result to determine actual correctness
+        const llmValidation = result?.data?.llmValidation;
+        if (llmValidation) {
+          const feedbackType = llmValidation.correct ? "solved" : "incorrect";
+          setFeedbackState({
+            type: feedbackType,
+            message: llmValidation.message,
+            isVisible: true,
+          });
+
+          console.log("[Riddle] LLM validation feedback set:", {
+            challengeAttemptId: selectedAnswerId,
+            feedbackType,
+            confidence: llmValidation.confidence,
+          });
+        } else {
+          // Fallback to local validation if LLM unavailable
+          setLocalFeedback(isCorrect, isAlmost);
+        }
+      } catch (error) {
+        console.error("[Riddle] Error getting LLM validation feedback:", error);
+        setLocalFeedback(isCorrect, isAlmost);
+      }
+    } else {
+      // For locally-validated challenges: set feedback immediately
+      stopTimerAndLog(
+        isCorrect ? "solved" : isAlmost ? "almost" : "incorrect",
+      );
+      setLocalFeedback(isCorrect, isAlmost);
+
+      // Submit to backend without waiting for response
       submitChallengeAttempt(
         selectedAnswerId,
         answerText,
-        true,
+        isCorrect,
         false,
-        ChallengeStatus.SOLVED,
+        isCorrect
+          ? ChallengeStatus.SOLVED
+          : isAlmost
+            ? ChallengeStatus.INCORRECT
+            : ChallengeStatus.INCORRECT,
         currentAttempt,
         updatedActions,
       );
+    }
 
+    setSelectedChoice(null);
+  };
+
+  // Helper function to set feedback based on local validation
+  const setLocalFeedback = (isCorrect: boolean, isAlmost: boolean) => {
+    if (isCorrect) {
       const messages = {
         RIDDLE: t("solvedAnswerRIDDLE"),
         TRUE_FALSE: t("solvedAnswerTRUE_FALSE"),
@@ -365,44 +441,88 @@ const RiddleInteractive = ({
         isVisible: true,
       });
     } else if (isAlmost) {
-      stopTimerAndLog("almost");
-      // Submit the challenge attempt to backend (incorrect answer) with all accumulated actions
-      submitChallengeAttempt(
-        selectedAnswerId,
-        answerText,
-        false,
-        false,
-        ChallengeStatus.INCORRECT,
-        currentAttempt,
-        updatedActions,
-      );
-
       setFeedbackState({
         type: "almost",
         message: t("almostAnswer"),
         isVisible: true,
       });
     } else {
-      stopTimerAndLog("incorrect");
-      // Submit the challenge attempt to backend (incorrect answer) with all accumulated actions
-      submitChallengeAttempt(
-        selectedAnswerId,
-        answerText,
-        false,
-        false,
-        ChallengeStatus.INCORRECT,
-        currentAttempt,
-        updatedActions,
-      );
-
       setFeedbackState({
         type: "incorrect",
         message: t("incorrectAnswer"),
         isVisible: true,
       });
     }
+  };
 
-    setSelectedChoice(null);
+  // Wrapper for submitChallengeAttempt that returns the full result
+  const submitChallengeAnswerActionWithFeedback = async (
+    selectedAnswerId: string | undefined,
+    answerText: string | undefined,
+    wasLocallyCorrect: boolean,
+    isSkipped: boolean = false,
+    status: ChallengeStatus,
+    attemptNum: number = attempts,
+    attemptActions: SubmitChallengeAnswerRequest["actions"] = actions,
+  ) => {
+    if (!gameSessionId) {
+      console.error("[Riddle] No game session ID provided");
+      return null;
+    }
+
+    try {
+      console.log("[Riddle] Submitting challenge attempt for LLM validation...", {
+        gameSessionId,
+        challengeId: currentRiddle.id,
+        attemptNumber: attemptNum,
+        isSkipped,
+      });
+
+      const result = await submitChallengeAnswerAction({
+        gameSessionId,
+        challengeId: currentRiddle.id,
+        challengeType: currentRiddle.type,
+        answerId: selectedAnswerId,
+        textAnswer: answerText,
+        isCorrect: isSkipped ? false : wasLocallyCorrect,
+        elapsedTime: elapsedTime,
+        attemptNumber: attemptNum,
+        usedHints: hintsUsed,
+        baseStars: currentRiddle.starsReward,
+        skipped: isSkipped,
+        status: status,
+        actions: attemptActions,
+        storyId,
+        chapterId,
+        storyContent,
+        question: currentRiddle.question,
+        correctAnswers: [currentRiddle.correctAnswer],
+        childAnswer: answerText || "",
+      });
+
+      if (result.success) {
+        console.log("[Riddle] Challenge attempt recorded successfully (LLM)", {
+          totalStars: result.data?.totalStarsEarned,
+          attemptId: result.data?.attempt?.id,
+          hasLLMValidation: !!result.data?.llmValidation,
+        });
+        if (result.data?.attempt) {
+          onChallengeSubmitted?.(
+            result.data.attempt,
+            result.data?.totalStarsEarned,
+          );
+        }
+      } else {
+        console.error("[Riddle] Failed to record challenge attempt (LLM)", {
+          error: result.error,
+        });
+      }
+
+      return result;
+    } catch (error) {
+      console.error("[Riddle] Error submitting challenge attempt (LLM):", error);
+      return null;
+    }
   };
 
   const handleRequestHint = () => {
@@ -463,10 +583,10 @@ const RiddleInteractive = ({
     onClose?.();
   };
 
-  const handleAudioPlay = () => {
-    setIsAudioPlaying(!isAudioPlaying);
-    setTimeout(() => setIsAudioPlaying(false), 3000);
-  };
+  // const handleAudioPlay = () => {
+  //   setIsAudioPlaying(!isAudioPlaying);
+  //   setTimeout(() => setIsAudioPlaying(false), 3000);
+  // };
 
   const handlePlayAudio = () => {
     if (audioRef.current && currentRiddle.questionAudioUrl) {
