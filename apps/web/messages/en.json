@@ -87,6 +87,7 @@
 		"tabs": {
 			"overview": "Overview",
 			"achievements": "Achievements",
+			"aiInsights": "AI Insights",
 			"riddleStatistics": "Riddle Statistics",
 			"timeAnalytics": "Time Analytics"
 		},
@@ -172,6 +173,42 @@
 			"action": {
 				"correct": "✓ Correct",
 				"incorrect": "✗ Incorrect"
+			}
+		},
+		"aiInsights": {
+			"title": {
+				"currentInsights": "AI-Powered Learning Insights",
+				"historicalInsights": "Previous Insights"
+			},
+			"label": {
+				"readingLevel": "Reading Level",
+				"engagementScore": "Engagement Score",
+				"period": "Analysis Period",
+				"strengths": "Strengths",
+				"weaknesses": "Areas for Improvement",
+				"recommendations": "Recommendations",
+				"tips": "Learning Tips",
+				"summary": "Summary",
+				"keyMetrics": "Key Metrics"
+			},
+			"metric": {
+				"totalStoriesCompleted": "Stories Completed",
+				"successRate": "Success Rate",
+				"challengesAttempted": "Challenges Solved",
+				"avgAttemptsPerChallenge": "Avg Attempts per Challenge",
+				"hintDependencyRate": "Hint Dependency Rate",
+				"starsEarned": "Stars Earned",
+				"totalTimeSpent": "Total Time Spent"
+			},
+			"action": {
+				"refresh": "Refresh"
+			},
+			"message": {
+				"noInsights": "No AI insights available yet",
+				"noInsightsSubtext": "{childName} hasn't completed enough activities for AI-powered insights. Keep reading!"
+			},
+			"error": {
+				"fetchFailed": "Failed to fetch analytics"
 			}
 		},
 		"timeAnalytics": {

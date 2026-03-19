@@ -19,7 +19,7 @@ import {
   API_BASE_URL_V1,
 } from "@shared/src/types";
 
-const PROGRESS_SERVICE_URL =
+export const PROGRESS_SERVICE_URL =
   process.env.PROGRESS_SERVICE_URL
 const AUTH_SERVICE_URL =
   process.env.AUTH_SERVICE_URL

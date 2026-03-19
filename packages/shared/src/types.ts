@@ -42,7 +42,7 @@ export enum TTSLanguageCodes {
   ENGLISH_US = "en-us",
   ARABIC = "ar-001",
   FRENCH = "fr-fr",
-};
+}
 
 export enum Local {
   EN = "en",
@@ -517,7 +517,6 @@ export interface ChildBadge {
 // AI SERVICE TYPES
 // ===========================================================================
 
-
 // map LanguageCodes to ContentService LanguageCode for easy reference
 export const TTSLanguageToContentLanguageMap: Record<string, LanguageCode> = {
   "en-us": LanguageCode.EN,
@@ -525,7 +524,10 @@ export const TTSLanguageToContentLanguageMap: Record<string, LanguageCode> = {
   "fr-fr": LanguageCode.FR,
 };
 
-export const ContentLanguageToTTSLanguageMap: Record<LanguageCode | string, string> = {
+export const ContentLanguageToTTSLanguageMap: Record<
+  LanguageCode | string,
+  string
+> = {
   [LanguageCode.EN]: TTSLanguageCodes.ENGLISH_US,
   [LanguageCode.AR]: TTSLanguageCodes.ARABIC,
   [LanguageCode.FR]: TTSLanguageCodes.FRENCH,
@@ -534,8 +536,8 @@ export const ContentLanguageToTTSLanguageMap: Record<LanguageCode | string, stri
 export interface TTSAudio {
   id: string;
 
-  storyId?: string| null ; // ID of the story this audio is for
-  chapterId?: string| null ; // ID of the chapter this audio is for
+  storyId?: string | null; // ID of the story this audio is for
+  chapterId?: string | null; // ID of the chapter this audio is for
 
   // TTS metadata
   languageCode?: string | null; // e.g., "en", "fr", "ar"
@@ -547,12 +549,92 @@ export interface TTSAudio {
   mimeType: string;
 
   // Optional technical metadata
-  durationMs?: number  | null; // Duration of the audio in milliseconds
+  durationMs?: number | null; // Duration of the audio in milliseconds
   sizeBytes?: number | null; // Size of the audio file in bytes
 
   // When the audio was generated and recorded
   generatedAt: Date;
   createdAt: Date;
+}
+
+export interface AIProgressInsight {
+  id: string;
+
+  childId: string;
+
+  periodStart: Date;
+  periodEnd: Date;
+
+  readingLevel: string;
+  engagementScore: number; // 0-100 percentage
+
+  insights: InsightsReport;
+
+  metrics: AggregatedMetrics;
+
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface InsightsReport {
+  childId: string;
+  periodStart: Date;
+  periodEnd: Date;
+  readingLevel: ReadingLevel;
+  engagementScore: number; // 0-100
+  strengths: string[];
+  weaknesses: string[];
+  recommendations: Recommendation[];
+  tips: string[];
+  summary: string; // overall narrative summary
+}
+
+export interface AggregatedMetrics {
+  totalStoriesCompleted: number;
+  totalChallengesAttempted: number;
+  totalChallengesSolved: number;
+  successRate: number; // 0-100 percentage
+  averageAttemptsPerChallenge: number;
+  totalTimeSpent: number; // milliseconds
+  hintDependencyRate: number; // 0-100 percentage
+  starsEarned: number;
+  starsPossible: number;
+  starAchievementRate: number; // 0-100 percentage
+  performanceByType: PerformanceByType[];
+  performanceByDifficulty: PerformanceByDifficulty[];
+  improvementTrend: ImprovementTrend;
+  lastActivityDate: Date;
+}
+
+export interface PerformanceByType {
+  type: string;
+  attempted: number;
+  solved: number;
+  successRate: number;
+  averageAttempts: number;
+}
+
+export interface PerformanceByDifficulty {
+  difficulty: "EASY" | "MEDIUM" | "HARD";
+  storiesRead: number;
+  successRate: number;
+  averageAttempts: number;
+}
+
+export interface ImprovementTrend {
+  firstQuarterSuccessRate: number;
+  lastQuarterSuccessRate: number;
+  improvementPercentage: number;
+  totalProgress: number;
+}
+
+export interface Recommendation {
+  storyId?: string;
+  storyTitle?: string;
+  storyDifficulty: "EASY" | "MEDIUM" | "HARD";
+  themeName?: string;
+  theme?: string; // for backward compatibility
+  reasoning: string;
 }
 
 // ============================================================================

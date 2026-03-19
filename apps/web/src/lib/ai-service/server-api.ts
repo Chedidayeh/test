@@ -7,7 +7,7 @@
  * Pattern follows progress-service/server-api.ts for consistency.
  */
 
-import type { ApiResponse } from "@readdly/shared-types";
+import type { ApiResponse, AIProgressInsight } from "@readdly/shared-types";
 import { apiRequest, isApiError } from "../helpers";
 
 /**
@@ -107,6 +107,64 @@ export async function validateAnswer(
       error instanceof Error ? error.message : String(error),
     );
     return null;
+  }
+}
+
+/**
+ * Fetch all analytics reports for a specific child
+ * Calls the AI service through the gateway
+ *
+ * @param childId - ID of the child to fetch analytics for
+ * @returns Array of analytics insights or empty array if fetch fails
+ *
+ * @example
+ * const insights = await getChildAnalytics("child-123");
+ * insights.forEach(insight => {
+ *   console.log("Period:", insight.periodStart, "to", insight.periodEnd);
+ *   console.log("Reading Level:", insight.readingLevel);
+ *   console.log("Engagement Score:", insight.engagementScore);
+ * });
+ */
+export async function getChildAnalytics(
+  childId: string,
+): Promise<AIProgressInsight[]> {
+  try {
+    console.log("[AI Service API] Fetching analytics for child:", { childId });
+
+    const response = await apiRequest<ApiResponse<AIProgressInsight[]>>(
+      `/analytics/${childId}`,
+      {
+        method: "GET",
+      },
+    );
+
+    if (isApiError(response)) {
+      console.warn(
+        "[AI Service API] Failed to fetch analytics:",
+        response.error.message,
+      );
+      return [];
+    }
+
+    if (!response.success) {
+      console.warn(
+        "[AI Service API] Failed to fetch analytics: API returned success=false",
+      );
+      return [];
+    }
+
+    console.log("[AI Service API] Analytics fetched successfully:", {
+      childId,
+      recordCount: response.data?.length || 0,
+    });
+
+    return response.data || [];
+  } catch (error) {
+    console.error(
+      "[AI Service API] Error fetching analytics:",
+      error instanceof Error ? error.message : String(error),
+    );
+    return [];
   }
 }
 

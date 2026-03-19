@@ -12,6 +12,11 @@ router.get("/", (req, res) => {
   }
 });
 
+// POST - get multiple stories by IDs in request body
+router.post("/bulk", (req, res) =>
+  storyController.getStoriesByIdsBody(req, res),
+);
+
 // POST - create story with chapters atomically
 router.post("/batch/create", (req, res) =>
   storyController.createStoryWithChapters(req, res),

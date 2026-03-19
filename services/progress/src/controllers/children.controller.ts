@@ -90,7 +90,7 @@ export class ChildrenController {
    * Fetch all children with stats
    * Query params: limit, offset, childIds (filter by specific child IDs)
    */
-  static async getAllChildren(
+  static async getAllChildrenWithPagination(
     req: Request,
     res: Response<ApiResponse<ChildProfile[]>>,
   ): Promise<void> {
@@ -122,7 +122,7 @@ export class ChildrenController {
       const parsedLimit = limit ? Math.min(parseInt(limit as string), 100) : 10;
       const parsedOffset = offset ? parseInt(offset as string) : 0;
 
-      const result = await ChildrenService.getAllChildren({
+      const result = await ChildrenService.getAllChildrenWithPagination({
         limit: parsedLimit,
         offset: parsedOffset,
       });
@@ -131,6 +131,37 @@ export class ChildrenController {
         success: true,
         data: result.children,
         pagination: result.pagination,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error fetching children:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "FETCH_ERROR",
+          message:
+            error instanceof Error ? error.message : "Failed to fetch children",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  /**
+   * Fetch all children with stats
+   */
+  static async getAllChildren(
+    req: Request,
+    res: Response<ApiResponse<{ children: ChildProfile[]; total: number }>>,
+  ): Promise<void> {
+    try {
+      // Get all children with pagination
+
+      const result = await ChildrenService.getAllChildren();
+
+      res.json({
+        success: true,
+        data: result,
         timestamp: new Date(),
       });
     } catch (error) {

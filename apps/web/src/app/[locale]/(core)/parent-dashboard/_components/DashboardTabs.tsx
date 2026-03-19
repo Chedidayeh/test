@@ -19,12 +19,15 @@ export default function DashboardTabs({
   return (
     <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
       {/* Desktop: Grid layout */}
-      <TabsList className="hidden md:grid w-full grid-cols-4 mb-4 md:mb-6">
+      <TabsList className="hidden md:grid w-full grid-cols-5 mb-4 md:mb-6">
         <TabsTrigger value="overview" className="font-medium text-sm">
           {t("tabs.overview")}
         </TabsTrigger>
         <TabsTrigger value="achievements" className="font-medium text-sm">
           {t("tabs.achievements")}
+        </TabsTrigger>
+        <TabsTrigger value="ai-insights" className="font-medium text-sm">
+          {t("tabs.aiInsights")}
         </TabsTrigger>
         <TabsTrigger value="riddle-analytics" className="font-medium text-sm">
           {t("tabs.riddleStatistics")}
@@ -43,6 +46,7 @@ export default function DashboardTabs({
           <SelectContent>
             <SelectItem value="overview">{t("tabs.overview")}</SelectItem>
             <SelectItem value="achievements">{t("tabs.achievements")}</SelectItem>
+            <SelectItem value="ai-insights">{t("tabs.aiInsights")}</SelectItem>
             <SelectItem value="riddle-analytics">{t("tabs.riddleStatistics")}</SelectItem>
             <SelectItem value="time-analytics">{t("tabs.timeAnalytics")}</SelectItem>
           </SelectContent>

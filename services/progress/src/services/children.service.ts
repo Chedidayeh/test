@@ -68,7 +68,7 @@ export class ChildrenService {
    * Fetch all children with their progress stats
    * Returns paginated results with optional filtering
    */
-  static async getAllChildren(
+  static async getAllChildrenWithPagination(
     options: {
       limit?: number;
       offset?: number;
@@ -98,7 +98,6 @@ export class ChildrenService {
                 },
                 checkpoints: true,
               },
-              
             },
           },
         },
@@ -120,6 +119,107 @@ export class ChildrenService {
         pageSize: limit,
         hasMore: offset + limit < total,
       },
+    };
+  }
+
+  /**
+   * Fetch all children with their progress stats from the past week
+   * Only returns children that have progress data in the last 7 days
+   * Only returns progress records from the past 7 days
+   */
+  static async getAllChildren(): Promise<{
+    children: ChildProfile[];
+    total : number;
+  }> {
+    // Calculate date from 7 days ago
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 30);
+
+    // Fetch child profiles with relations, only those with progress in the past week
+    const childProfiles = await prisma.childProfile.findMany({
+      where: {
+        progress: {
+          some: {
+            // Filter for progress records from the past 7 days
+            // Use completedAt if available, otherwise check createdAt
+            OR: [
+              {
+                completedAt: {
+                  gte: sevenDaysAgo,
+                },
+              },
+              {
+                createdAt: {
+                  gte: sevenDaysAgo,
+                },
+              },
+            ],
+          },
+        },
+      },
+      include: {
+        progress: {
+          // Only include progress records from the past 7 days
+          where: {
+            OR: [
+              {
+                completedAt: {
+                  gte: sevenDaysAgo,
+                },
+              },
+              {
+                createdAt: {
+                  gte: sevenDaysAgo,
+                },
+              },
+            ],
+          },
+          include: {
+            gameSession: {
+              include: {
+                challengeAttempts: {
+                  include: {
+                    actions: true,
+                    starEvent: true,
+                  },
+                },
+                checkpoints: true,
+              },
+            },
+          },
+        },
+        badges: true,
+      },
+    });
+
+    // Get total count of children with progress in the past 7 days
+    const total = await prisma.childProfile.count({
+      where: {
+        progress: {
+          some: {
+            OR: [
+              {
+                completedAt: {
+                  gte: sevenDaysAgo,
+                },
+              },
+              {
+                createdAt: {
+                  gte: sevenDaysAgo,
+                },
+              },
+            ],
+          },
+        },
+      },
+    });
+
+    // Cast to ChildProfile[] - Prisma handles enum conversion
+    const typedProfiles = childProfiles as unknown as ChildProfile[];
+
+    return {
+      children: typedProfiles,
+      total,
     };
   }
 
@@ -255,7 +355,6 @@ export class ChildrenService {
                 starEvent: true,
                 actions: true,
               },
-              
             },
             checkpoints: true,
           },
@@ -460,14 +559,16 @@ export class ChildrenService {
       where: { id: incompleteCheckpoint.id },
       data: {
         pausedAt: new Date(),
-        sessionDurationSeconds: Math.floor((new Date().getTime() - incompleteCheckpoint.startedAt.getTime()) / 1000),
+        sessionDurationSeconds: Math.floor(
+          (new Date().getTime() - incompleteCheckpoint.startedAt.getTime()) /
+            1000,
+        ),
         lastChapterId: gameSession.chapterId!,
       },
     });
 
     return checkpoint;
   }
-
 
   /**
    * Submit a challenge answer and record the attempt with star rewards
@@ -488,7 +589,7 @@ export class ChildrenService {
     baseStars: number;
     skipped: boolean;
     status: ChallengeStatus;
-    actions : AttemptAction[];
+    actions: AttemptAction[];
   }): Promise<{
     attempt: ChallengeAttempt;
     starEvent: StarEvent;
@@ -657,15 +758,22 @@ export class ChildrenService {
 
     // Handle the last checkpoint if it hasn't been paused
     if (gameSession.checkpoints.length > 0) {
-      const lastCheckpoint = gameSession.checkpoints[gameSession.checkpoints.length - 1];
+      const lastCheckpoint =
+        gameSession.checkpoints[gameSession.checkpoints.length - 1];
 
       // If the last checkpoint is incomplete (pausedAt is null), complete it now
-      if (lastCheckpoint.pausedAt === null && lastCheckpoint.startedAt !== null) {
+      if (
+        lastCheckpoint.pausedAt === null &&
+        lastCheckpoint.startedAt !== null
+      ) {
         await prisma.sessionCheckpoint.update({
           where: { id: lastCheckpoint.id },
           data: {
             pausedAt: completionTime,
-            sessionDurationSeconds: Math.floor((completionTime.getTime() - lastCheckpoint.startedAt.getTime()) / 1000),
+            sessionDurationSeconds: Math.floor(
+              (completionTime.getTime() - lastCheckpoint.startedAt.getTime()) /
+                1000,
+            ),
             lastChapterId: gameSession.chapterId!,
           },
         });
@@ -686,7 +794,10 @@ export class ChildrenService {
     let totalTimeSpent = 0;
     for (const checkpoint of updatedGameSession.checkpoints) {
       if (checkpoint.pausedAt && checkpoint.startedAt) {
-        totalTimeSpent += Math.floor((checkpoint.pausedAt.getTime() - checkpoint.startedAt.getTime()) / 1000);
+        totalTimeSpent += Math.floor(
+          (checkpoint.pausedAt.getTime() - checkpoint.startedAt.getTime()) /
+            1000,
+        );
       }
     }
 
@@ -937,46 +1048,50 @@ export class ChildrenService {
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
     // Use Promise.all for parallel queries
-    const [totalChildren, activeChildren, totalStoriesCompleted, totalChallengesSolved] =
-      await Promise.all([
-        // Count total children
-        prisma.childProfile.count(),
+    const [
+      totalChildren,
+      activeChildren,
+      totalStoriesCompleted,
+      totalChallengesSolved,
+    ] = await Promise.all([
+      // Count total children
+      prisma.childProfile.count(),
 
-        // Count children with game session checkpoint activity in last 7 days
-        // A child is active if they have a checkpoint (pause/resume) within the last 7 days
-        // This indicates recent engagement with a story
-        prisma.childProfile.count({
-          where: {
-            progress: {
-              some: {
-                gameSession: {
-                  checkpoints: {
-                    some: {
-                      startedAt: {
-                        gte: sevenDaysAgo,
-                      },
+      // Count children with game session checkpoint activity in last 7 days
+      // A child is active if they have a checkpoint (pause/resume) within the last 7 days
+      // This indicates recent engagement with a story
+      prisma.childProfile.count({
+        where: {
+          progress: {
+            some: {
+              gameSession: {
+                checkpoints: {
+                  some: {
+                    startedAt: {
+                      gte: sevenDaysAgo,
                     },
                   },
                 },
               },
             },
           },
-        }),
+        },
+      }),
 
-        // Count completed stories
-        prisma.progress.count({
-          where: {
-            status: "COMPLETED",
-          },
-        }),
+      // Count completed stories
+      prisma.progress.count({
+        where: {
+          status: "COMPLETED",
+        },
+      }),
 
-        // Count solved challenges (with correct answers)
-        prisma.challengeAttempt.count({
-          where: {
-            isCorrect: true,
-          },
-        }),
-      ]);
+      // Count solved challenges (with correct answers)
+      prisma.challengeAttempt.count({
+        where: {
+          isCorrect: true,
+        },
+      }),
+    ]);
 
     return {
       totalChildren,

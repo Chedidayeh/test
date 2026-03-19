@@ -9,8 +9,13 @@ router.post("/create-child-profile", (req, res) =>
 );
 
 // Get all children with pagination
-router.get("/children", (req, res) =>
+router.get("/children/all", (req, res) =>
   ChildrenController.getAllChildren(req, res),
+);
+
+// Get all children with pagination
+router.get("/children", (req, res) =>
+  ChildrenController.getAllChildrenWithPagination(req, res),
 );
 
 // Get children statistics (activeChildren, totalStoriesCompleted, totalChallengesSolved)

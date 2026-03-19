@@ -161,6 +161,56 @@ export class StoryController {
   }
 
   /**
+   * Get multiple stories by their IDs from request body (POST /bulk)
+   * Accepts: { ids: ["id1", "id2", "id3"] }
+   */
+  async getStoriesByIdsBody(
+    req: Request,
+    res: Response<ApiResponse<Story[]>>,
+  ): Promise<void> {
+    try {
+      const { ids } = req.body;
+
+      logger.info("Get stories by IDs (body) request", {
+        idsCount: Array.isArray(ids) ? ids.length : 0,
+      });
+
+      if (!Array.isArray(ids) || ids.length === 0) {
+        sendError(
+          res,
+          "IDs array is required in request body",
+          400,
+        );
+        return;
+      }
+
+      // Filter out empty strings and validate all are strings
+      const storyIds = ids.filter(
+        (id): id is string => typeof id === "string" && id.trim().length > 0,
+      );
+
+      if (storyIds.length === 0) {
+        sendError(res, "At least one valid story ID is required", 400);
+        return;
+      }
+
+      const stories = await storyService.getStoriesByIds(storyIds);
+
+      logger.info("Stories fetched successfully", {
+        requestedCount: storyIds.length,
+        foundCount: stories.length,
+      });
+
+      sendSuccess(res, stories, 200);
+    } catch (error) {
+      logger.error("Error in getStoriesByIdsBody controller", {
+        error: String(error),
+      });
+      sendError(res, String(error), 500, "Failed to fetch stories");
+    }
+  }
+
+  /**
    * Create a story with chapters, challenges, and answers atomically
    * All nested data created together or entire transaction rolls back on error
    */

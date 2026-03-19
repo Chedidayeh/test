@@ -5,6 +5,7 @@ import ChildSidebar from "./ChildSidebar";
 import DashboardTabs from "./DashboardTabs";
 import OverviewTab from "./OverviewTab";
 import AchievementsTab from "./AchievementsTab";
+import AIInsightsTab from "./AIInsightsTab";
 import { Badge, ParentUser, AgeGroup, RoleType } from "@readdly/shared-types";
 import TimeAnalyticsTab from "./TimeAnalyticsTab";
 import RiddleAnalyticsTab from "./RiddleAnalyticsTab";
@@ -89,6 +90,7 @@ export default function ParentDashboardInteractive({
               selectedChild={selectedChild}
               allAvailableBadges={badges}
             />
+            <AIInsightsTab selectedChild={selectedChild!} />
             <RiddleAnalyticsTab selectedChild={selectedChild!} />
             <TimeAnalyticsTab selectedChild={selectedChild!} />
           </DashboardTabs>

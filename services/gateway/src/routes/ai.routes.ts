@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import axios from "axios";
 import { logger } from "../utils/logger";
 import { forwardToContentService } from "../helpers/content.helpers";
-import { API_BASE_URL_V1, ApiResponse, TTSAudio } from "@shared/src/types";
+import { API_BASE_URL_V1, ApiResponse, TTSAudio, AIProgressInsight } from "@shared/src/types";
 
 const router = Router();
 
@@ -14,7 +14,7 @@ router.use(`/validate-answer`, async (req: Request, res: Response) => {
 	try {
 		if (!AI_SERVICE_URL) {
 			logger.error("AI_SERVICE_URL not configured");
-			return res.status(500).json({ success: false, error: "AI service not configured" });
+			return res.status(500).json({ success: false, error: { code: "CONFIG_ERROR", message: "AI service not configured" } });
 		}
 
 		const url = `${AI_SERVICE_URL}${API_BASE_URL_V1}/validate-answer`;
@@ -28,7 +28,30 @@ router.use(`/validate-answer`, async (req: Request, res: Response) => {
 			return res.status(error.response.status).json(error.response.data);
 		}
 
-		return res.status(500).json({ success: false, error: "Failed to contact AI service" });
+		return res.status(500).json({ success: false, error: { code: "SERVICE_ERROR", message: "Failed to contact AI service" } });
+	}
+});
+
+// GET /api/v1/analytics/:childId - Forward analytics retrieval request to AI service
+router.get(`/analytics/:childId`, async (req: Request, res: Response<ApiResponse<AIProgressInsight[]>>) => {
+	try {
+		if (!AI_SERVICE_URL) {
+			logger.error("AI_SERVICE_URL not configured");
+			return res.status(500).json({ success: false, error: { code: "CONFIG_ERROR", message: "AI service not configured" } });
+		}
+
+		const url = `${AI_SERVICE_URL}${API_BASE_URL_V1}/analytics/${req.params.childId}`;
+		const response = await axios.get<ApiResponse<AIProgressInsight[]>>(url, { timeout: 30000 });
+
+		return res.status(response.status).json(response.data);
+	} catch (error) {
+		logger.error("Error forwarding analytics/:childId", { error: error instanceof Error ? error.message : String(error) });
+
+		if (axios.isAxiosError(error) && error.response) {
+			return res.status(error.response.status).json(error.response.data);
+		}
+
+		return res.status(500).json({ success: false, error: { code: "SERVICE_ERROR", message: "Failed to contact AI service" } });
 	}
 });
 

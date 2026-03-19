@@ -161,7 +161,6 @@ export async function getStoriesByIds(
   // Build query string with comma-separated IDs
   const queryString = buildQueryString({ ids: uniqueIds.join(",") });
 
-  console.log("[Content Server API] Fetching stories by IDs:", uniqueIds);
   const response = await apiRequest<ApiResponse<Story[]>>(
     `/stories${queryString}`,
   );

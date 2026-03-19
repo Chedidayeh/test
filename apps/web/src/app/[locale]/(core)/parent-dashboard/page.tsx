@@ -1,7 +1,6 @@
 import { Metadata } from "next";
 import ParentDashboardInteractive from "./_components/ParentDashboardInteractive";
 import { auth } from "@/src/auth";
-import { redirect } from "next/navigation";
 import { getParentWithProfiles } from "@/src/lib/progress-service/server-api";
 import { getBadges, getAgeGroups } from "@/src/lib/content-service/server-api";
 import { RoleType } from "@readdly/shared-types";

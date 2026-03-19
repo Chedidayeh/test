@@ -70,3 +70,39 @@ model LLMValidationResult {
   @@index([challengeAttemptId])
   @@index([attemptActionId])
 }
+
+// AIProgressInsight stores the complete analytics response from generateAnalytics controller
+// Contains reading level, engagement score, insights, and metrics for future reference
+// Allows multiple insights per child per week for comparison and tracking evolution
+model AIProgressInsight {
+  id String @id @default(cuid())
+
+  // Child reference (foreign key to Progress Service)
+  childId String
+
+  // Time period this insight covers (weekly analytics)
+  periodStart DateTime
+  periodEnd   DateTime
+
+  // Reading assessment
+  readingLevel String // BEGINNER | EASY | MEDIUM | HARD | ADVANCED
+  engagementScore Int // 0-100 percentage
+
+  // All insights data stored as JSON
+  // Structure: { strengths: string[], weaknesses: string[], recommendations: Recommendation[], tips: string[] }
+  insights Json
+
+  // All metrics data stored as JSON
+  // Structure: { totalStoriesCompleted, totalChallengesAttempted, totalChallengesSolved, 
+  //             successRate, averageAttemptsPerChallenge, hintDependencyRate, starAchievementRate }
+  metrics Json
+
+  // Audit trail
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Indexes for efficient queries
+  @@index([childId])
+  @@index([periodStart])
+  @@index([periodEnd])
+}
