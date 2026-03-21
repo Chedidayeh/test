@@ -30,6 +30,12 @@ export interface ChallengeReport {
   timeSpent: number; // milliseconds
   starsEarned: number;
   baseStar: number;
+  // TIER 1 Enhancements
+  learningObjective?: string; // Learning goal/objective for the challenge
+  storyContent?: string; // Full story chapter text for context
+  availableHints?: string[]; // All hints available for this challenge
+  answerOptions?: string[]; // All answer options (for analyze choice patterns)
+  errorSequence?: string[]; // Progression of answer attempts (shows learning behavior)
 }
 
 // ============================================================================
@@ -75,6 +81,15 @@ export interface LLMContext {
   engagementSignal: EngagementSignal;
   topChallengeReports: ChallengeReport[]; // top 5-10 most relevant challenges
   consolidatedNarrative: string; // entire context as single narrative for LLM
+  // TIER 2 Enhancements
+  sessionAnalysis?: any; // SessionAnalysis from session-pattern-analyzer
+  actionSequenceAnalysis?: any; // ActionSequenceAnalysis from attempt-action-analyzer
+  contentAnalysis?: any; // ContentAnalysis from content-readability-analyzer
+  // TIER 3 Enhancements
+  nextStorySequences?: any; // StorySequence[] from curriculum-mapper
+  interventions?: any; // Intervention[] from intervention-recommender
+  cognitiveStyle?: any; // CognitiveStyleProfile from cognitive-style-detector
+  microlearningModules?: any; // MicrolearningModule[] from microlearning-recommender
 }
 
 // ============================================================================

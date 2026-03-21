@@ -159,6 +159,7 @@ export class MetricsAggregationService {
 
   /**
    * Calculate total possible stars for all challenges attempted
+   * Only counts unique stories to avoid duplicates when child has multiple progress entries per story
    * @param child ChildProfile with progress data
    * @returns total possible stars
    */
@@ -169,9 +170,16 @@ export class MetricsAggregationService {
     if (!child.progress || child.progress.length === 0) return 0;
 
     let totalPossible = 0;
+    const uniqueStoryIds = new Set<string>();
 
     child.progress.forEach((progress: Progress) => {
-      const story = stories.find((s: Story) => s.id === progress.storyId);
+      if (progress.status === "COMPLETED") {
+        uniqueStoryIds.add(progress.storyId);
+      }
+    });
+
+    uniqueStoryIds.forEach((storyId) => {
+      const story = stories.find((s: Story) => s.id === storyId);
       if (story && story.chapters) {
         story.chapters.forEach((chapter) => {
           if (chapter.challenge) {
@@ -270,7 +278,7 @@ export class MetricsAggregationService {
     const difficultyMap = new Map<
       string,
       {
-        stories: number;
+        stories: Set<string>;
         attempted: number;
         solved: number;
       }
@@ -278,6 +286,10 @@ export class MetricsAggregationService {
 
     if (child.progress) {
       child.progress.forEach((progress: Progress) => {
+        if (progress.status !== "COMPLETED") {
+          return;
+        }
+
         const story = stories.find((s: Story) => s.id === progress.storyId);
         const difficulty = this.convertNumericDifficultyToString(
           story?.difficulty
@@ -285,14 +297,14 @@ export class MetricsAggregationService {
 
         if (!difficultyMap.has(difficulty)) {
           difficultyMap.set(difficulty, {
-            stories: 0,
+            stories: new Set<string>(),
             attempted: 0,
             solved: 0,
           });
         }
 
         const stats = difficultyMap.get(difficulty)!;
-        stats.stories += 1;
+        stats.stories.add(progress.storyId);
 
         if (progress.gameSession?.challengeAttempts) {
           progress.gameSession.challengeAttempts.forEach(
@@ -307,20 +319,24 @@ export class MetricsAggregationService {
       });
     }
 
-    return Array.from(difficultyMap.entries()).map(([difficulty, stats]) => ({
-      difficulty: difficulty as "EASY" | "MEDIUM" | "HARD",
-      storiesRead: stats.stories,
-      successRate: this.calculateSuccessRate(
-        stats.attempted,
-        stats.solved
-      ),
-      averageAttempts:
-        Math.round((stats.attempted / stats.stories) * 100) / 100,
-    }));
+    return Array.from(difficultyMap.entries()).map(([difficulty, stats]) => {
+      const storiesCount = stats.stories.size;
+      return {
+        difficulty: difficulty as "EASY" | "MEDIUM" | "HARD",
+        storiesRead: storiesCount,
+        successRate: this.calculateSuccessRate(
+          stats.attempted,
+          stats.solved
+        ),
+        averageAttempts:
+          storiesCount > 0 ? Math.round((stats.attempted / storiesCount) * 100) / 100 : 0,
+      };
+    });
   }
 
   /**
    * Calculate improvement trend comparing first and last quarters
+   * WARNING: Requires minimum 10 progress records for realistic trend analysis
    * @param child ChildProfile with progress data
    * @returns improvement trend data
    */
@@ -334,13 +350,23 @@ export class MetricsAggregationService {
       };
     }
 
-    // Sort progress by date
     const sortedProgress = [...child.progress].sort(
       (a, b) =>
         new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
     const totalRecords = sortedProgress.length;
+    
+    if (totalRecords < 10) {
+      logger.warn(
+        "[MetricsAggregation] Improvement trend with unreliable sample size",
+        {
+          totalRecords,
+          recommendation: "Collect at least 10 progress records for meaningful trend analysis",
+        }
+      );
+    }
+
     const quarterSize = Math.ceil(totalRecords / 4);
 
     // First quarter

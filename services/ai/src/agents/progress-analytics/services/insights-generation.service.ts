@@ -43,16 +43,32 @@ export class InsightsGenerationService {
    */
   private initializeChains(): void {
     try {
-      // Strengths Chain: Extract top strengths from learning context (parent perspective)
+      // Strengths Chain: Extract DATA-BACKED strengths from learning context (parent perspective)
       const strengthsPrompt = ChatPromptTemplate.fromTemplate(
-        `Based on the following child's reading journey and performance data, identify and list 2-3 key strengths and abilities.
-Focus on areas where the child excels or shows strong performance. Phrase these as positive attributes that parents should encourage and build upon.
+        `Based on the following child's reading journey and performance data, identify 2-3 key strengths and abilities.
+
+For each strength, identify the SPECIFIC METRICS or BEHAVIORS that demonstrate it:
+- Success rate percentages (higher = stronger comprehension/problem-solving)
+- Hint independence (0% hint usage = strong independent learning)
+- Reading speed and efficiency (time per story/challenge)
+- Challenge type mastery (identify which types show 80%+ success)
+- Consistency across difficulty levels
+
+Phrase these as positive attributes that EXPLAIN the metric evidence, so parents understand:
+1. WHAT the strength is
+2. HOW the data shows it (with specific numbers)
+3. WHY this matters for their child's learning
 
 Child Profile:
 {context}
 
-Respond with a JSON array of strings describing strengths (e.g., ["Strong analytical thinking skills", "Persistent problem-solver", "Good pattern recognition"]).
-Make these specific and actionable for parents to recognize and reinforce.`
+Respond with a JSON array of strings. Format:
+[
+  "Strength Name: description that references specific metrics (e.g., 'X% success rate in Y challenges', 'no hint usage', 'completes 88% of challenges on first attempt')",
+  ...
+]
+
+IMPORTANT: Every strength must be directly supported by metrics in the child's data. Do not include generic abilities without specific evidence.`
       );
       this.strengthsChain = new LLMChain({
         llm: this.llm,
@@ -60,17 +76,27 @@ Make these specific and actionable for parents to recognize and reinforce.`
         outputParser: new StringOutputParser(),
       });
 
-      // Weaknesses Chain: Extract areas for improvement (parent perspective)
+      // Weaknesses Chain: Extract DATA-DRIVEN areas for improvement (parent perspective)
       const weaknessesPrompt = ChatPromptTemplate.fromTemplate(
-        `Based on the following child's reading journey and performance data, identify 2-3 areas where the child could improve.
-Focus on specific skill gaps, challenge types, or learning patterns that show lower performance.
-Phrase these as areas FOR PARENTS TO SUPPORT AND HELP DEVELOP, not as criticisms.
+        `Based on the following child's reading journey and performance data, identify 2-3 specific, measurable areas where the child could improve.
+
+IMPORTANT: Only identify weaknesses that are supported by the actual metrics data provided.
+- Look for challenge types with SUCCESS RATE LOWER than the overall success rate
+- Look for difficulty levels where performance drops compared to average
+- Look for patterns in hint usage, attempt counts, or time spent that indicate struggle
+- If the child is performing well across all areas (high success rate, no hint dependency, balanced performance), acknowledge this and suggest "growth opportunities" rather than weaknesses
+
+Phrase these as constructive areas FOR PARENTS TO SUPPORT AND HELP DEVELOP, focused on specific challenge types, reading strategies, or comprehension skills.
 
 Child Profile:
 {context}
 
-Respond with a JSON array of strings (e.g., ["Needs more support with reading comprehension", "Could develop better time management skills", "Struggles with complex problem-solving"]).
-Make these specific and constructive so parents know where to focus support.`
+Respond with a JSON array of strings. Examples:
+- "Struggles with [SPECIFIC CHALLENGE TYPE] where success rate drops to X% compared to Y% overall"
+- "Needs more practice with [DIFFICULTY LEVEL] difficulty where performance shows [SPECIFIC PATTERN]"
+- "Could benefit from [SPECIFIC STRATEGY] when dealing with [CHALLENGE TYPE OR STORY TYPE]"
+
+IMPORTANT: Base each weakness statement on actual performance metrics from the child's data. Do not include generic best practices unless directly supported by the data.`
       );
       this.weaknessesChain = new LLMChain({
         llm: this.llm,
@@ -101,15 +127,32 @@ IMPORTANT: Write recommendations for parents, explaining how each story will hel
         outputParser: new StringOutputParser(),
       });
 
-      // Tips Chain: Actionable improvement tips (directed at parents)
+      // Tips Chain: Actionable improvement tips (directed at parents, data-driven)
       const tipsPrompt = ChatPromptTemplate.fromTemplate(
-        `Based on the following child's learning profile and engagement patterns, provide 2-3 actionable tips for PARENTS to help their child improve reading and challenge-solving skills.
-Focus on practical, specific advice from a parent's perspective (e.g., "Encourage your child to...", "Set up a schedule for...", "Help your child practice...").
+        `Based on the following child's reading profile, engagement patterns, and performance metrics, provide 2-3 TARGETED actionable tips for PARENTS.
+
+Focus on practical, specific advice tailored to THIS CHILD'S actual performance patterns:
+- If engagement is high (90+), provide tips to maintain momentum and deepen learning
+- If hint dependency is high (>30%), suggest strategies to encourage independent problem-solving
+- If performance varies by challenge type, provide tips for the struggling categories
+- If reading speed is fast, suggest tips for comprehension depth; if slow, suggest tips for building confidence
+- If success rate is very high (80%+), suggest tips for appropriate challenge progression
+
+Each tip should:
+1. Be specific to the child's actual data
+2. Reference the child's strengths as a foundation
+3. Suggest practical strategies parents can implement TODAY
+4. Use conversational, warm language
 
 Child Profile:
 {context}
 
-Respond with a JSON array of strings, e.g., ["As a parent, encourage your child to...", "Consider setting up...", "Help your child practice..."]`
+Respond with a JSON array of strings. Examples:
+- "Since [CHILD NAME] has [STRENGTH], try having them [SPECIFIC ACTIVITY] to [GOAL]"
+- "When [CHILD NAME] encounters [SPECIFIC CHALLENGE TYPE], parents can suggest [SPECIFIC STRATEGY]"
+- "To support [CHILD NAME]'s [IDENTIFIED AREA], consider [PRACTICAL ACTION] which will help with [BENEFIT]"
+
+IMPORTANT: Every tip must be grounded in the actual metrics and reading patterns provided in the data.`
       );
       this.tipsChain = new LLMChain({
         llm: this.llm,

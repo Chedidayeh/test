@@ -604,6 +604,19 @@ export interface AggregatedMetrics {
   performanceByDifficulty: PerformanceByDifficulty[];
   improvementTrend: ImprovementTrend;
   lastActivityDate: Date;
+  // TIER 2: Skill mastery tracking per learning objective
+  skillMastery?: SkillMastery[];
+}
+
+// TIER 2: Skill mastery per learning objective
+export interface SkillMastery {
+  learningObjective: string; // The learning goal (from Challenge.description)
+  successRate: number; // 0-100 percentage for this specific objective
+  masteryLevel: "novice" | "developing" | "proficient" | "advanced" | "expert"; // Skill level classification
+  attemptedChallenges: number; // How many challenges with this objective
+  solvedChallenges: number; // How many solved
+  averageAttempts: number; // Average attempts needed
+  improvementTrend: number; // % change in success rate over time
 }
 
 export interface PerformanceByType {

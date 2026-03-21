@@ -410,9 +410,15 @@ CHILD LEARNING PROFILE: ${child.name}
 READING JOURNEY:
 ${storyJourney.narrativeJourney}
 
+CHALLENGE PERFORMANCE BY TYPE:
+${metrics.performanceByType.map((p) => `- ${p.type}: ${p.solved}/${p.attempted} correct (${p.successRate}% success rate)`).join("\n")}
+
+PERFORMANCE BY STORY DIFFICULTY:
+${metrics.performanceByDifficulty.map((p) => `- ${p.difficulty}: ${p.storiesRead} stories read with ${p.successRate}% success rate (avg ${p.averageAttempts} attempts per story)`).join("\n")}
+
 CHALLENGE PATTERNS:
-- Strong Areas: ${challengePattern.strongTypes.join(", ") || "Not yet determined"}
-- Areas for Improvement: ${challengePattern.weakTypes.join(", ") || "Not yet determined"}
+- Strong Challenge Types: ${challengePattern.strongTypes.join(", ") || "No identified pattern yet (consistent performance across all types)"}
+- Challenge Types Needing Support: ${challengePattern.weakTypes.join(", ") || "None identified - child performs well across all challenge types"}
 - Favorite Themes: ${challengePattern.favoriteThemes.join(", ")}
 
 READING BEHAVIOR:
@@ -422,17 +428,18 @@ READING BEHAVIOR:
 - Reading Frequency: ${readingPattern.frequencyOfReading}
 
 ENGAGEMENT SIGNALS:
-- Hint Dependency: ${engagementSignal.hintDependency}
-- Persistence Level: ${engagementSignal.persistence}
+- Hint Dependency: ${engagementSignal.hintDependency} (${metrics.hintDependencyRate}% of challenges used hints)
+- Persistence Level: ${engagementSignal.persistence} (avg ${metrics.averageAttemptsPerChallenge} attempts per challenge)
 - Retry Patterns: ${engagementSignal.retryPatterns}
 - Session Consistency: ${engagementSignal.sessionConsistency}
 
-PERFORMANCE METRICS:
-- Success Rate: ${metrics.successRate}%
-- Star Achievement: ${metrics.starAchievementRate}%
-- Average Attempts per Challenge: ${metrics.averageAttemptsPerChallenge}
+OVERALL PERFORMANCE METRICS:
+- Overall Success Rate: ${metrics.successRate}%
+- Star Achievement Rate: ${metrics.starAchievementRate}% (${metrics.starsEarned}/${metrics.starsPossible} stars earned)
+- Total Stories Completed: ${metrics.totalStoriesCompleted}
+- Total Challenges Attempted: ${metrics.totalChallengesAttempted} (${metrics.totalChallengesSolved} solved)
 - Total Time Investment: ${Math.round(metrics.totalTimeSpent / 60)} minutes
-- Improvement Trend: ${metrics.improvementTrend.improvementPercentage > 0 ? "Positive" : "Stable"}
+- Improvement Trend: ${metrics.improvementTrend.improvementPercentage > 0 ? `Positive (improving by ${metrics.improvementTrend.improvementPercentage}%)` : `Stable or declining (${metrics.improvementTrend.improvementPercentage}% change)`} (Note: Based on ${metrics.improvementTrend.totalProgress} progress records)
 
 RECENT CHALLENGE PERFORMANCE:
 ${topChallengeReports
@@ -443,9 +450,17 @@ ${topChallengeReports
   )
   .join("\n")}
 
+INTERPRETATION GUIDELINES FOR INSIGHTS:
+- If success rate >= 90%, child shows EXCEPTIONAL performance - suggest growth opportunities rather than deficits
+- If success rate 70-89%, child shows STRONG performance - identify specific challenge types for targeted support
+- If success rate < 70%, child needs more support - focus on strategies and encouragement
+- If hint dependency = 0%, child shows strong independence - acknowledge this strength
+- ${metrics.improvementTrend.totalProgress < 10 ? "WARNING: Only " + metrics.improvementTrend.totalProgress + " progress records available - trend analysis is NOT statistically reliable" : "Child has " + metrics.improvementTrend.totalProgress + " progress records - trend analysis is reliable"}
 ${
   pastRecords && pastRecords.length > 0
-    ? `HISTORICAL ANALYTICS CONTEXT:
+    ? `
+
+HISTORICAL ANALYTICS CONTEXT:
 This child has been analyzed ${pastRecords.length} time(s) before. Key historical patterns:
 
 ${pastRecords

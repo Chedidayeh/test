@@ -177,6 +177,9 @@
 		},
 		"aiInsights": {
 			"title": {
+				"title": "AI-Powered Learning Insights",
+				"description": "Personalized insights into {childName}'s reading journey, powered by advanced AI analysis",
+				"dashboardButton": "{childName}'s dashboard →",
 				"currentInsights": "AI-Powered Learning Insights",
 				"historicalInsights": "Previous Insights"
 			},

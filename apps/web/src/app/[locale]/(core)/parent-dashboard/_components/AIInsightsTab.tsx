@@ -9,6 +9,7 @@ import { Button } from "@/src/components/ui/button";
 import { Alert, AlertDescription } from "@/src/components/ui/alert";
 import { Spinner } from "@/src/components/ui/spinner";
 import { TabsContent } from "@/src/components/ui/tabs";
+import Link from "next/link";
 
 interface AIInsightsTabProps {
   selectedChild: ChildProfile;
@@ -74,7 +75,7 @@ export default function AIInsightsTab({ selectedChild }: AIInsightsTabProps) {
   if (insights.length === 0) {
     return (
       <TabsContent value="ai-insights" className="space-y-4 md:space-y-6">
-        <div className="bg-secondary/50 border border-secondary rounded-lg p-8 text-center">
+        <div className="border rounded-lg p-8 text-center">
           <p className="text-muted-foreground mb-4">{t("message.noInsights")}</p>
           <p className="text-sm text-muted-foreground">{t("message.noInsightsSubtext", { childName: selectedChild.name })}</p>
         </div>
@@ -87,14 +88,33 @@ export default function AIInsightsTab({ selectedChild }: AIInsightsTabProps) {
 
   return (
     <TabsContent value="ai-insights" className="space-y-4 md:space-y-6">
+      <div className="bg-linear-to-r from-primary/5 via-secondary/5 to-accent/5 rounded-xl p-4 md:p-6 border border-black/10">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4">
+          <div>
+            <h2 className="font-heading text-xl md:text-3xl text-foreground mb-2">
+              {t("title.title")}
+            </h2>
+            <p className="text-xs md:text-sm text-muted-foreground">
+              {t("title.description", { childName: selectedChild.name })}
+            </p>
+          </div>
+          {selectedChild?.childId && (
+            <Link href={`/child-dashboard/${selectedChild.childId}`} className="w-full md:w-auto">
+              <Button className="whitespace-nowrap w-full md:w-auto text-xs md:text-sm">
+                {t("title.dashboardButton", { childName: selectedChild.name })}
+              </Button>
+            </Link>
+          )}
+        </div>
+      </div>
       <div className="space-y-6">
       {/* Header with Refresh Button */}
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">{t("title.currentInsights")}</h2>
-        <Button onClick={fetchAnalytics} variant="outline" size="sm">
+        <h2 className="text-xl font-medium">{t("title.currentInsights")}</h2>
+        {/* <Button onClick={fetchAnalytics} variant="outline" size="sm">
           <RefreshCw className="h-4 w-4 mr-2" />
           {t("action.refresh")}
-        </Button>
+        </Button> */}
       </div>
 
       {/* Current Insight Card */}
@@ -106,7 +126,7 @@ export default function AIInsightsTab({ selectedChild }: AIInsightsTabProps) {
       {/* Historical Insights */}
       {previousInsights.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold">{t("title.historicalInsights")}</h3>
+          <h3 className="text-lg font-medium">{t("title.historicalInsights")}</h3>
           <div className="space-y-3">
             {previousInsights.map((insight) => (
               <HistoricalInsightCard key={insight.id} insight={insight} />
@@ -163,7 +183,7 @@ function CurrentInsightCard({ insight }: CurrentInsightCardProps) {
       {/* Strengths & Weaknesses */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <h4 className="font-semibold text-green-600 dark:text-green-400 mb-3 flex items-center gap-2">
+          <h4 className="font-medium text-green-600 dark:text-green-400 mb-3 flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
             {t("label.strengths")}
           </h4>
@@ -177,7 +197,7 @@ function CurrentInsightCard({ insight }: CurrentInsightCardProps) {
           </ul>
         </div>
         <div>
-          <h4 className="font-semibold text-orange-600 dark:text-orange-400 mb-3">
+          <h4 className="font-medium text-orange-600 dark:text-orange-400 mb-3">
             {t("label.weaknesses")}
           </h4>
           <ul className="space-y-2">
@@ -194,17 +214,17 @@ function CurrentInsightCard({ insight }: CurrentInsightCardProps) {
       {/* Recommendations */}
       {insight.insights.recommendations.length > 0 && (
         <div>
-          <h4 className="font-semibold mb-3">{t("label.recommendations")}</h4>
+          <h4 className="font-medium mb-3 text-purple-500">{t("label.recommendations")}</h4>
           <div className="space-y-2">
             {insight.insights.recommendations.map((rec, idx) => (
-              <div key={idx} className="bg-secondary/50 border border-secondary rounded p-3 text-sm">
+              <div key={idx} className="text-sm">
                 <p className="font-medium text-sm mb-1">
                   {rec.storyTitle && `${rec.storyTitle} - `}
-                  <span className={`px-2 py-1 rounded text-xs font-semibold ${getDifficultyColor(rec.storyDifficulty)}`}>
+                  <span className={`px-2 py-1 rounded text-xs font-medium ${getDifficultyColor(rec.storyDifficulty)}`}>
                     {rec.storyDifficulty}
                   </span>
                 </p>
-                <p className="text-muted-foreground">{rec.reasoning}</p>
+                <p className="">{rec.reasoning}</p>
               </div>
             ))}
           </div>
@@ -214,7 +234,7 @@ function CurrentInsightCard({ insight }: CurrentInsightCardProps) {
       {/* Tips */}
       {insight.insights.tips.length > 0 && (
         <div>
-          <h4 className="font-semibold mb-3">{t("label.tips")}</h4>
+          <h4 className="font-medium mb-3 text-yellow-500">{t("label.tips")}</h4>
           <ul className="space-y-2">
             {insight.insights.tips.map((tip, idx) => (
               <li key={idx} className="flex gap-2 text-sm">
@@ -230,7 +250,7 @@ function CurrentInsightCard({ insight }: CurrentInsightCardProps) {
       {insight.insights.summary && (
         <div className="bg-accent/10 border border-accent rounded p-4">
           <p className="text-sm font-medium mb-2">{t("label.summary")}</p>
-          <p className="text-sm leading-relaxed text-muted-foreground">
+          <p className="text-sm leading-relaxed">
             {insight.insights.summary}
           </p>
         </div>
@@ -353,18 +373,18 @@ function HistoricalInsightCard({ insight }: HistoricalInsightCardProps) {
             <p className="text-sm font-medium mb-2">{t("label.keyMetrics")}</p>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <p>
-                {t("metric.successRate")}: <span className="font-semibold">{insight.metrics.successRate}%</span>
+                {t("metric.successRate")}: <span className="font-medium">{insight.metrics.successRate}%</span>
               </p>
               <p>
-                {t("metric.starsEarned")}: <span className="font-semibold">{insight.metrics.starsEarned}</span>
+                {t("metric.starsEarned")}: <span className="font-medium">{insight.metrics.starsEarned}</span>
               </p>
               <p>
                 {t("metric.totalStoriesCompleted")}:{" "}
-                <span className="font-semibold">{insight.metrics.totalStoriesCompleted}</span>
+                <span className="font-medium">{insight.metrics.totalStoriesCompleted}</span>
               </p>
               <p>
                 {t("metric.avgAttemptsPerChallenge")}:{" "}
-                <span className="font-semibold">
+                <span className="font-medium">
                   {insight.metrics.averageAttemptsPerChallenge.toFixed(1)}
                 </span>
               </p>
@@ -432,7 +452,9 @@ function formatDate(date: Date | string): string {
 }
 
 function formatMilliseconds(ms: number): string {
-  const hours = Math.floor(ms / (1000 * 60 * 60));
-  const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+  console.log("Formatting milliseconds:", ms);
+  
+  const hours = Math.floor(ms / ( 60 * 60));
+  const minutes = Math.floor((ms % ( 60 * 60)) / ( 60));
   return `${hours}h ${minutes}m`;
 }

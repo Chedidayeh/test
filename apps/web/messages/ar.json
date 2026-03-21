@@ -91,6 +91,7 @@
 		"tabs": {
 			"overview": "نظرة عامة",
 			"achievements": "الإنجازات",
+			"aiInsights": " تحليلات الذكاء الاصطناعي ",
 			"riddleStatistics": "إحصائيات الألغاز",
 			"timeAnalytics": "تحليلات الوقت"
 		},
@@ -160,6 +161,45 @@
 			"action": {
 				"correct": "✓ صحيح",
 				"incorrect": "✗ غير صحيح"
+			}
+		},
+		"aiInsights": {
+			"title": {
+				"title": "تحليلات التعلم المدعومة بالذكاء الاصطناعي",
+				"description": "تحليلات شخصية لرحلة قراءة {childName}، مدعومة بتحليل متقدم للذكاء الاصطناعي",
+				"dashboardButton": "فضاء التعلم لطفلك {childName} →",
+				"currentInsights": "تحليلات الذكاء الاصطناعي الحالية",
+				"historicalInsights": "تحليلات الذكاء الاصطناعي التاريخية"
+			},
+			"label": {
+				"readingLevel": "مستوى القراءة",
+				"engagementScore": "درجة الانخراط",
+				"period": "الفترة الزمنية",
+				"strengths": "النقاط القوية",
+				"weaknesses": "المناطق للتحسين",
+				"recommendations": "التوصيات",
+				"tips": "نصائح التعلم",
+				"summary": "الملخص",
+				"keyMetrics": "المقاييس الرئيسية"
+			},
+			"metric": {
+				"totalStoriesCompleted": "القصص المكتملة",
+				"successRate": "نسبة النجاح",
+				"challengesAttempted": "التحديات المحلول",
+				"avgAttemptsPerChallenge": "متوسط المحاولات لكل تحدى",
+				"hintDependencyRate": "نسبة الاعتماد على التلميحات",
+				"starsEarned": "النجوم المكتسبة",
+				"totalTimeSpent": "إجمالي الوقت المستغرق"
+			},
+			"action": {
+				"refresh": "تحديث التحليلات"
+			},
+			"message": {
+				"noInsights": "لا توجد تحليلات الذكاء الاصطناعي المتاحة بعد",
+				"noInsightsSubtext": "{childName} لم يكمل عدد كافٍ من الأنشطة للحصول على تحليلات مدعومة بالذكاء الاصطناعي. استمر في القراءة!"
+			},
+			"error": {
+				"fetchFailed": "فشل في جلب التحليلات"
 			}
 		},
 		"timeAnalytics": {
