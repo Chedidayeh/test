@@ -22,6 +22,11 @@ router.post("/batch/create", (req, res) =>
   storyController.createStoryWithChapters(req, res),
 );
 
+// POST - create storytelling story from AI Service generated story
+router.post("/create-storytelling", (req, res) =>
+  storyController.createStorytellingStory(req, res),
+);
+
 // GET stories by world ID
 router.get("/world/:worldId", (req, res) =>
   storyController.getStoriesByWorld(req, res),

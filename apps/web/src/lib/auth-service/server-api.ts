@@ -147,6 +147,7 @@ export async function createChildProfile(payload: {
   parentEmail: string;
   parentId: string;
   name: string;
+  gender: string;
   ageGroupId: string;
   ageGroupName: string;
   themeIds: string[];

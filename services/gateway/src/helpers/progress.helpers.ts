@@ -599,14 +599,14 @@ export async function forwardStartStory(
     const firstChapter = story.chapters.find((ch) => ch.order === 1);
     const firstChapterId = firstChapter?.id;
     const worldId = story.worldId;
-    const roadmapId = story.world.roadmapId;
+    const roadmapId = story.world?.roadmapId;
 
     // Extract challenge IDs from all chapters
     const challengeIds = story.chapters
       .map((chapter) => chapter.challenge?.id)
       .filter((id) => id !== undefined) as string[];
 
-    if (!firstChapterId || !worldId || !roadmapId) {
+    if (!firstChapterId) {
       logger.warn("Story missing required fields", {
         storyId,
         hasFirstChapter: !!firstChapterId,

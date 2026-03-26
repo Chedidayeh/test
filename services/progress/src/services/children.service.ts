@@ -9,6 +9,7 @@ import {
   ChallengeType,
   SessionCheckpoint,
   AttemptAction,
+  Story,
 } from "@shared/src/types";
 
 const prisma = new PrismaClient();
@@ -21,6 +22,7 @@ export class ChildrenService {
     parentEmail: string;
     parentId: string;
     name: string;
+    gender: string;
     childId: string;
     ageGroupId: string;
     ageGroupName: string;
@@ -32,6 +34,7 @@ export class ChildrenService {
       data: {
         parentId: payload.parentId,
         name: payload.name,
+        gender: payload.gender,
         ageGroupId: payload.ageGroupId,
         ageGroupName: payload.ageGroupName,
         favoriteThemes: payload.themeIds,
@@ -129,7 +132,7 @@ export class ChildrenService {
    */
   static async getAllChildren(): Promise<{
     children: ChildProfile[];
-    total : number;
+    total: number;
   }> {
     // Calculate date from 7 days ago
     const sevenDaysAgo = new Date();
@@ -224,6 +227,57 @@ export class ChildrenService {
   }
 
   /**
+   * Fetch all children with storytelling profiles enabled
+   * Includes:
+   * - Children with active storytelling profiles (isActive = true)
+   * - Where ALL stories in their storytelling profile have status COMPLETED
+   */
+  static async getAllChildrenWithStorytelling(): Promise<ChildProfile[]> {
+    const childProfiles = await prisma.childProfile.findMany({
+      where: {
+        AND: [
+          {
+            storytelling: {
+              is: {
+                isActive: true, // Only active storytelling profiles
+              },
+            },
+          },
+          {
+            NOT: {
+              storytelling: {
+                stories: {
+                  some: {
+                    status: {
+                      not: ProgressStatus.COMPLETED, // No stories with incomplete status
+                    },
+                  },
+                },
+              },
+            },
+          },
+        ],
+      },
+      include: {
+        storytelling: {
+          include: {
+            stories: {
+              include: {
+                progress: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Cast to ChildProfile[] - Prisma handles enum conversion
+    const typedProfiles = childProfiles as unknown as ChildProfile[];
+
+    return typedProfiles;
+  }
+
+  /**
    * Fetch children for a specific child ID (single or multiple)
    */
   static async getChildrenByIds(childIds: string[]): Promise<ChildProfile[]> {
@@ -266,6 +320,7 @@ export class ChildrenService {
         parentId,
       },
       include: {
+        storytelling: true,
         progress: {
           include: {
             gameSession: {
@@ -298,6 +353,11 @@ export class ChildrenService {
     const childProfile = await prisma.childProfile.findUnique({
       where: { childId: childProfileId },
       include: {
+        storytelling: {
+          include: {
+            stories: true,
+          },
+        },
         progress: {
           include: {
             gameSession: {
@@ -373,17 +433,47 @@ export class ChildrenService {
   static async startStoryProgress(payload: {
     childId: string;
     storyId: string;
-    worldId: string;
-    roadmapId: string;
+    worldId: string | undefined;
+    roadmapId: string | undefined;
     firstChapterId: string;
     challengeIds?: string[];
   }): Promise<Progress | null> {
     const childProfile = await prisma.childProfile.findUnique({
       where: { childId: payload.childId },
+      include: {
+        storytelling: {
+          include: {
+            stories: true,
+          },
+        },
+      },
     });
 
     if (!childProfile) {
       return null;
+    }
+
+    // if storytelling profile is active, find the story and update its status to IN_PROGRESS
+    let storytellingStoryId: string | undefined;
+    if (childProfile.storytelling?.isActive) {
+      // Find the storytelling story using composite fields
+      const storytellingStory = await prisma.storytellingStory.findFirst({
+        where: {
+          storyId: payload.storyId,
+          storytellingProfileId: childProfile.storytelling.id,
+        },
+      });
+
+      // Update using the unique id field
+      if (storytellingStory) {
+        storytellingStoryId = storytellingStory.id;
+        await prisma.storytellingStory.update({
+          where: { id: storytellingStory.id },
+          data: {
+            status: ProgressStatus.IN_PROGRESS,
+          },
+        });
+      }
     }
 
     const progress = await prisma.progress.upsert({
@@ -396,6 +486,7 @@ export class ChildrenService {
       update: {}, // If it exists, just return it
       create: {
         childProfileId: childProfile.id,
+        storytellingStoryId,
         storyId: payload.storyId,
         worldId: payload.worldId,
         roadmapId: payload.roadmapId,
@@ -843,6 +934,9 @@ export class ChildrenService {
     if (progress) {
       const childProfile = await prisma.childProfile.findUnique({
         where: { id: progress.childProfileId },
+        include : {
+          storytelling: true
+        }
       });
 
       if (childProfile) {
@@ -852,6 +946,27 @@ export class ChildrenService {
             totalStars: childProfile.totalStars + gameSession.starsEarned,
           },
         });
+
+        // if storytelling profile is active, find the story and update its status to IN_PROGRESS
+        if (childProfile.storytelling?.isActive) {
+          // Find the storytelling story using composite fields
+          const storytellingStory = await prisma.storytellingStory.findFirst({
+            where: {
+              storyId: progress.storyId!,
+              storytellingProfileId: childProfile.storytelling.id,
+            },
+          });
+
+          // Update using the unique id field
+          if (storytellingStory) {
+            await prisma.storytellingStory.update({
+              where: { id: storytellingStory.id },
+              data: {
+                status: ProgressStatus.IN_PROGRESS,
+              },
+            });
+          }
+        }
       }
     }
 
@@ -1099,5 +1214,103 @@ export class ChildrenService {
       totalStoriesCompleted,
       totalChallengesSolved,
     };
+  }
+
+  /**
+   * Save storytelling profile for a child
+   */
+  static async saveStorytellingProfile(payload: {
+    childProfileId: string;
+    childName: string;
+    childLanguage: string;
+    favoriteThemes: string[];
+    learningObjectives: string[];
+  }): Promise<any> {
+    const storytellingProfile = await prisma.storytellingProfile.upsert({
+      where: { childProfileId: payload.childProfileId },
+      update: {
+        childName: payload.childName,
+        childLanguage: payload.childLanguage,
+        favoriteThemes: payload.favoriteThemes,
+        learningObjectives: payload.learningObjectives,
+      },
+      create: {
+        childProfileId: payload.childProfileId,
+        childName: payload.childName,
+        childLanguage: payload.childLanguage,
+        favoriteThemes: payload.favoriteThemes,
+        learningObjectives: payload.learningObjectives,
+        onboardingCompleted: true,
+      },
+    });
+
+    return storytellingProfile;
+  }
+
+  /**
+   * Update storytelling story for a child
+   * Called after story is generated and saved to Content Service
+   * Upserts a StorytellingStory record linking child to generated story
+   */
+  static async updateStorytellingStory(
+    childProfileId: string,
+    story: Story,
+  ): Promise<any> {
+    // Get the storytelling profile for the child
+    const storytellingProfile = await prisma.storytellingProfile.findUnique({
+      where: { childProfileId },
+    });
+
+    if (!storytellingProfile) {
+      throw new Error(
+        `Storytelling profile not found for child ${childProfileId}`,
+      );
+    }
+
+    // Check if StorytellingStory already exists for this story
+    const existingStory = await prisma.storytellingStory.findFirst({
+      where: {
+        storytellingProfileId: storytellingProfile.id,
+        storyId: story.id,
+      },
+    });
+
+    let storytellingStory;
+    if (existingStory) {
+      // Update existing record
+      storytellingStory = await prisma.storytellingStory.update({
+        where: { id: existingStory.id },
+        data: {
+          title: story.title,
+          storyId: story.id,
+        },
+      });
+    } else {
+      // Create new StorytellingStory record
+      storytellingStory = await prisma.storytellingStory.create({
+        data: {
+          storytellingProfileId: storytellingProfile.id,
+          storyId: story.id,
+          title: story.title,
+          status: ProgressStatus.NOT_STARTED, // New story starts as NOT_STARTED
+        },
+      });
+    }
+
+    // Return updated child profile with all storytelling data
+    const updatedChild = await prisma.childProfile.findUnique({
+      where: { id: childProfileId },
+      include: {
+        storytelling: {
+          include: {
+            stories: true,
+          },
+        },
+        progress: true,
+        badges: true,
+      },
+    });
+
+    return updatedChild;
   }
 }

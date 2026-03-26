@@ -108,6 +108,8 @@ export interface Child {
   id: string;
   parentId: string;
   name: string;
+  gender?: string;
+
   loginCode?: string;
   avatar?: string;
   ageGroup: string; // References ContentService.AgeGroup.id
@@ -242,14 +244,16 @@ export interface WorldTranslation {
 
 export interface Story {
   id: string;
-  worldId: string;
+  worldId?: string;
   title: string;
   description?: string;
-  difficulty: number; // 1-5 difficulty scale
+  difficulty?: number; // 1-5 difficulty scale
   order: number;
+  isStorytellingStory: boolean; // Flag to identify AI-generated storytelling stories
+  generatedStoryId?: string; // Reference to the original generated story ID from AI Service
   createdAt: Date;
   updatedAt: Date;
-  world: World;
+  world?: World;
   translations?: StoryTranslation[];
   chapters: Chapter[];
 }
@@ -388,6 +392,7 @@ export interface ParentUser {
 export interface ChildProfile {
   id: string;
   name: string;
+  gender?: string;
   parentId: string; // References Auth.Parent.id
   parent: User; // Parent user details
   childId: string; // References Auth.Child.id
@@ -398,19 +403,60 @@ export interface ChildProfile {
   allocatedRoadmaps: string[]; // List of Roadmap IDs allocated to this child
   currentLevel: number;
   totalStars: number;
+  storytelling?: StorytellingProfile;
+
   createdAt: Date;
   updatedAt: Date;
   progress: Progress[];
   badges: ChildBadge[];
 }
 
+export interface StorytellingProfile {
+  id: string;
+  childProfileId: string;
+
+  childName: string;
+  childLanguage: string;
+  favoriteThemes: string[]; // hand picked by the parent during onboarding
+  learningObjectives: string[]; // optional learning objectives for the AI to focus on
+
+  onboardingCompleted: Boolean;
+  isActive: Boolean;
+
+  stories: StorytellingStory[];
+
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface StorytellingStory {
+  id: string;
+  storytellingProfileId: string;
+  storytellingProfile: StorytellingProfile;
+
+  // Reference to content service StorytellingStory.id
+  storyId: string;
+
+  // AI-generated story content
+  title: string;
+
+  status: ProgressStatus;
+  progress?: Progress;
+
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // Progress represents a child's progress through a specific roadmap , world, story, tracking status, attempts, and rewards earned
 export interface Progress {
   id: string;
   childProfileId: string;
-  roadmapId: string; // References Content.Roadmap.id - current roadmap being progressed through
-  worldId: string; // References Content.World.id - current world being progressed through
-  storyId: string; // References Content.Story.id - current story being progressed through
+  storytellingStoryId: string | null; // Optional reference to StorytellingStory for AI-generated stories
+  storytellingStory: StorytellingStory | null; // Reference to the associated storytelling story
+
+  roadmapId?: string; // References Content.Roadmap.id - current roadmap being progressed through
+  worldId?: string; // References Content.World.id - current world being progressed through
+  storyId?: string; // References Content.Story.id - current story being progressed through
   status: ProgressStatus;
   totalTimeSpent: number; // Total time spent on this story across all sessions (in seconds)
   completedAt?: Date;
@@ -557,97 +603,102 @@ export interface TTSAudio {
   createdAt: Date;
 }
 
-export interface AIProgressInsight {
+export interface StoryPlanWorld {
   id: string;
 
-  childId: string;
+  order: number; // 0, 1, 2... (strict ordering)
 
-  periodStart: Date;
-  periodEnd: Date;
+  theme: string;
+  title: string;
+  description: string;
+  atmosphere: string;
 
-  readingLevel: string;
-  engagementScore: number; // 0-100 percentage
+  learningFocus: string[];
+  baseDifficulty: number; // Base difficulty for this world
 
-  insights: InsightsReport;
+  estimatedStoryCount: number;
+  generatedStoryCount: number;
 
-  metrics: AggregatedMetrics;
+  isUnlocked: Boolean;
+  isCompleted: Boolean;
+
+  stories: StoryPlanItem[];
 
   createdAt: Date;
   updatedAt: Date;
 }
 
-export interface InsightsReport {
-  childId: string;
-  periodStart: Date;
-  periodEnd: Date;
-  readingLevel: ReadingLevel;
-  engagementScore: number; // 0-100
-  strengths: string[];
-  weaknesses: string[];
-  recommendations: Recommendation[];
-  tips: string[];
-  summary: string; // overall narrative summary
+export interface StoryPlanItem {
+  id: string;
+  worldId: string;
+  world: StoryPlanWorld;
+
+  // ISSUE 7 FIX: Enforce sequence
+  sequenceOrder: number; // 0, 1, 2... per world
+
+  title: string;
+  summary: string; // 150-250 chars
+  storyArc: string; // "introduction" | "development" | "climax" | "resolution"
+
+  objectives: string[];
+  skillsToReinforce: string[];
+  skillsToIntroduce: string[];
+
+  status: string; // "pending" | "generating" | "generated" | "synced"
+
+  dependsOn?: string;
+  generatedStory?: GeneratedStory;
+
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export interface AggregatedMetrics {
-  totalStoriesCompleted: number;
-  totalChallengesAttempted: number;
-  totalChallengesSolved: number;
-  successRate: number; // 0-100 percentage
-  averageAttemptsPerChallenge: number;
-  totalTimeSpent: number; // milliseconds
-  hintDependencyRate: number; // 0-100 percentage
-  starsEarned: number;
-  starsPossible: number;
-  starAchievementRate: number; // 0-100 percentage
-  performanceByType: PerformanceByType[];
-  performanceByDifficulty: PerformanceByDifficulty[];
-  improvementTrend: ImprovementTrend;
-  lastActivityDate: Date;
-  // TIER 2: Skill mastery tracking per learning objective
-  skillMastery?: SkillMastery[];
+export interface GeneratedStory {
+  id: string;
+  planItemId: string;
+  planItem: StoryPlanItem;
+
+  childProfileId: string;
+
+  title: string;
+  content: JSON; // { chapters: [...] }
+  status: string; // "pending" | "generating" | "generated" | "synced"
+
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-// TIER 2: Skill mastery per learning objective
-export interface SkillMastery {
-  learningObjective: string; // The learning goal (from Challenge.description)
-  successRate: number; // 0-100 percentage for this specific objective
-  masteryLevel: "novice" | "developing" | "proficient" | "advanced" | "expert"; // Skill level classification
-  attemptedChallenges: number; // How many challenges with this objective
-  solvedChallenges: number; // How many solved
-  averageAttempts: number; // Average attempts needed
-  improvementTrend: number; // % change in success rate over time
+// ============================================================================
+// ContentServicePayload
+// =============================================================================
+export interface ContentServicePayload {
+  worldId: string; // or number, depending on your backend
+  title: string;
+  description: string;
+  difficulty: number;
+  order: number;
+  chapters: ChapterPayload[];
 }
 
-export interface PerformanceByType {
-  type: string;
-  attempted: number;
-  solved: number;
-  successRate: number;
-  averageAttempts: number;
+export interface ChapterPayload {
+  title: string;
+  content: string;
+  order: number;
+  challenge?: ChallengePayload | null;
 }
 
-export interface PerformanceByDifficulty {
-  difficulty: "EASY" | "MEDIUM" | "HARD";
-  storiesRead: number;
-  successRate: number;
-  averageAttempts: number;
+export interface ChallengePayload {
+  type: string; // e.g. 'multiple-choice', 'fill-in-blank', etc.
+  question: string;
+  hints: string[];
+  baseStars: number;
+  answers: ChallengeAnswer[];
 }
 
-export interface ImprovementTrend {
-  firstQuarterSuccessRate: number;
-  lastQuarterSuccessRate: number;
-  improvementPercentage: number;
-  totalProgress: number;
-}
-
-export interface Recommendation {
-  storyId?: string;
-  storyTitle?: string;
-  storyDifficulty: "EASY" | "MEDIUM" | "HARD";
-  themeName?: string;
-  theme?: string; // for backward compatibility
-  reasoning: string;
+export interface ChallengeAnswer {
+  text: string;
+  isCorrect: boolean;
+  order: number;
 }
 
 // ============================================================================
@@ -849,6 +900,107 @@ export interface TokenVerificationResponse {
   email?: string;
   role?: RoleType;
   error?: string;
+}
+
+// ============================================================================
+// PROGRESS ANALYTICS TYPES
+// ============================================================================
+
+/**
+ * Reading engagement metrics for the weekly period
+ */
+export interface ReadingEngagementMetrics {
+  totalSessionsCount: number; // Number of reading sessions during the week
+  totalSessionDurationMinutes: number; // Total active reading time (excluding idle)
+  averageSessionDurationMinutes: number; // Average session length
+  readingFrequency: "daily" | "regular" | "occasional" | "sparse"; // Pattern classification
+  sessionsPerDay: number; // Average sessions per day
+  consistencyScore: number; // 0-100: how consistent the reading habit is
+}
+
+/**
+ * Learning progress metrics for the weekly period
+ */
+export interface LearningProgressMetrics {
+  storiesStartedCount: number; // Number of stories started
+  storiesCompletedCount: number; // Number of stories completed
+  completionRate: number; // 0-100: percentage of started stories completed
+  currentLevel: number; // Current level after this week
+  totalStarsEarned: number; // Stars earned this week
+  avgDifficultyProgression: "decreasing" | "stable" | "increasing"; // Difficulty trend
+}
+
+/**
+ * Challenge and comprehension metrics for the weekly period
+ */
+export interface ComprehensionMetrics {
+  totalChallengesAttempted: number; // Total challenge attempts
+  totalChallengesSolved: number; // Correctly solved challenges
+  overallSuccessRate: number; // 0-100: percentage of challenges solved
+  avgHintsUsedPerChallenge: number; // Average hints consumed per attempt
+}
+
+/**
+ * Weekly progress report section: narrative summary
+ */
+export interface ReportSummary {
+  weekOverview: string; // 2-3 sentences: general overview of the week
+  engagementStatus:
+    | "highly_engaged"
+    | "engaged"
+    | "moderately_engaged"
+    | "low_engagement"; // Classification
+  progressTrend: "excellent" | "good" | "stable" | "declining"; // Trend direction
+  quickHighlights: string[]; // 3-4 bullet points of key achievements
+}
+
+/**
+ * Weekly progress report section: structured metrics
+ */
+export interface ReportMetrics {
+  reading: ReadingEngagementMetrics;
+  learning: LearningProgressMetrics;
+  comprehension: ComprehensionMetrics;
+}
+
+/**
+ * Weekly progress report section: insights and analysis
+ */
+export interface ReportInsights {
+  strengthsIdentified: string[]; // What the child is doing well
+  areasForGrowth: string[]; // Areas where they could improve
+  learningStyle?: string; // Observed learning style (if identifiable)
+  engagementObservations: string; // Paragraph about engagement level and patterns
+  progressComparison?: string; // Optional: comparison to previous weeks
+  parentalGuidanceInsight?: string; // Optional: insight for parent to support learning
+}
+
+/**
+ * Weekly progress report section: recommendations for next week
+ */
+export interface ReportRecommendations {
+  nextStepsForParent: string[]; // Actions parent can take to support
+  suggestedReadingPath?: string; // Recommended next story or theme
+  challengesForFocus?: string[]; // Challenge types to practice
+  motivationalMessage: string; // Encouraging message tailored to the child
+}
+
+/**
+ * Full weekly progress report structure
+ * Stored as JSON in AIProgressInsight.reportData
+ */
+export interface ProgressReport {
+  // Metadata
+  childId: string;
+  childName: string;
+  weekStart: Date;
+  weekEnd: Date;
+
+  // Report sections
+  summary: ReportSummary;
+  metrics: ReportMetrics;
+  insights: ReportInsights;
+  recommendations: ReportRecommendations;
 }
 
 // ============================================================================

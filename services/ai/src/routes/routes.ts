@@ -2,6 +2,7 @@ import { Router } from "express";
 import { handleSynthesize } from "../agents/voice-agent/controllers/tts.controller";
 import { handleValidateAnswer } from "../agents/answer-validation-agent/controllers/validation.controller";
 import { analyticsController } from "../agents/progress-analytics/controllers/analytics.controller";
+import { storytellingController } from "../agents/storytelling-agent/controllers/storytelling.controller";
 
 const router = Router();
 
@@ -83,8 +84,18 @@ router.post("/analytics/generate", (req, res) =>
   analyticsController.generateAnalytics(req, res),
 );
 
-router.get("/analytics/:childId", (req, res) =>
-  analyticsController.getChildAnalytics(req, res),
+// router.get("/analytics/:childId", (req, res) =>
+//   analyticsController.getChildAnalytics(req, res),
+// );
+
+/**
+ * Storytelling Routes
+ *
+ * POST /api/v1/generate-child-storytelling - Generate personalized AI story for a child
+ *
+ */
+router.post("/generate-child-storytelling", (req, res) =>
+  storytellingController.generateChildStorytelling(req, res),
 );
 
 export default router;

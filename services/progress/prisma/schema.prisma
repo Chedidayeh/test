@@ -17,6 +17,7 @@ datasource db {
 model ChildProfile {
   id                String   @id @default(cuid())
   name              String
+  gender            String?
   parentId          String // Reference to auth service Parent.id
   childId           String   @unique // Reference to auth service Child.id
   ageGroupId        String // Reference to content service AgeGroup.id
@@ -26,13 +27,55 @@ model ChildProfile {
   currentLevel      Int      @default(1)
   totalStars        Int      @default(0)
 
-  progress                    Progress[]
-  badges                      ChildBadge[]
+  storytelling StorytellingProfile?
+
+  progress Progress[]
+  badges   ChildBadge[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([childId])
+}
+
+model StorytellingProfile {
+  id             String       @id @default(cuid())
+  childProfileId String       @unique
+  childProfile   ChildProfile @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
+
+  childName          String
+  childLanguage      String
+  favoriteThemes     String[] // hand picked by the parent during onboarding
+  learningObjectives String[] // optional learning objectives for the AI to focus on
+
+  onboardingCompleted Boolean @default(false)
+  isActive            Boolean @default(true)
+
+  stories StorytellingStory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model StorytellingStory {
+  id                    String              @id @default(cuid())
+  storytellingProfileId String
+  storytellingProfile   StorytellingProfile @relation(fields: [storytellingProfileId], references: [id], onDelete: Cascade)
+  
+
+  // Reference to content service StorytellingStory.id
+  storyId String
+  title   String
+
+
+  status   ProgressStatus @default(NOT_STARTED) // "not_started", "in_progress", "completed"
+  progress Progress?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([storytellingProfileId])
+  @@index([storyId])
 }
 
 enum ProgressStatus {
@@ -47,10 +90,13 @@ model Progress {
   childProfileId String
   childProfile   ChildProfile @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
 
+  storytellingStoryId String?  @unique // Optional reference to StorytellingStory for AI-generated stories
+  storytellingStory   StorytellingStory? @relation(fields: [storytellingStoryId], references: [id], onDelete: Cascade)
+
   // References to content service (string IDs only - no direct FK)
-  roadmapId String // Reference to content service Roadmap.id
-  worldId   String // Reference to content service World.id
-  storyId   String // Reference to content service Story.id
+  roadmapId String? // Reference to content service Roadmap.id
+  worldId   String? // Reference to content service World.id
+  storyId   String? // Reference to content service Story.id
 
   status ProgressStatus @default(NOT_STARTED) // "not_started", "in_progress", "completed"
 

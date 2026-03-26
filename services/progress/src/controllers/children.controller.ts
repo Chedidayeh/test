@@ -10,6 +10,7 @@ import {
   ChallengeStatus,
   ChallengeType,
   SessionCheckpoint,
+  Story,
 } from "@shared/src/types";
 
 export class ChildrenController {
@@ -25,6 +26,7 @@ export class ChildrenController {
         parentEmail,
         parentId,
         name,
+        gender,
         childId,
         ageGroupId,
         ageGroupName,
@@ -38,6 +40,7 @@ export class ChildrenController {
         !parentEmail ||
         !parentId ||
         !name ||
+        !gender ||
         !childId ||
         !ageGroupId ||
         !ageGroupName ||
@@ -48,7 +51,7 @@ export class ChildrenController {
           error: {
             code: "BAD_REQUEST",
             message:
-              "Missing required fields: parentEmail, parentId, name, childId, ageGroupId, badgeId",
+              "Missing required fields: parentEmail, parentId, name, gender, childId, ageGroupId, badgeId",
           },
           timestamp: new Date(),
         });
@@ -59,6 +62,7 @@ export class ChildrenController {
         parentEmail,
         parentId,
         name,
+        gender,
         childId,
         ageGroupId,
         ageGroupName,
@@ -179,6 +183,37 @@ export class ChildrenController {
   }
 
   /**
+   * Fetch all children with storytelling profiles enabled
+   */
+  static async getAllChildrenWithStorytelling(
+    req: Request,
+    res: Response<ApiResponse<ChildProfile[]>>,
+  ): Promise<void> {
+    try {
+      const result = await ChildrenService.getAllChildrenWithStorytelling();
+
+      res.json({
+        success: true,
+        data: result,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error fetching children with storytelling:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "FETCH_ERROR",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to fetch children with storytelling",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  /**
    * Fetch a single child by ID
    */
   static async getChildById(
@@ -288,18 +323,6 @@ export class ChildrenController {
           error: {
             code: "BAD_REQUEST",
             message: "Missing required parameters: childId and storyId",
-          },
-          timestamp: new Date(),
-        });
-        return;
-      }
-
-      if (!worldId || !roadmapId) {
-        res.status(400).json({
-          success: false,
-          error: {
-            code: "BAD_REQUEST",
-            message: "Missing required fields: worldId, roadmapId",
           },
           timestamp: new Date(),
         });
@@ -929,6 +952,113 @@ export class ChildrenController {
             error instanceof Error
               ? error.message
               : "Failed to fetch children statistics",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  /**
+   * Save storytelling profile for a child
+   * Body: { childProfileId, childName, childLanguage, favoriteThemes, learningObjectives, customThemes, otherObjective }
+   */
+  static async saveStorytellingProfile(
+    req: Request,
+    res: Response<ApiResponse<any>>,
+  ): Promise<void> {
+    try {
+      const {
+        childProfileId,
+        childName,
+        childLanguage,
+        favoriteThemes,
+        learningObjectives,
+      } = req.body;
+
+      // Validation
+      if (!childProfileId || !childName || !childLanguage || !Array.isArray(favoriteThemes)) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required fields: childProfileId, childName, childLanguage, favoriteThemes",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      const storytellingProfile = await ChildrenService.saveStorytellingProfile({
+        childProfileId,
+        childName,
+        childLanguage,
+        favoriteThemes,
+        learningObjectives: learningObjectives || [],
+      });
+
+      res.status(200).json({
+        success: true,
+        data: storytellingProfile,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error saving storytelling profile:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "SAVE_ERROR",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to save storytelling profile",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  /**
+   * Update storytelling story for a child
+   * Called after a story is generated and saved to Content Service
+   * Receives the Story object and updates Progress Service tracking
+   */
+  static async updateStorytellingStory(
+    req: Request,
+    res: Response<ApiResponse<any>>,
+  ): Promise<void> {
+    try {
+      const { childId } = req.params;
+      const { story } = req.body;
+
+      if (!childId || !story) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required fields: childId or story",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      const result = await ChildrenService.updateStorytellingStory(childId, story as Story);
+
+      res.status(200).json({
+        success: true,
+        data: result,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error updating storytelling story:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "UPDATE_ERROR",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to update storytelling story",
         },
         timestamp: new Date(),
       });

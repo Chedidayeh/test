@@ -15,12 +15,12 @@ datasource db {
 
 // TTSAudio: stores generated TTS recordings and metadata
 model TTSAudio {
-  id          String   @id @default(cuid())
+  id String @id @default(cuid())
 
   // Optional foreign identifiers (stored as plain IDs so they can reference other services)
-  storyId     String?  // ID of the story this audio is for
-  chapterId   String?  // ID of the chapter this audio is for
-  challengeId String?  // ID of the challenge this audio is for (if applicable)
+  storyId     String? // ID of the story this audio is for
+  chapterId   String? // ID of the chapter this audio is for
+  challengeId String? // ID of the challenge this audio is for (if applicable)
 
   // TTS metadata
   languageCode String?
@@ -28,16 +28,16 @@ model TTSAudio {
   prompt       String?
 
   // Location of the stored audio file (URL or path)
-  audioUrl     String
-  mimeType     String  @default("audio/wav")
+  audioUrl String
+  mimeType String @default("audio/wav")
 
   // Optional technical metadata
-  durationMs   Int?
-  sizeBytes    Int?
+  durationMs Int?
+  sizeBytes  Int?
 
   // When the audio was generated and recorded
-  generatedAt  DateTime @default(now())
-  createdAt    DateTime @default(now())
+  generatedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
 
   @@index([storyId])
   @@index([chapterId])
@@ -49,12 +49,12 @@ model LLMValidationResult {
   id String @id @default(cuid())
 
   // References to other services (stored as plain IDs)
-  storyId             String  // ID of the story this validation is for
-  chapterId           String  // ID of the chapter this validation is for
-  challengeAttemptId  String  // ID of the challenge attempt from progress service
-  attemptActionId     String? // Optional reference to attempt action ID from progress service
+  storyId            String // ID of the story this validation is for
+  chapterId          String // ID of the chapter this validation is for
+  challengeAttemptId String // ID of the challenge attempt from progress service
+  attemptActionId    String? // Optional reference to attempt action ID from progress service
 
-  childAnswer        String
+  childAnswer String
 
   // LLM validation data
   correct    Boolean // Whether the child's answer was correct
@@ -84,18 +84,9 @@ model AIProgressInsight {
   periodStart DateTime
   periodEnd   DateTime
 
-  // Reading assessment
-  readingLevel String // BEGINNER | EASY | MEDIUM | HARD | ADVANCED
-  engagementScore Int // 0-100 percentage
-
-  // All insights data stored as JSON
-  // Structure: { strengths: string[], weaknesses: string[], recommendations: Recommendation[], tips: string[] }
-  insights Json
-
-  // All metrics data stored as JSON
-  // Structure: { totalStoriesCompleted, totalChallengesAttempted, totalChallengesSolved, 
-  //             successRate, averageAttemptsPerChallenge, hintDependencyRate, starAchievementRate }
-  metrics Json
+  // Full report data: structured JSON containing summary, metrics, insights, and recommendations
+  // Structure: { summary, metrics, insights, recommendations, metadata }
+  reportData Json?
 
   // Audit trail
   createdAt DateTime @default(now())
@@ -105,4 +96,441 @@ model AIProgressInsight {
   @@index([childId])
   @@index([periodStart])
   @@index([periodEnd])
+}
+
+// ============================================================================
+// CHILD PROFILE WITH SKILL TRACKING
+// ============================================================================
+
+model ChildProfile {
+  id      String @id @default(uuid())
+  childId String @unique // Reference to progress service
+
+  name String
+  age  String // 6-12 typically
+  gender String?
+
+  interests      String[]
+  objectives     String[]
+  favoriteThemes String[]
+
+  // ISSUE 5 FIX: Rich skill tracking with history
+  skillScores  SkillScore[] // Current scores
+  skillHistory SkillHistory[] // Track progression over time
+
+  readingLevel    Int    @default(1) // 1-5 scale
+  engagementStyle String @default("interactive")
+
+  // Linguistic constraints (for prompt calibration)
+  avg_sentence_length Int @default(12) // Target words per sentence
+  target_vocab_level  Int @default(2) // 1-5 Flesch-Kincaid grade
+
+  // Relations
+  storyPlan        StoryPlan?
+  generatedStories GeneratedStory[]
+  narrativeMemory  NarrativeMemory?        @relation(fields: [narrativeMemoryId], references: [id])
+  performanceEvals PerformanceEvaluation[]
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  narrativeMemoryId String?
+
+  @@index([childId])
+}
+
+// ISSUE 5 FIX: Current skill scores
+model SkillScore {
+  id             String       @id @default(uuid())
+  childProfileId String
+  childProfile   ChildProfile @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
+
+  skillName  String // "logic", "vocabulary", "comprehension"
+  score      Float  @default(0.5) // 0.0-1.0
+  confidence Float  @default(0.3) // How confident in this score
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([childProfileId, skillName])
+  @@index([childProfileId])
+}
+
+// ISSUE 5 FIX: Skill progression tracking
+model SkillHistory {
+  id             String       @id @default(uuid())
+  childProfileId String
+  childProfile   ChildProfile @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
+
+  skillName String
+  score     Float
+  week      Int // Which week this was recorded
+
+  createdAt DateTime @default(now())
+
+  @@index([childProfileId, skillName])
+}
+
+// ============================================================================
+// STORY PLANNING WITH EXTENSION LOGIC
+// ============================================================================
+
+model StoryPlan {
+  id             String       @id @default(uuid())
+  childProfileId String       @unique
+  childProfile   ChildProfile @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
+
+  globalGoal       String
+  antagonist       String?
+  progressionStyle String  @default("linear")
+
+  // ISSUE 6 FIX: Track plan extension state
+  version                  Int @default(1) // Increment on each extension
+  estimatedTotalWorlds     Int @default(0)
+  estimatedStoriesPerWorld Int @default(8)
+
+  currentWorldIndex Int @default(0)
+  currentStoryIndex Int @default(0)
+
+  // ISSUE 6 FIX: Explicit extension logic
+  nextExtensionPoint Int? // Story count at which to extend
+  lastExtendedAt     DateTime?
+  isExtensionPending Boolean   @default(false)
+
+  // PHASE 1: Plan Versioning & History Tracking
+  // Links all versions together for continuous child journey
+  planVersionChainId String?  // Links all versions of same child's plans (UUID of first plan in chain)
+  previousPlanId     String?  // Direct parent plan reference (for quick access)
+  planVersion        Int      @default(1) // Version number within chain (1, 2, 3...)
+  planStatus         String   @default("generating") // "generating" | "active" | "completed" | "archived"
+
+  // Completion tracking
+  completedAt        DateTime? // When plan reached 100% completion
+  completedPercentage Float    @default(0) // 0-100 tracking
+
+  // Context from previous plan for continuity
+  previousPlanContext Json? // Captured PlanContext: themes, objectives, skills, difficulty progression
+  previousPlanSummary String? // Human-readable summary of what was taught
+
+  // Relationships
+  worlds        StoryPlanWorld[]
+  history       PlanHistory[] // All lifecycle events for this plan
+  nextVersions  StoryPlan[]   @relation("plan_chain") // Plans that came after this one
+  previousPlan  StoryPlan?    @relation("plan_chain", fields: [previousPlanId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isExtensionPending])
+  @@index([planVersionChainId])
+  @@index([planStatus])
+  @@index([completedAt])
+  @@index([childProfileId, planVersion])
+}
+
+// PHASE 1: Plan versioning history - tracks all lifecycle events
+model PlanHistory {
+  id String @id @default(uuid())
+
+  storyPlanId String
+  storyPlan   StoryPlan @relation(fields: [storyPlanId], references: [id], onDelete: Cascade)
+
+  // Event type and description
+  event       String  // "created" | "completed" | "extended" | "regenerated" | "archived"
+  description String  // Human-readable event description
+  
+  // Optional metadata about the event
+  metadata    Json? // Additional context (e.g., reason for completion, extension stats)
+
+  // When this event occurred
+  timestamp DateTime @default(now())
+
+  @@index([storyPlanId])
+  @@index([event, timestamp])
+  @@index([timestamp])
+}
+
+// ISSUE 7 FIX: Enforce strict ordering
+model StoryPlanWorld {
+  id          String    @id @default(uuid())
+  storyPlanId String
+  storyPlan   StoryPlan @relation(fields: [storyPlanId], references: [id], onDelete: Cascade)
+
+  // ISSUE 7 FIX: Ordered sequence
+  order Int // 0, 1, 2... (strict ordering)
+
+  theme       String
+  title       String
+  description String
+  atmosphere  String
+
+  learningFocus  String[]
+  baseDifficulty Float    @default(1.0) // Base difficulty for this world
+
+  estimatedStoryCount Int @default(8)
+  generatedStoryCount Int @default(0)
+
+  isUnlocked  Boolean @default(false)
+  isCompleted Boolean @default(false)
+
+  stories StoryPlanItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([storyPlanId, order])
+  @@index([storyPlanId, order])
+}
+
+// ISSUE 7 FIX: Strict ordering within world
+model StoryPlanItem {
+  id      String         @id @default(uuid())
+  worldId String
+  world   StoryPlanWorld @relation(fields: [worldId], references: [id], onDelete: Cascade)
+
+  // ISSUE 7 FIX: Enforce sequence
+  sequenceOrder Int // 0, 1, 2... per world
+
+  isCompleted Boolean @default(false)
+
+  title    String
+  summary  String // 150-250 chars
+  storyArc String // "introduction" | "development" | "climax" | "resolution"
+
+  objectives        String[]
+  skillsToReinforce String[]
+  skillsToIntroduce String[]
+
+  // ISSUE 8 FIX: Explicit difficulty constraints
+  baseDifficulty     Float // From world
+  adjustedDifficulty Float? // Adjusted based on child's skill scores
+  targetReadingGrade Int // Flesch-Kincaid grade level
+  maxSentenceLength  Int // Max words per sentence
+
+  status String @default("pending") // "pending" | "generating" | "generated" | "synced"
+
+  dependsOn      String?
+  generatedStory GeneratedStory?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([worldId, sequenceOrder])
+  @@index([worldId, sequenceOrder])
+  @@index([status])
+}
+
+// ============================================================================
+// GENERATED STORIES WITH GENERATION METADATA
+// ============================================================================
+
+model GeneratedStory {
+  id         String        @id @default(uuid())
+  planItemId String        @unique
+  planItem   StoryPlanItem @relation(fields: [planItemId], references: [id], onDelete: Cascade)
+
+  childProfileId String
+  childProfile   ChildProfile @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
+
+  title   String
+  content Json // { chapters: [...] }
+  status  String @default("generated") // "pending" | "generating" | "generated" | "synced"
+
+  // ISSUE 3 FIX: Track what was used to generate
+  generationPromptUsed String? // Full prompt for reproducibility
+  generationModel      String
+  generationTokens     Int?
+
+  objectivesUsed    String[]
+  skillsReinforced  String[]
+  difficultyApplied Float
+
+  // ISSUE 4 FIX: Memory snapshot injected
+  memorySnapshotUsed Json? // What memory was passed to LLM
+
+  // ISSUE 2 FIX: LLM only outputs content, not persistence
+  rawLLMOutput     String? // Store raw output for debugging
+  validationErrors String[] // Any validation issues
+  retryCount       Int      @default(0)
+
+  contentStoryId String?
+  synced         Boolean @default(false)
+  syncError      String?
+
+  generatedAt DateTime  @default(now())
+  syncedAt    DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([childProfileId, status])
+}
+
+// ============================================================================
+// ISSUE 4 FIX: RICH NARRATIVE MEMORY SYSTEM
+// ============================================================================
+
+model NarrativeMemory {
+  id             String @id @default(uuid())
+  childProfileId String @unique
+
+  // Character tracking (richer than v1.0)
+  characters NarrativeCharacter[]
+
+  // World state evolution
+  worldState NarrativeWorldState?
+
+  // Key narrative threads (critical for continuity)
+  narrativeThreads NarrativeThread[]
+
+  // Previous story references
+  storyHistory NarrativeStoryRef[]
+
+  lastUpdated  DateTime       @default(now())
+  ChildProfile ChildProfile[]
+
+  @@index([childProfileId])
+}
+
+// ISSUE 4 FIX: Character persistence
+model NarrativeCharacter {
+  id       String          @id @default(uuid())
+  memoryId String
+  memory   NarrativeMemory @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+
+  name            String
+  role            String // "protagonist", "mentor", "antagonist", etc.
+  firstAppearance Int // Story index
+  appearances     Int[] // Which stories they appear in
+
+  // Character evolution
+  personality     String // Traits
+  relationships   Json // { characterName: relationship }
+  emotionalTrials String[] // What they've been through
+
+  lastSeenStory Int? // Most recent appearance
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([memoryId, name])
+}
+
+// ISSUE 4 FIX: World state tracking
+model NarrativeWorldState {
+  id       String          @id @default(uuid())
+  memoryId String          @unique
+  memory   NarrativeMemory @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+
+  locations   Json // { name: { description, discovered_in_story, importance } }
+  discoveries Json // { item: { description, significance, uses } }
+  conflicts   Json // Unresolved conflicts that drive future stories
+  rules       Json // World rules established (magic system, etc.)
+
+  lastUpdated DateTime @default(now())
+}
+
+// ISSUE 4 FIX: Narrative threads
+model NarrativeThread {
+  id       String          @id @default(uuid())
+  memoryId String
+  memory   NarrativeMemory @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+
+  name              String // "The mystery of the lost artifact"
+  introducedInStory Int
+  status            String // "active" | "resolved" | "foreshadowed"
+
+  description    String // What the thread is about
+  keyEvents      String[] // Events that advanced this thread
+  resolutionGoal String? // How it should resolve
+
+  @@index([memoryId, status])
+}
+
+// ISSUE 4 FIX: Story reference history
+model NarrativeStoryRef {
+  id       String          @id @default(uuid())
+  memoryId String
+  memory   NarrativeMemory @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+
+  storyIndex    Int
+  title         String
+  summary       String
+  keyEvents     String[]
+  emotionalTone String // "tense", "joyful", "mysterious", etc.
+
+  createdAt DateTime @default(now())
+
+  @@index([memoryId, storyIndex])
+}
+
+// ============================================================================
+// ISSUE 5 FIX: PERFORMANCE-BASED SKILL UPDATE TRACKING
+// ============================================================================
+
+model PerformanceEvaluation {
+  id             String       @id @default(uuid())
+  childProfileId String
+  childProfile   ChildProfile @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
+
+  storyId String // Reference to generated story
+
+  // Challenge performance
+  totalChallenges  Int
+  correctAnswers   Int
+  incorrectAnswers Int
+  hintUsageCount   Int
+
+  // Skill assessments
+  skillsAssessed Json // { skill: { score, confidence } }
+
+  // Recommendations
+  suggestedDifficultyAdjustment Float? // -0.5 to +0.5
+  skillsThatNeedWork            String[]
+  skillsThatExcel               String[]
+
+  evaluatedAt DateTime @default(now())
+
+  @@index([childProfileId, evaluatedAt])
+}
+
+// ============================================================================
+// GENERATION ROBUSTNESS TRACKING
+// ============================================================================
+
+model GenerationAttempt {
+  id String @id @default(uuid())
+
+  planItemId     String
+  childProfileId String
+
+  attemptNumber Int // 1, 2, 3...
+  status        String // "success" | "validation_error" | "timeout" | "llm_error"
+
+  error            String? // Error message if failed
+  validationErrors String[]
+
+  executionTimeMs Int
+  tokensUsed      Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([planItemId, attemptNumber])
+  @@index([status, createdAt])
+}
+
+// Memory archive (optional, for tracking evolution)
+model StoryMemory {
+  id             String @id @default(uuid())
+  childProfileId String
+
+  // Key events from all stories
+  keyEvents Json // [{ storyId, event, timestamp }]
+
+  // Recurring characters
+  characters Json // [{ name, firstSeen, appearances }]
+
+  // World state evolution
+  worldState Json // { theme, locations, discoveries }
+
+  lastUpdated DateTime @default(now())
+
+  @@index([childProfileId])
 }

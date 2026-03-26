@@ -41,6 +41,7 @@ model Child {
 
     // Basic child profile
     name      String
+    gender    String?
     loginCode String? @unique
     avatar    String?
     ageGroup  String  // reference to content service age group

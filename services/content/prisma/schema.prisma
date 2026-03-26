@@ -166,14 +166,16 @@ model WorldTranslation {
 // Story: Individual story within a world
 model Story {
   id      String @id @default(cuid())
-  worldId String
-  world   World  @relation(fields: [worldId], references: [id], onDelete: Cascade)
+  worldId String?
+  world   World?  @relation(fields: [worldId], references: [id], onDelete: Cascade)
 
   title       String
   description String?
-  difficulty  Int // 1-5 difficulty scale
+  difficulty  Int? // 1-5 difficulty scale
   order       Int // Order in world
 
+  isStorytellingStory Boolean @default(false) // Flag to identify AI-generated storytelling stories
+  generatedStoryId String? //  reference to the original generated story ID from AI Service
   translations StoryTranslation[]
 
   chapters Chapter[]

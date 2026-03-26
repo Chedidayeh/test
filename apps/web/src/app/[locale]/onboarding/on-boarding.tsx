@@ -50,7 +50,7 @@ export default function ParentOnboarding({
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<{
-    childBasic: { childName?: string; childAge?: string };
+    childBasic: { childName?: string; childAge?: string; childGender?: string };
     childPreferences: { favoriteThemes?: string[] };
   }>({
     childBasic: {},
@@ -79,11 +79,12 @@ export default function ParentOnboarding({
       .refine((v) => ageGroups.some((ag) => ag.id === v), {
         message: t("invalidAgeGroup"),
       }),
+    childGender: z.string().min(1, t("selectGender") || "Please select a gender"),
   });
 
   const childBasicForm = useForm({
     resolver: zodResolver(childBasicSchema),
-    defaultValues: { childName: "", childAge: "" },
+    defaultValues: { childName: "", childAge: "", childGender: "" },
   });
 
   // Step 2: Child Preferences (Themes)
@@ -119,7 +120,8 @@ export default function ParentOnboarding({
       if (
         !user.email ||
         !formData.childBasic.childName ||
-        !formData.childBasic.childAge
+        !formData.childBasic.childAge ||
+        !formData.childBasic.childGender
       ) {
         toast.error(t("missingRequired"));
         setIsLoading(false);
@@ -146,6 +148,7 @@ export default function ParentOnboarding({
         parentEmail: user.email,
         parentId: user.id,
         name: formData.childBasic.childName,
+        gender: formData.childBasic.childGender,
         ageGroupId,
         ageGroupName,
         themeIds,
@@ -325,6 +328,49 @@ export default function ParentOnboarding({
                       </FieldDescription>
                     )}
                   </Field>
+
+                  <Field>
+                    {/* <FieldLabel>{t("genderLabel")}</FieldLabel> */}
+                    <Controller
+                      control={childBasicForm.control}
+                      name="childGender"
+                      render={({ field }) => (
+                        <div className="grid grid-cols-3 gap-3">
+                          {["boy", "girl"].map((option) => (
+                            <label
+                              key={option}
+                              className={`flex items-center justify-center p-3 border rounded-lg cursor-pointer transition-all ${
+                                field.value === option
+                                  ? option === "boy"
+                                    ? "border-sky-500 bg-sky-500/10"
+                                    : option === "girl"
+                                    ? "border-rose-500 bg-rose-500/10"
+                                    : "border-primary bg-primary/10"
+                                  : "border-muted hover:border-primary/50"
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name="childGender"
+                                value={option}
+                                checked={field.value === option}
+                                onChange={() => field.onChange(option)}
+                                className="hidden"
+                              />
+                              <span className="font-medium text-sm capitalize">
+                                {t(`gender.${option}`) || option}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    />
+                    {childBasicForm.formState.errors.childGender && (
+                      <FieldDescription className="text-destructive">
+                        {childBasicForm.formState.errors.childGender.message}
+                      </FieldDescription>
+                    )}
+                  </Field>
                 </FieldGroup>
 
                 <div className="flex flex-col sm:flex-row gap-3 mt-6 sm:mt-8">
@@ -487,6 +533,13 @@ export default function ParentOnboarding({
                       );
                       return translation?.name || selectedAgeGroup?.name;
                     })()}
+                  </span>
+                </p>
+                <p className="text-muted-foreground text-sm">
+                  {t("genderLabel") || "Gender"}:{" "}
+                  <span className="font-medium text-foreground capitalize">
+                    {t(`gender.${formData.childBasic.childGender}`) ||
+                      formData.childBasic.childGender}
                   </span>
                 </p>
 

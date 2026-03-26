@@ -203,15 +203,15 @@ export class AuthController {
    */
   async createChildProfile(req: Request, res: Response<ApiResponse<Child>>): Promise<void> {
     try {
-      const { parentEmail, name, ageGroupId, themeIds } = req.body;
+      const { parentEmail, name, gender, ageGroupId, themeIds } = req.body;
 
       // Validation
-      if (!parentEmail || !name || !ageGroupId) {
+      if (!parentEmail || !name || !gender || !ageGroupId) {
         res.status(400).json({
           success: false,
           error: {
             code: "BAD_REQUEST",
-            message: "Missing required fields: parentEmail, name, ageGroupId",
+            message: "Missing required fields: parentEmail, name, gender, ageGroupId",
           },
           timestamp: new Date(),
         } as ApiResponse<Child>);
@@ -239,6 +239,7 @@ export class AuthController {
       const child = await userService.createChildProfile(
         parent.id,
         name,
+        gender,
         ageGroupId,
         childLoginCode,
         themeIds

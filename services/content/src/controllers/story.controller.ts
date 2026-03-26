@@ -15,6 +15,7 @@ import {
 import {
   ApiResponse,
   CreateStoryWithChaptersInput,
+  GeneratedStory,
   Story,
 } from "@shared/src/types";
 
@@ -424,6 +425,62 @@ export class StoryController {
         error instanceof Error ? error.message : String(error),
         500,
         "Failed to execute story translations",
+      );
+    }
+  }
+
+  /**
+   * Create a storytelling story from AI Service generated story
+   * Receives a GeneratedStory object and creates story with chapters atomically
+   * IMPORTANT: The GeneratedStory.content contains { chapters: [...] } structure
+   */
+  async createStorytellingStory(
+    req: Request,
+    res: Response<ApiResponse<Story>>,
+  ): Promise<void> {
+    try {
+      const { generatedStory } = req.body;
+
+      logger.info("Create storytelling story request", {
+        storyId: generatedStory?.id,
+        storyTitle: generatedStory?.title,
+        worldId: generatedStory?.planItem?.world?.id,
+      });
+
+      // Validate generated story object
+      if (!generatedStory) {
+        sendError(res, "generatedStory object is required in request body", 400);
+        return;
+      }
+
+      if (!generatedStory.id || !generatedStory.title || !generatedStory.content) {
+        sendError(
+          res,
+          "Generated story must have id, title, and content",
+          400,
+        );
+        return;
+      }
+
+      // Use service to create story from generated story
+      const story = await storyService.createStoryFromGeneratedStory(generatedStory as GeneratedStory);
+
+      logger.info("Storytelling story created successfully", {
+        storyId: story.id,
+        aiGeneratedStoryId: generatedStory.id,
+        chaptersCreated: story.chapters.length,
+      });
+
+      sendSuccess(res, story, 201);
+    } catch (error) {
+      logger.error("Error in createStorytellingStory controller", {
+        error: String(error),
+      });
+      sendError(
+        res,
+        error instanceof Error ? error.message : String(error),
+        500,
+        "Failed to create storytelling story",
       );
     }
   }

@@ -89,7 +89,8 @@
 			"achievements": "Réalisations",
 			"aiInsights": "Aperçus IA",
 			"riddleStatistics": "Statistiques des énigmes",
-			"timeAnalytics": "Analyse du temps"
+			"timeAnalytics": "Analyse du temps",
+			"childStorytelling": "Histoires personnalisées"
 		},
 		"overview": {
 			"welcome": "Bon retour, {name} ! 👋",
@@ -246,6 +247,14 @@
 				"showing": "Affichage"
 			},
 			"noActivityMessage": "Aucune activité de lecture pour le moment. Commencez à jouer pour voir les statistiques !"
+		},
+		"childStorytelling": {
+			"activated": "Activé",
+			"title": "Récit d'histoire pour l'enfant",
+			"description": "Créez des histoires personnalisées mettant en vedette {childName} comme héros ! Aventures adaptées en fonction de leurs centres d'intérêt et de leur parcours de lecture.",
+			"dashboardButton": "Tableau de bord de {childName} →",
+			"activateOption": "Activer le récit d'histoire pour {childName} →",
+			"storytellingDashboard": "Tableau de bord du récit d'histoire de {childName}"
 		}
 	},
 	"ChildDashboard": {
@@ -317,6 +326,16 @@
 					"startReading": "Commencer la lecture"
 				}
 			}
+		},
+		"storytelling": {
+			"title": "Histoires hebdomadaires",
+			"status": {
+				"completed": "Terminé",
+				"inProgress": "En cours",
+				"notStarted": "Non commencé"
+			},
+			"generatedDate": "Généré le",
+			"viewAll": "Voir toutes les histoires"
 		}
 	},
 	"RoadmapsLibrary": {
@@ -454,7 +473,76 @@
 		"selectAgeGroup": "Veuillez sélectionner une tranche d'âge pour votre enfant",
 		"invalidAgeGroup": "La tranche d'âge sélectionnée est invalide",
 		"selectAtLeastOneTheme": "Sélectionnez au moins un thème",
+		"stepOf": "Étape {step} sur {total}",
+		"genderLabel": "Genre de l'enfant",
+		"selectGender": "Veuillez sélectionner un genre",
+		"gender": {
+			"boy": "Garçon",
+			"girl": "Fille"
+		}
+	},
+	"OnboardingStorytelling": {
+		"Arabic": "Arabe",
+		"English": "Anglais",
+		"French": "Français",
+		"titleStep1": "Bienvenue ! Parlez-nous de votre enfant",
+		"titleStep2": "Quels sont les intérêts de votre enfant ?",
+		"titleStep3": "Quels progrès souhaitez-vous pour votre enfant ?",
+		"titleStep4": "Vérification et confirmation",
+		"descStep1": "Dites-nous le nom de votre enfant (ou surnom) - il sera présenté dans ses histoires personnalisées !",
+		"descStep2": "Sélectionnez des thèmes pour que les histoires soient engageantes et personnalisées.",
+		"descStep3": "Choisissez les objectifs d'apprentissage alignés sur vos attentes.",
+		"descStep4": "Vérifiez toutes les informations avant de créer le profil.",
+		"childNameLabel": "Nom de l'enfant (ou surnom)",
+		"childNamePlaceholder": "par ex. Emma ou un surnom,",
+		"childNameDesc": "Ce nom apparaîtra comme personnage principal dans les histoires générées de votre enfant",
+		"childLanguageLabel": "Langue préférée pour les histoires",
+		"selectLanguagePlaceholder": "Sélectionnez une langue",
+		"selectLanguageRequired": "Veuillez sélectionner une langue pour les histoires de votre enfant",
+		"ageGroupLabel": "Tranche d'âge",
+		"ageGroupPlaceholder": "Sélectionnez une tranche d'âge",
+		"availableThemesEmpty": "Aucun thème disponible",
+		"favoriteThemesLabel": "Thèmes préférés",
+		"selectAllApply": "Sélectionnez tout ce qui s'applique",
+		"addCustomThemePlaceholder": "Ajouter un thème personnalisé pour votre enfant...",
+		"learningObjectivesLabel": "Objectifs d'apprentissage",
+		"selectObjectivesDesc": "Choisissez ce que vous aimeriez que votre enfant améliore",
+		"selectAtLeastOneObjective": "Sélectionnez au moins un objectif d'apprentissage",
+		"objective_thinking": "Pensée et résolution de problèmes",
+		"objective_reading": "Lecture et compréhension des histoires",
+		"objective_vocabulary": "Apprentissage de nouveaux mots",
+		"objective_focus": "Concentration et attention",
+		"objective_confidence": "Confiance et prise de décision",
+		"objective_social": "Compétences sociales et empathie",
+		"objective_other": "Autre (veuillez préciser)",
+		"otherObjectivePlaceholder": "Décrivez ce que vous aimeriez que votre enfant améliore",
+		"cancel": "Annuler",
+		"next": "Suivant",
+		"previous": "Précédent",
+		"creatingProfile": "Création du profil...",
+		"createProfile": "Créer le profil",
+		"settingUp": "Configuration...",
+		"startExploring": "Commencer à explorer",
+		"missingRequired": "Informations requises manquantes",
+		"childCreated": "Profil de l'enfant créé avec succès !",
+		"onboardingError": "Une erreur s'est produite lors de l'intégration",
+		"childNameRequired": "Le nom de l'enfant est requis",
+		"selectAgeGroup": "Veuillez sélectionner une tranche d'âge pour votre enfant",
+		"invalidAgeGroup": "La tranche d'âge sélectionnée est invalide",
+		"selectAtLeastOneTheme": "Sélectionnez au moins un thème",
 		"stepOf": "Étape {step} sur {total}"
+	},
+	"AiStorytellingIntro": {
+		"title": " Histoires personnalisées pour votre enfant",
+		"subtitle": "Créez des aventures personnalisées où votre enfant est le héros",
+		"feature1Title": " Histoires personnalisées",
+		"feature1Desc": "Chaque semaine, de nouvelles histoires mettant en vedette votre enfant comme personnage principal",
+		"feature2Title": " Objectifs d'apprentissage",
+		"feature2Desc": "Des histoires alignées sur les compétences que vous souhaitez développer chez votre enfant",
+		"feature3Title": " Aventures captivantes",
+		"feature3Desc": "Défis interactifs pour atteindre les objectifs et renforcer la confiance",
+		"mainDescription": "Votre enfant embarquera chaque semaine dans des aventures où il est le héros ! Les histoires sont adaptées à ses intérêts et conçues pour l'aider à atteindre vos objectifs d'apprentissage choisis. Regardez-le grandir en confiance, élargir son vocabulaire et développer sa pensée critique—tout par la joie de la lecture.",
+		"continueButton": "Continuer vers la configuration"
 	},
 	"StoryReadingInterface": {
 		"saving": "Enregistrement...",

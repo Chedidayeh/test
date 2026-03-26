@@ -89,7 +89,8 @@
 			"achievements": "Achievements",
 			"aiInsights": "AI Insights",
 			"riddleStatistics": "Riddle Statistics",
-			"timeAnalytics": "Time Analytics"
+			"timeAnalytics": "Time Analytics",
+			"childStorytelling": "Child Storytelling"
 		},
 		"overview": {
 			"welcome": "Welcome back, {name}! 👋",
@@ -110,7 +111,7 @@
 		"achievements": {
 			"title": "Badges & Achievements",
 			"unlockedSummary": "Unlocked {unlocked} of {total} badges for {childName}",
-			"dashboardButton": "{childName} dashboard →",
+			"dashboardButton": "{childName}'s dashboard →",
 			"emptyTitle": "🏆",
 			"emptyMessage": "No badges yet. Check back later for more achievements!",
 			"locked": {
@@ -246,6 +247,14 @@
 				"showing": "Showing"
 			},
 			"noActivityMessage": "No reading activity yet. Start playing to see reading statistics!"
+		},
+		"childStorytelling": {
+			"activated": "Activated",
+			"title": "Child Storytelling",
+			"description": "Create personalized stories featuring {childName} as the hero! Tailored adventures based on their interests and reading journey.",
+			"dashboardButton": "{childName}'s dashboard →",
+			"activateOption": "Activate Storytelling for {childName} →",
+			"storytellingDashboard": "{childName}'s Storytelling Dashboard"
 		}
 	},
 	"ChildDashboard": {
@@ -319,6 +328,16 @@
 					"startReading": "Start Reading"
 				}
 			}
+		},
+		"storytelling": {
+			"title": "Weekly Stories",
+			"status": {
+				"completed": "Completed",
+				"inProgress": "In Progress",
+				"notStarted": "Not Started"
+			},
+			"generatedDate": "Generated on",
+			"viewAll": "View All Stories"
 		}
 	},
 	"RoadmapsLibrary": {
@@ -456,7 +475,76 @@
 		"selectAgeGroup": "Please select an age group for your child",
 		"invalidAgeGroup": "Selected age group is invalid",
 		"selectAtLeastOneTheme": "Select at least one theme",
+		"stepOf": "Step {step} of {total}",
+		"genderLabel": "Child's Gender",
+		"selectGender": "Please select a gender",
+		"gender": {
+			"boy": "Boy",
+			"girl": "Girl"
+		}
+	},
+	"OnboardingStorytelling": {
+		"Arabic": "Arabic",
+		"English": "English",
+		"French": "French",
+		"titleStep1": "Welcome! Let's get to know your child",
+		"titleStep2": "What interests does your child have?",
+		"titleStep3": "What would you like your child to improve?",
+		"titleStep4": "Review & Confirm",
+		"descStep1": "Tell us your child's name (or nickname) - it will be featured in their personalized stories!",
+		"descStep2": "Select themes to make stories engaging and personalized.",
+		"descStep3": "Choose learning goals that align with your expectations.",
+		"descStep4": "Review all information before creating the profile.",
+		"childNameLabel": "Child's Name (or Nickname)",
+		"childNamePlaceholder": "e.g., Emma or nickname",
+		"childNameDesc": "This name will appear as the main character in your child's generated stories",
+		"childLanguageLabel": "Preferred Language for Stories",
+		"selectLanguagePlaceholder": "Select a language",
+		"selectLanguageRequired": "Please select a language for your child's stories",
+		"ageGroupLabel": "Age Group",
+		"ageGroupPlaceholder": "Select an age group",
+		"availableThemesEmpty": "No themes available",
+		"favoriteThemesLabel": "Favorite Themes",
+		"selectAllApply": "Select all that apply",
+		"addCustomThemePlaceholder": "Add a custom theme for your child...",
+		"learningObjectivesLabel": "Learning Goals",
+		"selectObjectivesDesc": "Choose what you'd like your child to improve",
+		"selectAtLeastOneObjective": "Select at least one learning goal",
+		"objective_thinking": "Thinking & problem solving",
+		"objective_reading": "Reading and understanding stories",
+		"objective_vocabulary": "Learning new words",
+		"objective_focus": "Focus and attention",
+		"objective_confidence": "Confidence and decision making",
+		"objective_social": "Social skills and empathy",
+		"objective_other": "Other (please specify)",
+		"otherObjectivePlaceholder": "Describe what you'd like your child to improve",
+		"cancel": "Cancel",
+		"next": "Next",
+		"previous": "Previous",
+		"creatingProfile": "Creating profile...",
+		"createProfile": "Create Profile",
+		"settingUp": "Setting up...",
+		"startExploring": "Start Exploring",
+		"missingRequired": "Missing required information",
+		"childCreated": "Child profile created successfully!",
+		"onboardingError": "An error occurred during onboarding",
+		"childNameRequired": "Child name is required",
+		"selectAgeGroup": "Please select an age group for your child",
+		"invalidAgeGroup": "Selected age group is invalid",
+		"selectAtLeastOneTheme": "Select at least one theme",
 		"stepOf": "Step {step} of {total}"
+	},
+	"AiStorytellingIntro": {
+		"title": " Weekly Generated Stories",
+		"subtitle": "Create personalized adventures where your child is the hero",
+		"feature1Title": " Personalized Stories",
+		"feature1Desc": "Each week, new stories featuring your child as the main character",
+		"feature2Title": " Learning Goals",
+		"feature2Desc": "Stories aligned with the skills you want your child to develop",
+		"feature3Title": " Engaging Adventures",
+		"feature3Desc": "Interactive challenges to reach objectives and build confidence",
+		"mainDescription": "Your child will embark on weekly adventures where they're the hero! Stories are tailored to their interests and designed to help them reach your chosen learning objectives. Watch as they grow in confidence, expand their vocabulary, and develop critical thinking skills—all through the joy of reading.",
+		"continueButton": "Continue to Setup"
 	},
 	"StoryReadingInterface": {
 		"saving": "Saving...",

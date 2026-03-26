@@ -13,6 +13,11 @@ router.get("/children/all", (req, res) =>
   ChildrenController.getAllChildren(req, res),
 );
 
+// Get all children with storytelling profiles
+router.get("/children/storytelling-all", (req, res) =>
+  ChildrenController.getAllChildrenWithStorytelling(req, res),
+);
+
 // Get all children with pagination
 router.get("/children", (req, res) =>
   ChildrenController.getAllChildrenWithPagination(req, res),
@@ -83,6 +88,17 @@ router.post("/children/:childId/badges", (req, res) =>
 // Allocate roadmap to child
 router.post("/children/:childId/allocate-roadmap", (req, res) =>
   ChildrenController.allocateRoadmapToChild(req, res),
+);
+
+// Storytelling endpoints
+// Save storytelling profile for a child
+router.post("/storytelling/profile", (req, res) =>
+  ChildrenController.saveStorytellingProfile(req, res),
+);
+
+// Update storytelling story for a child (after story generation)
+router.put("/children/:childId/storytelling/update", (req, res) =>
+  ChildrenController.updateStorytellingStory(req, res),
 );
 
 export default router;

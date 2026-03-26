@@ -7,7 +7,7 @@
  * Pattern follows progress-service/server-api.ts for consistency.
  */
 
-import type { ApiResponse, AIProgressInsight } from "@readdly/shared-types";
+import type { ApiResponse } from "@readdly/shared-types";
 import { apiRequest, isApiError } from "../helpers";
 
 /**
@@ -33,6 +33,18 @@ export interface LLMValidationResult {
   reason: string; // Short explanation of validation
   message: string; // Child-friendly message to display
 }
+
+/**
+ * Request payload for generating personalized storytelling for a child
+ */
+export interface GenerateStorytellingRequest {
+  childProfileId: string; // ID of the child profile
+  name: string; // Child's name
+  childLanguage: string; // Child's preferred language code (en, fr, ar)
+  favoriteThemes: string[]; // Array of favorite theme names
+  learningObjectives: string[]; // Array of learning objectives
+}
+
 
 /**
  * Validate a child's answer using LLM
@@ -111,6 +123,79 @@ export async function validateAnswer(
 }
 
 /**
+ * Generate personalized storytelling profile for a child
+ * Calls the gateway to save storytelling preferences and initiate story generation
+ *
+ * @param request - Storytelling generation request data
+ * @returns Storytelling generation result or null if generation fails
+ *
+ * @example
+ * const result = await generateStorytelling({
+ *   childProfileId: "child-123",
+ *   name: "Alice",
+ *   childLanguage: "en",
+ *   favoriteThemes: ["Fantasy", "Adventure"],
+ *   learningObjectives: ["Reading comprehension", "Vocabulary"]
+ * });
+ * if (result) {
+ *   console.log("Profile created:", result.storytellingProfile.id);
+ *   console.log("Message:", result.message);
+ * }
+ */
+export async function generateStorytelling(
+  request: GenerateStorytellingRequest,
+) {
+  try {
+    console.log("[AI Service API] Generating storytelling profile:", {
+      childProfileId: request.childProfileId,
+      name: request.name,
+      childLanguage: request.childLanguage,
+      favoriteThemesCount: request.favoriteThemes.length,
+      objectivesCount: request.learningObjectives.length,
+    });
+
+    const response = await apiRequest(
+      `/generate-storytelling`,
+      {
+        method: "POST",
+        body: JSON.stringify(request),
+      },
+    );
+
+    if (isApiError(response)) {
+      console.warn(
+        "[AI Service API] Failed to generate storytelling:",
+        response.error.message,
+      );
+      return null;
+    }
+
+    if (!response.success) {
+      console.warn(
+        "[AI Service API] Failed to generate storytelling: API returned success=false",
+      );
+      return null;
+    }
+
+    console.log(
+      "[AI Service API] Storytelling profile generated successfully:",
+      {
+        childProfileId: request.childProfileId,
+        storyProfileId: response.data?.storytellingProfile.id,
+      },
+    );
+
+    return response.data || null;
+  } catch (error) {
+    console.error(
+      "[AI Service API] Error generating storytelling:",
+      error instanceof Error ? error.message : String(error),
+    );
+    return null;
+  }
+}
+
+/**
  * Fetch all analytics reports for a specific child
  * Calls the AI service through the gateway
  *
@@ -125,47 +210,47 @@ export async function validateAnswer(
  *   console.log("Engagement Score:", insight.engagementScore);
  * });
  */
-export async function getChildAnalytics(
-  childId: string,
-): Promise<AIProgressInsight[]> {
-  try {
-    console.log("[AI Service API] Fetching analytics for child:", { childId });
+// export async function getChildAnalytics(
+//   childId: string,
+// ): Promise<AIProgressInsight[]> {
+//   try {
+//     console.log("[AI Service API] Fetching analytics for child:", { childId });
 
-    const response = await apiRequest<ApiResponse<AIProgressInsight[]>>(
-      `/analytics/${childId}`,
-      {
-        method: "GET",
-      },
-    );
+//     const response = await apiRequest<ApiResponse<AIProgressInsight[]>>(
+//       `/analytics/${childId}`,
+//       {
+//         method: "GET",
+//       },
+//     );
 
-    if (isApiError(response)) {
-      console.warn(
-        "[AI Service API] Failed to fetch analytics:",
-        response.error.message,
-      );
-      return [];
-    }
+//     if (isApiError(response)) {
+//       console.warn(
+//         "[AI Service API] Failed to fetch analytics:",
+//         response.error.message,
+//       );
+//       return [];
+//     }
 
-    if (!response.success) {
-      console.warn(
-        "[AI Service API] Failed to fetch analytics: API returned success=false",
-      );
-      return [];
-    }
+//     if (!response.success) {
+//       console.warn(
+//         "[AI Service API] Failed to fetch analytics: API returned success=false",
+//       );
+//       return [];
+//     }
 
-    console.log("[AI Service API] Analytics fetched successfully:", {
-      childId,
-      recordCount: response.data?.length || 0,
-    });
+//     console.log("[AI Service API] Analytics fetched successfully:", {
+//       childId,
+//       recordCount: response.data?.length || 0,
+//     });
 
-    return response.data || [];
-  } catch (error) {
-    console.error(
-      "[AI Service API] Error fetching analytics:",
-      error instanceof Error ? error.message : String(error),
-    );
-    return [];
-  }
-}
+//     return response.data || [];
+//   } catch (error) {
+//     console.error(
+//       "[AI Service API] Error fetching analytics:",
+//       error instanceof Error ? error.message : String(error),
+//     );
+//     return [];
+//   }
+// }
 
 

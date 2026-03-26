@@ -63,7 +63,7 @@ const ActionCards = ({
     .filter((progress) => progress.status === ProgressStatus.IN_PROGRESS)
     .map((progress) => ({
       progressId: progress.id,
-      storyData: findStoryDetails(progress.storyId),
+      storyData: findStoryDetails(progress.storyId!),
       progress: progress,
     }))
     .filter((item) => item.storyData !== null) as Array<{

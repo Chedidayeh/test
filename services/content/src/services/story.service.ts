@@ -1,6 +1,12 @@
 import { PrismaClient } from "@prisma/client";
 import { logger } from "../utils/logger";
-import type { Story } from "@shared/src/types";
+import type {
+  Chapter,
+  ContentServicePayload,
+  GeneratedStory,
+  Story,
+} from "@shared/src/types";
+import { ChallengeType } from "@shared/src/types";
 import { StoryQuery } from "../types";
 
 export class StoryService {
@@ -42,11 +48,11 @@ export class StoryService {
                 order: true,
                 createdAt: true,
                 updatedAt: true,
-                challenge : true,
+                challenge: true,
               },
             },
             translations: true,
-            world : true,
+            world: true,
           },
           orderBy: { order: "asc" },
           take: limit,
@@ -78,7 +84,7 @@ export class StoryService {
         where: { id: storyId },
         include: {
           world: {
-            include:{roadmap: true}
+            include: { roadmap: true },
           },
           translations: true,
           chapters: {
@@ -88,7 +94,7 @@ export class StoryService {
                 include: {
                   translations: true,
                   answers: {
-                    include:{translations: true,},
+                    include: { translations: true },
                     orderBy: { order: "asc" },
                   },
                 },
@@ -173,7 +179,7 @@ export class StoryService {
         include: {
           translations: true,
           world: {
-            include:{roadmap: true}
+            include: { roadmap: true },
           },
           chapters: {
             include: {
@@ -182,7 +188,7 @@ export class StoryService {
                 include: {
                   translations: true,
                   answers: {
-                    include:{translations: true,},
+                    include: { translations: true },
                     orderBy: { order: "asc" },
                   },
                 },
@@ -227,7 +233,7 @@ export class StoryService {
   async isOrderUsedInWorld(
     worldId: string,
     order: number,
-    excludeStoryId?: string
+    excludeStoryId?: string,
   ): Promise<boolean> {
     try {
       const story = await this.prisma.story.findFirst({
@@ -307,7 +313,7 @@ export class StoryService {
       description: string | null;
       difficulty: number;
       order: number;
-    }>
+    }>,
   ): Promise<Story> {
     try {
       logger.info("Updating story", { storyId });
@@ -334,6 +340,124 @@ export class StoryService {
     } catch (error) {
       logger.error("Error updating story", {
         storyId,
+        error: String(error),
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Create a story from AI Service generated story
+   * Converts GeneratedStory to CreateStoryWithChaptersInput and creates atomically
+   */
+  async createStoryFromGeneratedStory(
+    generatedStory: GeneratedStory,
+  ): Promise<Story> {
+    try {
+      // Validate generated story
+      if (
+        !generatedStory?.id ||
+        !generatedStory?.title ||
+        !generatedStory?.content
+      ) {
+        throw new Error(
+          "Invalid generated story: missing id, title, or content",
+        );
+      }
+
+
+      // Extract chapters from generated story content
+      const storyContent =
+        generatedStory.content as unknown as ContentServicePayload; // Assuming content has chapters array
+      if (!storyContent.chapters || !Array.isArray(storyContent.chapters)) {
+        throw new Error("Generated story content must have chapters array");
+      }
+
+      // Build story creation input from generated story
+      const storyInput = {
+        title: generatedStory.title,
+        description: generatedStory.planItem.summary || null,
+        difficulty: generatedStory.planItem.world.baseDifficulty,
+        order: generatedStory.planItem?.sequenceOrder || 0,
+        chapters: storyContent.chapters.map((chapter) => ({
+          content: chapter.content,
+          order: chapter.order,
+          challenge: chapter.challenge
+            ? {
+                type: chapter.challenge.type,
+                question: chapter.challenge.question,
+                order: 0, // Each chapter has one challenge at order 0
+                hints: chapter.challenge.hints || [],
+                baseStars: chapter.challenge.baseStars || 20,
+                answers: chapter.challenge.answers.map((answer) => ({
+                  text: answer.text,
+                  isCorrect: answer.isCorrect,
+                  order: answer.order,
+                })),
+              }
+            : undefined,
+        })),
+      };
+
+      logger.info("Creating story from generated story", {
+        aiGeneratedStoryId: generatedStory.id,
+        title: storyInput.title,
+        chaptersCount: storyInput.chapters.length,
+      });
+
+      // Create story with all chapters
+      const story = await this.prisma.story.create({
+        data: {
+          title: storyInput.title,
+          description: storyInput.description,
+          order: storyInput.order,
+          difficulty: storyInput.difficulty,
+          isStorytellingStory: true,
+          generatedStoryId: generatedStory.id,
+          chapters: {
+            create: storyInput.chapters.map((chapter) => ({
+              content: chapter.content,
+              order: chapter.order,
+              challenge: chapter.challenge
+                ? {
+                    create: {
+                      type: chapter.challenge.type as ChallengeType,
+                      question: chapter.challenge.question,
+                      order: chapter.challenge.order,
+                      hints: chapter.challenge.hints,
+                      baseStars: chapter.challenge.baseStars,
+                      answers: {
+                        create: chapter.challenge.answers,
+                      },
+                    },
+                  }
+                : undefined,
+            })),
+          },
+        },
+        include: {
+          chapters: {
+            include: {
+              challenge: {
+                include: {
+                  answers: true,
+                },
+              },
+            },
+            orderBy: { order: "asc" },
+          },
+          world: true,
+          translations: true,
+        },
+      });
+
+      logger.info("Story created from generated story successfully", {
+        storyId: story.id,
+      });
+
+      return story as Story;
+    } catch (error) {
+      logger.error("Error creating story from generated story", {
         error: String(error),
       });
       throw error;
@@ -368,7 +492,7 @@ export class StoryService {
         chaptersDeleted: story.chapters.length,
       });
 
-      return true
+      return true;
     } catch (error) {
       logger.error("Error deleting story", {
         storyId,

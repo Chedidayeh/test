@@ -1,11 +1,10 @@
 import { Request, Response } from "express";
 import { logger } from "../../../lib/logger";
-import { AIProgressInsight, ApiResponse, ChildProfile, Story, InsightsReport, AggregatedMetrics } from "@shared/src/types";
-import { metricsAggregationService } from "../services/metrics-aggregation.service";
-import { llmContextBuilderService } from "../services/llm-context-builder.service";
-import { insightsGenerationService } from "../services/insights-generation.service";
-import { insightsPersistenceService } from "../services/insights-persistence.service";
+import { ApiResponse, ChildProfile, Story, ProgressReport } from "@shared/src/types";
 import { PrismaClient } from "@prisma/client";
+import { analyticsValidationService } from "../services/analytics-validation.service";
+import { analyticsDataAggregator } from "../services/analytics-data-aggregator";
+import { generateProgressReport } from "../services/analytics-llm.service";
 
 export class AnalyticsController {
   private prisma: PrismaClient;
@@ -21,17 +20,27 @@ export class AnalyticsController {
    * - childProfile: ChildProfile with all progress data
    * - storiesData: Story[] that the child has read
    *
-   * Current implementation: Extracts and validates the passed data
-   * Next steps: Process data through LangChain for summarization and insight generation
+   * Workflow:
+   * 1. Validate input data (childProfile, storiesData, periods)
+   * 2. Check for duplicate reports
+   * 3. Aggregate metrics from raw data
+   * 4. Fetch historical reports for context
+   * 5. Generate report using LLM
+   * 6. Save report to database
+   * 7. Return response
    */
   async generateAnalytics(
     req: Request,
     res: Response<ApiResponse<any>>,
   ): Promise<void> {
+    const startTime = Date.now();
+
     try {
       const { childProfile, storiesData } = req.body;
 
-      // Validate required fields
+      // ===================================================================
+      // STEP 1: Basic Request Validation
+      // ===================================================================
       if (!childProfile) {
         logger.warn("[Analytics] Missing childProfile in request body");
         res.status(400).json({
@@ -60,7 +69,6 @@ export class AnalyticsController {
         return;
       }
 
-      // Extract data from request
       const child: ChildProfile = childProfile;
       const stories: Story[] = storiesData;
 
@@ -74,250 +82,298 @@ export class AnalyticsController {
       });
 
       // ===================================================================
-      // CHECK: Duplicate Record Prevention
+      // STEP 2: Period Definition and Duplicate Check
       // ===================================================================
-      // Calculate the period metadata (same as insights generation)
       const periodEnd = new Date();
       const periodStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); // 7 days ago
 
-      logger.debug("[Analytics] Checking for existing analytics record", {
+      logger.debug("[Analytics] Defined reporting period", {
         childProfileId: child.id,
         periodStart,
         periodEnd,
+        durationDays: 7,
       });
 
-      // Check if analytics record exists for this child and period
+      // Check if analytics record already exists for this period
       const existingRecord = await this.prisma.aIProgressInsight.findFirst({
         where: {
           childId: child.id,
           periodStart: {
-            gte: new Date(periodStart.getTime() - 60 * 60 * 1000), // Allow 1 hour tolerance for period matching
+            gte: new Date(periodStart.getTime() - 60 * 60 * 1000), // 1 hour tolerance
           },
           periodEnd: {
-            lte: new Date(periodEnd.getTime() + 60 * 60 * 1000), // Allow 1 hour tolerance for period matching
+            lte: new Date(periodEnd.getTime() + 60 * 60 * 1000), // 1 hour tolerance
           },
         },
         orderBy: { createdAt: "desc" },
       });
 
       if (existingRecord) {
-        logger.info("[Analytics] ⏭️  Analytics record already exists for this period", {
-          childProfileId: child.id,
-          childName: child.name,
-          existingRecordId: existingRecord.id,
-          existingRecordCreatedAt: existingRecord.createdAt,
-          periodStart: existingRecord.periodStart,
-          periodEnd: existingRecord.periodEnd,
-        });
+        logger.info(
+          "[Analytics] ⏭️  Duplicate prevention: Report already exists for this period",
+          {
+            childProfileId: child.id,
+            childName: child.name,
+            existingRecordId: existingRecord.id,
+            createdAt: existingRecord.createdAt,
+          },
+        );
 
         res.status(200).json({
           success: true,
           data: {
-            childProfileId: child.id,
-            childName: child.name,
-            message: "Analytics record already exists for this period",
-            skipped: true,
-            existingRecordId: existingRecord.id,
-            readingLevel: existingRecord.readingLevel,
-            engagementScore: existingRecord.engagementScore,
-            periodStart: existingRecord.periodStart,
-            periodEnd: existingRecord.periodEnd,
+            message: "Report already generated for this period",
+            existingReportId: existingRecord.id,
           },
           timestamp: new Date(),
         } as ApiResponse<any>);
         return;
       }
 
-      logger.info("[Analytics] No existing record found, proceeding with analytics generation", {
-        childProfileId: child.id,
-      });
-
-      // Fetch past records for this child to provide context to the LLM
-      const pastRecords = await this.prisma.aIProgressInsight.findMany({
-        where: {
-          childId: child.id,
-        },
-        orderBy: { createdAt: "desc" },
-        take: 10, // Get last 10 records for historical context
-      });
-
-      logger.debug("[Analytics] Retrieved past analytics records for context", {
-        childProfileId: child.id,
-        pastRecordsCount: pastRecords.length,
-        pastRecordsPeriods: pastRecords.map((r) => ({
-          periodStart: r.periodStart,
-          periodEnd: r.periodEnd,
-          readingLevel: r.readingLevel,
-          engagementScore: r.engagementScore,
-        })),
-      });
-
-      if (child.progress && child.progress.length > 0) {
-        logger.debug("[Analytics] Child progress details", {
-          childProfileId: child.id,
-          progressRecords: child.progress.map((p) => ({
-            storyId: p.storyId,
-            status: p.status,
-            totalTimeSpent: p.totalTimeSpent,
-            completedAt: p.completedAt,
-            gameSessionCount: p.gameSession ? 1 : 0,
-          })),
-        });
-      }
-
-      // Log stories details for processing
-      if (stories.length > 0) {
-        logger.debug("[Analytics] Stories data for processing", {
-          childProfileId: child.id,
-          stories: stories.slice(0, 3).map((s) => ({
-            id: s.id,
-            title: s.title,
-            difficulty: s.difficulty,
-            chaptersCount: s.chapters?.length || 0,
-          })),
-          totalStoriesCount: stories.length,
-        });
-      }
-
-      // ===================================================================
-      // STEP 1: Data Validation and Extraction (Completed)
-      // ===================================================================
-      // ✅ Extracted childProfile and storiesData from request
-      // ✅ Validated required fields
-      // ✅ Logged all details for monitoring
-
-      // ===================================================================
-      // STEP 2: Aggregate Metrics
-      // ===================================================================
-      logger.info("[Analytics] Starting metrics aggregation...", {
-        childProfileId: child.id,
-      });
-
-      const metrics = await metricsAggregationService.aggregateChildMetrics(
-        child,
-        stories,
-      );
-
-      logger.info("[Analytics] ✅ Metrics aggregation completed", {
-        childProfileId: child.id,
-        successRate: metrics.successRate,
-        totalStoriesCompleted: metrics.totalStoriesCompleted,
-        totalChallengesAttempted: metrics.totalChallengesAttempted,
-      });
-
-      // ===================================================================
-      // STEP 3: Build LLM Context (with Historical Data)
-      // ===================================================================
-      logger.info("[Analytics] Building LLM context with historical data...", {
-        childProfileId: child.id,
-        pastRecordsCount: pastRecords.length,
-      });
-
-      const context = await llmContextBuilderService.buildLearningContext(
-        child,
-        stories,
-        metrics,
-        pastRecords,
-      );
-
-      logger.info("[Analytics] ✅ LLM context built successfully", {
-        childProfileId: child.id,
-        narrativeLength: context.consolidatedNarrative.length,
-        challengePatternsCount: context.challengePattern.strongTypes.length,
-        historicalDataIncluded: pastRecords.length > 0,
-        pastRecordsProvided: pastRecords.length,
-      });
-
-      // ===================================================================
-      // STEP 4: Generate AI Insights (LangChain)
-      // ===================================================================
-      logger.info("[Analytics] Generating AI insights (LangChain)...", {
-        childProfileId: child.id,
-      });
-
-      const insights = await insightsGenerationService.generateInsights(
-        context,
-        metrics,
-      );
-
-      logger.info("[Analytics] ✅ AI insights generated successfully", {
-        childProfileId: child.id,
-        readingLevel: insights.readingLevel,
-        engagementScore: insights.engagementScore,
-        strengthsCount: insights.strengths.length,
-        weaknessesCount: insights.weaknesses.length,
-      });
-
-      // ===================================================================
-      // STEP 5: Save Insights to Database for Future Reference
-      // ===================================================================
-      logger.info("[Analytics] Saving insights to database for reference...", {
-        childProfileId: child.id,
-      });
-
-      let savedInsightRecord: any = null;
-      try {
-        savedInsightRecord = await insightsPersistenceService.saveInsights(
-          child,
-          insights,
-          metrics,
-        );
-
-        logger.info("[Analytics] ✅ Insights saved to database successfully", {
-          childProfileId: child.id,
-          recordId: savedInsightRecord.id,
-        });
-      } catch (persistenceError) {
-        logger.error("[Analytics] Error saving insights to database", {
-          childProfileId: child.id,
-          error: String(persistenceError),
-        });
-        // Continue - database save is nice-to-have for this request
-      }
-
-      // ===================================================================
-      // STEP 6: Return Formatted Response
-      // ===================================================================
       logger.info(
-        "[Analytics] ✅ All processing steps completed successfully",
+        "[Analytics] No existing record found, proceeding with report generation",
         {
           childProfileId: child.id,
-          duration: "varies",
         },
       );
+
+      // ===================================================================
+      // STEP 3: Comprehensive Input Validation
+      // ===================================================================
+      logger.debug("[Analytics] Starting comprehensive input validation", {
+        childProfileId: child.id,
+      });
+
+      try {
+        analyticsValidationService.validateAnalyticsInput(child, stories);
+        analyticsValidationService.validatePeriod(periodStart, periodEnd);
+        analyticsValidationService.logValidationSummary(
+          child.id,
+          child.progress?.length || 0,
+          stories.length,
+        );
+      } catch (validationError) {
+        logger.warn("[Analytics] Input validation failed", {
+          childProfileId: child.id,
+          error: String(validationError),
+        });
+
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "VALIDATION_ERROR",
+            message:
+              validationError instanceof Error
+                ? validationError.message
+                : "Input validation failed",
+          },
+          timestamp: new Date(),
+        } as ApiResponse<any>);
+        return;
+      }
+
+      // ===================================================================
+      // STEP 4: Data Aggregation + Enrichment
+      // ===================================================================
+      logger.info("[Analytics] Starting metrics aggregation", {
+        childProfileId: child.id,
+        childName: child.name,
+      });
+
+      let metrics;
+      let enrichedContext;
+      try {
+        metrics = await analyticsDataAggregator.aggregateMetrics(
+          child,
+          stories,
+          periodStart,
+          periodEnd,
+        );
+
+        // Build enriched context with chapter and challenge details
+        enrichedContext = await analyticsDataAggregator.buildEnrichedReadingContext(
+          child,
+          stories,
+          periodStart,
+          periodEnd,
+        );
+
+        logger.info("[Analytics] Metrics aggregation and enrichment completed", {
+          childProfileId: child.id,
+          metricsKeys: Object.keys(metrics),
+          enrichedStoriesCount: enrichedContext.stories.length,
+        });
+      } catch (aggregationError) {
+        logger.error("[Analytics] Metrics aggregation or enrichment failed", {
+          childProfileId: child.id,
+          error: String(aggregationError),
+        });
+
+        res.status(500).json({
+          success: false,
+          error: {
+            code: "AGGREGATION_ERROR",
+            message: "Failed to aggregate metrics",
+          },
+          timestamp: new Date(),
+        } as ApiResponse<any>);
+        return;
+      }
+
+      // ===================================================================
+      // STEP 5: Fetch Historical Context
+      // ===================================================================
+      logger.info("[Analytics] Fetching historical reports for context", {
+        childProfileId: child.id,
+      });
+
+      let historicalContext = "";
+      try {
+        const historicalReports = await analyticsDataAggregator.fetchHistoricalReports(
+          child.id,
+          4, // Last 4 weeks
+        );
+
+        historicalContext = analyticsDataAggregator.extractHistoricalContext(
+          historicalReports,
+        );
+
+        logger.info("[Analytics] Historical context extracted", {
+          childProfileId: child.id,
+          reportsFound: historicalReports.length,
+          contextLength: historicalContext.length,
+        });
+      } catch (historyError) {
+        logger.warn("[Analytics] Failed to fetch historical reports", {
+          childProfileId: child.id,
+          error: String(historyError),
+        });
+
+        // Don't fail the entire request if historical context unavailable
+        historicalContext =
+          "No previous reports available for this child. This is the first week.";
+      }
+
+      // ===================================================================
+      // STEP 6: Generate Report Using LLM
+      // ===================================================================
+      logger.info("[Analytics] Starting LLM report generation", {
+        childProfileId: child.id,
+        childName: child.name,
+        withHistoricalContext: historicalContext.length > 100,
+        withEnrichedContext: !!enrichedContext,
+      });
+
+      let progressReport: ProgressReport;
+      try {
+        progressReport = await generateProgressReport(
+          child.name,
+          child.id,
+          metrics,
+          historicalContext,
+          periodStart,
+          periodEnd,
+          enrichedContext,
+        );
+
+        logger.info("[Analytics] LLM report generation completed", {
+          childProfileId: child.id,
+          reportEngagementStatus: progressReport.summary.engagementStatus,
+          reportProgressTrend: progressReport.summary.progressTrend,
+        });
+      } catch (llmError) {
+        logger.error("[Analytics] LLM report generation failed", {
+          childProfileId: child.id,
+          error: String(llmError),
+        });
+
+        res.status(500).json({
+          success: false,
+          error: {
+            code: "LLM_ERROR",
+            message: "Failed to generate report from LLM",
+          },
+          timestamp: new Date(),
+        } as ApiResponse<any>);
+        return;
+      }
+
+      // ===================================================================
+      // STEP 7: Save Report to Database
+      // ===================================================================
+      logger.info("[Analytics] Saving report to database", {
+        childProfileId: child.id,
+      });
+
+      let savedRecord;
+      try {
+        savedRecord = await this.prisma.aIProgressInsight.create({
+          data: {
+            childId: child.id,
+            periodStart,
+            periodEnd,
+            reportData: progressReport as Record<string, any>,
+          },
+        });
+
+        logger.info("[Analytics] Report successfully saved to database", {
+          childProfileId: child.id,
+          recordId: savedRecord.id,
+          createdAt: savedRecord.createdAt,
+          periodStart: savedRecord.periodStart,
+          periodEnd: savedRecord.periodEnd,
+        });
+      } catch (dbError) {
+        logger.error("[Analytics] Failed to save report to database", {
+          childProfileId: child.id,
+          error: String(dbError),
+        });
+
+        res.status(500).json({
+          success: false,
+          error: {
+            code: "DATABASE_ERROR",
+            message: "Failed to save report to database",
+          },
+          timestamp: new Date(),
+        } as ApiResponse<any>);
+        return;
+      }
+
+      // ===================================================================
+      // STEP 8: Return Success Response
+      // ===================================================================
+      const elapsedMs = Date.now() - startTime;
+
+      logger.info("[Analytics] Report generation workflow completed", {
+        childProfileId: child.id,
+        childName: child.name,
+        recordId: savedRecord.id,
+        elapsedMs,
+        engagementStatus: progressReport.summary.engagementStatus,
+        progressTrend: progressReport.summary.progressTrend,
+      });
 
       res.status(200).json({
         success: true,
         data: {
-          childProfileId: child.id,
+          reportId: savedRecord.id,
+          childId: child.id,
           childName: child.name,
-          insights: {
-            strengths: insights.strengths,
-            weaknesses: insights.weaknesses,
-            recommendations: insights.recommendations,
-            tips: insights.tips,
-          },
-          readingLevel: insights.readingLevel,
-          engagementScore: insights.engagementScore,
-          metrics: {
-            totalStoriesCompleted: metrics.totalStoriesCompleted,
-            totalChallengesAttempted: metrics.totalChallengesAttempted,
-            totalChallengesSolved: metrics.totalChallengesSolved,
-            successRate: metrics.successRate,
-            averageAttemptsPerChallenge: metrics.averageAttemptsPerChallenge,
-            hintDependencyRate: metrics.hintDependencyRate,
-            starAchievementRate: metrics.starAchievementRate,
-          },
-          periodStart: insights.periodStart,
-          periodEnd: insights.periodEnd,
-          databaseRecordId: savedInsightRecord?.id || null,
+          periodStart,
+          periodEnd,
+          report: progressReport,
+          generatedAt: savedRecord.createdAt,
         },
         timestamp: new Date(),
       } as ApiResponse<any>);
     } catch (error) {
-      logger.error("[Analytics] Error in generateAnalytics controller", {
+      const elapsedMs = Date.now() - startTime;
+
+      logger.error("[Analytics] Unexpected error in generateAnalytics", {
         error: String(error),
         stack: error instanceof Error ? error.stack : "N/A",
+        elapsedMs,
       });
 
       res.status(500).json({
@@ -328,89 +384,6 @@ export class AnalyticsController {
             error instanceof Error
               ? error.message
               : "Failed to generate analytics",
-        },
-        timestamp: new Date(),
-      } as ApiResponse<any>);
-    }
-  }
-
-  /**
-   * Get all analytics reports for a specific child
-   * Returns paginated list of all AIProgressInsight records sorted by date (newest first)
-   *
-   * Query parameters:
-   * - page: number (default 1)
-   * - pageSize: number (default 10, max 50)
-   */
-  async getChildAnalytics(
-    req: Request,
-    res: Response<ApiResponse<AIProgressInsight[]>>,
-  ): Promise<void> {
-    try {
-      const { childId } = req.params;
-
-      // Validate childId
-      if (!childId || childId.trim().length === 0) {
-        logger.warn("[Analytics] Missing or invalid childId in request");
-        res.status(400).json({
-          success: false,
-          error: {
-            code: "INVALID_CHILD_ID",
-            message: "childId is required and must be non-empty",
-          },
-          timestamp: new Date(),
-        } as ApiResponse<AIProgressInsight[]>);
-        return;
-      }
-
-      logger.info("[Analytics] Fetching analytics reports for child", {
-        childId,
-      });
-
-      // Get total count
-      const totalRecords = await this.prisma.aIProgressInsight.count({
-        where: { childId },
-      });
-
-      // Get paginated records
-      const records = await this.prisma.aIProgressInsight.findMany({
-        where: { childId },
-        orderBy: { periodEnd: "desc" }, // Newest first
-      });
-
-      // Transform records to properly type JSON fields from Prisma
-      const typedRecords: AIProgressInsight[] = records.map((record) => ({
-        ...record,
-        insights: record.insights as unknown as InsightsReport,
-        metrics: record.metrics as unknown as AggregatedMetrics,
-      }));
-
-      logger.info("[Analytics] ✅ Successfully retrieved child analytics", {
-        childId,
-        recordsCount: typedRecords.length,
-        totalRecords,
-      });
-
-      res.status(200).json({
-        success: true,
-        data: typedRecords,
-        timestamp: new Date(),
-      } as ApiResponse<AIProgressInsight[]>);
-    } catch (error) {
-      logger.error("[Analytics] Error fetching child analytics", {
-        childId: req.params.childId,
-        error: String(error),
-        stack: error instanceof Error ? error.stack : "N/A",
-      });
-
-      res.status(500).json({
-        success: false,
-        error: {
-          code: "INTERNAL_SERVER_ERROR",
-          message:
-            error instanceof Error
-              ? error.message
-              : "Failed to retrieve analytics",
         },
         timestamp: new Date(),
       } as ApiResponse<any>);

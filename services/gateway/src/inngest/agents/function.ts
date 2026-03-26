@@ -14,6 +14,7 @@ import {
   API_BASE_URL_V1,
   ApiResponse,
   ChildProfile,
+  GeneratedStory,
   LanguageCode,
   Progress,
   Story,
@@ -21,54 +22,6 @@ import {
 import { logger } from "../../utils/logger";
 import { triggerTTSGenerationForAllChapters } from "./queue";
 import { PROGRESS_SERVICE_URL } from "src/helpers/progress.helpers";
-
-/**
- * Deserialize API response into Story type with proper Date conversion
- * Axios returns dates as strings, need to convert them to Date objects
- */
-function deserializeStory(data: any): Story {
-  if (!data) return data;
-
-  // Convert createdAt and updatedAt strings to Date objects
-  const story = {
-    ...data,
-    createdAt: new Date(data.createdAt),
-    updatedAt: new Date(data.updatedAt),
-  };
-
-  // Convert world dates
-  if (story.world) {
-    story.world = {
-      ...story.world,
-      createdAt: new Date(story.world.createdAt),
-      updatedAt: new Date(story.world.updatedAt),
-    };
-  }
-
-  // Convert chapter dates and nested dates
-  if (story.chapters && Array.isArray(story.chapters)) {
-    story.chapters = story.chapters.map((ch: any) => ({
-      ...ch,
-      createdAt: new Date(ch.createdAt),
-      updatedAt: new Date(ch.updatedAt),
-      challenge: ch.challenge
-        ? {
-            ...ch.challenge,
-            createdAt: new Date(ch.challenge.createdAt),
-            updatedAt: new Date(ch.challenge.updatedAt),
-            answers:
-              ch.challenge.answers?.map((ans: any) => ({
-                ...ans,
-                createdAt: new Date(ans.createdAt),
-                updatedAt: new Date(ans.updatedAt),
-              })) || [],
-          }
-        : undefined,
-    }));
-  }
-
-  return story;
-}
 
 /**
  * Inngest function: Trigger translation generation in background
@@ -309,6 +262,347 @@ export const generateTTSAudio = inngest.createFunction(
         storyId: eventData.storyId,
         chapterId: eventData.chapterId,
         languageCode: eventData.languageCode,
+        error: String(error),
+      });
+
+      throw error; // Inngest will handle retries
+    }
+  },
+);
+
+/**
+ * Inngest cron job: Generate weekly AI storytelling stories for all children
+ * Runs every week on Sunday at 6:00 AM UTC
+ *
+ * Process:
+ * 1. STEP 1: Fetch all children profiles with storytelling enabled from Progress Service
+ * 2. STEP 2: For each child, call AI Service to generate a new story based on their preferences
+ * 3. STEP 3: Handle failures with retry logic and logging
+ */
+export const generateWeeklyAIStories = inngest.createFunction(
+  {
+    id: "generate-weekly-ai-stories",
+    retries: 2,
+    concurrency: { limit: 1 }, // Process up to 1 child at a time
+  },
+  { cron: "0 6 * * 0" }, // Every Sunday at 6:00 AM UTC
+  async ({ step }) => {
+    logger.info(
+      "[Story Generation Cron] Starting weekly AI storytelling generation",
+    );
+
+    try {
+      // ========================================================================
+      // STEP 1: Fetch all children profiles with storytelling enabled
+      // ========================================================================
+      const allChildrenProfiles = (await step.run(
+        "fetch-all-children-with-storytelling",
+        async () => {
+          logger.debug(
+            "[Story Generation Cron] Fetching all children profiles from Progress Service",
+          );
+
+          if (!PROGRESS_SERVICE_URL) {
+            throw new Error("PROGRESS_SERVICE_URL not configured");
+          }
+
+          const url = `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/children/storytelling-all`;
+          const response = await axios.get<ApiResponse<ChildProfile[]>>(url, {
+            validateStatus: () => true,
+          });
+
+          if (response.status !== 200 || !response.data.success) {
+            logger.error(
+              "[Story Generation Cron] Failed to fetch children profiles",
+              {
+                status: response.status,
+                error: response.data.error,
+              },
+            );
+            throw new Error(
+              `Failed to fetch children profiles: ${response.status}`,
+            );
+          }
+
+          logger.info(
+            "[Story Generation Cron] Successfully fetched children profiles",
+            {
+              totalCount: response.data.data?.length || 0,
+            },
+          );
+
+          return response.data.data || [];
+        },
+      )) as unknown as ChildProfile[];
+
+      if (!allChildrenProfiles || allChildrenProfiles.length === 0) {
+        logger.info("[Story Generation Cron] No children profiles found");
+        return {
+          success: true,
+          message: "No children profiles found",
+          processedCount: 0,
+        };
+      }
+
+      // ========================================================================
+      // STEP 2: Generate stories for each child with storytelling enabled
+      // ========================================================================
+      const generationResults = await step.run(
+        "generate-stories-for-all-children",
+        async () => {
+          logger.info(
+            "[Story Generation Cron] Starting story generation for children",
+            {
+              totalChildren: allChildrenProfiles.length,
+            },
+          );
+
+          const results = {
+            successful: 0,
+            failed: 0,
+            skipped: 0,
+            errors: [] as string[],
+          };
+
+          // Process each child profile
+          for (const childProfile of allChildrenProfiles) {
+            try {
+              // Check if child has storytelling profile
+              if (!childProfile.storytelling) {
+                logger.debug(
+                  "[Story Generation Cron] Skipping child without storytelling profile",
+                  {
+                    childProfileId: childProfile.id,
+                    childName: childProfile.name,
+                  },
+                );
+                results.skipped++;
+                continue;
+              }
+
+              logger.debug(
+                "[Story Generation Cron] Generating story for child",
+                {
+                  childProfileId: childProfile.id,
+                  childName: childProfile.name,
+                  childLanguage: childProfile.storytelling?.childLanguage,
+                },
+              );
+
+              // Call AI Service to generate story
+              if (!AI_SERVICE_URL) {
+                throw new Error("AI_SERVICE_URL not configured");
+              }
+
+              const storyGenerationUrl = `${AI_SERVICE_URL}${API_BASE_URL_V1}/generate-child-storytelling`;
+
+              // Create payload with childProfile for AI Service
+              const storyPayload = {
+                childProfile: childProfile,
+              };
+
+              const storyResponse = await axios.post<ApiResponse<GeneratedStory | { done: boolean }>>(
+                storyGenerationUrl,
+                storyPayload,
+                {
+                  validateStatus: () => true,
+                },
+              );
+
+              if (storyResponse.status !== 200 || !storyResponse.data.success) {
+                logger.error(
+                  "[Story Generation Cron] Failed to generate story for child",
+                  {
+                    childProfileId: childProfile.id,
+                    childName: childProfile.name,
+                    status: storyResponse.status,
+                    error: storyResponse.data.error,
+                  },
+                );
+                results.failed++;
+                results.errors.push(
+                  `Child ${childProfile.name} (${childProfile.id}): ${storyResponse.data.error?.message || "Unknown error"}`,
+                );
+                continue;
+              }
+
+              // Check if a GeneratedStory was actually generated
+              const generatedStory = storyResponse.data.data as GeneratedStory
+
+              if (!generatedStory) {
+                logger.info(
+                  "[Story Generation Cron] No new story generated for child (plan complete or all stories done)",
+                  {
+                    childProfileId: childProfile.id,
+                    childName: childProfile.name,
+                  },
+                );
+                results.skipped++;
+                continue;
+              }
+
+              // SYNC WITH CONTENT SERVICE: Create new story in content database
+              logger.debug(
+                "[Story Generation Cron] Syncing generated story with Content Service",
+                {
+                  childProfileId: childProfile.id,
+                  storyId: generatedStory.id,
+                  storyTitle: generatedStory.title,
+                },
+              );
+
+              let contentStory: Story | null = null;
+
+              try {
+                if (!CONTENT_SERVICE_URL) {
+                  throw new Error("CONTENT_SERVICE_URL not configured");
+                }
+
+                const contentSyncUrl = `${CONTENT_SERVICE_URL}${API_BASE_URL_V1}/stories/create-storytelling`;
+                const storyPayloadForContent = {
+                  generatedStory,
+                };
+
+                const contentSyncResponse = await axios.post<ApiResponse<Story>>(
+                  contentSyncUrl,
+                  storyPayloadForContent,
+                  {
+                    validateStatus: () => true,
+                  },
+                );
+
+                if (contentSyncResponse.status === 200 || contentSyncResponse.status === 201) {
+                  contentStory = contentSyncResponse.data.data as Story;
+                  logger.debug(
+                    "[Story Generation Cron] Story synced with Content Service",
+                    {
+                      storyId: contentStory?.id,
+                      storyTitle: contentStory?.title,
+                    },
+                  );
+                } else {
+                  throw new Error(
+                    `Content Service returned ${contentSyncResponse.status}: ${JSON.stringify(contentSyncResponse.data?.error)}`,
+                  );
+                }
+              } catch (contentServiceError) {
+                logger.error(
+                  "[Story Generation Cron] Failed to sync with Content Service",
+                  {
+                    storyId: generatedStory.id,
+                    error: String(contentServiceError),
+                  },
+                );
+                throw contentServiceError; // Stop and retry via Inngest
+              }
+
+              // SYNC WITH PROGRESS SERVICE: Update child's story progress
+              if (!contentStory) {
+                throw new Error("No story returned from Content Service");
+              }
+
+              logger.debug(
+                "[Story Generation Cron] Updating progress in Progress Service",
+                {
+                  childProfileId: childProfile.id,
+                  storyId: contentStory.id,
+                },
+              );
+
+              try {
+                if (!PROGRESS_SERVICE_URL) {
+                  throw new Error("PROGRESS_SERVICE_URL not configured");
+                }
+
+                const progressUpdateUrl = `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/children/${childProfile.id}/storytelling/update`;
+                const progressPayload = {
+                  story: contentStory,
+                };
+
+                const progressResponse = await axios.put<ApiResponse<ChildProfile>>(
+                  progressUpdateUrl,
+                  progressPayload,
+                  {
+                    validateStatus: () => true,
+                  },
+                );
+
+                if (progressResponse.status !== 200) {
+                  throw new Error(
+                    `Progress Service returned ${progressResponse.status}: ${JSON.stringify(progressResponse.data?.error)}`,
+                  );
+                }
+
+                logger.debug(
+                  "[Story Generation Cron] Progress updated in Progress Service",
+                  {
+                    childProfileId: childProfile.id,
+                    storyId: contentStory.id,
+                  },
+                );
+              } catch (progressServiceError) {
+                logger.error(
+                  "[Story Generation Cron] Failed to update Progress Service",
+                  {
+                    childProfileId: childProfile.id,
+                    error: String(progressServiceError),
+                  },
+                );
+                throw progressServiceError; // Stop and retry via Inngest
+              }
+
+              logger.info(
+                "[Story Generation Cron] Story generated and synced successfully for child",
+                {
+                  childProfileId: childProfile.id,
+                  childName: childProfile.name,
+                  storyId: generatedStory.id,
+                  storyTitle: generatedStory.title,
+                },
+              );
+              results.successful++;
+            } catch (error) {
+              logger.error(
+                "[Story Generation Cron] Exception while generating story for child",
+                {
+                  childProfileId: childProfile.id,
+                  childName: childProfile.name,
+                  error: String(error),
+                },
+              );
+              results.failed++;
+              results.errors.push(
+                `Child ${childProfile.name} (${childProfile.id}): ${error instanceof Error ? error.message : String(error)}`,
+              );
+            }
+          }
+
+          return results;
+        },
+      );
+
+      logger.info("[Story Generation Cron] Weekly story generation completed", {
+        successful: generationResults.successful,
+        failed: generationResults.failed,
+        skipped: generationResults.skipped,
+        total: allChildrenProfiles.length,
+        errors:
+          generationResults.errors.length > 0
+            ? generationResults.errors
+            : undefined,
+      });
+
+      return {
+        success: true,
+        message: "Weekly story generation completed",
+        results: generationResults,
+        processedCount:
+          generationResults.successful +
+          generationResults.failed +
+          generationResults.skipped,
+      };
+    } catch (error) {
+      logger.error("[Story Generation Cron] Weekly story generation failed", {
         error: String(error),
       });
 
@@ -599,12 +893,15 @@ async function processChildAnalytics(child: ChildProfile): Promise<void> {
     if (aiResponse.status === 200 && aiResponse.data.success) {
       const analyticsData = aiResponse.data.data;
 
-      logger.info("[AI Analytics] ✅ AI Service analytics generated successfully", {
-        childProfileId: child.id,
-        childName: analyticsData.childName,
-        readingLevel: analyticsData.readingLevel,
-        engagementScore: analyticsData.engagementScore,
-      });
+      logger.info(
+        "[AI Analytics] ✅ AI Service analytics generated successfully",
+        {
+          childProfileId: child.id,
+          childName: analyticsData.childName,
+          readingLevel: analyticsData.readingLevel,
+          engagementScore: analyticsData.engagementScore,
+        },
+      );
 
       // Log detailed metrics
       // logger.debug("[AI Analytics] Analytics metrics", {
@@ -650,7 +947,6 @@ async function processChildAnalytics(child: ChildProfile): Promise<void> {
         `AI Service analytics generation failed: ${aiResponse.data.error?.message || "Unknown error"}`,
       );
     }
-
   } catch (error) {
     logger.error("[AI Analytics] Error processing child analytics", {
       childProfileId: child.id,
@@ -732,4 +1028,52 @@ function deserializeChildProfile(data: any): ChildProfile {
   };
 
   return profile;
+}
+
+/**
+ * Deserialize API response into Story type with proper Date conversion
+ * Axios returns dates as strings, need to convert them to Date objects
+ */
+function deserializeStory(data: any): Story {
+  if (!data) return data;
+
+  // Convert createdAt and updatedAt strings to Date objects
+  const story = {
+    ...data,
+    createdAt: new Date(data.createdAt),
+    updatedAt: new Date(data.updatedAt),
+  };
+
+  // Convert world dates
+  if (story.world) {
+    story.world = {
+      ...story.world,
+      createdAt: new Date(story.world.createdAt),
+      updatedAt: new Date(story.world.updatedAt),
+    };
+  }
+
+  // Convert chapter dates and nested dates
+  if (story.chapters && Array.isArray(story.chapters)) {
+    story.chapters = story.chapters.map((ch: any) => ({
+      ...ch,
+      createdAt: new Date(ch.createdAt),
+      updatedAt: new Date(ch.updatedAt),
+      challenge: ch.challenge
+        ? {
+            ...ch.challenge,
+            createdAt: new Date(ch.challenge.createdAt),
+            updatedAt: new Date(ch.challenge.updatedAt),
+            answers:
+              ch.challenge.answers?.map((ans: any) => ({
+                ...ans,
+                createdAt: new Date(ans.createdAt),
+                updatedAt: new Date(ans.updatedAt),
+              })) || [],
+          }
+        : undefined,
+    }));
+  }
+
+  return story;
 }

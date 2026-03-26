@@ -93,7 +93,8 @@
 			"achievements": "الإنجازات",
 			"aiInsights": " تحليلات الذكاء الاصطناعي ",
 			"riddleStatistics": "إحصائيات الألغاز",
-			"timeAnalytics": "تحليلات الوقت"
+			"timeAnalytics": "تحليلات الوقت",
+			"childStorytelling": "قصص مخصصة للطفل"
 		},
 		"achievements": {
 			"title": "الشارات والإنجازات",
@@ -234,6 +235,14 @@
 				"apply": "تطبيق",
 				"showing": "يظهر"
 			}
+		},
+		"childStorytelling": {
+			"activated": "تم التفعيل",
+			"title": "قصص مخصصة للطفل",
+			"description": "أنشئ قصصًا مخصصة يظهر فيها {childName} كبطل! مغامرات مُصممة وفقًا لاهتماماته ومسار تقدمه في القراءة.",
+			"dashboardButton": "لوحة تحكم {childName} →",
+			"activateOption": "تفعيل ميزة سرد القصص لـ {childName} →",
+			"storytellingDashboard": "لوحة تحكم سرد القصص لـ {childName}"
 		}
 	},
 	"ChildDashboard": {
@@ -305,6 +314,16 @@
 					"startReading": "ابدأ القراءة"
 				}
 			}
+		},
+		"storytelling": {
+			"title": "القصص الأسبوعية",
+			"status": {
+				"completed": "مكتمل",
+				"inProgress": "قيد التقدم",
+				"notStarted": "لم يبدأ"
+			},
+			"generatedDate": "تم إنشاؤها في",
+			"viewAll": "عرض جميع القصص"
 		}
 	},
 	"RoadmapsLibrary": {
@@ -454,7 +473,76 @@
 		"selectAgeGroup": "يرجى تحديد فئة عمرية لطفلك",
 		"invalidAgeGroup": "فئة العمر المحددة غير صالحة",
 		"selectAtLeastOneTheme": "حدد موضوعًا واحدًا على الأقل",
+		"stepOf": "الخطوة {step} من {total}",
+		"genderLabel": "جنس الطفل",
+		"selectGender": "يرجى اختيار ",
+		"gender": {
+			"boy": "ولد",
+			"girl": "بنت"
+		}
+	},
+	"OnboardingStorytelling": {
+		"Arabic": "العربية",
+		"English": "الإنجليزية",
+		"French": "الفرنسية",
+		"titleStep1": "أهلاً! دعنا نتعرف على طفلك",
+		"titleStep2": "ما اهتمامات طفلك؟",
+		"titleStep3": "ماذا تريد أن يحسّن طفلك؟",
+		"titleStep4": "مراجعة وتأكيد",
+		"descStep1": "أخبرنا باسم طفلك (أو كنيته) - سيظهر في قصصه المخصصة!",
+		"descStep2": "اختر الموضوعات لجعل القصص جذابة وشخصية.",
+		"descStep3": "اختر أهداف التعلم التي تتوافق مع توقعاتك.",
+		"descStep4": "تحقق من جميع المعلومات قبل إنشاء الملف.",
+		"childNameLabel": "اسم الطفل (أو كنيته)",
+		"childNamePlaceholder": "مثل إيما أو كنية,",
+		"childNameDesc": "سيظهر هذا الاسم كشخصية رئيسية في القصص المولدة  لطفلك",
+		"childLanguageLabel": "اللغة المفضلة للقصص",
+		"selectLanguagePlaceholder": "اختر لغة",
+		"selectLanguageRequired": "يرجى اختيار لغة لقصص طفلك",
+		"ageGroupLabel": "فئة العمر",
+		"ageGroupPlaceholder": "اختر فئة عمرية",
+		"availableThemesEmpty": "لا توجد موضوعات متاحة",
+		"favoriteThemesLabel": "الموضوعات المفضلة",
+		"selectAllApply": "حدد كل ما ينطبق",
+		"addCustomThemePlaceholder": "أضف موضوعاً مخصصاً لطفلك...",
+		"learningObjectivesLabel": "أهداف التعلم",
+		"selectObjectivesDesc": "اختر ما تود أن يحسّنه طفلك",
+		"selectAtLeastOneObjective": "حدد هدف تعلم واحد على الأقل",
+		"objective_thinking": "التفكير وحل المشاكل",
+		"objective_reading": "القراءة وفهم القصص",
+		"objective_vocabulary": "تعلم كلمات جديدة",
+		"objective_focus": "التركيز والانتباه",
+		"objective_confidence": "الثقة واتخاذ القرار",
+		"objective_social": "المهارات الاجتماعية والتعاطف",
+		"objective_other": "آخر (يرجى التحديد)",
+		"otherObjectivePlaceholder": "صف ما تود أن يحسّنه طفلك",
+		"cancel": "إلغاء",
+		"next": "التالي",
+		"previous": "السابق",
+		"creatingProfile": "جارٍ إنشاء الاعدادات...",
+		"createProfile": "إنشاء الاعدادات",
+		"settingUp": "جارٍ الإعداد...",
+		"startExploring": "ابدأ الاستكشاف",
+		"missingRequired": "معلومات مطلوبة مفقودة",
+		"childCreated": "تم إنشاء ملف الطفل بنجاح!",
+		"onboardingError": "حدث خطأ أثناء الإعداد",
+		"childNameRequired": "اسم الطفل مطلوب",
+		"selectAgeGroup": "يرجى تحديد فئة عمرية لطفلك",
+		"invalidAgeGroup": "فئة العمر المحددة غير صالحة",
+		"selectAtLeastOneTheme": "حدد موضوعًا واحدًا على الأقل",
 		"stepOf": "الخطوة {step} من {total}"
+	},
+	"AiStorytellingIntro": {
+		"title": "قصص مخصصة لطفلك",
+		"subtitle": "أنشئ مغامرات مخصصة حيث يكون طفلك هو البطل",
+		"feature1Title": " قصص مخصصة",
+		"feature1Desc": "كل أسبوع، قصص جديدة تضع طفلك كشخصية رئيسية",
+		"feature2Title": " أهداف التعلم",
+		"feature2Desc": "قصص محاذاة للمهارات التي تريد تطويرها عند طفلك",
+		"feature3Title": "مغامرات جذابة",
+		"feature3Desc": "تحديات تفاعلية لتحقيق الأهداف وبناء الثقة",
+		"mainDescription": "سيشهد طفلك كل أسبوع مغامرات حيث يكون هو البطل! تُصمم القصص وفقاً لاهتماماته وتهدف إلى مساعدته على تحقيق أهداف التعلم التي اخترتها. شاهد بينما ينمو بالثقة، يوسع مفرداته، ويطور مهارات التفكير النقدي—كل هذا من خلال متعة القراءة.",
+		"continueButton": "المتابعة إلى الإعداد"
 	},
 	"StoryReadingInterface": {
 		"saving": "جارٍ الحفظ...",

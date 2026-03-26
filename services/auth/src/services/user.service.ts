@@ -106,6 +106,7 @@ export class UserService {
   async createChildProfile(
     parentId: string,
     name: string,
+    gender: string,
     ageGroup: string,
     childLoginCode: string,
     favoriteThemes: string[],
@@ -123,6 +124,7 @@ export class UserService {
         data: {
           parentId,
           name,
+          gender,
           loginCode: childLoginCode,
           avatar,
           ageGroup,
