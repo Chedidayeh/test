@@ -3,7 +3,7 @@ import axios from "axios";
 import { logger } from "../utils/logger";
 import { forwardToContentService } from "../helpers/content.helpers";
 import { API_BASE_URL_V1, ApiResponse, TTSAudio } from "@shared/src/types";
-import { generateStorytelling } from "src/helpers/ai.helpers";
+import { generateStorytelling } from "../helpers/ai.helpers";
 
 const router = Router();
 

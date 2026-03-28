@@ -21,7 +21,7 @@ import {
 } from "@shared/src/types";
 import { logger } from "../../utils/logger";
 import { triggerTTSGenerationForAllChapters } from "./queue";
-import { PROGRESS_SERVICE_URL } from "src/helpers/progress.helpers";
+import { PROGRESS_SERVICE_URL } from "./../../helpers/ai.helpers";
 
 /**
  * Inngest function: Trigger translation generation in background
