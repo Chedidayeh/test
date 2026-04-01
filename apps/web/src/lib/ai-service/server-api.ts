@@ -45,6 +45,25 @@ export interface GenerateStorytellingRequest {
   learningObjectives: string[]; // Array of learning objectives
 }
 
+/**
+ * Request payload for generating hints for a challenge
+ */
+export interface GenerateHintsRequest {
+  storyContent: string; // Full story/chapter text for context
+  question: string; // The challenge question
+  answers: string[]; // Array of correct answers
+  challengeType: string; // Type of challenge (RIDDLE, MULTIPLE_CHOICE, TRUE_FALSE, etc.)
+  difficultyLevel?: number; // Story difficulty level (1.0-5.0), optional (default: 1.0)
+  ageGroup?: string; // Age group of the child (e.g., "6-8", "9-12"), optional (default: "6-8")
+}
+
+/**
+ * Response from hint generation
+ */
+export interface HintResponse {
+  hints: string[]; // Array of generated hints (typically 3: general, medium, specific)
+  hintGenerationLogId: string; // ID of the generation log record for audit trail
+}
 
 /**
  * Validate a child's answer using LLM
@@ -189,6 +208,76 @@ export async function generateStorytelling(
   } catch (error) {
     console.error(
       "[AI Service API] Error generating storytelling:",
+      error instanceof Error ? error.message : String(error),
+    );
+    return null;
+  }
+}
+
+/**
+ * Generate hints for a challenge using LLM
+ * Calls the AI service through the gateway to generate progressive hints
+ *
+ * @param request - Hint generation request data
+ * @returns Hint response with generated hints or null if generation fails
+ *
+ * @example
+ * const result = await generateHints({
+ *   storyContent: "Once upon a time...",
+ *   question: "What was the main character's name?",
+ *   answers: ["", ""],
+ *   challengeType: "RIDDLE",
+ *   difficultyLevel: 2.5,
+ *   ageGroup: "6-8"
+ * });
+ * if (result) {
+ *   console.log("Hints:", result.hints);
+ *   console.log("Log ID:", result.hintGenerationLogId);
+ * }
+ */
+export async function generateHints(
+  request: GenerateHintsRequest,
+): Promise<HintResponse | null> {
+  try {
+    console.log("[AI Service API] Generating hints:", {
+      challengeType: request.challengeType,
+      difficultyLevel: request.difficultyLevel,
+      ageGroup: request.ageGroup,
+    });
+
+    const response = await apiRequest<ApiResponse<HintResponse>>(
+      `/generate-hints`,
+      {
+        method: "POST",
+        body: JSON.stringify(request),
+      },
+    );
+
+    if (isApiError(response)) {
+      console.warn(
+        "[AI Service API] Failed to generate hints:",
+        response.error.message,
+      );
+      return null;
+    }
+
+    if (!response.success) {
+      console.warn(
+        "[AI Service API] Failed to generate hints: API returned success=false",
+      );
+      return null;
+    }
+
+    console.log("[AI Service API] Hints generated successfully:", {
+      challengeType: request.challengeType,
+      hintsCount: response.data?.hints.length || 0,
+      logId: response.data?.hintGenerationLogId,
+    });
+
+    return response.data || null;
+  } catch (error) {
+    console.error(
+      "[AI Service API] Error generating hints:",
       error instanceof Error ? error.message : String(error),
     );
     return null;

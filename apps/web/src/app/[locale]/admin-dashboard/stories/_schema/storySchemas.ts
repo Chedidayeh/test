@@ -205,6 +205,7 @@ export const storyFormSchema = z.object({
   difficulty: z.number().int().min(1).max(5),
   generateAudio: z.boolean().default(false),
   order: z.number().int().min(1),
+  ageGroup: z.string().optional(), // Age group name of the child (used for AI hint generation e.g., "6-8", "9-12")
   translationSource: z.nativeEnum(TranslationSourceType).default(TranslationSourceType.MANUAL),
   chapters: z.array(chapterFormSchema).min(1, "At least one chapter is required"),
   translations: z.array(z.object({

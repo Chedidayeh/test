@@ -106,8 +106,8 @@ model ChildProfile {
   id      String @id @default(uuid())
   childId String @unique // Reference to progress service
 
-  name String
-  age  String // 6-12 typically
+  name   String
+  age    String // 6-12 typically
   gender String?
 
   interests      String[]
@@ -197,24 +197,24 @@ model StoryPlan {
 
   // PHASE 1: Plan Versioning & History Tracking
   // Links all versions together for continuous child journey
-  planVersionChainId String?  // Links all versions of same child's plans (UUID of first plan in chain)
-  previousPlanId     String?  // Direct parent plan reference (for quick access)
-  planVersion        Int      @default(1) // Version number within chain (1, 2, 3...)
-  planStatus         String   @default("generating") // "generating" | "active" | "completed" | "archived"
+  planVersionChainId String? // Links all versions of same child's plans (UUID of first plan in chain)
+  previousPlanId     String? // Direct parent plan reference (for quick access)
+  planVersion        Int     @default(1) // Version number within chain (1, 2, 3...)
+  planStatus         String  @default("generating") // "generating" | "active" | "completed" | "archived"
 
   // Completion tracking
-  completedAt        DateTime? // When plan reached 100% completion
-  completedPercentage Float    @default(0) // 0-100 tracking
+  completedAt         DateTime? // When plan reached 100% completion
+  completedPercentage Float     @default(0) // 0-100 tracking
 
   // Context from previous plan for continuity
   previousPlanContext Json? // Captured PlanContext: themes, objectives, skills, difficulty progression
   previousPlanSummary String? // Human-readable summary of what was taught
 
   // Relationships
-  worlds        StoryPlanWorld[]
-  history       PlanHistory[] // All lifecycle events for this plan
-  nextVersions  StoryPlan[]   @relation("plan_chain") // Plans that came after this one
-  previousPlan  StoryPlan?    @relation("plan_chain", fields: [previousPlanId], references: [id])
+  worlds       StoryPlanWorld[]
+  history      PlanHistory[] // All lifecycle events for this plan
+  nextVersions StoryPlan[]      @relation("plan_chain") // Plans that came after this one
+  previousPlan StoryPlan?       @relation("plan_chain", fields: [previousPlanId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -234,11 +234,11 @@ model PlanHistory {
   storyPlan   StoryPlan @relation(fields: [storyPlanId], references: [id], onDelete: Cascade)
 
   // Event type and description
-  event       String  // "created" | "completed" | "extended" | "regenerated" | "archived"
-  description String  // Human-readable event description
-  
+  event       String // "created" | "completed" | "extended" | "regenerated" | "archived"
+  description String // Human-readable event description
+
   // Optional metadata about the event
-  metadata    Json? // Additional context (e.g., reason for completion, extension stats)
+  metadata Json? // Additional context (e.g., reason for completion, extension stats)
 
   // When this event occurred
   timestamp DateTime @default(now())
@@ -533,4 +533,45 @@ model StoryMemory {
   lastUpdated DateTime @default(now())
 
   @@index([childProfileId])
+}
+
+// ============================================================================
+// HINT GENERATION TRACKING & AUDIT TRAIL
+// ============================================================================
+
+// HintGenerationLog: Tracks AI-generated hints for challenges
+// Used for:
+// - Audit trail of which hints were generated and when
+// - Preventing accidental duplicate generation
+// - Analytics on hint usefulness over time
+// - Debugging prompt engineering improvements
+model HintGenerationLog {
+  id String @id @default(cuid())
+
+  question String // The question for which hints were generated
+  answers  String[] // The correct answers for the question (for context)
+  // Generated hints (stored as array for easy tracking)
+  hints    String[]
+
+  ageGroup String
+
+  // Metadata about generation
+  hintCount Int
+
+  challengeType String // "MULTIPLE_CHOICE", "RIDDLE", "TRUE_FALSE", etc.
+
+  // LLM execution details
+  generationTimeMs Int? // How long LLM took to generate
+
+  // Admin context
+  previousHints String[] // Previous hints before regeneration (for tracking changes)
+
+  failed        Boolean @default(false)
+  failureReason String? // If failed, why
+
+  // Timestamps for tracking
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
 }

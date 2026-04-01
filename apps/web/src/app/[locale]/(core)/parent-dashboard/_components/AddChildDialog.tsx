@@ -65,10 +65,10 @@ export default function AddChildDialog({
 
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<{
-    childBasic: { childName: string; childAge: string };
+    childBasic: { childName: string; childAge: string; childGender: string };
     childPreferences: { favoriteThemes: string[] };
   }>({
-    childBasic: { childName: "", childAge: "" },
+    childBasic: { childName: "", childAge: "", childGender: "" },
     childPreferences: { favoriteThemes: [] },
   });
 
@@ -78,8 +78,14 @@ export default function AddChildDialog({
     childAge: z
       .string()
       .min(1, t("addChildDialog.errors.selectAgeGroup"))
-      .refine((v) => ageGroups.some((ag) => ag.id === v), {
+      .refine((v) => ageGroups?.some((ag) => ag.id === v) ?? false, {
         message: t("addChildDialog.errors.invalidAgeGroup"),
+      }),
+    childGender: z
+      .string()
+      .min(1, t("addChildDialog.errors.selectGender") || "Please select a gender")
+      .refine((v) => ["boy", "girl"].includes(v), {
+        message: t("addChildDialog.errors.selectGender") || "Please select a gender",
       }),
   });
 
@@ -92,7 +98,7 @@ export default function AddChildDialog({
 
   const childBasicForm = useForm({
     resolver: zodResolver(childBasicSchema),
-    defaultValues: { childName: "", childAge: "" },
+    defaultValues: { childName: "", childAge: "", childGender: "" },
   });
 
   const childPreferencesForm = useForm({
@@ -101,10 +107,10 @@ export default function AddChildDialog({
   });
 
   const selectedAgeGroupId = childBasicForm.watch("childAge");
-  const selectedAgeGroup = ageGroups.find((ag) => ag.id === selectedAgeGroupId);
+  const selectedAgeGroup = ageGroups?.find((ag) => ag.id === selectedAgeGroupId);
 
   const getThemesForAgeGroup = (ageGroupId: string): Theme[] => {
-    const ag = ageGroups.find((a) => a.id === ageGroupId);
+    const ag = ageGroups?.find((a) => a.id === ageGroupId);
     if (!ag) return [];
     const themes = ag.roadmaps.map((roadmap) => roadmap.theme);
     return Array.from(new Map(themes.map((t) => [t.id, t])).values());
@@ -130,7 +136,7 @@ export default function AddChildDialog({
       const ageGroupId = formData.childBasic.childAge;
       const themeIds = formData.childPreferences.favoriteThemes || [];
 
-      const selectedAgeGroupData = ageGroups.find((ag) => ag.id === ageGroupId);
+      const selectedAgeGroupData = ageGroups?.find((ag) => ag.id === ageGroupId);
       const allocatedRoadmaps =
         selectedAgeGroupData?.roadmaps
           ?.filter((roadmap) => themeIds.includes(roadmap.themeId))
@@ -143,6 +149,7 @@ export default function AddChildDialog({
         parentEmail,
         parentId,
         name: formData.childBasic.childName,
+        gender: formData.childBasic.childGender,
         ageGroupId,
         ageGroupName,
         themeIds,
@@ -162,7 +169,7 @@ export default function AddChildDialog({
       childPreferencesForm.reset();
       setStep(1);
       setFormData({
-        childBasic: { childName: "", childAge: "" },
+        childBasic: { childName: "", childAge: "", childGender: "" },
         childPreferences: { favoriteThemes: [] },
       });
       onOpenChange(false);
@@ -192,7 +199,7 @@ export default function AddChildDialog({
       childPreferencesForm.reset();
       setStep(1);
       setFormData({
-        childBasic: { childName: "", childAge: "" },
+        childBasic: { childName: "", childAge: "", childGender: "" },
         childPreferences: { favoriteThemes: [] },
       });
     }
@@ -321,6 +328,47 @@ export default function AddChildDialog({
                     {childBasicForm.formState.errors.childAge && (
                       <FieldDescription className="text-red-500">
                         {childBasicForm.formState.errors.childAge.message}
+                      </FieldDescription>
+                    )}
+                  </Field>
+
+                  <Field>
+                    <FieldLabel>{t("addChildDialog.step1.genderLabel") || "Gender"}</FieldLabel>
+                    <Controller
+                      control={childBasicForm.control}
+                      name="childGender"
+                      render={({ field }) => (
+                        <div className="grid grid-cols-2 gap-3">
+                          {["boy", "girl"].map((option) => (
+                            <label
+                              key={option}
+                              className={`flex items-center justify-center p-3 border rounded-lg cursor-pointer transition-all ${
+                                field.value === option
+                                  ? option === "boy"
+                                    ? "border-sky-500 bg-sky-500/10"
+                                    : option === "girl"
+                                    ? "border-rose-500 bg-rose-500/10"
+                                    : "border-primary bg-primary/10"
+                                  : "border-muted hover:border-primary/50"
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name="childGender"
+                                value={option}
+                                checked={field.value === option}
+                                onChange={() => field.onChange(option)}
+                                className="hidden"
+                              />
+                              <span className="font-medium capitalize">{option}</span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    />
+                    {childBasicForm.formState.errors.childGender && (
+                      <FieldDescription className="text-red-500">
+                        {childBasicForm.formState.errors.childGender.message}
                       </FieldDescription>
                     )}
                   </Field>
@@ -495,6 +543,14 @@ export default function AddChildDialog({
                           );
                         return translation?.name || selectedAgeGroup?.name;
                       })()}{" "}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">
+                      {t("addChildDialog.step3.genderLabel") || "Gender"}
+                    </p>
+                    <p className="font-medium capitalize">
+                      {formData.childBasic.childGender}
                     </p>
                   </div>
                   <div>

@@ -1,4 +1,7 @@
 {
+	"LoadingComponent": {
+		"loading": "Chargement..."
+	},
 	"Hero": {
 		"headline": "Des histoires qui éveillent votre enfant",
 		"subline": "Parcourez des contes magiques et résolvez des énigmes stimulantes",
@@ -39,6 +42,7 @@
 		"selectLanguage": "Langue"
 	},
 	"ParentDashboard": {
+		"loading": "Chargement...",
 		"yourChildren": "Vos enfants",
 		"unknown": "Inconnu",
 		"stars": "{count} étoiles",
@@ -51,7 +55,8 @@
 				"childNameLabel": "Nom de l'enfant",
 				"childNamePlaceholder": "ex. Emma",
 				"ageGroupLabel": "Tranche d'âge",
-				"ageGroupPlaceholder": "Sélectionnez une tranche d'âge"
+				"ageGroupPlaceholder": "Sélectionnez une tranche d'âge",
+				"genderLabel": "Genre de l'enfant"
 			},
 			"step2": {
 				"title": "Thèmes préférés",
@@ -72,7 +77,8 @@
 				"childNameRequired": "Le nom de l'enfant est requis",
 				"selectAgeGroup": "Veuillez sélectionner une tranche d'âge pour votre enfant",
 				"invalidAgeGroup": "La tranche d'âge sélectionnée est invalide",
-				"selectAtLeastOneTheme": "Sélectionnez au moins un thème"
+				"selectAtLeastOneTheme": "Sélectionnez au moins un thème",
+				"selectGender": "Veuillez sélectionner un genre"
 			},
 			"messages": {
 				"createdSuccess": "Profil de l'enfant créé avec succès !",

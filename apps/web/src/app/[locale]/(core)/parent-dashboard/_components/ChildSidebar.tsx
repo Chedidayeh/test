@@ -23,7 +23,7 @@ function cn(...inputs: ClassValue[]) {
 interface ChildSidebarProps {
   session: Session;
   parentData: ParentUser | null | undefined;
-  selectedChildId: string;
+  selectedChildId: string | undefined;
   onChildSelect: (childId: string) => void;
   ageGroups: AgeGroup[];
   onChildAdded: () => void;

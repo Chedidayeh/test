@@ -1,4 +1,7 @@
 {
+	"LoadingComponent": {
+		"loading": "جارٍ التحميل..."
+	},
 	"Hero": {
 		"headline": " قصص تُلهم طفلك كي",
 		"subline": "سافر عبر حكايات سحرية وحل الألغاز المحفزة للعقل",
@@ -27,6 +30,7 @@
 		"selectLanguage": "اللغة"
 	},
 	"ParentDashboard": {
+		"loading": "جارٍ التحميل...",
 		"yourChildren": "قائمة أطفالك",
 		"unknown": "غير معروف",
 		"stars": "{count} نجمة",
@@ -39,7 +43,8 @@
 				"childNameLabel": "اسم الطفل",
 				"childNamePlaceholder": "مثال: إيما",
 				"ageGroupLabel": "فئة العمر",
-				"ageGroupPlaceholder": "اختر فئة عمرية"
+				"ageGroupPlaceholder": "اختر فئة عمرية",
+				"genderLabel": " الطفل"
 			},
 			"step2": {
 				"title": "الموضوعات المفضلة",
@@ -60,7 +65,8 @@
 				"childNameRequired": "اسم الطفل مطلوب",
 				"selectAgeGroup": "يرجى تحديد فئة عمرية لطفلك",
 				"invalidAgeGroup": "فئة العمر المحددة غير صالحة",
-				"selectAtLeastOneTheme": "حدد موضوعًا واحدًا على الأقل"
+				"selectAtLeastOneTheme": "حدد موضوعًا واحدًا على الأقل",
+				"selectGender": "يرجى اختيار"
 			},
 			"messages": {
 				"createdSuccess": "تم إنشاء ملف الطفل بنجاح!",

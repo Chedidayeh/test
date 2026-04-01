@@ -454,7 +454,7 @@ export interface RefetchParentDataResult {
  *   console.log("Updated children:", result.data?.children);
  * }
  */
-export async function refetchParentDataAction(
+export async function getParentWithProfilesAction(
   parentId: string,
 ): Promise<RefetchParentDataResult> {
   try {

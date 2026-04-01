@@ -3,6 +3,7 @@ import { handleSynthesize } from "../agents/voice-agent/controllers/tts.controll
 import { handleValidateAnswer } from "../agents/answer-validation-agent/controllers/validation.controller";
 import { analyticsController } from "../agents/progress-analytics/controllers/analytics.controller";
 import { storytellingController } from "../agents/storytelling-agent/controllers/storytelling.controller";
+import { hintGeneratorController } from "../agents/hint-generator/controllers/hint.controller";
 
 const router = Router();
 
@@ -96,6 +97,11 @@ router.post("/analytics/generate", (req, res) =>
  */
 router.post("/generate-child-storytelling", (req, res) =>
   storytellingController.generateChildStorytelling(req, res),
+);
+
+
+router.post("/generate-hints", (req, res) =>
+  hintGeneratorController.generateHints(req, res),
 );
 
 export default router;

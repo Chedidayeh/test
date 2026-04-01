@@ -16,6 +16,17 @@ export default function ChildStorytellingTab({
   selectedChild,
 }: ChildStorytellingTabProps) {
   const t = useTranslations("ParentDashboard");
+
+  if (!selectedChild) {
+    return (
+      <TabsContent value="child-storytelling" className="space-y-4 md:space-y-6">
+        <div className="text-center py-8 text-muted-foreground">
+          {t("loading", { defaultValue: "Loading child data..." })}
+        </div>
+      </TabsContent>
+    );
+  }
+
   const childName = selectedChild?.child?.name ?? t("unknown");
 
   return (

@@ -19,7 +19,7 @@ export default async function AdminLayout({
     redirect("/");
   }
   return (
-    <div className="flex h-screen">
+    <div dir="ltr" className="flex h-screen">
       {/* Fixed Sidebar */}
       <div className="fixed left-0 top-0 h-screen z-40">
         <AdminSidebar />

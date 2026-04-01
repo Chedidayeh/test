@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useParams } from "next/navigation";
 import { Settings, Users, BookOpen, Home, Map, TrendingUp } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { cn } from "@/src/lib/utils";
@@ -85,12 +85,17 @@ const navigationSections: NavSection[] = [
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const params = useParams();
+  const locale = params.locale as string;
+
+  // Remove locale prefix from pathname for comparison
+  const pathWithoutLocale = pathname.replace(`/${locale}`, "");
 
   const isActive = (href: string) => {
     if (href === "/admin-dashboard") {
-      return pathname === href;
+      return pathWithoutLocale === href;
     }
-    return pathname.startsWith(href);
+    return pathWithoutLocale.startsWith(href);
   };
 
   return (
@@ -107,7 +112,7 @@ export function AdminSidebar() {
         >
           {/* Logo/Header */}
           <div className="p-3 border-b">
-            <Link href="/" className="flex items-center gap-3">
+            <Link href={`/${locale}`} className="flex items-center gap-3">
               <div className={cn("flex items-center gap-3")}>
                 <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-semibold">
                   R
@@ -130,7 +135,7 @@ export function AdminSidebar() {
 
                 <div className="space-y-2">
                   {section.items.map((item) => (
-                    <Link key={item.href} href={item.href}>
+                    <Link key={item.href} href={`/${locale}${item.href}`}>
                       <Button
                         variant={isActive(item.href) ? "default" : "ghost"}
                         className={cn(

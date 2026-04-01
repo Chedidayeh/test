@@ -1,4 +1,7 @@
 {
+	"LoadingComponent": {
+		"loading": "Loading..."
+	},
 	"Hero": {
 		"headline": "Stories That Make Your Child",
 		"subline": "Journey through magical tales and solve mind-bending riddles",
@@ -39,6 +42,7 @@
 		"selectLanguage": "Language"
 	},
 	"ParentDashboard": {
+		"loading": "Loading...",
 		"yourChildren": "Your Children",
 		"unknown": "Unknown",
 		"stars": "{count} stars",
@@ -51,7 +55,8 @@
 				"childNameLabel": "Child's Name",
 				"childNamePlaceholder": "e.g., Emma",
 				"ageGroupLabel": "Age Group",
-				"ageGroupPlaceholder": "Select age group"
+				"ageGroupPlaceholder": "Select age group",
+				"genderLabel": "Child's Gender"
 			},
 			"step2": {
 				"title": "Favorite Themes",
@@ -72,7 +77,8 @@
 				"childNameRequired": "Child name is required",
 				"selectAgeGroup": "Please select an age group for your child",
 				"invalidAgeGroup": "Selected age group is invalid",
-				"selectAtLeastOneTheme": "Select at least one theme"
+				"selectAtLeastOneTheme": "Select at least one theme",
+				"selectGender": "Please select a gender"
 			},
 			"messages": {
 				"createdSuccess": "Child profile created successfully!",

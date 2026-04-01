@@ -34,7 +34,7 @@ export function AdminHeader({ session }: AdminHeaderProps) {
 
           <ModeToggle />
 
-          <Switcher />
+          {/* <Switcher /> */}
         </div>
       </div>
     </header>

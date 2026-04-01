@@ -17,6 +17,8 @@ import {
   type StoryFormData,
 } from "../_schema/storySchemas";
 import { useState } from "react";
+import { toast } from "sonner";
+import { generateHintsAction } from "@/src/lib/ai-service/server-actions";
 import {
   Loader2,
   ChevronLeft,
@@ -27,6 +29,7 @@ import {
   ChevronUp,
   Plus,
   Trash2,
+  Sparkles,
 } from "lucide-react";
 import {
   Dialog,
@@ -108,6 +111,7 @@ const getInitialFormData = (data?: any): StoryFormData => {
       description: data.description || "",
       difficulty: data.difficulty || 1,
       order: data.order || 1,
+      ageGroup: data.ageGroup || "",
       translationSource: data.translationSource || TranslationSourceType.MANUAL,
       generateAudio: data.generateAudio || false,
       chapters: (data.chapters || []).map((chapter: any) => ({
@@ -144,6 +148,7 @@ const getInitialFormData = (data?: any): StoryFormData => {
     description: "",
     difficulty: 1,
     order: 1,
+    ageGroup: "",
     translationSource: TranslationSourceType.MANUAL,
     generateAudio: false,
     chapters: [
@@ -663,7 +668,7 @@ export function NewStoryForm({
             {STEPS.map((step, idx) => (
               <motion.div
                 key={idx}
-                className={`h-10 min-w-10 rounded-full flex items-center justify-center font-medium text-xs transition-all ${
+                className={`h-10 min-w-10 font-semibold rounded-full flex items-center justify-center text-xs transition-all ${
                   idx < currentStepIndex
                     ? "bg-primary text-white cursor-pointer"
                     : idx === currentStepIndex
@@ -802,6 +807,8 @@ export function NewStoryForm({
                 removeChallengeFromChapter(currentChapterIndexForChallenge)
               }
               errors={errors}
+              difficulty={formData.difficulty}
+              ageGroup={formData.ageGroup}
             />
           )}
 
@@ -913,6 +920,10 @@ function StoryDetailsStep({
             value={selectedAgeGroupId}
             onValueChange={(val) => {
               setSelectedAgeGroupId(val);
+              // Get the age group name and store in form data
+              const selectedAgeGroupName =
+                ageGroups.find((g) => g.id === val)?.name || "";
+              onFieldChange("ageGroup", selectedAgeGroupName);
               // reset downstream selections
               setSelectedRoadmapId("");
               onWorldChange("");
@@ -981,11 +992,11 @@ function StoryDetailsStep({
       {/* Existing Stories Reference */}
       {formData.worldId && existingStories.length > 0 && (
         <Card className="p-2 px-4 bg-amber-50 border-amber-200">
-          <h3 className="font-medium text-amber-900 mb-3">
+          <h3 className="font-medium text-amber-900">
             Stories in this world:
           </h3>
           <div className="space-y-2 text-sm">
-            {existingStories.map((story) => (
+            {[...existingStories].sort((a, b) => a.order - b.order).map((story) => (
               <p key={story.id} className="text-amber-800">
                 {story.order}. {story.title}
               </p>
@@ -1429,6 +1440,8 @@ interface ChallengesManagementStepProps {
   onAddChallenge: () => void;
   onRemoveChallenge: () => void;
   errors: ValidationErrors;
+  difficulty?: number;
+  ageGroup?: string;
 }
 
 function ChallengesManagementStep({
@@ -1443,9 +1456,13 @@ function ChallengesManagementStep({
   onAddChallenge,
   onRemoveChallenge,
   errors,
+  difficulty,
+  ageGroup,
 }: ChallengesManagementStepProps) {
   const chapter = chapters[currentChapterIndex];
   const challenge = chapter?.challenge;
+  const [isGeneratingHints, setIsGeneratingHints] = useState(false);
+  const [stagedHints, setStagedHints] = useState<string[] | null>(null);
 
   // Check if challenge type is RIDDLE (open-ended, no predefined answers)
   const isRiddleType = () => challenge?.type === ChallengeType.RIDDLE;
@@ -1457,6 +1474,129 @@ function ChallengesManagementStep({
 
   // Check if TRUE_FALSE type (exactly 2 answers)
   const isTrueFalseType = () => challenge?.type === ChallengeType.TRUE_FALSE;
+
+  /**
+   * Generate hints for the challenge using LLM
+   * Aggregates story content (current + previous chapters) and challenge data
+   * Validates all required data before making the API call
+   */
+  const handleGenerateHints = async () => {
+    // Validate challenge exists
+    if (!challenge) {
+      toast.error("No challenge found", {
+        description: "Please add a challenge to this chapter first.",
+      });
+      return;
+    }
+
+    // Validate challenge type is set
+    if (!challenge.type) {
+      toast.error("Invalid challenge type", {
+        description: "Please select a valid challenge type.",
+      });
+      return;
+    }
+
+    // Validate question is provided and non-empty
+    if (!challenge.question || !challenge.question.trim()) {
+      toast.error("Question is required", {
+        description: "Please enter a challenge question.",
+      });
+      return;
+    }
+
+    // Validate answers exist and have content
+    if (!challenge.answers || challenge.answers.length === 0) {
+      toast.error("Answers are required", {
+        description: "Please add at least one answer option.",
+      });
+      return;
+    }
+
+    // Get answers with non-empty text
+    const answers = challenge.answers
+      .map((a: any) => a.text)
+      .filter((text: string) => text && text.trim());
+
+    if (answers.length === 0) {
+      toast.error("Answer text is empty", {
+        description: "Please enter text for all answer options.",
+      });
+      return;
+    }
+
+    // Validate age group is provided (optional - will use backend default if not set)
+    // This allows hint generation to work even when editing stories where age group might not be pre-populated
+    const effectiveAgeGroup =
+      ageGroup && ageGroup.trim() ? ageGroup.trim() : undefined;
+
+    // Aggregate story content from current chapter and all previous chapters
+    const storyContent = chapters
+      .slice(0, currentChapterIndex + 1)
+      .map((ch: any) => ch.content)
+      .filter((content: string) => content && content.trim())
+      .join("\n---\n");
+
+    if (!storyContent.trim()) {
+      toast.error("Story content is required", {
+        description: "Please add content to the current chapter first.",
+      });
+      return;
+    }
+
+    // Validate difficulty level is valid
+    if (difficulty === undefined || difficulty === null) {
+      toast.error("Difficulty level is required", {
+        description: "Please select a difficulty level for the story.",
+      });
+      return;
+    }
+
+    if (difficulty < 1 || difficulty > 5) {
+      toast.error("Invalid difficulty level", {
+        description: "Difficulty must be between 1 and 5.",
+      });
+      return;
+    }
+
+    // Build request payload with fallback for optional fields
+    const payload = {
+      storyContent,
+      question: challenge.question.trim(),
+      answers,
+      challengeType: challenge.type,
+      difficultyLevel: difficulty,
+      ageGroup: effectiveAgeGroup, // Will use backend default if not provided
+    };
+
+    // Log payload for debugging
+    console.log("Hint Generation Request:", payload);
+
+    setIsGeneratingHints(true);
+    try {
+      const result = await generateHintsAction(payload);
+
+      if (result.success && result.data?.hints) {
+        // Store generated hints in staging area for review
+        setStagedHints(result.data.hints);
+        toast.success("Hints generated successfully!", {
+          description: `Generated ${result.data.hints.length} progressive hints. Review and accept to apply.`,
+        });
+      } else {
+        toast.error("Failed to generate hints", {
+          description:
+            result.error || "The AI service is currently unavailable.",
+        });
+      }
+    } catch (error) {
+      console.error("[UI] Error generating hints:", error);
+      toast.error("Error generating hints", {
+        description: "An unexpected error occurred. Please try again.",
+      });
+    } finally {
+      setIsGeneratingHints(false);
+    }
+  };
 
   const canAddMoreAnswers = () => {
     if (!challenge) return false;
@@ -1656,17 +1796,17 @@ function ChallengesManagementStep({
             <div className="flex items-center gap-2">
               <h3 className="font-medium">Answers</h3>
               {isRiddleType() && (
-                <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded">
+                <span className="text-xs bg-amber-100 text-amber-500s px-2 py-1 rounded">
                   Reference answers (min 2)
                 </span>
               )}
               {isAllAnswersCorrectType() && (
-                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                <span className="text-xs bg-blue-100 text-blue-500s px-2 py-1 rounded">
                   All answers are correct
                 </span>
               )}
               {isTrueFalseType() && (
-                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
+                <span className="text-xs bg-purple-100 text-purple-500s px-2 py-1 rounded">
                   Exactly 2 answers
                 </span>
               )}
@@ -1830,118 +1970,207 @@ function ChallengesManagementStep({
                 selected source language.
               </p>
             )}
-            <div className="space-y-2">
-              {(challenge.hints || []).map((hint: string, idx: number) => (
-                <div
-                  key={idx}
-                  className="flex flex-col gap-4 border-b pb-4 pt-4"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <Input
-                      value={hint}
-                      onChange={(e) => {
-                        const newHints = [...(challenge.hints || [])];
-                        newHints[idx] = e.target.value;
-                        onChallengeFieldChange("hints", newHints);
-                      }}
-                      placeholder={`Hint ${idx + 1}`}
-                    />
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="max-w-max"
-                      onClick={() => {
-                        const newHints = (challenge.hints || []).filter(
-                          (_: any, i: number) => i !== idx,
-                        );
-                        onChallengeFieldChange("hints", newHints);
-                      }}
+
+            {/* Actual Hints List - User-confirmed hints */}
+            {(challenge.hints || []).length > 0 && (
+              <div className="mb-6 ">
+                {/* <p className="text-sm font-semibold text-slate-600 mb-3">
+                 Hints ({challenge.hints.length})
+                </p> */}
+                <div className="space-y-3">
+                  {(challenge.hints || []).map((hint: string, idx: number) => (
+                    <div
+                      key={idx}
+                      className="flex items-start gap-3 p-3 rounded border"
                     >
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
-                  </div>
-
-                  {translationSource === TranslationSourceType.MANUAL &&
-                    (challenge.hints || []).length > 0 && (
-                      <div className="space-y-3 p-4 rounded border ">
-                        <p className="text-sm font-medium">
-                          Hints Translations
-                        </p>
-
-                        <div key={idx} className="space-y-2">
-                          <p className="text-xs font-medium text-slate-500">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="inline-flex items-center justify-center w-6 h-6 text-xs font-bold rounded-full bg-slate-500 text-white">
+                            {idx + 1}
+                          </span>
+                          <span className="text-xs font-medium ">
                             Hint {idx + 1}
-                          </p>
-                          {getAllLanguages().map((lang) => {
-                            const translation = challenge.translations?.find(
-                              (t: any) => t.languageCode === lang,
-                            );
-                            const hintValue = translation?.hints?.[idx] || "";
-                            return (
-                              <div key={`${idx}-${lang}`}>
-                                <label className="block text-xs font-medium mb-1">
-                                  {lang}
-                                </label>
-                                <Textarea
-                                  value={hintValue}
-                                  onChange={(e) => {
-                                    const translations = [
-                                      ...(challenge.translations || []),
-                                    ];
-                                    const transIdx = translations.findIndex(
-                                      (t) => t.languageCode === lang,
-                                    );
-                                    const newHints =
-                                      transIdx >= 0
-                                        ? [
-                                            ...(translations[transIdx].hints ||
-                                              []),
-                                          ]
-                                        : [];
-                                    newHints[idx] = e.target.value;
-
-                                    if (transIdx >= 0) {
-                                      translations[transIdx].hints = newHints;
-                                    } else {
-                                      translations.push({
-                                        languageCode: lang,
-                                        question: "",
-                                        hints: newHints,
-                                      });
-                                    }
-                                    onChallengeFieldChange(
-                                      "translations",
-                                      translations,
-                                    );
-                                  }}
-                                  placeholder={`Translate hint ${idx + 1} to ${lang}`}
-                                  className="text-sm h-16"
-                                />
-                              </div>
-                            );
-                          })}
+                          </span>
                         </div>
+                        <p className="text-sm ">{hint}</p>
                       </div>
-                    )}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="flex-shrink-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                        onClick={() => {
+                          const newHints = (challenge.hints || []).filter(
+                            (_: any, i: number) => i !== idx,
+                          );
+                          onChallengeFieldChange("hints", newHints);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
-              ))}
-              {(challenge.hints || []).length < 3 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    const newHints = [...(challenge.hints || []), ""];
-                    onChallengeFieldChange("hints", newHints);
-                  }}
-                  className="w-full"
-                >
-                  Add Hint
-                </Button>
-              )}
+              </div>
+            )}
+
+            {/* Generate Hints Button - Always Visible */}
+            <div className="mb-4 p-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg">
+              <p className="text-sm text-amber-900 mb-3">
+                ✨ Let AI generate progressive hints based on your challenge and
+                story context.
+              </p>
+              <Button
+                type="button"
+                size={"sm"}
+                variant="default"
+                onClick={handleGenerateHints}
+                disabled={isGeneratingHints}
+                className="max-w-max bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+              >
+                {isGeneratingHints ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating hints...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Generate Hints with AI
+                  </>
+                )}
+              </Button>
             </div>
+
+            {/* Staged Hints - Awaiting Review */}
+            {stagedHints && stagedHints.length > 0 && (
+              <div className="mb-6 p-4 border bg-amber-50 rounded-lg">
+                <p className="text-sm font-medium text-amber-900 mb-3">
+                  Review Generated Hints ({stagedHints.length})
+                </p>
+                <div className="space-y-3 mb-4">
+                  {stagedHints.map((hint: string, idx: number) => (
+                    <div
+                      key={idx}
+                      className="flex items-start gap-3 p-3 rounded border border-amber-200 bg-white"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="inline-flex items-center justify-center w-6 h-6 text-xs font-bold rounded-full bg-amber-500 text-white">
+                            {idx + 1}
+                          </span>
+                          <span className="text-xs font-medium text-amber-600">
+                            Hint {idx + 1}
+                          </span>
+                        </div>
+                        <p className="text-sm text-slate-700">{hint}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    size={"sm"}
+                    className="flex-1 bg-green-500 hover:bg-green-600 text-white"
+                    onClick={() => {
+                      // Replace actual hints with staged hints
+                      onChallengeFieldChange("hints", stagedHints);
+                      setStagedHints(null);
+                      toast.success("Hints accepted!", {
+                        description: "AI-generated hints have been applied.",
+                      });
+                    }}
+                  >
+                    ✓ Accept & Apply
+                  </Button>
+                  <Button
+                  size={"sm"}
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setStagedHints(null);
+                      toast.info("Hints rejected", {
+                        description: "Generated hints were discarded.",
+                      });
+                    }}
+                  >
+                    ✕ Reject
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Manual Hints Editor - For manual translations */}
+            {translationSource === TranslationSourceType.MANUAL &&
+              (challenge.hints || []).length > 0 && (
+                <div className="space-y-4 p-4 rounded border">
+                  <p className="text-sm font-semibold text-slate-500s">
+                    Hint Translations
+                  </p>
+                  <div className="space-y-4">
+                    {(challenge.hints || []).map((_: string, idx: number) => (
+                      <div key={idx} className="space-y-2">
+                        <p className="text-xs font-medium text-slate-600">
+                          Hint {idx + 1}
+                        </p>
+                        {getAllLanguages().map((lang) => {
+                          const translation = challenge.translations?.find(
+                            (t: any) => t.languageCode === lang,
+                          );
+                          const hintValue = translation?.hints?.[idx] || "";
+                          return (
+                            <div key={`${idx}-${lang}`}>
+                              <label className="block text-xs font-medium mb-1">
+                                {lang}
+                              </label>
+                              <Textarea
+                                value={hintValue}
+                                onChange={(e) => {
+                                  const translations = [
+                                    ...(challenge.translations || []),
+                                  ];
+                                  const transIdx = translations.findIndex(
+                                    (t) => t.languageCode === lang,
+                                  );
+                                  const newHints =
+                                    transIdx >= 0
+                                      ? [
+                                          ...(translations[transIdx].hints ||
+                                            []),
+                                        ]
+                                      : [];
+                                  newHints[idx] = e.target.value;
+
+                                  if (transIdx >= 0) {
+                                    translations[transIdx].hints = newHints;
+                                  } else {
+                                    translations.push({
+                                      languageCode: lang,
+                                      question: "",
+                                      hints: newHints,
+                                    });
+                                  }
+                                  onChallengeFieldChange(
+                                    "translations",
+                                    translations,
+                                  );
+                                }}
+                                placeholder={`Translate hint ${idx + 1} to ${lang}`}
+                                className="text-sm h-16"
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
             {errors["challenge.hints"] && (
-              <p className="text-sm text-red-500 mt-1">
+              <p className="text-sm text-red-500 mt-2">
                 {errors["challenge.hints"]}
               </p>
             )}
@@ -2036,7 +2265,7 @@ function StoryValidationStep({ formData, worlds }: StoryValidationStepProps) {
             Difficulty Level
           </label>
           <p className=" font-medium mt-2">
-            <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-700">
+            <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-500s">
               {formData.difficulty} / 5
             </span>
           </p>

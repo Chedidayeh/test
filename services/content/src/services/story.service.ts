@@ -33,6 +33,8 @@ export class StoryService {
       const whereClause: any = {};
       if (query.worldId) whereClause.worldId = query.worldId;
       if (query.difficulty) whereClause.difficulty = query.difficulty;
+      whereClause.isStorytellingStory = false;
+      
 
       const [stories, total] = await Promise.all([
         this.prisma.story.findMany({

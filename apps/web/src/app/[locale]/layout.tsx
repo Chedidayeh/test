@@ -9,7 +9,6 @@ import { Toaster } from "../../components/ui/sonner";
 import { NextIntlClientProvider } from "next-intl";
 import { LocaleProvider } from "../../contexts/LocaleContext";
 import { Local } from "@readdly/shared-types";
-
 const fredoka = Fredoka({
   subsets: ["latin"],
   display: "swap",
@@ -43,18 +42,16 @@ export default async function RootLayout({
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
 }>) {
-  const { locale } = await params
+  const { locale } = await params;
 
   const isRTL = locale === "ar";
   return (
-    <html 
-    dir={isRTL ? "rtl" : "ltr"} 
-    lang={locale}>
+    <html dir={isRTL ? "rtl" : "ltr"} lang={locale}>
       <body
         className={` ${isRTL ? tajawal.className : fredoka.className} antialiased bg-background  `}
       >
         <NextIntlClientProvider>
-          <NextTopLoader color="#F59E0B"  showSpinner={false} />
+          <NextTopLoader color="#F59E0B" showSpinner={false} />
           <SessionProvider>
             <ThemeProvider
               attribute="class"

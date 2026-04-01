@@ -8,10 +8,10 @@ import AchievementsTab from "./AchievementsTab";
 import { Badge, ParentUser, AgeGroup, RoleType } from "@readdly/shared-types";
 import TimeAnalyticsTab from "./TimeAnalyticsTab";
 import RiddleAnalyticsTab from "./RiddleAnalyticsTab";
-import { refetchParentDataAction } from "@/src/lib/progress-service/server-actions";
 import { toast } from "sonner";
 import { Session } from "next-auth";
 import ChildStorytellingTab from "./ChildStorytellingTab";
+import { getParentWithProfilesAction } from "@/src/lib/progress-service/server-actions";
 
 export default function ParentDashboardInteractive({
   parentData: initialParentData,
@@ -45,7 +45,7 @@ export default function ParentDashboardInteractive({
       }
 
       // Refetch parent data
-      const result = await refetchParentDataAction(parentData.id);
+      const result = await getParentWithProfilesAction(parentData.id);
       if (result.success && result.data) {
         setParentData(result.data);
         // Auto-select the new child if it exists

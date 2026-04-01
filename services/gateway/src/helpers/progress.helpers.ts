@@ -28,7 +28,6 @@ const CONTENT_SERVICE_URL =
 /**
  * Helper function to fetch a specific child by ID
  * Orchestrates Progress Service (child profile) and Auth Service (child data)
- * TODO: Extend to fetch related content service data (stories, progress, etc.)
  */
 export async function forwardGetChildById(
   req: Request,
@@ -157,11 +156,6 @@ export async function forwardGetChildById(
       // Continue without auth data if it fails
     }
 
-    // TODO: Step 3: Fetch related content service data
-    // - Story progress
-    // - Current reading level/roadmap
-    // - Available stories based on age group
-    // - Badges and achievements
 
     logger.info("Child profile fetched successfully", { childId });
 

@@ -7,11 +7,17 @@
  * Wraps `ai-service` server-api calls for use in Server Components / Actions
  */
 
-import { validateAnswer, LLMValidationResult, ValidateAnswerRequest, generateStorytelling, GenerateStorytellingRequest } from "./server-api";
+import { validateAnswer, LLMValidationResult, ValidateAnswerRequest, generateStorytelling, GenerateStorytellingRequest, generateHints, GenerateHintsRequest, HintResponse } from "./server-api";
 
 export interface ValidateAnswerActionResult {
   success: boolean;
   data?: LLMValidationResult;
+  error?: string;
+}
+
+export interface GenerateHintsActionResult {
+  success: boolean;
+  data?: HintResponse;
   error?: string;
 }
 
@@ -150,6 +156,72 @@ export async function generateStorytellingAction(
 
     console.error("[AI Service] Error generating storytelling:", {
       childProfileId: request.childProfileId,
+      error: errorMessage,
+    });
+
+    return {
+      success: false,
+      error: errorMessage,
+    };
+  }
+}
+
+/**
+ * Server action to generate hints for a challenge using LLM
+ * Wraps the generateHints API call with error handling
+ *
+ * @param request - Hint generation request data
+ * @returns Result object with success status and data/error
+ *
+ * @example
+ * const result = await generateHintsAction({
+ *   storyContent: "Once upon a time...",
+ *   question: "What was the main character's name?",
+ *   correctAnswers: ["Alice"],
+ *   challengeType: "RIDDLE",
+ *   difficultyLevel: 2.5,
+ *   ageGroup: "6-8"
+ * });
+ * if (result.success) {
+ *   console.log("Hints:", result.data?.hints);
+ *   console.log("Log ID:", result.data?.hintGenerationLogId);
+ * }
+ */
+export async function generateHintsAction(
+  request: GenerateHintsRequest,
+): Promise<GenerateHintsActionResult> {
+  try {
+    console.log("[AI Service] Generating hints via server action:", {
+      challengeType: request.challengeType,
+      difficultyLevel: request.difficultyLevel,
+      ageGroup: request.ageGroup,
+    });
+
+    const result = await generateHints(request);
+
+    if (!result) {
+      console.warn("[AI Service] Hint generation returned null");
+      return {
+        success: false,
+        error: "Failed to generate hints",
+      };
+    }
+
+    console.log("[AI Service] Hints generated via server action:", {
+      hintsCount: result.hints.length,
+      logId: result.hintGenerationLogId,
+    });
+
+    return {
+      success: true,
+      data: result,
+    };
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred";
+
+    console.error("[AI Service] Error generating hints:", {
+      challengeType: request.challengeType,
       error: errorMessage,
     });
 
