@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Gateway Service Server API
  *
@@ -67,13 +66,6 @@ export interface SubmitChallengeAnswerRequest {
     isCorrect?: boolean; // Whether the submitted answer was correct (for ANSWER_SUBMITTED)
   }[];
 
-  // LLM validation context (for open-ended challenges like RIDDLE, CHOOSE_ENDING, MORAL_DECISION)
-  storyId?: string; // ID of the story
-  chapterId?: string; // ID of the chapter
-  storyContent?: string; // Full story/chapter text for LLM context
-  question?: string; // The challenge question
-  correctAnswers?: string[]; // Array of correct answers for LLM validation
-  childAnswer?: string; // What the child answered (for LLM validation)
 }
 
 

@@ -227,13 +227,6 @@ const StoryReadingInteractive = ({
   const currentPageData = localizedPages[currentPage - 1];
   const currentChallenge = currentChapter?.challenge || null;
 
-  // Build complete story content up to current chapter for LLM context
-  const storyContextContent = useMemo(() => {
-    return localizedPages
-      .slice(0, currentPage)
-      .map((page) => page.text)
-      .join("\n\n");
-  }, [localizedPages, currentPage]);
 
   // Determine if riddle button should be shown
   // Show button only if challenge is not attempted
@@ -396,9 +389,6 @@ const StoryReadingInteractive = ({
                 storyImage={currentPageData?.image}
                 storyImageAlt={currentPageData?.alt}
                 gameSessionId={currentProgress?.gameSession?.id}
-                storyId={story.id}
-                chapterId={currentChapter?.id}
-                storyContent={storyContextContent}
                 onChallengeSubmitted={handleChallengeSubmitted}
                 onClose={() => setShowRiddle(false)}
               />

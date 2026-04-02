@@ -34,6 +34,8 @@ const buttonVariants = cva(
         "icon-xs": "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3",
         "icon-sm": "size-8",
         "icon-lg": "size-10",
+        // responsive sizes: sm on mobile, default on md, lg on lg+
+        responsive: "h-9 px-4 text-sm md:h-11 md:px-6 md:text-base lg:h-12 lg:px-8 lg:text has-[>svg]:px-2.5 md:has-[>svg]:px-3 lg:has-[>svg]:px-4",
       },
     },
     defaultVariants: {

@@ -1,20 +1,57 @@
+"use client";
 import Header from "./_components/Header";
-import { auth } from "@/src/auth";
-import { redirect } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import { RoleType } from "@readdly/shared-types";
+import { useSession } from "next-auth/react";
+import { useEffect, useRef } from "react";
 
-export default async function Layout({
+export default function Layout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth();
-  if (!session) {
-    redirect("/");
-  }
+  const { data: session, status } = useSession();
 
-  if (session.user.role === RoleType.PARENT && session?.user.newUser) {
-    redirect("/onboarding");
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const router = useRouter();
+  
+  useEffect(() => {
+    const handleUserInteraction = async () => {
+      try {
+        if (audioRef.current) {
+          await audioRef.current.play();
+        }
+        window.removeEventListener("pointerdown", handleUserInteraction);
+      } catch (err) {
+        console.log("Play failed:", err);
+      }
+    };
+
+    window.addEventListener("pointerdown", handleUserInteraction);
+
+    return () => {
+      window.removeEventListener("pointerdown", handleUserInteraction);
+    };
+  }, []);
+
+  // Only check session state once it's done loading
+  useEffect(() => {
+    if (status === "loading") return; // Wait for session to load
+    
+    if (status === "unauthenticated") {
+      router.push("/");
+      return;
+    }
+
+    if (session?.user.role === RoleType.PARENT && session?.user.newUser) {
+      router.push("/onboarding");
+      return;
+    }
+  }, [status, session, router]);
+
+  // Don't render anything while checking session status
+  if (status === "loading") {
+    return null;
   }
 
   const userRole = session?.user.role;
@@ -24,6 +61,13 @@ export default async function Layout({
       <Header userRole={userRole} />
 
       {children}
+      <audio
+        ref={audioRef}
+        preload="auto"
+        playsInline
+        loop
+        src="/soundtracks/audio.mp3"
+      />
     </div>
   );
 }

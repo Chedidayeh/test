@@ -14,14 +14,12 @@ import { apiRequest, isApiError } from "../helpers";
  * Request payload for validating a child's answer using LLM
  */
 export interface ValidateAnswerRequest {
-  storyId: string; // ID of the story
-  chapterId: string; // ID of the chapter
-  challengeAttemptId: string; // ID of the challenge attempt (from progress service)
-  storyContent: string; // Full story/chapter text for context
+  challengeId: string; // ID of the challenge (from content service)
   question: string; // The challenge question
-  correctAnswers: string[]; // Array of correct answers
+  correctAnswer: string; // The correct answer
   childAnswer: string; // What the child answered
   challengeType: string; // Type of challenge (RIDDLE, MULTIPLE_CHOICE, etc.)
+  baseLocale : string; // Base locale of the story (e.g., "en", "fr", "ar") for language-specific validation
 }
 
 /**
@@ -93,9 +91,7 @@ export async function validateAnswer(
 ): Promise<LLMValidationResult | null> {
   try {
     console.log("[AI Service API] Validating answer via LLM:", {
-      storyId: request.storyId,
-      chapterId: request.chapterId,
-      challengeAttemptId: request.challengeAttemptId,
+      challengeId: request.challengeId,
       challengeType: request.challengeType,
     });
 
@@ -125,7 +121,7 @@ export async function validateAnswer(
     console.log(
       "[AI Service API] Answer validation completed successfully:",
       {
-        challengeAttemptId: request.challengeAttemptId,
+        challengeAttemptId: request.challengeId,
         correct: response.data?.correct,
         confidence: response.data?.confidence,
       },

@@ -7,6 +7,7 @@ export default function Loading() {
 
   return (
     <>
+
       <div className="fixed inset-0 z-99 flex items-center justify-center bg-background/80 backdrop-blur-sm">
         <div className="flex flex-col items-center gap-4">
           <span className="inline-flex items-center gap-3">

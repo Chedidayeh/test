@@ -55,7 +55,7 @@ export async function validateAnswerAction(
 ): Promise<ValidateAnswerActionResult> {
   try {
     console.log("[AI Service] Validating answer via server action:", {
-      challengeAttemptId: request.challengeAttemptId,
+      challengeAttemptId: request.challengeId,
       challengeType: request.challengeType,
     });
 
@@ -70,7 +70,7 @@ export async function validateAnswerAction(
     }
 
     console.log("[AI Service] Answer validation completed via server action:", {
-      challengeAttemptId: request.challengeAttemptId,
+      challengeAttemptId: request.challengeId,
       correct: result.correct,
       confidence: result.confidence,
     });
@@ -84,7 +84,7 @@ export async function validateAnswerAction(
       error instanceof Error ? error.message : "Unknown error occurred";
 
     console.error("[AI Service] Error validating answer:", {
-      challengeAttemptId: request.challengeAttemptId,
+      challengeAttemptId: request.challengeId,
       error: errorMessage,
     });
 

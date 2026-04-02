@@ -689,7 +689,7 @@
 			"unlocked": "شارة جديدة مفتوحة: {badgeName}"
 		},
 		"buttons": {
-			"returnToDashboard": "العودة إلى لوحة التحكم"
+			"continueReading": "متابعة القراءة"
 		}
 	}
 }

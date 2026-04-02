@@ -63,15 +63,15 @@ export default function StoryCompletion({
           transition={{ duration: 0.5 }}
           className="text-center mb-8"
         >
-          <div className="flex items-center justify-center">
+          {/* <div className="flex items-center justify-center">
             <div className="rounded-full  p-2">
               <CheckCircle2 className="w-8 h-8 text-primary" />
             </div>
-          </div>
-          <h1 className="text-4xl font-bold  mb-2">
+          </div> */}
+          <h1 className="text-4xl font-bold text-primary mb-2">
             {t("completionHeader.title")}
           </h1>
-          <p className="text-lg text-gray-500">
+          <p className="text-lg text-gray-400">
             {t("completionHeader.subtitle", {
               childName: child.name,
               storyTitle: localizeStory.name,
@@ -99,7 +99,7 @@ export default function StoryCompletion({
             <CardContent className="pt-6 space-y-4">
               {/* Current Level */}
               <div className="flex items-center text-xl justify-between">
-                <span className="text-gray-500">
+                <span className="">
                   {t("progressCard.currentLevel")}
                 </span>
                 <span className="text-2xl font-bold text-primary">
@@ -109,7 +109,7 @@ export default function StoryCompletion({
 
               {/* Total Stars */}
               <div className="flex items-center  text-xl justify-between">
-                <span className="text-gray-500">
+                <span className="">
                   {t("progressCard.totalStars")}
                 </span>
                 <div className="flex items-center gap-1">
@@ -123,7 +123,7 @@ export default function StoryCompletion({
               {/* Progress Bar */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between  text-xl">
-                  <span className="text-gray-500">
+                  <span className="">
                     {t("progressCard.progressToLevel", {
                       nextLevel: levelAnalysis.nextLevelNumber,
                     })}
@@ -190,7 +190,7 @@ export default function StoryCompletion({
           className="gap-3 flex items-center justify-center"
         >
           <Button className="max-w-max " onClick={handleReturnToDashboard}>
-            {t("buttons.returnToDashboard")}
+            {t("buttons.continueReading")}
             {isRTL ? (
               <ChevronLeft className="w-4 h-4 mr-1" />
             ) : (

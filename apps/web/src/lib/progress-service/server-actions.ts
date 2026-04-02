@@ -159,68 +159,6 @@ export async function submitChallengeAnswerAction(
       },
     );
 
-    // Step 1: Call LLM validator for open-ended challenges (RIDDLE, CHOOSE_ENDING, MORAL_DECISION) if context is provided
-    let llmValidationResult = undefined;
-    const shouldValidateWithLLM =
-      request.challengeType === ChallengeType.RIDDLE ||
-      request.challengeType === ChallengeType.CHOOSE_ENDING ||
-      request.challengeType === ChallengeType.MORAL_DECISION;
-
-    if (
-      shouldValidateWithLLM &&
-      request.storyId &&
-      request.chapterId &&
-      request.storyContent &&
-      request.question &&
-      request.correctAnswers &&
-      request.childAnswer
-    ) {
-      console.log(
-        "[Progress Service] Calling LLM validator for challenge:",
-        request.challengeId,
-      );
-
-      const validationStartTime = Date.now();
-      const validationResult = await validateAnswerAction({
-        storyId: request.storyId,
-        chapterId: request.chapterId,
-        challengeAttemptId: request.challengeId, // Use challengeId as a unique identifier temporarily
-        storyContent: request.storyContent,
-        question: request.question,
-        correctAnswers: request.correctAnswers,
-        childAnswer: request.childAnswer,
-        challengeType: request.challengeType,
-      });
-
-      const validationTime = Date.now() - validationStartTime;
-      console.log(
-        "[Progress Service] LLM validation completed",
-        {
-          success: validationResult.success,
-          validationTimeMs: validationTime,
-          challengeId: request.challengeId,
-        },
-      );
-
-      if (validationResult.success && validationResult.data) {
-        llmValidationResult = validationResult.data;
-        // Update isCorrect based on LLM validation for LLM-validated challenges
-        request.isCorrect = llmValidationResult.correct;
-        console.log("[Progress Service] Updated isCorrect from LLM result:", {
-          challengeId: request.challengeId,
-          isCorrect: request.isCorrect,
-          confidence: llmValidationResult.confidence,
-        });
-      }
-    } else {
-      const skipReason = !shouldValidateWithLLM
-        ? `Challenge type ${request.challengeType} does not require LLM validation`
-        : "Missing required context for LLM validation";
-      console.log("[Progress Service] Skipping LLM validation:", {
-        challengeId: request.challengeId,
-        reason: skipReason,
-      });
-    }
 
     // Step 2: Submit challenge answer to progress service
     const result = await submitChallengeAnswer(request);
@@ -230,16 +168,12 @@ export async function submitChallengeAnswerAction(
       {
         challengeId: request.challengeId,
         totalStars: result.totalStarsEarned,
-        hasLLMValidation: !!llmValidationResult,
       },
     );
 
     return {
       success: true,
-      data: {
-        ...result,
-        llmValidation: llmValidationResult,
-      },
+      data: result,
     };
   } catch (error) {
     const errorMessage =

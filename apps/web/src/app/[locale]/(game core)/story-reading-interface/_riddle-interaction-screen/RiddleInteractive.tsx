@@ -20,6 +20,7 @@ import { submitChallengeAnswerAction } from "@/src/lib/progress-service/server-a
 import type { SubmitChallengeAnswerRequest } from "@/src/lib/progress-service/server-api";
 import { useTranslations } from "next-intl";
 import { useLocale } from "@/src/contexts/LocaleContext";
+import { validateAnswerAction } from "@/src/lib/ai-service/server-actions";
 
 interface Choice {
   id: string;
@@ -48,10 +49,6 @@ interface RiddleInteractiveProps {
   storyImage?: string;
   storyImageAlt?: string;
   gameSessionId?: string;
-  // LLM validation context
-  storyId?: string;
-  chapterId?: string;
-  storyContent?: string;
   onChallengeSubmitted?: (
     attempt: ChallengeAttempt,
     starsEarned?: number,
@@ -64,9 +61,6 @@ const RiddleInteractive = ({
   storyImage,
   storyImageAlt = "Story image",
   gameSessionId,
-  storyId,
-  chapterId,
-  storyContent,
   onChallengeSubmitted,
   onClose,
 }: RiddleInteractiveProps) => {
@@ -74,10 +68,9 @@ const RiddleInteractive = ({
 
   // Transform Challenge to Riddle format
   const { locale } = useLocale();
+  const baseLocale = (locale || Local.EN).split("-")[0].toUpperCase();
 
   const transformChallengeToRiddle = (challenge: Challenge): Riddle => {
-    const baseLocale = (locale || Local.EN).split("-")[0].toUpperCase();
-
     // pick challenge-level translation if present
     const challengeTranslation = challenge.translations?.find(
       (t) => t.languageCode === baseLocale,
@@ -134,6 +127,7 @@ const RiddleInteractive = ({
   const [hintsUsed, setHintsUsed] = useState(0);
   const [currentHintLevel, setCurrentHintLevel] = useState(0);
   const [isHintPanelVisible, setIsHintPanelVisible] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
   const [feedbackState, setFeedbackState] = useState<{
     type: "solved" | "almost" | "incorrect" | null;
     message: string;
@@ -145,6 +139,8 @@ const RiddleInteractive = ({
   });
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const correctSoundRef = useRef<HTMLAudioElement>(null);
+  const incorrectSoundRef = useRef<HTMLAudioElement>(null);
 
   // const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -221,13 +217,6 @@ const RiddleInteractive = ({
         skipped: isSkipped,
         status: status,
         actions: attemptActions,
-        // LLM validation context
-        storyId,
-        chapterId,
-        storyContent,
-        question: currentRiddle.question,
-        correctAnswers: [currentRiddle.correctAnswer],
-        childAnswer: answerText || "",
       });
 
       if (result.success) {
@@ -273,150 +262,130 @@ const RiddleInteractive = ({
     const currentAttempt = attempts + 1;
     setAttempts(currentAttempt);
 
-    const normalizedAnswer = answer.toLowerCase().trim();
-    const correctAnswer = currentRiddle.correctAnswer.toLowerCase();
     let isCorrect = false;
-    let isAlmost = false;
+    const isAlmost = false;
     let selectedAnswerId: string | undefined;
     let answerText: string | undefined;
     let selectedAnswerText: string | undefined;
+    let llmMessage: string | null = null;
 
-    // Determine if LLM validation will be used for this challenge type
-    const shouldValidateWithLLM =
-      currentRiddle.type === ChallengeType.RIDDLE ||
-      currentRiddle.type === ChallengeType.CHOOSE_ENDING ||
-      currentRiddle.type === ChallengeType.MORAL_DECISION;
-
-    // Type-specific validation logic
-    switch (currentRiddle.type) {
-      case "RIDDLE":
-        // For riddles: allow substring matching or exact match
-        if (
-          normalizedAnswer === correctAnswer ||
-          normalizedAnswer.includes(correctAnswer)
-        ) {
-          isCorrect = true;
-        } else if (
-          normalizedAnswer.length > 0 &&
-          correctAnswer.includes(normalizedAnswer.substring(0, 3))
-        ) {
-          isAlmost = true;
-        }
-        answerText = answer;
-        break;
-
-      case "TRUE_FALSE":
-        // For true/false: exact match only
-        if (normalizedAnswer === correctAnswer) {
-          isCorrect = true;
-        }
-        answerText = answer;
-        break;
-
-      case "MULTIPLE_CHOICE":
-        // For multiple choice: exact match required
-        if (normalizedAnswer === correctAnswer) {
-          isCorrect = true;
-        }
-        // Get the answer ID from selected choice
-        selectedAnswerId = selectedChoice || undefined;
-        selectedAnswerText = currentRiddle.choices?.find(
-          (c) => c.id === selectedChoice,
-        )?.text;
-        answerText = answer;
-        break;
-
-      case "CHOOSE_ENDING":
-      case "MORAL_DECISION":
-        // For these types: all answers are correct (we log the child's choice to track story understanding)
-        isCorrect = true;
-        // Get the answer ID from selected choice
-        selectedAnswerId = selectedChoice || undefined;
-        selectedAnswerText = currentRiddle.choices?.find(
-          (c) => c.id === selectedChoice,
-        )?.text;
-        answerText = answer;
-        break;
-    }
-
-    // Capture action for this answer submission
-    const actionData: SubmitChallengeAnswerRequest["actions"][0] = {
-      selectedAnswerId,
-      selectedAnswerText,
-      answerText,
-      attemptNumberAtAction: currentAttempt,
-      isCorrect: isCorrect,
-    };
-
-    // Build new actions array synchronously before submitting
-    const updatedActions = [...actions, actionData];
-    setActions(updatedActions);
-
-    console.log("[Riddle] Answer submitted", {
-      challengeType: currentRiddle.type,
-      attemptNumber: currentAttempt,
-      action: actionData,
-      totalActionsAfterSubmit: updatedActions.length,
-      willValidateWithLLM: shouldValidateWithLLM,
-    });
-
-    // For LLM-validated challenges: await server response and use LLM result for feedback
-    if (shouldValidateWithLLM) {
-      stopTimerAndLog(isCorrect ? "solved" : "incorrect");
-
-      // Await the server response which includes LLM validation
+    // Case 1: RIDDLE type - Use LLM validation
+    if (currentRiddle.type === ChallengeType.RIDDLE) {
       try {
-        const result = await submitChallengeAnswerActionWithFeedback(
-          selectedAnswerId,
-          answerText,
-          isCorrect,
-          false,
-          isCorrect ? ChallengeStatus.SOLVED : ChallengeStatus.INCORRECT,
-          currentAttempt,
-          updatedActions,
-        );
+        setIsValidating(true);
+        console.log("[Riddle] Calling LLM validation for RIDDLE type");
 
-        // Use LLM validation result to determine actual correctness
-        const llmValidation = result?.data?.llmValidation;
-        if (llmValidation) {
-          const feedbackType = llmValidation.correct ? "solved" : "incorrect";
-          setFeedbackState({
-            type: feedbackType,
-            message: llmValidation.message,
-            isVisible: true,
+        const validationResult = await validateAnswerAction({
+          challengeId: challenge!.id,
+          question: currentRiddle.question,
+          correctAnswer: currentRiddle.correctAnswer,
+          childAnswer: answer,
+          challengeType: ChallengeType.RIDDLE,
+          baseLocale: baseLocale,
+        });
+
+        if (validationResult.success && validationResult.data) {
+          isCorrect = validationResult.data.correct;
+          llmMessage = validationResult.data.message;
+          console.log("[Riddle] LLM validation completed:", {
+            correct: isCorrect,
+            confidence: validationResult.data.confidence,
+            message: llmMessage,
           });
 
-          console.log("[Riddle] LLM validation feedback set:", {
-            challengeAttemptId: selectedAnswerId,
-            feedbackType,
-            confidence: llmValidation.confidence,
-          });
+          stopTimerAndLog(isCorrect ? "solved" : "incorrect");
+          answerText = answer;
+
+          // Capture action
+          const actionData: SubmitChallengeAnswerRequest["actions"][0] = {
+            answerText,
+            attemptNumberAtAction: currentAttempt,
+            isCorrect: isCorrect,
+          };
+
+          const updatedActions = [...actions, actionData];
+          setActions(updatedActions);
+
+          // Display feedback immediately with LLM message
+          setLocalFeedback(isCorrect, false, llmMessage || undefined);
+
+          // Submit to backend in the background (don't wait for response)
+          submitChallengeAnswerActionWithFeedback(
+            undefined,
+            answerText,
+            isCorrect,
+            false,
+            isCorrect ? ChallengeStatus.SOLVED : ChallengeStatus.INCORRECT,
+            currentAttempt,
+            updatedActions,
+          );
         } else {
-          // Fallback to local validation if LLM unavailable
-          setLocalFeedback(isCorrect, isAlmost);
+          console.warn(
+            "[Riddle] LLM validation failed:",
+            validationResult.error,
+          );
+          setLocalFeedback(false, false);
         }
       } catch (error) {
-        console.error("[Riddle] Error getting LLM validation feedback:", error);
-        setLocalFeedback(isCorrect, isAlmost);
+        console.error("[Riddle] Error calling LLM validation:", error);
+        setLocalFeedback(false, false);
+      } finally {
+        setIsValidating(false);
       }
     } else {
-      // For locally-validated challenges: set feedback immediately
-      stopTimerAndLog(
-        isCorrect ? "solved" : isAlmost ? "almost" : "incorrect",
-      );
+      // Case 2: Other challenge types - Direct validation using challenge data
+      const normalizedAnswer = answer.toLowerCase().trim();
+      const correctAnswer = currentRiddle.correctAnswer.toLowerCase();
+
+      switch (currentRiddle.type) {
+        case "TRUE_FALSE":
+          isCorrect = normalizedAnswer === correctAnswer;
+          answerText = answer;
+          break;
+
+        case "MULTIPLE_CHOICE":
+          isCorrect = normalizedAnswer === correctAnswer;
+          selectedAnswerId = selectedChoice || undefined;
+          selectedAnswerText = currentRiddle.choices?.find(
+            (c) => c.id === selectedChoice,
+          )?.text;
+          answerText = answer;
+          break;
+
+        case "CHOOSE_ENDING":
+        case "MORAL_DECISION":
+          // All answers are correct for these types (track child's choice)
+          isCorrect = true;
+          selectedAnswerId = selectedChoice || undefined;
+          selectedAnswerText = currentRiddle.choices?.find(
+            (c) => c.id === selectedChoice,
+          )?.text;
+          answerText = answer;
+          break;
+      }
+
+      stopTimerAndLog(isCorrect ? "solved" : isAlmost ? "almost" : "incorrect");
       setLocalFeedback(isCorrect, isAlmost);
 
-      // Submit to backend without waiting for response
+      // Capture action
+      const actionData: SubmitChallengeAnswerRequest["actions"][0] = {
+        selectedAnswerId,
+        selectedAnswerText,
+        answerText,
+        attemptNumberAtAction: currentAttempt,
+        isCorrect: isCorrect,
+      };
+
+      const updatedActions = [...actions, actionData];
+      setActions(updatedActions);
+
+      // Submit to backend
       submitChallengeAttempt(
         selectedAnswerId,
         answerText,
         isCorrect,
         false,
-        isCorrect
-          ? ChallengeStatus.SOLVED
-          : isAlmost
-            ? ChallengeStatus.INCORRECT
-            : ChallengeStatus.INCORRECT,
+        isCorrect ? ChallengeStatus.SOLVED : ChallengeStatus.INCORRECT,
         currentAttempt,
         updatedActions,
       );
@@ -426,30 +395,43 @@ const RiddleInteractive = ({
   };
 
   // Helper function to set feedback based on local validation
-  const setLocalFeedback = (isCorrect: boolean, isAlmost: boolean) => {
+  // Accepts optional customMessage parameter to override static messages (e.g., for LLM responses)
+  const setLocalFeedback = (isCorrect: boolean, isAlmost: boolean, customMessage?: string) => {
     if (isCorrect) {
-      const messages = {
-        RIDDLE: t("solvedAnswerRIDDLE"),
-        TRUE_FALSE: t("solvedAnswerTRUE_FALSE"),
-        MULTIPLE_CHOICE: t("solvedAnswerMULTIPLE_CHOICE"),
-        CHOOSE_ENDING: t("solvedAnswerCHOOSE_ENDING"),
-        MORAL_DECISION: t("solvedAnswerMORAL_DECISION"),
-      };
-      setFeedbackState({
-        type: "solved",
-        message: messages[currentRiddle.type] || messages.MULTIPLE_CHOICE,
-        isVisible: true,
-      });
+      playFeedbackSound("correct");
+      // Use custom message (from LLM) if provided, otherwise use static messages
+      if (customMessage) {
+        setFeedbackState({
+          type: "solved",
+          message: customMessage,
+          isVisible: true,
+        });
+      } else {
+        const messages = {
+          RIDDLE: t("solvedAnswerRIDDLE"),
+          TRUE_FALSE: t("solvedAnswerTRUE_FALSE"),
+          MULTIPLE_CHOICE: t("solvedAnswerMULTIPLE_CHOICE"),
+          CHOOSE_ENDING: t("solvedAnswerCHOOSE_ENDING"),
+          MORAL_DECISION: t("solvedAnswerMORAL_DECISION"),
+        };
+        setFeedbackState({
+          type: "solved",
+          message: messages[currentRiddle.type] || messages.MULTIPLE_CHOICE,
+          isVisible: true,
+        });
+      }
     } else if (isAlmost) {
+      playFeedbackSound("incorrect");
       setFeedbackState({
         type: "almost",
-        message: t("almostAnswer"),
+        message: customMessage || t("almostAnswer"),
         isVisible: true,
       });
     } else {
+      playFeedbackSound("incorrect");
       setFeedbackState({
         type: "incorrect",
-        message: t("incorrectAnswer"),
+        message: customMessage || t("incorrectAnswer"),
         isVisible: true,
       });
     }
@@ -471,12 +453,15 @@ const RiddleInteractive = ({
     }
 
     try {
-      console.log("[Riddle] Submitting challenge attempt for LLM validation...", {
-        gameSessionId,
-        challengeId: currentRiddle.id,
-        attemptNumber: attemptNum,
-        isSkipped,
-      });
+      console.log(
+        "[Riddle] Submitting challenge attempt for LLM validation...",
+        {
+          gameSessionId,
+          challengeId: currentRiddle.id,
+          attemptNumber: attemptNum,
+          isSkipped,
+        },
+      );
 
       const result = await submitChallengeAnswerAction({
         gameSessionId,
@@ -492,12 +477,6 @@ const RiddleInteractive = ({
         skipped: isSkipped,
         status: status,
         actions: attemptActions,
-        storyId,
-        chapterId,
-        storyContent,
-        question: currentRiddle.question,
-        correctAnswers: [currentRiddle.correctAnswer],
-        childAnswer: answerText || "",
       });
 
       if (result.success) {
@@ -520,7 +499,10 @@ const RiddleInteractive = ({
 
       return result;
     } catch (error) {
-      console.error("[Riddle] Error submitting challenge attempt (LLM):", error);
+      console.error(
+        "[Riddle] Error submitting challenge attempt (LLM):",
+        error,
+      );
       return null;
     }
   };
@@ -600,6 +582,16 @@ const RiddleInteractive = ({
     }
   };
 
+  const playFeedbackSound = (type: "correct" | "incorrect") => {
+    const soundRef = type === "correct" ? correctSoundRef : incorrectSoundRef;
+    if (soundRef.current) {
+      soundRef.current.currentTime = 0;
+      soundRef.current.play().catch((error) => {
+        console.warn(`Failed to play ${type} sound:`, error);
+      });
+    }
+  };
+
   return (
     <div className="pt-16 sm:pt-20 pb-20 sm:pb-24 md:pb-28 lg:pb-32">
       <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 max-w-5xl">
@@ -638,11 +630,16 @@ const RiddleInteractive = ({
           onPause={() => setIsPlayingAudio(false)}
         />
 
+        {/* Feedback Sound Effects */}
+        <audio ref={correctSoundRef} src="/soundtracks/correct-answer.mp3" />
+        <audio ref={incorrectSoundRef} src="/soundtracks/wrong-answer.mp3" />
+
         {/* Answer Input */}
         <div className="mt-4 sm:mt-6 bg-card rounded-xl shadow-warm-lg p-4 sm:p-6">
           {currentRiddle.type === "RIDDLE" ? (
             <TextInputAnswer
               onSubmit={handleTextSubmit}
+              isLoading={isValidating}
               isDisabled={feedbackState.isVisible}
               placeholder={t("textInputAnswer.placeholder")}
             />

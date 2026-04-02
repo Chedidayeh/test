@@ -8,14 +8,12 @@ import { logger } from "../../../lib/logger";
 const prisma = new PrismaClient();
 
 export interface ValidateAnswerRequest {
-  storyId: string;
-  chapterId: string;
-  challengeAttemptId: string;
-  storyContent: string;
+  challengeId: string;
   question: string;
-  correctAnswers: string[];
+  correctAnswer: string;
   childAnswer: string;
   challengeType: string;
+  baseLocale: string;
 }
 
 export async function validateAnswerAndSave(
@@ -24,7 +22,7 @@ export async function validateAnswerAndSave(
 
   const previousAnswers = await prisma.lLMValidationResult.findMany({
     where: {
-      challengeAttemptId: request.challengeAttemptId,
+      challengeId: request.challengeId,
     },
     orderBy: {
       createdAt: "asc",
@@ -38,25 +36,26 @@ export async function validateAnswerAndSave(
   }));
 
   const llmResult = await llmValidateAnswer(
-    request.storyContent,
     request.question,
-    request.correctAnswers,
+    request.correctAnswer,
     request.childAnswer,
     request.challengeType,
+    request.baseLocale,
+    previousAnswers.length + 1,
     answerHistory,
   );
 
   // Save the validation result to the database
    await prisma.lLMValidationResult.create({
     data: {
-      storyId: request.storyId,
-      chapterId: request.chapterId,
-      challengeAttemptId: request.challengeAttemptId,
+      challengeId: request.challengeId,
       childAnswer: request.childAnswer,
+      correctAnswer: request.correctAnswer,
       correct: llmResult.correct,
       confidence: llmResult.confidence,
       reason: llmResult.reason,
       message: llmResult.message,
+      attemptNumber: previousAnswers.length + 1,
     },
   });
 
@@ -67,7 +66,7 @@ export async function validateAnswerAndSave(
       service: "ai-service",
       message: "Answer validation complete",
       metadata: {
-        challengeAttemptId: request.challengeAttemptId,
+        challengeId: request.challengeId,
         correct: llmResult.correct,
         confidence: llmResult.confidence,
       },

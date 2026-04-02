@@ -49,13 +49,10 @@ model LLMValidationResult {
   id String @id @default(cuid())
 
   // References to other services (stored as plain IDs)
-  storyId            String // ID of the story this validation is for
-  chapterId          String // ID of the chapter this validation is for
-  challengeAttemptId String // ID of the challenge attempt from progress service
-  attemptActionId    String? // Optional reference to attempt action ID from progress service
-
-  childAnswer String
-
+  challengeId   String // ID of the challenge id from content service
+  correctAnswer String
+  childAnswer   String
+  attemptNumber  Int   @default(1)    // Which attempt this was (1, 2, 3...)
   // LLM validation data
   correct    Boolean // Whether the child's answer was correct
   confidence Float // Confidence score (0.0 - 1.0)
@@ -65,10 +62,8 @@ model LLMValidationResult {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([storyId])
-  @@index([chapterId])
-  @@index([challengeAttemptId])
-  @@index([attemptActionId])
+  @@index([challengeId])
+  @@index([attemptNumber])
 }
 
 // AIProgressInsight stores the complete analytics response from generateAnalytics controller

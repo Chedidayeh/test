@@ -691,7 +691,7 @@
 			"unlocked": "New Badge Unlocked: {badgeName}"
 		},
 		"buttons": {
-			"returnToDashboard": "Return to Dashboard"
+			"continueReading": "Continue Reading"
 		}
 	}
 }

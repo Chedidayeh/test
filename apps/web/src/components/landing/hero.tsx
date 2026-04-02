@@ -19,6 +19,7 @@ export default function Hero({ session }: { session: Session | null }) {
   const router = useRouter();
   const loginModal = useLoginModal();
 
+
   return (
     <div>
       {/* Hero Content */}
@@ -36,21 +37,20 @@ export default function Hero({ session }: { session: Session | null }) {
             {t("details")}
           </p>
         </div>
-
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6 sm:pt-12">
           <Link
             href={
               session?.user?.newUser
                 ? "/onboarding"
-                : session?.user?.newUser === false 
+                : session?.user?.newUser === false
                   ? "/parent-dashboard"
                   : ""
             }
           >
             <Button
               className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4"
-              size={"sm"}
+              size={"responsive"}
               onClick={() => {
                 if (session?.user.newUser) {
                   router.push("/onboarding");

@@ -18,6 +18,7 @@ import {
 } from "@readdly/shared-types";
 import { useLocale } from "@/src/contexts/LocaleContext";
 import { useTranslations } from "next-intl";
+import { validateAnswerAction } from "@/src/lib/ai-service/server-actions";
 
 interface Choice {
   id: string;
@@ -59,20 +60,23 @@ const RiddleInteractive = ({
   onChallengeSubmitted,
   onClose,
 }: RiddleInteractiveProps) => {
-    const t = useTranslations("StoryReadingInterface.riddleInterface");
-  
+  const t = useTranslations("StoryReadingInterface.riddleInterface");
+
   // Transform Challenge to Riddle format
   const { locale } = useLocale();
+  const baseLocale = (locale || Local.EN).split("-")[0].toUpperCase();
 
   const transformChallengeToRiddle = (challenge: Challenge): Riddle => {
-    const baseLocale = (locale || Local.EN).split("-")[0].toUpperCase();
-
     // pick challenge-level translation if present
-    const challengeTranslation = challenge.translations?.find((t) => t.languageCode === baseLocale);
+    const challengeTranslation = challenge.translations?.find(
+      (t) => t.languageCode === baseLocale,
+    );
 
     // Build choices with localized text when available
     const choices = challenge.answers?.map((answer) => {
-      const answerTranslation = answer.translations?.find((t) => t.languageCode === baseLocale);
+      const answerTranslation = answer.translations?.find(
+        (t) => t.languageCode === baseLocale,
+      );
       return {
         id: answer.id,
         text: answerTranslation?.text || answer.text,
@@ -80,11 +84,15 @@ const RiddleInteractive = ({
     });
 
     // Determine correct answer text (localized if possible)
-    const correctAnswerRaw = challenge.answers?.find((a) => a.isCorrect) || null;
+    const correctAnswerRaw =
+      challenge.answers?.find((a) => a.isCorrect) || null;
     const correctAnswerTranslation = correctAnswerRaw
-      ? correctAnswerRaw.translations?.find((t) => t.languageCode === baseLocale)
+      ? correctAnswerRaw.translations?.find(
+          (t) => t.languageCode === baseLocale,
+        )
       : null;
-    const correctAnswerText = correctAnswerTranslation?.text || correctAnswerRaw?.text || "";
+    const correctAnswerText =
+      correctAnswerTranslation?.text || correctAnswerRaw?.text || "";
 
     // Build hints (use translated hints array if present)
     const hintsArray = challengeTranslation?.hints || challenge.hints || [];
@@ -115,6 +123,7 @@ const RiddleInteractive = ({
   const [hintsUsed, setHintsUsed] = useState(0);
   const [currentHintLevel, setCurrentHintLevel] = useState(0);
   const [isHintPanelVisible, setIsHintPanelVisible] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
   const [feedbackState, setFeedbackState] = useState<{
     type: "solved" | "almost" | "incorrect" | null;
     message: string;
@@ -128,6 +137,8 @@ const RiddleInteractive = ({
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(true);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const correctSoundRef = useRef<HTMLAudioElement>(null);
+  const incorrectSoundRef = useRef<HTMLAudioElement>(null);
 
   const totalHints = currentRiddle.hints.length;
   const availableHints = totalHints - hintsUsed;
@@ -174,7 +185,7 @@ const RiddleInteractive = ({
     }
   };
 
-  const checkAnswer = (answer: string) => {
+  const checkAnswer = async (answer: string) => {
     const currentAttempt = attempts + 1;
     setAttempts(currentAttempt);
 
@@ -182,21 +193,57 @@ const RiddleInteractive = ({
     const correctAnswer = currentRiddle.correctAnswer.toLowerCase();
     let isCorrect = false;
     let isAlmost = false;
+    let llmMessage: string | null = null; // Local variable to store LLM message immediately
 
     // Type-specific validation logic
     switch (currentRiddle.type) {
       case "RIDDLE":
-        // For riddles: allow substring matching or exact match
-        if (
-          normalizedAnswer === correctAnswer ||
-          normalizedAnswer.includes(correctAnswer)
-        ) {
+        // First check for exact match
+        if (normalizedAnswer === correctAnswer) {
           isCorrect = true;
         } else if (
           normalizedAnswer.length > 0 &&
           correctAnswer.includes(normalizedAnswer.substring(0, 3))
         ) {
           isAlmost = true;
+        } else {
+          // If no exact match, use LLM validation
+          try {
+            setIsValidating(true);
+            console.log("[Riddle] Attempting LLM validation for RIDDLE type");
+            const validationResult = await validateAnswerAction({
+              challengeId: challenge!.id,
+              question: currentRiddle.question,
+              correctAnswer: currentRiddle.correctAnswer,
+              childAnswer: answer,
+              challengeType: ChallengeType.RIDDLE,
+              baseLocale: baseLocale,
+            });
+
+            if (validationResult.success && validationResult.data) {
+              console.log("[Riddle] LLM validation result:", {
+                correct: validationResult.data.correct,
+                confidence: validationResult.data.confidence,
+                message: validationResult.data.message,
+              });
+              isCorrect = validationResult.data.correct;
+              // Store the LLM message in local variable to use immediately
+              llmMessage = validationResult.data.message;
+            } else {
+              console.warn(
+                "[Riddle] LLM validation failed:",
+                validationResult.error,
+              );
+              isCorrect = false;
+              llmMessage = null;
+            }
+          } catch (error) {
+            console.error("[Riddle] Error calling LLM validation:", error);
+            isCorrect = false;
+            llmMessage = null;
+          } finally {
+            setIsValidating(false);
+          }
         }
         break;
 
@@ -223,6 +270,7 @@ const RiddleInteractive = ({
 
     if (isCorrect) {
       stopTimerAndLog("solved");
+      playFeedbackSound("correct");
 
       // Create a local challenge attempt object for preview
       const now = new Date();
@@ -263,13 +311,21 @@ const RiddleInteractive = ({
         CHOOSE_ENDING: t("solvedAnswerCHOOSE_ENDING"),
         MORAL_DECISION: t("solvedAnswerMORAL_DECISION"),
       };
+
+      // Use LLM message for RIDDLE type if available, otherwise use static message
+      const feedbackMessage =
+        currentRiddle.type === "RIDDLE" && llmMessage
+          ? llmMessage
+          : messages[currentRiddle.type];
+
       setFeedbackState({
         type: "solved",
-        message: messages[currentRiddle.type] || messages.MULTIPLE_CHOICE,
+        message: feedbackMessage,
         isVisible: true,
       });
     } else if (isAlmost) {
       stopTimerAndLog("almost");
+      playFeedbackSound("incorrect");
 
       // Create a local challenge attempt object for preview
       const now = new Date();
@@ -310,6 +366,7 @@ const RiddleInteractive = ({
       });
     } else {
       stopTimerAndLog("incorrect");
+      playFeedbackSound("incorrect");
 
       // Create a local challenge attempt object for preview
       const now = new Date();
@@ -343,9 +400,15 @@ const RiddleInteractive = ({
       };
       onChallengeSubmitted?.(localAttempt);
 
+      // Use LLM message for RIDDLE type if available, otherwise use static message
+      const feedbackMessage =
+        currentRiddle.type === "RIDDLE" && llmMessage
+          ? llmMessage
+          : t("incorrectAnswer");
+
       setFeedbackState({
         type: "incorrect",
-        message: t("incorrectAnswer"),
+        message: feedbackMessage,
         isVisible: true,
       });
     }
@@ -371,12 +434,14 @@ const RiddleInteractive = ({
 
   const handleTryAgain = () => {
     setFeedbackState({ type: null, message: "", isVisible: false });
+    setIsValidating(false);
     // Resume timer when user tries again
     setIsTimerRunning(true);
   };
 
   const handleContinue = (action: "solved" | "skipped") => {
     stopTimerAndLog(action === "solved" ? "solved" : "skipped");
+    setIsValidating(false);
 
     // If skipped, create and track the attempt locally
     if (action === "skipped") {
@@ -428,6 +493,16 @@ const RiddleInteractive = ({
     }
   };
 
+  const playFeedbackSound = (type: "correct" | "incorrect") => {
+    const soundRef = type === "correct" ? correctSoundRef : incorrectSoundRef;
+    if (soundRef.current) {
+      soundRef.current.currentTime = 0;
+      soundRef.current.play().catch((error) => {
+        console.warn(`Failed to play ${type} sound:`, error);
+      });
+    }
+  };
+
   return (
     <div className="pt-16 sm:pt-20 pb-20 sm:pb-24 md:pb-28 lg:pb-32">
       <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 max-w-5xl">
@@ -466,12 +541,17 @@ const RiddleInteractive = ({
           onPause={() => setIsPlayingAudio(false)}
         />
 
+        {/* Feedback Sound Effects */}
+        <audio ref={correctSoundRef} src="/soundtracks/correct-answer.mp3" />
+        <audio ref={incorrectSoundRef} src="/soundtracks/wrong-answer.mp3" />
+
         {/* Answer Input */}
         <div className="mt-4 sm:mt-6 bg-card rounded-xl shadow-warm-lg p-4 sm:p-6">
           {currentRiddle.type === "RIDDLE" ? (
             <TextInputAnswer
               onSubmit={handleTextSubmit}
               isDisabled={feedbackState.isVisible}
+              isLoading={isValidating}
               placeholder={t("textInputAnswer.placeholder")}
             />
           ) : (

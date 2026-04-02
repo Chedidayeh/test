@@ -689,7 +689,7 @@
 			"unlocked": "Nouveau Badge Débloqué: {badgeName}"
 		},
 		"buttons": {
-			"returnToDashboard": "Retour au Tableau de Bord"
+			"continueReading": "Continuer à Lire"
 		}
 	}
 }

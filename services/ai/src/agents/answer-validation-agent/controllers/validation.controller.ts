@@ -7,24 +7,19 @@ import {
 export async function handleValidateAnswer(req: Request, res: Response) {
   try {
     const {
-      storyId,
-      chapterId,
-      challengeAttemptId,
-      storyContent,
+      challengeId,
       question,
-      correctAnswers,
+      correctAnswer,
       childAnswer,
       challengeType,
+      baseLocale
     } = req.body;
 
     // Validate required fields
     if (
-      !storyId ||
-      !chapterId ||
-      !challengeAttemptId ||
-      !storyContent ||
+      !challengeId ||
       !question ||
-      !correctAnswers ||
+      !correctAnswer ||
       !childAnswer ||
       !challengeType
     ) {
@@ -36,14 +31,12 @@ export async function handleValidateAnswer(req: Request, res: Response) {
     }
 
     const validationRequest: ValidateAnswerRequest = {
-      storyId,
-      chapterId,
-      challengeAttemptId,
-      storyContent,
+      challengeId,
       question,
-      correctAnswers,
+      correctAnswer,
       childAnswer,
       challengeType,
+      baseLocale
     };
 
     const result = await validateAnswerAndSave(validationRequest);

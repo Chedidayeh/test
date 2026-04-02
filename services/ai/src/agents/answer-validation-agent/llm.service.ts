@@ -14,11 +14,12 @@ export type PreviousAttempt = {
 };
 
 export async function llmValidateAnswer(
-  storyContent: string,
   question: string,
-  correctAnswers: string[],
+  correctAnswer: string,
   childAnswer: string,
   challengeType: string,
+  baseLocale: string,
+  attemptNumber: number,
   previousAttempts: PreviousAttempt[] = [],
 ): Promise<LLMValidationResult> {
   const prompt = `
@@ -34,10 +35,31 @@ Your tone must always be:
 Never shame the child.
 
 --------------------------------------------------
-STORY CONTEXT
+LANGUAGE CONTEXT
 --------------------------------------------------
 
-${storyContent}
+Base Language: ${baseLocale}
+Respond in the same language as the question and challenge content.
+Adapt cultural references and examples to be appropriate for the ${baseLocale} language context.
+
+--------------------------------------------------
+ATTEMPT CONTEXT
+--------------------------------------------------
+
+Current Attempt: ${attemptNumber}
+Total Previous Attempts: ${previousAttempts.length}
+
+${
+  attemptNumber === 1
+    ? "This is the FIRST attempt. Be encouraging and supportive."
+    : attemptNumber <= 2
+      ? "This is attempt " +
+        attemptNumber +
+        ". The child is trying again - be patient and gently guide them."
+      : "This is attempt " +
+        attemptNumber +
+        ". The child has tried multiple times. Be extra encouraging and provide gentle hints about what to consider."
+}
 
 --------------------------------------------------
 QUESTION
@@ -46,10 +68,10 @@ QUESTION
 ${question}
 
 --------------------------------------------------
-CORRECT ANSWERS
+CORRECT ANSWER
 --------------------------------------------------
 
-${correctAnswers.join(", ")}
+${correctAnswer}
 
 --------------------------------------------------
 CHILD ANSWER
@@ -61,7 +83,7 @@ ${
   previousAttempts.length > 0
     ? `
 --------------------------------------------------
-PREVIOUS ATTEMPTS
+PREVIOUS ATTEMPTS (if any)
 --------------------------------------------------
 
 ${previousAttempts.length > 0 ? previousAttempts.map((attempt, i) => `Attempt ${i + 1}:\n  Answer: ${attempt.answer}\n  Your Feedback Message: ${attempt.message}`).join("\n\n") : "None"}
@@ -79,47 +101,35 @@ ${challengeType}
 CHALLENGE TYPE BEHAVIOR
 --------------------------------------------------
 
-MULTIPLE_CHOICE
-- The answer must match one of the correct answers.
-- Allow minor spelling differences.
-
-TRUE_FALSE
-- Accept "true", "false", "yes", "no".
-- Map synonyms to true/false.
-
 RIDDLE
 - Open-ended answer.
 - Validate using meaning comparison.
 - Accept synonyms or paraphrases.
 
-CHOOSE_ENDING
-- ALL answers are correct.
-- Evaluate whether the answer logically relates to the story ending.
-
-MORAL_DECISION
-- ALL answers are acceptable.
-- Validate if the child demonstrates understanding of the moral.
-
 --------------------------------------------------
 EVALUATION RULES
 --------------------------------------------------
 
-1. Use STORY CONTEXT to understand the answer.
+1. Use STORY QUESTION to understand the answer.
 2. Accept answers with the SAME MEANING.
 3. Accept synonyms and paraphrasing.
 4. Accept minor spelling mistakes.
-5. Reject answers referring to different characters or events.
+5. SPELL-CHECK: If child's answer has spelling errors but is semantically correct:
+   - Accept the answer as correct
+   - Identify and correct the spelling errors
+   - Include the corrected spelling in your message as a gentle learning opportunity
+   - Example: If child writes "caracterr" for "character", respond with the corrected word in your message
 
 --------------------------------------------------
 CONFIDENCE SCALE
 --------------------------------------------------
 
-1.00 → exact correct answer  
-0.90 → strong semantic match  
-0.75 → mostly correct idea  
-0.50 → uncertain  
-0.25 → likely incorrect  
-0.00 → completely incorrect  
+1.00 → exact correct answer  (consider correct)
+0.90 → strong semantic match  (consider correct)
+0.75 → mostly correct idea  (consider correct but not perfect)
+0.50 → uncertain (close but not quite, consider not correct)
+0.25 → likely incorrect  (consider incorrect)
+0.00 → completely incorrect  (consider incorrect)
 
 --------------------------------------------------
 CHILD MESSAGE RULES
@@ -129,11 +139,21 @@ If correct:
 - congratulate the child
 - be positive
 - encourage reading
+- If you corrected spelling errors, include the corrected version naturally in your message
+  Example: "Exactly! The character was very brave!"
+- Acknowledge effort if this is not the first attempt
+  Attempt 1: "Perfect on your first try!"
+  Attempt 2+: "Great job! You got it after trying again - that shows persistence!"
 
 If incorrect:
 - encourage trying again
 - do NOT reveal the answer
-- hint gently
+- maintain that he can use hints (hints are available in the app)
+- Adjust tone based on attempt number:
+  Attempt 1: Be supportive and encouraging to try again
+  Attempt 2: Gently remind them to think about specific story details
+  Attempt 3+: Provide a gentle nudge toward the right direction (without spoiling the answer)
+- Reference previous attempts if patterns emerge (e.g., "You're getting closer!" if answer is improving)
 
 
 
@@ -147,13 +167,15 @@ Return ONLY valid JSON.
   "correct": boolean,
   "confidence": number,
   "reason": string,
-  "message": string
+  "message": string,
 }
 
 Rules:
 - reason: max 15 words
-- message: max 20 words
+- message: max 20 words, should be adjusted based on attemptNumber (see CHILD MESSAGE RULES)
+- correctedAnswer: only include if child's answer had spelling/grammar errors that you corrected
 - no extra text
+- respond in the language specified in LANGUAGE CONTEXT (${baseLocale})
 `;
 
   try {

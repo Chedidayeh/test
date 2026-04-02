@@ -74,7 +74,8 @@ const FeedbackDisplay2 = ({
         {/* Header */}
         <div className="flex items-center justify-between p-3 sm:p-4 border-b-2 border-border">
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 text-white bg-secondary rounded-full flex items-center justify-center flex-shrink-0">
+            <div className={`w-8 h-8 sm:w-10 sm:h-10 text-white ${type === "incorrect" ? "bg-red-500" : "bg-primary"}
+             rounded-full flex items-center justify-center flex-shrink-0`}>
               {type === "incorrect" && <CircleX size={18} className="sm:size-6" />}
               {type === "solved" && <CircleCheck size={18} className="sm:size-6" />}
             </div>
@@ -109,7 +110,7 @@ const FeedbackDisplay2 = ({
 
           {/* Stars Earned (for correct answers) */}
           {type === "solved" && starsEarned > 0 && (
-            <div className="flex items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-6 p-3 sm:p-4 bg-secondary/20 rounded-xl">
+            <div className="flex items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-6 p-3 sm:p-4 bg-primary/40 rounded-xl">
               <Star size={20} className="sm:size-6 fill-amber-500 text-amber-500" />
               <span className="font-heading text-xl sm:text-2xl text-foreground">
                 {t("feedbackDisplay.starsEarned", { count: starsEarned })}
@@ -122,7 +123,7 @@ const FeedbackDisplay2 = ({
             {type === "solved" ? (
               <div className="flex items-center justify-center">
                 <Button
-                  variant={"secondary"}
+                  variant={"default"}
                   onClick={() => onContinue("solved")}
                   className="text-sm sm:text-base"
                 >
@@ -141,7 +142,7 @@ const FeedbackDisplay2 = ({
                 <Button
                   variant={"secondary"}
                   onClick={onTryAgain}
-                  className="text-xs sm:text-sm flex-1 max-w-max"
+                  className="text-xs sm:text-sm flex-1 w-full"
                 >
                   {t("feedbackDisplay.tryAgainButton")}
                 </Button>
