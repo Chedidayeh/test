@@ -350,7 +350,7 @@ export function calculateChallengeStats(
       for (const attempt of progress.gameSession.challengeAttempts) {
         // Deduplicate by attempt ID - only keep the first occurrence
         if (!attemptMap.has(attempt.id)) {
-          (attempt as unknown as AttemptWithContext)._storyId = progress.storyId;
+          (attempt as unknown as AttemptWithContext)._storyId = progress.storyId!;
           (attempt as unknown as AttemptWithContext)._chapterId =
             progress.gameSession.chapterId || null;
           attemptMap.set(attempt.id, attempt as unknown as AttemptWithContext);
