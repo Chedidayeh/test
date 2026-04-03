@@ -288,6 +288,10 @@
 				"5": "You're a reading champion 👑",
 				"6": "Incredible dedication! You're a star reader 🌠",
 				"7": "You're a reading superstar! Keep shining ✨",
+				"8": "You're a reading legend in the making! Keep it up 🏆",
+				"9": "You're a reading hero! Your story is just beginning 🌟",
+				"10": "You're an inspiration to other readers! 🌟",
+				"11": "Your reading journey is extraordinary! Keep reaching for the stars 🌟",
 				"default": "Keep reading and you'll reach new heights! ⭐"
 			}
 		},
@@ -385,7 +389,14 @@
 			"worldLabel": "World",
 			"worldsLabel": "Worlds",
 			"coverImageAlt": "Cover image for {title}",
-			"allocateButton": "Allocate to Child"
+			"allocateButton": "Allocate to Child",
+			"readingLevels": {
+				"BEGINNER": "Beginner",
+				"EASY": "Easy",
+				"MEDIUM": "Medium",
+				"HARD": "Hard",
+				"ADVANCED": "Advanced"
+			}
 		},
 		"allocateDialog": {
 			"title": "Allocate Roadmap to Child",
@@ -590,6 +601,7 @@
 			"nextButton": "Next",
 			"starsEarned": "{count} stars",
 			"pageProgress": "Page {current} of {total}",
+			"timeDisplay": "Time: {seconds}",
 			"timerMessage": "Keep reading... ({remaining}s remaining)",
 			"completionMessage": "Story completed",
 			"solveRiddle": "Solve the riddle",

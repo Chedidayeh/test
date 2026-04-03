@@ -85,7 +85,7 @@ export default function BadgeCard({
             <p className={`text-sm text-gray-500 px-2`}>
               {t("achievements.locked.message")}
             </p>
-            <p className="text-xs text-gray-500 pt-1">
+            <p className="text-sm text-gray-500 pt-1">
               {t("achievements.locked.required", { level: badge.level.levelNumber })}
             </p>
           </>

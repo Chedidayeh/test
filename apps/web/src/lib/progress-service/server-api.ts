@@ -65,9 +65,7 @@ export interface SubmitChallengeAnswerRequest {
     attemptNumberAtAction: number; // Which attempt number they were on
     isCorrect?: boolean; // Whether the submitted answer was correct (for ANSWER_SUBMITTED)
   }[];
-
 }
-
 
 /**
  * Response from challenge answer submission
@@ -321,10 +319,15 @@ export async function startStory(childId: string, storyId: string) {
  * @example
  * const session = await saveCheckpoint("session-123", "chapter-456");
  */
-export async function saveCheckpoint(gameSessionId: string, chapterId: string) {
+export async function saveCheckpoint(
+  gameSessionId: string,
+  chapterId: string,
+  elapsedTime: number,
+) {
   console.log("[Progress Service API] Saving checkpoint:", {
     gameSessionId,
     chapterId,
+    elapsedTime,
   });
 
   const response = await apiRequest<ApiResponse<GameSession | null>>(
@@ -334,6 +337,7 @@ export async function saveCheckpoint(gameSessionId: string, chapterId: string) {
       body: JSON.stringify({
         gameSessionId,
         chapterId,
+        elapsedTime,
       }),
     },
   );
@@ -471,13 +475,18 @@ export async function submitChallengeAnswer(
  */
 export async function completeStory(
   gameSessionId: string,
+  elapsedTime: number,
 ): Promise<GameSession | null> {
   console.log("[Progress Service API] Completing story:", { gameSessionId });
 
   const response = await apiRequest<ApiResponse<GameSession>>(
     `/progress/${gameSessionId}/complete`,
+
     {
       method: "POST",
+      body: JSON.stringify({
+        elapsedTime,
+      }),
     },
   );
 
@@ -718,8 +727,7 @@ export async function allocateRoadmapToChild(
   );
 
   if (isApiError(response)) {
-    const errorMessage =
-      response.error.message || "Failed to allocate roadmap";
+    const errorMessage = response.error.message || "Failed to allocate roadmap";
     console.error(
       "[Progress Service API] Error allocating roadmap:",
       errorMessage,
@@ -734,14 +742,11 @@ export async function allocateRoadmapToChild(
     throw new Error(response.error?.message || "Failed to allocate roadmap");
   }
 
-  console.log(
-    "[Progress Service API] Roadmap allocated successfully",
-    {
-      childId,
-      roadmapId,
-      childName: response.data?.name,
-    },
-  );
+  console.log("[Progress Service API] Roadmap allocated successfully", {
+    childId,
+    roadmapId,
+    childName: response.data?.name,
+  });
 
   return response.data as ChildProfile;
 }
@@ -810,7 +815,10 @@ export async function getDashboardStats(): Promise<AdminDashboardStats> {
 
     return response.data || defaultStats;
   } catch (error) {
-    console.error("[Progress Service API] Error fetching dashboard stats:", error);
+    console.error(
+      "[Progress Service API] Error fetching dashboard stats:",
+      error,
+    );
     return defaultStats;
   }
 }

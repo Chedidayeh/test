@@ -102,6 +102,7 @@ model Roadmap {
   theme   Theme  @relation(fields: [themeId], references: [id])
 
   readingLevel ReadingLevel @default(BEGINNER)
+  LearningObjectives String[] // Array of learning objectives for this roadmap
 
   translations RoadmapTranslation[]
   worlds       World[]

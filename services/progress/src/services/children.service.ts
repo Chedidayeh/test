@@ -532,6 +532,7 @@ export class ChildrenService {
   static async saveCheckpoint(
     gameSessionId: string,
     chapterId: string,
+    elapsedTime: number,
   ): Promise<GameSession | null> {
     // Validate inputs
     if (!gameSessionId || !chapterId) {
@@ -553,6 +554,7 @@ export class ChildrenService {
       data: {
         chapterId: chapterId,
         checkpointAt: new Date(),
+        elapsedTimeSeconds: { increment: elapsedTime }, // Increment elapsed time with the new checkpoint duration
       },
       include: {
         challengeAttempts: {
@@ -562,6 +564,26 @@ export class ChildrenService {
         },
       },
     });
+
+    // Get the most recent checkpoint for this game session that doesn't have a pausedAt timestamp yet, and update its sessionDurationSeconds with the elapsedTime since the last checkpoint
+    const incompleteCheckpoint = await prisma.sessionCheckpoint.findFirst({
+      where: {
+        gameSessionId: gameSessionId,
+        pausedAt: null,
+      },
+      orderBy: {
+        startedAt: 'desc',
+      },
+    });
+
+    if (incompleteCheckpoint) {
+      await prisma.sessionCheckpoint.update({
+        where: { id: incompleteCheckpoint.id },
+        data: {
+          sessionDurationSeconds: { increment: elapsedTime },
+        },
+      });
+    }
 
     return updatedSession as unknown as GameSession;
   }
@@ -650,10 +672,6 @@ export class ChildrenService {
       where: { id: incompleteCheckpoint.id },
       data: {
         pausedAt: new Date(),
-        sessionDurationSeconds: Math.floor(
-          (new Date().getTime() - incompleteCheckpoint.startedAt.getTime()) /
-            1000,
-        ),
         lastChapterId: gameSession.chapterId!,
       },
     });
@@ -822,6 +840,7 @@ export class ChildrenService {
    */
   static async completeStory(
     gameSessionId: string,
+    elapsedTime: number,
   ): Promise<GameSession | null> {
     // Validate input
     if (!gameSessionId) {
@@ -861,11 +880,8 @@ export class ChildrenService {
           where: { id: lastCheckpoint.id },
           data: {
             pausedAt: completionTime,
-            sessionDurationSeconds: Math.floor(
-              (completionTime.getTime() - lastCheckpoint.startedAt.getTime()) /
-                1000,
-            ),
             lastChapterId: gameSession.chapterId!,
+            sessionDurationSeconds: { increment: elapsedTime },
           },
         });
       }
@@ -881,16 +897,6 @@ export class ChildrenService {
       throw new Error(`Game session not found for ID: ${gameSessionId}`);
     }
 
-    // Calculate total time spent in the session by summing checkpoint durations
-    let totalTimeSpent = 0;
-    for (const checkpoint of updatedGameSession.checkpoints) {
-      if (checkpoint.pausedAt && checkpoint.startedAt) {
-        totalTimeSpent += Math.floor(
-          (checkpoint.pausedAt.getTime() - checkpoint.startedAt.getTime()) /
-            1000,
-        );
-      }
-    }
 
     // Find and update the progress record to mark as completed
     const progress = await prisma.progress.findFirst({
@@ -908,7 +914,7 @@ export class ChildrenService {
         data: {
           status: ProgressStatus.COMPLETED,
           completedAt: completionTime,
-          totalTimeSpent: totalTimeSpent,
+          totalTimeSpent: gameSession.elapsedTimeSeconds,
         },
       });
     }
@@ -918,7 +924,6 @@ export class ChildrenService {
       where: { id: gameSessionId },
       data: {
         endedAt: completionTime,
-        totalTimeSpent,
       },
       include: {
         challengeAttempts: {

@@ -171,9 +171,9 @@ export class AnalyticsValidationService {
     }
 
     // Validate numeric fields
-    if (session.totalTimeSpent !== undefined && session.totalTimeSpent < 0) {
+    if (session.elapsedTimeSeconds !== undefined && session.elapsedTimeSeconds < 0) {
       errors.push(
-        `progress[${progressIndex}].gameSession.totalTimeSpent must be non-negative`,
+        `progress[${progressIndex}].gameSession.elapsedTimeSeconds must be non-negative`,
       );
     }
 

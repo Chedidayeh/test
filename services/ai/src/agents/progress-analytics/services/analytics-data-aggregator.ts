@@ -132,7 +132,7 @@ export class AnalyticsDataAggregator {
 
     const totalSessionsCount = gameSessions.length;
     const totalSessionDurationSeconds = gameSessions.reduce(
-      (sum, session) => sum + (session.totalTimeSpent || 0),
+      (sum, session) => sum + (session.elapsedTimeSeconds || 0),
       0,
     );
     const totalSessionDurationMinutes = Math.round(

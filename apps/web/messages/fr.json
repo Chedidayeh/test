@@ -286,6 +286,12 @@
 				"3": "Wow, vous faites un travail incroyable 🌟",
 				"4": "Vous êtes en feu ! Vous êtes inarrêtable 🔥",
 				"5": "Vous êtes un champion de la lecture 👑",
+				"6": "Vous êtes une légende de la lecture ! Keep it up 🌠",
+				"7": "Vous êtes une superstar de la lecture ! Continuez à brillant ✨",
+				"8": "Vous êtes une légende de la lecture en herbe ! Continuez comme ça 🏆",
+				"9": "Vous êtes un héros de la lecture ! Votre histoire commence à peine 🌟",
+				"10": "Vous êtes une source d'inspiration pour les autres lecteurs ! 🌟",
+				"11": "Votre parcours de lecture est extraordinaire ! Continuez à atteindre les étoiles 🌟",
 				"default": "Continuez à lire et vous atteindrez de nouveaux sommets ! ⭐"
 			}
 		},
@@ -383,7 +389,14 @@
 			"worldLabel": "Monde",
 			"worldsLabel": "Mondes",
 			"coverImageAlt": "Image de couverture de {title}",
-			"allocateButton": "Allouer à l'enfant"
+			"allocateButton": "Allouer à l'enfant",
+			"readingLevels": {
+				"BEGINNER": "Débutant",
+				"EASY": "Facile",
+				"MEDIUM": "Moyen",
+				"HARD": "Difficile",
+				"ADVANCED": "Avancé"
+			}
 		},
 		"allocateDialog": {
 			"title": "Allouer un parcours à l'enfant",
@@ -588,6 +601,7 @@
 			"nextButton": "Suivant",
 			"starsEarned": "{count} étoiles",
 			"pageProgress": "Page {current} sur {total}",
+			"timeDisplay": "Temps: {seconds}",
 			"timerMessage": "Continuez à lire... ({remaining}s restantes)",
 			"completionMessage": "Histoire terminée",
 			"solveRiddle": "Résoudre l'énigme",

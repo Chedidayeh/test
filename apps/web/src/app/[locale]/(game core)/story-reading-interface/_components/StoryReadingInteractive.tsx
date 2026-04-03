@@ -79,9 +79,19 @@ const StoryReadingInteractive = ({
   );
   const [showSettings, setShowSettings] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0); // Track total elapsed time of each chapter
 
   const [showRiddle, setShowRiddle] = useState(false);
   const currentChapter = getChapterByPageNumber(story, currentPage);
+
+  // Timer effect - starts on component mount
+  useEffect(() => {
+    const timerInterval = setInterval(() => {
+      setElapsedTime((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(timerInterval);
+  }, []);
 
   // TTS Audio state
   // const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -221,12 +231,12 @@ const StoryReadingInteractive = ({
     setIsPlaying(false);
     setHighlightedWord(undefined);
     setWordIndex(0); // Reset word index when changing pages
+    setElapsedTime(0); // Reset elapsed time when changing chapters
   };
 
   // Get current page data
   const currentPageData = localizedPages[currentPage - 1];
   const currentChallenge = currentChapter?.challenge || null;
-
 
   // Determine if riddle button should be shown
   // Show button only if challenge is not attempted
@@ -234,6 +244,9 @@ const StoryReadingInteractive = ({
     currentPageData.hasRiddle &&
     (currentChallengeAttemptState?.status === ChallengeStatus.NOT_ATTEMPTED ||
       currentChallengeAttemptState?.status === ChallengeStatus.INCORRECT);
+
+  // Format elapsed time to MM:SS
+  const formattedTime = `${String(Math.floor(elapsedTime / 60)).padStart(2, "0")}:${String(elapsedTime % 60).padStart(2, "0")}`;
   // Callback to update challenge attempt when submitted from riddle component
   const handleChallengeSubmitted = (
     updatedAttempt: ChallengeAttempt,
@@ -253,8 +266,22 @@ const StoryReadingInteractive = ({
 
   return (
     <div className="pt-16 sm:pt-20 pb-20 sm:pb-24 md:pb-28 lg:pb-32 flex flex-col">
+      {/* Timer Display */}
+      {/* <div className="fixed left-2 sm:left-4 md:left-6 lg:left-8 top-20 sm:top-24 md:top-28 lg:top-32 bg-card rounded-lg shadow-warm-lg px-3 sm:px-4 py-2 sm:py-3 z-40">
+        <div className="flex items-center gap-2">
+          <span className="text-xs sm:text-sm font-semibold text-muted-foreground">
+            {t("storyFlowNavigation.timeDisplay", { seconds: formattedTime }) ||
+              "Time"}
+          </span>
+          <span className="font-heading text-lg sm:text-xl font-bold text-foreground tabular-nums">
+            {formattedTime}
+          </span>
+        </div>
+      </div> */}
+
       {/* Story Flow Navigation */}
       <StoryFlowNavigation
+        elapsedTime={elapsedTime}
         storyTitle={localizedTitle}
         currentPage={currentPage}
         riddleMode={currentPageData.hasRiddle}

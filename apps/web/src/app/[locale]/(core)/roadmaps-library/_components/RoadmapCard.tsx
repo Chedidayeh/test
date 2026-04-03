@@ -50,6 +50,11 @@ const RoadmapCard = ({
     return translation?.name ?? roadmap.ageGroup.name ?? "";
   })();
 
+  const localizedReadingLevel = (() => {
+    const readingLevelKey = `readingLevels.${roadmap.readingLevel}`;
+    return t(readingLevelKey, { defaultValue: roadmap.readingLevel });
+  })();
+
   const [allocateDialogOpen, setAllocateDialogOpen] = useState(false);
 
   return (
@@ -72,7 +77,7 @@ const RoadmapCard = ({
         {/* Reading Level & Age Group */}
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           <span className="px-2 py-1 bg-secondary/10 text-secondary rounded-lg font-caption text-sm font-medium">
-            {roadmap.readingLevel}
+            {localizedReadingLevel}
           </span>
           <span className="px-2 py-1 bg-primary/10 text-primary rounded-lg font-caption text-sm font-medium">
             {localizedAgeGroupName}

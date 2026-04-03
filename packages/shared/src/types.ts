@@ -475,7 +475,7 @@ export interface GameSession {
   startedAt: Date;
   checkpointAt: Date | null; // Optional checkpoint time for mid-session saves (deprecated, use SessionCheckpoint.pausedAt)
   endedAt: Date | null;
-  totalTimeSpent: number; // Total active time in seconds (sum of all pause-to-resume durations)
+  elapsedTimeSeconds: number; // Total active time in seconds (sum of all chapters time checkpoints)
   sessionCount: number; // Number of separate sessions (pause/resume cycles)
   totalIdleTime: number; // Total time child was away between sessions (in seconds)
   starsEarned: number;
@@ -495,7 +495,7 @@ export interface SessionCheckpoint {
   lastChapterId: string | null; // Which chapter was the child reading when they paused (null if not paused yet)
   pausedAt: Date | null;
   startedAt: Date;
-  sessionDurationSeconds?: number | null;
+  sessionDurationSeconds: number;
   createdAt: Date;
   updatedAt: Date;
 }

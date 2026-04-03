@@ -95,19 +95,7 @@ function splitCheckpointAcrossDays(
     return [];
   }
 
-  // Determine the total duration in seconds
-  let totalSeconds = 0;
-  if (
-    checkpoint.sessionDurationSeconds !== null &&
-    checkpoint.sessionDurationSeconds !== undefined
-  ) {
-    totalSeconds = checkpoint.sessionDurationSeconds;
-  } else {
-    // Fallback: calculate from timestamps
-    const startMs = new Date(checkpoint.startedAt).getTime();
-    const pauseMs = new Date(checkpoint.pausedAt).getTime();
-    totalSeconds = Math.floor((pauseMs - startMs) / 1000);
-  }
+  const totalSeconds = checkpoint.sessionDurationSeconds;
 
   // Handle zero-duration sessions
   if (totalSeconds <= 0) {
@@ -350,7 +338,8 @@ export function calculateChallengeStats(
       for (const attempt of progress.gameSession.challengeAttempts) {
         // Deduplicate by attempt ID - only keep the first occurrence
         if (!attemptMap.has(attempt.id)) {
-          (attempt as unknown as AttemptWithContext)._storyId = progress.storyId!;
+          (attempt as unknown as AttemptWithContext)._storyId =
+            progress.storyId!;
           (attempt as unknown as AttemptWithContext)._chapterId =
             progress.gameSession.chapterId || null;
           attemptMap.set(attempt.id, attempt as unknown as AttemptWithContext);
@@ -520,8 +509,7 @@ export function getStoriesCompleted(profile: ChildProfile | undefined): number {
 
 /**
  * Get total reading time in minutes
- * Calculated from session checkpoints - sum of sessionDurationSeconds for completed checkpoints
- * Checkpoints are accessed through Progress → GameSession → SessionCheckpoint
+ * Calculated by summing the totalTimeSpent field from all Progress records
  * @param profile - ChildProfile data
  * @returns Total reading time in minutes
  */
@@ -530,47 +518,9 @@ export function getTotalReadingTime(profile: ChildProfile | undefined): number {
     return 0;
   }
 
-  // Collect all completed checkpoints from progress objects
-  const allCheckpoints: SessionCheckpoint[] = [];
-  for (const progress of profile.progress) {
-    if (
-      !progress.gameSession?.checkpoints ||
-      !Array.isArray(progress.gameSession.checkpoints)
-    ) {
-      continue;
-    }
-
-    // Only count checkpoints that have been paused (completed)
-    const completedCheckpoints = progress.gameSession.checkpoints.filter(
-      (cp) => cp.pausedAt !== null,
-    );
-    allCheckpoints.push(...completedCheckpoints);
-  }
-
-  if (allCheckpoints.length === 0) {
-    return 0;
-  }
-
-  // Calculate total reading time from completed checkpoints
-  const totalSeconds = allCheckpoints.reduce(
-    (sum: number, checkpoint: SessionCheckpoint) => {
-      let duration = 0;
-
-      // Use sessionDurationSeconds if available
-      if (
-        checkpoint.sessionDurationSeconds !== null &&
-        checkpoint.sessionDurationSeconds !== undefined
-      ) {
-        duration = checkpoint.sessionDurationSeconds;
-      } else if (checkpoint.pausedAt) {
-        // Calculate from startedAt to pausedAt
-        const startMs = new Date(checkpoint.startedAt).getTime();
-        const pauseMs = new Date(checkpoint.pausedAt).getTime();
-        duration = Math.floor((pauseMs - startMs) / 1000);
-      }
-
-      return sum + Math.max(0, duration);
-    },
+  // Sum totalTimeSpent (in seconds) from all progress records
+  const totalSeconds = profile.progress.reduce(
+    (sum: number, progress: Progress) => sum + (progress.totalTimeSpent || 0),
     0,
   );
 
@@ -1071,91 +1021,4 @@ export function localizeChallengStatsWithMaps(
       chapterIndex,
     };
   });
-}
-
-// ============================================================================
-// TESTING & VALIDATION - Multi-day checkpoint splitting
-// ============================================================================
-
-/**
- * Test function to validate splitCheckpointAcrossDays logic
- * Example scenario: Child reads from Feb 27 10 PM to Feb 28 1 AM (10,800 seconds = 3 hours)
- * Expected result:
- *   - Feb 27: 2 hours (7,200 seconds)
- *   - Feb 28: 1 hour (3,600 seconds)
- *
- * Usage: Call testMultiDayCheckpointSplit() in browser console to verify
- */
-export function testMultiDayCheckpointSplit(): void {
-  // Create a test checkpoint spanning Feb 27 10 PM to Feb 28 1 AM
-  const testCheckpoint: SessionCheckpoint = {
-    id: "test-1",
-    gameSessionId: "session-1",
-    firstChapterId: "ch-1",
-    lastChapterId: "ch-2",
-    pausedAt: new Date("2026-02-28T01:00:00Z"),
-    startedAt: new Date("2026-02-27T22:00:00Z"),
-    sessionDurationSeconds: 10800, // 3 hours
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-
-  const allocations = splitCheckpointAcrossDays(testCheckpoint);
-
-  console.log("=== Multi-Day Checkpoint Split Test ===");
-  console.log("Input checkpoint:");
-  console.log(`  startedAt: ${testCheckpoint.startedAt.toISOString()}`);
-  console.log(`  pausedAt: ${testCheckpoint.pausedAt!.toISOString()}`);
-  console.log(
-    `  duration: ${testCheckpoint.sessionDurationSeconds} seconds (3 hours)`,
-  );
-  console.log("\nExpected output:");
-  console.log(`  2026-02-27: 7200 seconds (2 hours)`);
-  console.log(`  2026-02-28: 3600 seconds (1 hour)`);
-  console.log("\nActual output:");
-  allocations.forEach((alloc) => {
-    console.log(`  ${alloc.date}: ${alloc.seconds} seconds`);
-  });
-
-  // Validate the results
-  const totalSeconds = allocations.reduce(
-    (sum, alloc) => sum + alloc.seconds,
-    0,
-  );
-  const isValid =
-    allocations.length === 2 &&
-    allocations[0].date === "2026-02-27" &&
-    allocations[0].seconds === 7200 &&
-    allocations[1].date === "2026-02-28" &&
-    allocations[1].seconds === 3600 &&
-    totalSeconds === 10800;
-
-  console.log(`\nValidation: ${isValid ? "✓ PASS" : "✗ FAIL"}`);
-  console.log(
-    `Total seconds preserved: ${totalSeconds === 10800 ? "✓ Yes" : "✗ No"}`,
-  );
-}
-
-// Optional: Test same-day checkpoint
-export function testSameDayCheckpointSplit(): void {
-  const testCheckpoint: SessionCheckpoint = {
-    id: "test-2",
-    gameSessionId: "session-2",
-    firstChapterId: "ch-1",
-    lastChapterId: "ch-2",
-    pausedAt: new Date("2026-02-27T15:30:00Z"),
-    startedAt: new Date("2026-02-27T14:00:00Z"),
-    sessionDurationSeconds: 5400, // 1.5 hours
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-
-  const allocations = splitCheckpointAcrossDays(testCheckpoint);
-
-  console.log("\n=== Same-Day Checkpoint Split Test ===");
-  console.log(
-    `Single allocation on 2026-02-27: ${allocations[0].seconds} seconds (expected: 5400)`,
-  );
-  const isValid = allocations.length === 1 && allocations[0].seconds === 5400;
-  console.log(`Validation: ${isValid ? "✓ PASS" : "✗ FAIL"}`);
 }

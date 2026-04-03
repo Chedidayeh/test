@@ -83,14 +83,16 @@ export interface SaveCheckpointResult {
 export async function saveCheckpointAction(
   gameSessionId: string,
   chapterId: string,
+  elapsedTime: number, // New parameter to capture elapsed time on the page
 ): Promise<SaveCheckpointResult> {
   try {
     console.log("[Progress Service] Saving checkpoint via server action", {
       gameSessionId,
       chapterId,
+      elapsedTime,
     });
 
-    const updatedSession = await saveCheckpoint(gameSessionId, chapterId);
+    const updatedSession = await saveCheckpoint(gameSessionId, chapterId, elapsedTime);
 
     return {
       success: true,
@@ -216,13 +218,15 @@ export interface CompleteStoryResult {
  */
 export async function completeStoryAction(
   gameSessionId: string,
+  elapsedTime: number,
 ): Promise<CompleteStoryResult> {
   try {
     console.log("[Progress Service] Completing story via server action", {
       gameSessionId,
+      elapsedTime,
     });
 
-    const updatedSession = await completeStory(gameSessionId);
+    const updatedSession = await completeStory(gameSessionId, elapsedTime);
     if (!updatedSession) {
       return {
         success: false,

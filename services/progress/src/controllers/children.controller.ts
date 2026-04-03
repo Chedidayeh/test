@@ -422,7 +422,7 @@ export class ChildrenController {
     res: Response<ApiResponse<GameSession | null>>,
   ): Promise<void> {
     try {
-      const { gameSessionId, chapterId } = req.body;
+      const { gameSessionId, chapterId, elapsedTime } = req.body;
 
       // Validation
       if (!gameSessionId || !chapterId) {
@@ -440,6 +440,7 @@ export class ChildrenController {
       const updatedSession = await ChildrenService.saveCheckpoint(
         gameSessionId,
         chapterId,
+        elapsedTime
       );
 
       res.status(200).json({
@@ -661,6 +662,7 @@ export class ChildrenController {
   ): Promise<void> {
     try {
       const { gameSessionId } = req.params;
+      const { elapsedTime } = req.body;
 
       // Validation
       if (!gameSessionId) {
@@ -676,7 +678,7 @@ export class ChildrenController {
       }
 
       const completedSession =
-        await ChildrenService.completeStory(gameSessionId);
+        await ChildrenService.completeStory(gameSessionId, elapsedTime);
 
       res.status(200).json({
         success: true,

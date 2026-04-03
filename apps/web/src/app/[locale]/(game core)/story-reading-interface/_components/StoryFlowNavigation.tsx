@@ -33,6 +33,7 @@ import {
   DialogPortal,
 } from "@/src/components/ui/dialog";
 interface StoryFlowNavigationProps {
+  elapsedTime: number; // Elapsed time in seconds on the current page
   storyTitle?: string;
   currentPage?: number;
   riddleMode: boolean;
@@ -53,6 +54,7 @@ interface StoryFlowNavigationProps {
 }
 
 const StoryFlowNavigation = ({
+  elapsedTime,
   storyTitle = "Story Title",
   currentPage = 1,
   riddleMode = false,
@@ -191,6 +193,7 @@ const StoryFlowNavigation = ({
         setIsSavingCheckpoint(true);
         const result = await completeStoryAction(
           currentProgress.gameSession.id,
+          elapsedTime,
         );
 
         if (result.success) {
@@ -236,6 +239,7 @@ const StoryFlowNavigation = ({
             const result = await saveCheckpointAction(
               currentProgress.gameSession.id,
               nextChapter.id,
+              elapsedTime, // Pass the elapsed time to the server action
             );
             setIsSavingCheckpoint(false);
 

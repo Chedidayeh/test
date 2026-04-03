@@ -100,7 +100,7 @@ const FilterPanel = ({
     <div className="space-y-6">
       {/* Categories (Themes) */}
       <div>
-        <h3 className="font-heading text-sm font-semibold text-foreground/70 mb-4 uppercase tracking-wide">
+        <h3 className="font-heading text-sm font-medium text-foreground/70 mb-4 uppercase tracking-wide">
           {t("categoryLabel")}
         </h3>
         <div className="flex flex-wrap gap-2">
@@ -118,7 +118,7 @@ const FilterPanel = ({
 
       {/* Age Groups */}
       <div>
-        <h3 className="font-heading text-sm font-semibold text-foreground/70 mb-4 uppercase tracking-wide">
+        <h3 className="font-heading text-sm font-medium text-foreground/70 mb-4 uppercase tracking-wide">
           {t("ageGroupLabel")}
         </h3>
         <div className="flex flex-wrap gap-2">
@@ -136,7 +136,7 @@ const FilterPanel = ({
 
       {/* Reading Levels */}
       <div>
-        <h3 className="font-heading text-sm font-semibold text-foreground/70 mb-4 uppercase tracking-wide">
+        <h3 className="font-heading text-sm font-medium text-foreground/70 mb-4 uppercase tracking-wide">
           {t("readingLevelLabel")}
         </h3>
         <div className="flex flex-wrap gap-2">
@@ -176,7 +176,7 @@ const FilterPanel = ({
             >
               <span>{t("title")}</span>
               {activeFilterCount > 0 && (
-                <span className="ml-2 px-2 py-1 bg-primary/10 text-primary rounded-full font-data text-xs font-semibold">
+                <span className="ml-2 px-2 py-1 bg-primary/10 text-primary rounded-full font-data text-xs font-medium">
                   {activeFilterCount}
                 </span>
               )}
@@ -197,11 +197,11 @@ const FilterPanel = ({
       {/* Desktop Filter Panel */}
       <div className="hidden lg:block rounded-xl bg-card p-6 sticky top-24 border border-foreground/10 max-h-[calc(100vh-120px)]">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="font-heading text-base font-bold text-foreground">
+          <h2 className="font-heading text-base font-medium text-foreground">
             {t("title")}
           </h2>
           {activeFilterCount > 0 && (
-            <span className="px-2.5 py-1 bg-primary/10 text-primary rounded-full font-data text-xs font-semibold border border-primary/20">
+            <span className="px-2.5 py-1 bg-primary/10 text-primary rounded-full font-data text-xs font-medium border border-primary/20">
               {t("activeCount", { count: activeFilterCount })}
             </span>
           )}

@@ -10,6 +10,7 @@ import { Roadmap, ChildProfile, LanguageCode } from "@readdly/shared-types";
 import { transformRoadmapForDisplay } from "../_lib/roadmap-display";
 import { getLanguageCode } from "@/src/lib/translation-utils";
 import { useLocale } from "@/src/contexts/LocaleContext";
+import { getReadingLevelLabel } from "@/src/lib/reading-level-utils";
 
 interface Filters {
   categories: string[];
@@ -30,7 +31,7 @@ const RoadmapsLibrary = ({
   const {locale} = useLocale();
 
   const langCode = getLanguageCode(locale);
-
+  const tReadingLevels = useTranslations("RoadmapsLibrary.roadmapCard");
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<Filters>({
@@ -69,6 +70,18 @@ const RoadmapsLibrary = ({
     );
   });
 
+  // Build localized reading level map (database key -> localized label)
+  const localizedReadingLevels = new Map<string, string>();
+  const uniqueReadingLevels = Array.from(
+    new Set(roadmaps.map((r) => r.readingLevel))
+  );
+  uniqueReadingLevels.forEach((level) => {
+    localizedReadingLevels.set(
+      level,
+      getReadingLevelLabel(level, (key) => tReadingLevels(key))
+    );
+  });
+
   // Get unique localized themes/categories from roadmaps
   const uniqueThemes = Array.from(
     new Set(roadmaps.map((r) => localizedThemeNames.get(r.theme.id) || r.theme.name)),
@@ -104,9 +117,21 @@ const RoadmapsLibrary = ({
 
     // Filter by reading levels
     if (filters.levels.length > 0) {
-      filtered = filtered.filter((roadmap) =>
-        filters.levels.includes(roadmap.readingLevel),
-      );
+      filtered = filtered.filter((roadmap) => {
+        // Convert selected localized labels back to database keys
+        const selectedKeys = filters.levels
+          .map((selectedLabel) => {
+            // Find the database key for this localized label
+            for (const [key, localizedLabel] of localizedReadingLevels) {
+              if (localizedLabel === selectedLabel) {
+                return key;
+              }
+            }
+            return null;
+          })
+          .filter((key) => key !== null);
+        return selectedKeys.includes(roadmap.readingLevel);
+      });
     }
 
     // Filter by age groups
@@ -167,11 +192,11 @@ const RoadmapsLibrary = ({
           {/* Stories Grid */}
           <div className="lg:col-span-3">
             {/* Search Bar */}
-            <div className="flex items-center justify-between mb-3 gap-4">
+            {/* <div className="flex items-center justify-between mb-3 gap-4">
               <div className="flex-1">
                 <SearchBar onSearch={handleSearch} />
               </div>
-            </div>
+            </div> */}
             <div className="flex items-center justify-between mb-6">
               <h2 className="font-heading text-xl md:text-2xl text-foreground">
                 {t("library.allRoadmaps", { count: filteredRoadmaps.length })}

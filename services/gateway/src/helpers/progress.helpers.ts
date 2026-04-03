@@ -1010,12 +1010,13 @@ export async function forwardSaveCheckpoint(
   res: Response<ApiResponse<GameSession | null>>,
 ): Promise<void> {
   try {
-    const { gameSessionId, chapterId } = req.body;
+    const { gameSessionId, chapterId , elapsedTime } = req.body;
 
     if (!gameSessionId || !chapterId) {
       logger.warn("Missing required fields for save checkpoint", {
         gameSessionId,
         chapterId,
+        elapsedTime,
       });
       res.status(400).json({
         success: false,
@@ -1031,6 +1032,7 @@ export async function forwardSaveCheckpoint(
     logger.info("Saving checkpoint for game session", {
       gameSessionId,
       chapterId,
+      elapsedTime,
     });
 
     // Forward to Progress Service
@@ -1039,6 +1041,7 @@ export async function forwardSaveCheckpoint(
       {
         gameSessionId,
         chapterId,
+        elapsedTime,
       },
       {
         headers: {
@@ -1190,7 +1193,6 @@ export async function forwardCreateNewCheckpoint(
 
     logger.info("Game session resumed successfully", {
       gameSessionId,
-      sessionDurationSeconds: result.sessionDurationSeconds,
     });
 
     res.status(200).json({
@@ -1324,6 +1326,7 @@ export async function forwardCompleteStory(
 ): Promise<void> {
   try {
     const { gameSessionId } = req.params;
+    const { elapsedTime } = req.body;
 
     if (!gameSessionId) {
       logger.warn("Missing required parameter for complete story", {
@@ -1345,7 +1348,7 @@ export async function forwardCompleteStory(
     // Forward to Progress Service
     const completeResponse = await axios.post<ApiResponse<GameSession>>(
       `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/progress/${gameSessionId}/complete`,
-      {},
+      { elapsedTime },
       {
         headers: {
           "Content-Type": "application/json",
