@@ -6,6 +6,7 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import Link from "next/link";
 import { StoryEditClient } from "../../_components/StoryEditClient";
+import { Roadmap, World } from "@readdly/shared-types";
 
 export default async function EditStoryPage({
   params,
@@ -38,8 +39,10 @@ export default async function EditStoryPage({
   // Fetch data server-side
   const ageGroups = await getAgeGroupsForAdmin();
   const roadmaps = ageGroups.map((group) => group.roadmaps).flat();
-  const worlds = roadmaps.map((roadmap) => roadmap.worlds).flat();
-
+  const worlds = roadmaps.map((roadmap) => roadmap!.worlds).flat();
+  // Filter out any undefined values from roadmaps and worlds
+  const filteredRoadmaps = roadmaps.filter((r): r is Roadmap => r !== undefined);
+  const filteredWorlds = worlds.filter((w): w is World => w !== undefined);
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -59,7 +62,7 @@ export default async function EditStoryPage({
       </div>
 
       {/* Form */}
-      <StoryEditClient ageGroups={ageGroups} roadmaps={roadmaps} worlds={worlds} story={story} />
+      <StoryEditClient ageGroups={ageGroups} roadmaps={filteredRoadmaps} worlds={filteredWorlds} story={story} />
     </div>
   );
 }

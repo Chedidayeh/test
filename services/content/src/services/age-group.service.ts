@@ -47,7 +47,7 @@ export class AgeGroupService {
         count: ageGroups.length,
       });
 
-      return ageGroups as AgeGroup[];
+      return ageGroups
     } catch (error) {
       logger.error("Error fetching age groups", { error: String(error) });
       throw error;
@@ -91,7 +91,7 @@ export class AgeGroupService {
         count: ageGroups.length,
       });
 
-      return ageGroups as AgeGroup[];
+      return ageGroups
     } catch (error) {
       logger.error("Error fetching age groups", { error: String(error) });
       throw error;
@@ -120,7 +120,7 @@ export class AgeGroupService {
       }
 
       logger.info("Age group retrieved successfully", { ageGroupId });
-      return ageGroup as AgeGroup;
+      return ageGroup
     } catch (error) {
       logger.error("Error fetching age group", {
         ageGroupId,
@@ -142,7 +142,7 @@ export class AgeGroupService {
         },
       });
 
-      return ageGroup as AgeGroup | null;
+      return ageGroup
     } catch (error) {
       logger.error("Error fetching age group by name", {
         name,
@@ -220,7 +220,7 @@ export class AgeGroupService {
         return newAgeGroup;
       });
 
-      return ageGroup as AgeGroup;
+      return ageGroup
     } catch (error) {
       logger.error("Error creating age group", {
         data,
@@ -303,7 +303,7 @@ export class AgeGroupService {
       });
 
       logger.info("Age group updated successfully", { ageGroupId });
-      return ageGroup as AgeGroup;
+      return ageGroup;
     } catch (error) {
       logger.error("Error updating age group", {
         ageGroupId,
@@ -329,7 +329,7 @@ export class AgeGroupService {
         name: ageGroup.name,
       });
 
-      return ageGroup as AgeGroup;
+      return ageGroup
     } catch (error) {
       logger.error("Error deleting age group", {
         ageGroupId,
@@ -363,7 +363,7 @@ export class AgeGroupService {
       const translationRecords = await tx.ageGroupTranslation.createMany({
         data: manualTranslations.map((t) => ({
           ageGroupId,
-          languageCode: t.languageCode as LanguageCode,
+          languageCode: t.languageCode,
           name: t.name || sourceText,
         })),
         skipDuplicates: true,

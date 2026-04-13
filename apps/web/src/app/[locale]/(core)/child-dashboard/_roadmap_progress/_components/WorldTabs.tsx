@@ -111,7 +111,7 @@ export default function WorldTabs({
               {/* Story Count */}
               <div className="mt-3 flex items-center justify-center gap-4">
                 <span className="text-muted-foreground">
-                  {selectedWorld.stories.length}{" "}
+                  {selectedWorld.stories!.length}{" "}
                   {t("roadmapPage.worldTabs.storiesLabel")}
                 </span>
               </div>

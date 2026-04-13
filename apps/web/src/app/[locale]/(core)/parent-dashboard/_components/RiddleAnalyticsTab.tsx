@@ -49,7 +49,7 @@ export default function RiddleAnalyticsTab({ selectedChild }: AnalyticsTabProps)
 
       <div className="space-y-6 md:space-y-8">
         <div>
-          <RiddlesStats childProgress={selectedChild.progress} />
+          <RiddlesStats childProgress={selectedChild.progress!} />
         </div>
       </div>
     </TabsContent>

@@ -32,10 +32,10 @@ export default function RoadmapPage({
 
   // Localize theme name/description and roadmap title using translations arrays
   const localizedTheme = (() => {
-    const translation = roadmap.theme.translations?.find((tr: { languageCode: LanguageCode }) => tr.languageCode === langCode);
+    const translation = roadmap.theme!.translations?.find((tr: { languageCode: LanguageCode }) => tr.languageCode === langCode);
     return {
-      name: translation?.name || roadmap.theme.name,
-      description: translation?.description || roadmap.theme.description,
+      name: translation?.name || roadmap.theme!.name,
+      description: translation?.description || roadmap.theme!.description,
     };
   })();
 
@@ -44,14 +44,14 @@ export default function RoadmapPage({
     return translation?.title ?? roadmap.title ?? "";
   })();
 
-  const [selectedWorldId, setSelectedWorldId] = useState(roadmap.worlds[0].id);
+  const [selectedWorldId, setSelectedWorldId] = useState(roadmap.worlds![0].id);
 
   // Scroll to top when component mounts
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  const selectedWorld = roadmap.worlds.find((w) => w.id === selectedWorldId);
+  const selectedWorld = roadmap.worlds!.find((w) => w.id === selectedWorldId);
 
   if (!selectedWorld) {
     return null;
@@ -87,7 +87,7 @@ export default function RoadmapPage({
 
         <section className="">
           <WorldTabs
-            worlds={roadmap.worlds}
+            worlds={roadmap.worlds!}
             selectedWorldId={selectedWorldId}
             onWorldSelect={setSelectedWorldId}
           />

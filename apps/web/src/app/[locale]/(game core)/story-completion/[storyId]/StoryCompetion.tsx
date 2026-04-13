@@ -50,7 +50,7 @@ export default function StoryCompletion({
   const starsEarned = progress.gameSession?.starsEarned || 0;
 
   const handleReturnToDashboard = () => {
-    router.push(`/child-dashboard/${child.child.id}`);
+    router.push(`/child-dashboard/${child.child!.id}`);
   };
 
   return (

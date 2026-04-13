@@ -75,7 +75,7 @@ export class UserService {
         where: { id },
         include: { children: true },
       });
-      return user as U | null;
+      return user
     } catch (error) {
       logger.error("Error finding user by ID", { id, error: String(error) });
       return null;

@@ -27,7 +27,7 @@ export class ThemeService {
         count: themes.length,
       });
 
-      return themes as Theme[];
+      return themes 
     } catch (error) {
       logger.error("Error fetching themes", { error: String(error) });
       throw error;
@@ -52,7 +52,7 @@ export class ThemeService {
       }
 
       logger.info("Theme retrieved successfully", { themeId });
-      return theme as Theme;
+      return theme
     } catch (error) {
       logger.error("Error fetching theme", { error: String(error), themeId });
       throw error;
@@ -71,7 +71,7 @@ export class ThemeService {
         },
       });
 
-      return theme as Theme | null;
+      return theme;
     } catch (error) {
       logger.error("Error fetching theme by name", {
         name,
@@ -144,7 +144,7 @@ export class ThemeService {
         return newTheme;
       });
 
-      return theme as Theme;
+      return theme
     } catch (error) {
       logger.error("Error creating theme", {
         data,
@@ -223,7 +223,7 @@ export class ThemeService {
         return updatedTheme;
       });
 
-      return theme as Theme;
+      return theme 
     } catch (error) {
       logger.error("Error updating theme", {
         themeId,
@@ -249,7 +249,7 @@ export class ThemeService {
         name: theme.name,
       });
 
-      return theme as Theme;
+      return theme 
     } catch (error) {
       logger.error("Error deleting theme", {
         themeId,
@@ -282,7 +282,7 @@ export class ThemeService {
       const translationRecords = await tx.themeTranslation.createMany({
         data: manualTranslations.map((t) => ({
           themeId,
-          languageCode: t.languageCode as LanguageCode,
+          languageCode: t.languageCode,
           name: t.name || sourceName,
           description: t.description || sourceDescription,
         })),

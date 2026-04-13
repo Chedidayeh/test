@@ -35,8 +35,8 @@ const ActionCards = ({
   // Helper function to find story details from roadmaps
   const findStoryDetails = (storyId: string): StoryCardData | null => {
     for (const roadmap of roadmaps) {
-      for (const world of roadmap.worlds) {
-        const story = world.stories.find((s) => s.id === storyId);
+      for (const world of roadmap.worlds!) {
+        const story = world.stories!.find((s) => s.id === storyId);
         if (story) {
           const totalChapters = story.chapters?.length || 1;
           const translation = story.translations?.find(
@@ -47,7 +47,7 @@ const ActionCards = ({
           return {
             storyId: story.id,
             title,
-            coverImage: roadmap.theme.imageUrl!,
+            coverImage: roadmap.theme!.imageUrl!,
             coverAlt: title,
             totalChapters,
             chapters: story.chapters || [],
@@ -99,7 +99,7 @@ const ActionCards = ({
             return (
               <Link
                 key={progressId}
-                href={`/story-reading-interface/${storyData.storyId}?childId=${childProfile.child.id}`}
+                href={`/story-reading-interface/${storyData.storyId}?childId=${childProfile.child!.id}`}
                 className="bg-black/90 text-white rounded-xl h-52 p-4 shadow-warm-lg group relative overflow-hidden transform-gpu transition-transform duration-300 hover:scale-105  hover:z-20"
               >
                 <div className="absolute inset-0 opacity-20">

@@ -107,11 +107,11 @@ export function isWorldCompleted(
   }
 
   // Get all stories in this world
-  const worldStoryIds = world.stories.map((s) => s.id);
+  const worldStoryIds = world.stories!.map((s) => s.id);
 
   // Check if all stories in this world are completed
   return worldStoryIds.every((storyId) => {
-    const progress = childProfile.progress.find((p) => p.storyId === storyId);
+    const progress = childProfile.progress!.find((p) => p.storyId === storyId);
     return progress && progress.status === ProgressStatus.COMPLETED;
   });
 }
@@ -130,7 +130,7 @@ export function isPreviousWorldCompleted(
   }
 
   // Find the previous world
-  const previousWorld = roadmap.worlds.find(
+  const previousWorld = roadmap.worlds!.find(
     (w) => w.order === currentWorld.order - 1
   );
 
@@ -149,7 +149,7 @@ export function getEnrichedStoriesForWorld(
   roadmap: Roadmap,
   childProfile: ChildProfile
 ) {
-  return world.stories.map((story) =>
+  return world.stories!.map((story) =>
     enrichStoryWithProgress(story, world, roadmap, childProfile)
   );
 }

@@ -127,8 +127,8 @@ export default function AddChildDialog({
   const getThemesForAgeGroup = (ageGroupId: string): Theme[] => {
     const ag = ageGroups?.find((a) => a.id === ageGroupId);
     if (!ag) return [];
-    const themes = ag.roadmaps.map((roadmap) => roadmap.theme);
-    return Array.from(new Map(themes.map((t) => [t.id, t])).values());
+    const themes = ag.roadmaps!.map((roadmap) => roadmap.theme);
+    return Array.from(new Map(themes.map((t) => [t!.id, t])).values()) as Theme[];
   };
 
   const availableThemes = selectedAgeGroupId

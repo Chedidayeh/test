@@ -959,7 +959,7 @@ function StoryDetailsStep({
             <SelectContent>
               {filteredRoadmaps.map((r) => (
                 <SelectItem key={r.id} value={r.id}>
-                  {r.title + " - " + r.theme.name || r.theme.name}
+                  {r.title + " - " + r.theme!.name || r.theme!.name}
                 </SelectItem>
               ))}
             </SelectContent>

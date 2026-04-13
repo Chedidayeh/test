@@ -107,7 +107,7 @@ const RiddleInteractive = ({
       storyImage: storyImage,
       storyImageAlt: storyImageAlt,
       starsReward: challenge.baseStars,
-      questionAudioUrl: challengeTranslation?.audioUrl || challenge.audioUrl,
+      questionAudioUrl: challengeTranslation?.audioUrl || challenge.audioUrl || undefined,
     };
 
     return riddle;

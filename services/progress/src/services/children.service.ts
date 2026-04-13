@@ -71,7 +71,7 @@ export class ChildrenService {
     });
 
     // Cast to ChildProfile - Prisma handles enum conversion
-    return childProfile as unknown as ChildProfile;
+    return childProfile
   }
 
   /**
@@ -119,7 +119,7 @@ export class ChildrenService {
     const total = await prisma.childProfile.count();
 
     // Cast to ChildProfile[] - Prisma handles enum conversion
-    const typedProfiles = childProfiles as unknown as ChildProfile[];
+    const typedProfiles = childProfiles
 
     return {
       children: typedProfiles,
@@ -225,7 +225,7 @@ export class ChildrenService {
     });
 
     // Cast to ChildProfile[] - Prisma handles enum conversion
-    const typedProfiles = childProfiles as unknown as ChildProfile[];
+    const typedProfiles = childProfiles
 
     return {
       children: typedProfiles,
@@ -279,7 +279,7 @@ export class ChildrenService {
     });
 
     // Cast to ChildProfile[] - Prisma handles enum conversion
-    const typedProfiles = childProfiles as unknown as ChildProfile[];
+    const typedProfiles = childProfiles
 
     return typedProfiles;
   }
@@ -314,7 +314,7 @@ export class ChildrenService {
     });
 
     // Cast to ChildProfile[] - Prisma handles enum conversion
-    return childProfiles as unknown as ChildProfile[];
+    return childProfiles
   }
 
   /**
@@ -338,7 +338,7 @@ export class ChildrenService {
     });
 
     // Cast to ChildProfile[] - Prisma handles enum conversion
-    const typedProfiles = childProfiles as unknown as ChildProfile[];
+    const typedProfiles = childProfiles 
 
     return typedProfiles;
   }
@@ -403,7 +403,7 @@ export class ChildrenService {
     });
 
     // Cast to ChildProfile[] - Prisma handles enum conversion
-    return childProfiles as unknown as ChildProfile[];
+    return childProfiles
   }
 
   /**
@@ -442,7 +442,7 @@ export class ChildrenService {
     if (!childProfile) return null;
 
     // Cast to ChildProfile - Prisma handles enum conversion
-    return childProfile as unknown as ChildProfile;
+    return childProfile
   }
 
   /**
@@ -489,7 +489,7 @@ export class ChildrenService {
     }
 
     // Cast to Progress - Prisma handles enum conversion
-    return progress as unknown as Progress;
+    return progress
   }
 
   static async startStoryProgress(payload: {
@@ -583,7 +583,7 @@ export class ChildrenService {
         },
       },
     });
-    return progress as unknown as Progress;
+    return progress
   }
 
   /**
@@ -647,7 +647,7 @@ export class ChildrenService {
       });
     }
 
-    return updatedSession as unknown as GameSession;
+    return updatedSession
   }
 
   /**
@@ -906,8 +906,8 @@ export class ChildrenService {
 
     // Return the results
     return {
-      attempt: updatedAttempt as unknown as ChallengeAttempt,
-      starEvent: starEvent as unknown as StarEvent,
+      attempt: updatedAttempt,
+      starEvent: starEvent ,
       totalStars,
     };
   }
@@ -1105,7 +1105,7 @@ export class ChildrenService {
       },
     });
 
-    return updatedChild as unknown as ChildProfile;
+    return updatedChild
   }
 
   /**
@@ -1138,7 +1138,7 @@ export class ChildrenService {
       },
     });
 
-    return updatedChild as unknown as ChildProfile;
+    return updatedChild 
   }
 
   /**
@@ -1202,7 +1202,7 @@ export class ChildrenService {
       },
     });
 
-    return updatedChild as unknown as ChildProfile;
+    return updatedChild
   }
 
   /**
@@ -1260,7 +1260,7 @@ export class ChildrenService {
       },
     });
 
-    return updatedChild as unknown as ChildProfile;
+    return updatedChild
   }
 
   /**

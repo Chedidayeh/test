@@ -21,6 +21,7 @@ export default async function page() {
   const parentId = session!.user.id;
   const parentData = await getParentWithProfiles(parentId).catch(() => null);
   const children = parentData?.children || [];
-  
-  return <RoadmapsLibrary roadmaps={roadmaps} childrenList={children} />;
+  // filter roadmaps from undefined values
+  const filteredRoadmaps = roadmaps.filter((roadmap) => roadmap !== undefined);
+  return <RoadmapsLibrary roadmaps={filteredRoadmaps} childrenList={children} />;
 }

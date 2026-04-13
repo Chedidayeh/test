@@ -55,7 +55,7 @@ export default async function page({
   const levelAnalysis = analyzeLevelProgress(
     child.currentLevel,
     child.totalStars,
-    child.badges,
+    child.badges!,
     levels,
     badges,
   );

@@ -40,9 +40,12 @@ export default async function ChildDashboardPage({
   const badges = await getBadges().catch(() => []);
 
   const roadmaps = await getRoadmapsByIds(childData.allocatedRoadmaps); // stories in progress
-  const currentProgresses = childData.progress.filter(
+  const currentProgresses = childData.progress?.filter(
     (progress) => progress.status === ProgressStatus.IN_PROGRESS,
   );
+  if (!currentProgresses) {
+    return <MissingDataAlert message={t("progressNotFound")} />;
+  }
   return (
     <>
       <div className="min-h-screen p-4 ">

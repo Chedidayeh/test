@@ -59,7 +59,7 @@ export default function AllocateRoadmapDialog({
 
       if (result.success) {
         toast.success(
-          t("messages.allocatedSuccess", { roadmapName: roadmap.title || roadmap.theme.name, childName: result.data?.name || "child" }),
+          t("messages.allocatedSuccess", { roadmapName: roadmap.title || roadmap.theme!.name, childName: result.data?.name || "child" }),
         );
         onOpenChange(false);
         setSelectedChildId("");
@@ -82,7 +82,7 @@ export default function AllocateRoadmapDialog({
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>
           <DialogDescription>
-            {t("description", { roadmapName: roadmap.title || roadmap.theme.name })}
+            {t("description", { roadmapName: roadmap.title || roadmap.theme!.name })}
           </DialogDescription>
         </DialogHeader>
 

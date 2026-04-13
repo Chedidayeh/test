@@ -17,7 +17,7 @@ import {
  */
 export function getSourceLanguageForMode(
   source: TranslationSourceType,
-): LanguageCode.EN | LanguageCode.FR | LanguageCode.AR | null {
+): LanguageCode | null {
   switch (source) {
     case TranslationSourceType.EN_TO_FR_AR:
       return LanguageCode.EN;

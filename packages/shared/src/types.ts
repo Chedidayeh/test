@@ -21,68 +21,92 @@ export const API_BASE_URL_V1 = "/api/v1";
 // ENUMS
 // ============================================================================
 
-export enum TranslationSourceType {
-  EN_TO_FR_AR = "en_to_fr_ar", // Auto-translate from English
-  FR_TO_AR_EN = "fr_to_ar_en", // Auto-translate from French
-  MANUAL = "manual", // Manual translations
-}
+export const TranslationSourceType = {
+  EN_TO_FR_AR: "en_to_fr_ar", // Auto-translate from English
+  FR_TO_AR_EN: "fr_to_ar_en", // Auto-translate from French
+  MANUAL: "manual", // Manual translations
+} as const;
+export type TranslationSourceType =
+  (typeof TranslationSourceType)[keyof typeof TranslationSourceType];
 
-export enum RoleType {
-  PARENT = "PARENT",
-  ADMIN = "ADMIN",
-}
+  
+export const RoleType = {
+  PARENT: "PARENT",
+  ADMIN: "ADMIN",
+} as const;
+export type RoleType = (typeof RoleType)[keyof typeof RoleType];
 
-export enum LanguageCode {
-  EN = "EN",
-  AR = "AR",
-  FR = "FR",
-}
+export const LanguageCode = {
+  EN: "EN",
+  AR: "AR",
+  FR: "FR",
+} as const;
 
-export enum TTSLanguageCodes {
-  ENGLISH_US = "en-us",
-  ARABIC = "ar-001",
-  FRENCH = "fr-fr",
-}
+export type LanguageCode = (typeof LanguageCode)[keyof typeof LanguageCode];
 
-export enum Local {
-  EN = "en",
-  AR = "ar",
-  FR = "fr",
-}
+export const TTSLanguageCodes = {
+  ENGLISH_US: "en-us",
+  ARABIC: "ar-001",
+  FRENCH: "fr-fr",
+} as const;
 
-export enum ChallengeType {
-  MULTIPLE_CHOICE = "MULTIPLE_CHOICE", // standard quiz format with predefined answers
-  TRUE_FALSE = "TRUE_FALSE", // standard true/false format
-  RIDDLE = "RIDDLE", // open-ended question where child must type an answer, correctness is determined by keyword matching or manual review
-  CHOOSE_ENDING = "CHOOSE_ENDING", // all anserwers are correct, see if child understandood the story
-  MORAL_DECISION = "MORAL_DECISION", // all anserwers are correct, see if child understood the moral of the story
-}
+export type TTSLanguageCodes =
+  (typeof TTSLanguageCodes)[keyof typeof TTSLanguageCodes];
 
-export enum ProgressStatus {
-  NOT_STARTED = "NOT_STARTED",
-  IN_PROGRESS = "IN_PROGRESS",
-  COMPLETED = "COMPLETED",
-}
+export const Local = {
+  EN: "en",
+  AR: "ar",
+  FR: "fr",
+} as const;
 
-export enum ChallengeStatus {
-  SOLVED = "SOLVED",
-  SKIPPED = "SKIPPED",
-  INCORRECT = "INCORRECT",
-  NOT_ATTEMPTED = "NOT_ATTEMPTED",
-}
+export type Local = (typeof Local)[keyof typeof Local];
 
-export enum ReadingLevel {
-  BEGINNER = "BEGINNER",
-  EASY = "EASY",
-  MEDIUM = "MEDIUM",
-  HARD = "HARD",
-  ADVANCED = "ADVANCED",
-}
+export const ChallengeType = {
+  MULTIPLE_CHOICE: "MULTIPLE_CHOICE", // standard quiz format with predefined answers
+  TRUE_FALSE: "TRUE_FALSE", // standard true/false format
+  RIDDLE: "RIDDLE", // open-ended question where child must type an answer, correctness is determined by keyword matching or manual review
+  CHOOSE_ENDING: "CHOOSE_ENDING", // all anserwers are correct, see if child understandood the story
+  MORAL_DECISION: "MORAL_DECISION", // all anserwers are correct, see if child understood the moral of the story
+} as const;
 
-export enum AgeGroupStatus {
-  ACTIVE = "ACTIVE",
-  INACTIVE = "INACTIVE",
-}
+export type ChallengeType = (typeof ChallengeType)[keyof typeof ChallengeType];
+
+export const ProgressStatus = {
+  NOT_STARTED: "NOT_STARTED",
+  IN_PROGRESS: "IN_PROGRESS",
+  COMPLETED: "COMPLETED",
+} as const;
+
+export type ProgressStatus =
+  (typeof ProgressStatus)[keyof typeof ProgressStatus];
+
+export const ChallengeStatus = {
+  SOLVED: "SOLVED",
+  SKIPPED: "SKIPPED",
+  INCORRECT: "INCORRECT",
+  NOT_ATTEMPTED: "NOT_ATTEMPTED",
+} as const;
+
+export type ChallengeStatus =
+  (typeof ChallengeStatus)[keyof typeof ChallengeStatus];
+
+export const ReadingLevel = {
+  BEGINNER: "BEGINNER",
+  EASY: "EASY",
+  MEDIUM: "MEDIUM",
+  HARD: "HARD",
+  ADVANCED: "ADVANCED",
+} as const;
+
+export type ReadingLevel = (typeof ReadingLevel)[keyof typeof ReadingLevel];
+
+export const AgeGroupStatus = {
+  ACTIVE: "ACTIVE",
+  INACTIVE: "INACTIVE",
+} as const;
+
+export type AgeGroupStatus =
+  (typeof AgeGroupStatus)[keyof typeof AgeGroupStatus];
 
 // ============================================================================
 // AUTH SERVICE TYPES
@@ -91,12 +115,12 @@ export enum AgeGroupStatus {
 export interface User {
   id: string;
   email: string;
-  password?: string; // nullable for OAuth users
-  name?: string;
-  image?: string;
+  password: string | null; // nullable for OAuth users
+  name: string | null;
+  image: string | null;
   role: RoleType;
   newUser: boolean;
-  emailVerified?: Date;
+  emailVerified: Date | null;
   createdAt: Date;
   updatedAt: Date;
   children: Child[];
@@ -108,15 +132,15 @@ export interface Child {
   id: string;
   parentId: string;
   name: string;
-  gender?: string;
+  gender: string | null;
 
-  loginCode?: string;
-  avatar?: string;
+  loginCode: string | null; // Unique code for child to log in without email/password
+  avatar: string | null;
   ageGroup: string; // References ContentService.AgeGroup.id
   favoriteThemes: string[]; // References ContentService.Theme.id
   createdAt: Date;
   updatedAt: Date;
-  parent: User;
+  parent?: User;
 }
 
 export interface Account {
@@ -162,7 +186,7 @@ export interface AgeGroup {
   createdAt: Date;
   updatedAt: Date;
   translations?: AgeGroupTranslation[];
-  roadmaps: Roadmap[];
+  roadmaps?: Roadmap[];
 }
 
 export interface AgeGroupTranslation {
@@ -178,7 +202,7 @@ export interface Theme {
   id: string;
   name: string; // e.g., "Adventure", "Mystery", "Fantasy"
   description: string;
-  imageUrl?: string;
+  imageUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
   translations?: ThemeTranslation[];
@@ -190,7 +214,7 @@ export interface ThemeTranslation {
   themeId: string;
   languageCode: LanguageCode;
   name: string;
-  description?: string;
+  description: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -199,21 +223,21 @@ export interface Roadmap {
   id: string;
   ageGroupId: string;
   themeId: string;
-  title?: string | null;
+  title: string | null;
   readingLevel: ReadingLevel;
   createdAt: Date;
   updatedAt: Date;
-  ageGroup: AgeGroup;
-  theme: Theme;
+  ageGroup?: AgeGroup;
+  theme?: Theme;
   translations?: RoadmapTranslation[];
-  worlds: World[];
+  worlds?: World[];
 }
 
 export interface RoadmapTranslation {
   id: string;
   roadmapId: string;
   languageCode: LanguageCode;
-  title?: string | null;
+  title: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -222,14 +246,14 @@ export interface World {
   id: string;
   roadmapId: string;
   name: string;
-  description?: string;
-  imageUrl?: string;
+  description: string | null;
+  imageUrl: string | null;
   order: number;
   createdAt: Date;
   updatedAt: Date;
-  roadmap: Roadmap;
+  roadmap?: Roadmap;
   translations?: WorldTranslation[];
-  stories: Story[];
+  stories?: Story[];
 }
 
 export interface WorldTranslation {
@@ -237,25 +261,25 @@ export interface WorldTranslation {
   worldId: string;
   languageCode: LanguageCode;
   name: string;
-  description?: string;
+  description: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface Story {
   id: string;
-  worldId?: string;
+  worldId: string | null;
   title: string;
-  description?: string;
-  difficulty?: number; // 1-5 difficulty scale
+  description: string | null;
+  difficulty: number | null; // 1-5 difficulty scale
   order: number;
   isStorytellingStory: boolean; // Flag to identify AI-generated storytelling stories
-  generatedStoryId?: string; // Reference to the original generated story ID from AI Service
+  generatedStoryId: string | null; // Reference to the original generated story ID from AI Service
   createdAt: Date;
   updatedAt: Date;
-  world?: World;
+  world?: World | null;
   translations?: StoryTranslation[];
-  chapters: Chapter[];
+  chapters?: Chapter[];
 }
 
 export interface StoryTranslation {
@@ -263,7 +287,7 @@ export interface StoryTranslation {
   storyId: string;
   languageCode: LanguageCode;
   title: string;
-  description?: string;
+  description: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -272,14 +296,14 @@ export interface Chapter {
   id: string;
   storyId: string;
   content: string; // Reading content (text)
-  imageUrl?: string;
-  audioUrl?: string;
+  imageUrl: string | null; // Optional image for the chapter
+  audioUrl: string | null;
   order: number;
   createdAt: Date;
   updatedAt: Date;
-  story: Story;
+  story?: Story;
   translations?: ChapterTranslation[];
-  challenge?: Challenge;
+  challenge?: Challenge | null; // Optional challenge at the end of the chapter
 }
 
 export interface ChapterTranslation {
@@ -287,7 +311,7 @@ export interface ChapterTranslation {
   chapterId: string;
   languageCode: LanguageCode;
   content: string;
-  audioUrl?: string;
+  audioUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -297,16 +321,16 @@ export interface Challenge {
   chapterId: string;
   type: ChallengeType;
   question: string;
-  audioUrl?: string;
-  description?: string;
+  audioUrl: string | null;
+  description?: string | null;
   baseStars: number;
   order: number;
   hints: string[];
   createdAt: Date;
   updatedAt: Date;
-  chapter: Chapter;
+  chapter?: Chapter | null;
   translations?: ChallengeTranslation[];
-  answers: Answer[];
+  answers?: Answer[];
 }
 
 export interface ChallengeTranslation {
@@ -314,8 +338,8 @@ export interface ChallengeTranslation {
   challengeId: string;
   languageCode: LanguageCode;
   question: string;
-  description?: string;
-  audioUrl?: string;
+  description?: string | null;
+  audioUrl: string | null;
   hints: string[];
   createdAt: Date;
   updatedAt: Date;
@@ -326,7 +350,7 @@ export interface Answer {
   challengeId: string;
   text: string;
   isCorrect: boolean;
-  order?: number;
+  order: number | null;
   createdAt: Date;
   updatedAt: Date;
   translations?: AnswerTranslation[];
@@ -392,33 +416,33 @@ export interface ParentUser {
 export interface ChildProfile {
   id: string;
   name: string;
-  gender?: string;
+  gender: string | null;
   parentId: string; // References Auth.Parent.id
-  parent: User; // Parent user details
+  parent?: User; // Parent user details
   childId: string; // References Auth.Child.id
-  child: Child;
+  child?: Child;
   ageGroupId: string; // References Content.AgeGroup.id
-  ageGroupName: string; // Denormalized for easy access
+  ageGroupName: string | null; // Denormalized for easy access
   favoriteThemes: string[]; // References Content.Theme.id
   allocatedRoadmaps: string[]; // List of Roadmap IDs allocated to this child
   currentLevel: number;
   totalStars: number;
-  storytelling?: StorytellingProfile;
+  storytelling?: StorytellingProfile | null; // Optional storytelling profile for AI-generated stories
 
   activateNotifications: boolean; // Whether the child has enabled notifications
   sessionsPerWeek: number; // Number of sessions the child should ideally have per week (for activity tracking)
-  dailyActivity: ChildDailyActivity; // Tracks daily activity for the child
+  dailyActivity?: ChildDailyActivity | null; // Tracks daily activity for the child
   createdAt: Date;
   updatedAt: Date;
-  progress: Progress[];
-  badges: ChildBadge[];
+  progress?: Progress[];
+  badges?: ChildBadge[];
 }
 
 export interface ChildDailyActivity {
   id: string;
   childProfileId: string;
-  childProfile: ChildProfile;
-  lastActiveAt: Date; // Timestamp of the last time the child was active (e.g., had a game session)
+  childProfile?: ChildProfile | null;
+  lastActiveAt: Date | null; // Timestamp of the last time the child was active (e.g., had a game session)
   createdAt: Date;
   updatedAt: Date;
 }
@@ -435,7 +459,7 @@ export interface StorytellingProfile {
   onboardingCompleted: Boolean;
   isActive: Boolean;
 
-  stories: StorytellingStory[];
+  stories?: StorytellingStory[];
 
   createdAt: Date;
   updatedAt: Date;
@@ -444,7 +468,7 @@ export interface StorytellingProfile {
 export interface StorytellingStory {
   id: string;
   storytellingProfileId: string;
-  storytellingProfile: StorytellingProfile;
+  storytellingProfile?: StorytellingProfile;
 
   // Reference to content service StorytellingStory.id
   storyId: string;
@@ -453,7 +477,7 @@ export interface StorytellingStory {
   title: string;
 
   status: ProgressStatus;
-  progress?: Progress;
+  progress?: Progress | null; // Reference to the child's progress on this story
 
   createdAt: Date;
   updatedAt: Date;
@@ -464,15 +488,15 @@ export interface Progress {
   id: string;
   childProfileId: string;
   storytellingStoryId: string | null; // Optional reference to StorytellingStory for AI-generated stories
-  storytellingStory: StorytellingStory | null; // Reference to the associated storytelling story
+  storytellingStory?: StorytellingStory | null; // Reference to the associated storytelling story
 
-  roadmapId?: string; // References Content.Roadmap.id - current roadmap being progressed through
-  worldId?: string; // References Content.World.id - current world being progressed through
-  storyId?: string; // References Content.Story.id - current story being progressed through
+  roadmapId: string | null; // References Content.Roadmap.id - current roadmap being progressed through
+  worldId: string | null; // References Content.World.id - current world being progressed through
+  storyId: string | null; // References Content.Story.id - current story being progressed through
   status: ProgressStatus;
   totalTimeSpent: number; // Total time spent on this story across all sessions (in seconds)
-  completedAt?: Date;
-  gameSession?: GameSession;
+  completedAt: Date | null;
+  gameSession?: GameSession | null; // Reference to the current active game session for this progress (if any)
   createdAt: Date;
   updatedAt: Date;
 }
@@ -481,7 +505,7 @@ export interface Progress {
 export interface GameSession {
   id: string;
   progressId: string;
-  progress?: Progress;
+  progress?: Progress | null;
   storyId: string; // References Content.Story.id
   chapterId: string | null; // References Content.Chapter.id - checkpoint for mid-story saves
   startedAt: Date;
@@ -492,7 +516,7 @@ export interface GameSession {
   totalIdleTime: number; // Total time child was away between sessions (in seconds)
   starsEarned: number;
   challengeAttempts: ChallengeAttempt[];
-  checkpoints: SessionCheckpoint[]; // History of all pause/resume checkpoints
+  checkpoints?: SessionCheckpoint[]; // History of all pause/resume checkpoints
   createdAt: Date;
   updatedAt: Date;
 }
@@ -502,7 +526,7 @@ export interface GameSession {
 export interface SessionCheckpoint {
   id: string;
   gameSessionId: string;
-  gameSession?: GameSession;
+  gameSession?: GameSession | null;
   firstChapterId: string; // Which chapter was the child reading when they started this session
   lastChapterId: string | null; // Which chapter was the child reading when they paused (null if not paused yet)
   pausedAt: Date | null;
@@ -525,23 +549,23 @@ export interface ChallengeAttempt {
   attemptNumber: number;
   usedHints: number;
   timeSpentSeconds: number;
-  actions: AttemptAction[]; // Detailed log of user actions during this attempt
+  actions?: AttemptAction[]; // Detailed log of user actions during this attempt
   starEventId?: string; // References StarEvent.id - rewards earned from this attempt
-  starEvent: StarEvent;
+  starEvent?: StarEvent | null;
   createdAt: Date;
   updatedAt: Date;
 }
 export interface AttemptAction {
   id: string;
-  attemptId?: string;
-  attempt?: ChallengeAttempt;
+  attemptId: string | null;
+  attempt?: ChallengeAttempt | null;
   // What was selected/used in this action
-  selectedAnswerId?: string;
-  selectedAnswerText?: string; // Capture the full text of the answer they selected
-  answerText?: string; // For open-ended questions, capture the text they entered
+  selectedAnswerId: string | null;
+  selectedAnswerText: string | null; // Capture the full text of the answer they selected
+  answerText: string | null; // For open-ended questions, capture the text they entered
   // Context about this action
   attemptNumberAtAction: number; // Which attempt number they were on
-  isCorrect: boolean; // Whether this action resulted in a correct answer (null for non-answer actions)
+  isCorrect: boolean | null; // Whether this action resulted in a correct answer (null for non-answer actions)
   createdAt: Date;
 }
 

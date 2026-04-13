@@ -590,13 +590,13 @@ export async function forwardStartStory(
     });
 
     // Step 2: Extract required fields from story
-    const firstChapter = story.chapters.find((ch) => ch.order === 1);
+    const firstChapter = story.chapters?.find((ch) => ch.order === 1);
     const firstChapterId = firstChapter?.id;
     const worldId = story.worldId;
     const roadmapId = story.world?.roadmapId;
 
     // Extract challenge IDs from all chapters
-    const challengeIds = story.chapters
+    const challengeIds = story.chapters!
       .map((chapter) => chapter.challenge?.id)
       .filter((id) => id !== undefined) as string[];
 

@@ -70,7 +70,7 @@ export class StoryService {
         offset,
       });
 
-      return { stories: stories as Story[], total };
+      return { stories: stories , total };
     } catch (error) {
       logger.error("Error fetching stories", { error: String(error) });
       throw error;
@@ -113,7 +113,7 @@ export class StoryService {
       }
 
       logger.info("Story retrieved successfully", { storyId });
-      return story as Story;
+      return story
     } catch (error) {
       logger.error("Error fetching story", { storyId, error: String(error) });
       throw error;
@@ -151,7 +151,7 @@ export class StoryService {
         count: stories.length,
       });
 
-      return stories as Story[];
+      return stories
     } catch (error) {
       logger.error("Error fetching stories by world", {
         worldId,
@@ -207,7 +207,7 @@ export class StoryService {
         foundCount: stories.length,
       });
 
-      return stories as Story[];
+      return stories
     } catch (error) {
       logger.error("Error fetching stories by IDs", {
         error: String(error),
@@ -295,7 +295,7 @@ export class StoryService {
         worldId: data.worldId,
       });
 
-      return story as Story;
+      return story
     } catch (error) {
       logger.error("Error creating story", {
         data,
@@ -338,7 +338,7 @@ export class StoryService {
       });
 
       logger.info("Story updated successfully", { storyId });
-      return story as Story;
+      return story
     } catch (error) {
       logger.error("Error updating story", {
         storyId,
@@ -457,7 +457,7 @@ export class StoryService {
         storyId: story.id,
       });
 
-      return story as Story;
+      return story
     } catch (error) {
       logger.error("Error creating story from generated story", {
         error: String(error),

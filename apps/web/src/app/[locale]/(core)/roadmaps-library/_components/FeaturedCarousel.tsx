@@ -43,14 +43,14 @@ const FeaturedCarousel = ({ roadmaps }: { roadmaps: Roadmap[] }) => {
       >
         {roadmaps.map((roadmap) => {
           const localizedTheme = (() => {
-            const translation = roadmap.theme.translations?.find(
+            const translation = roadmap.theme!.translations?.find(
               (tr: { languageCode: LanguageCode }) =>
                 tr.languageCode === langCode,
             );
             return {
-              name: translation?.name || roadmap.theme.name,
+              name: translation?.name || roadmap.theme!.name,
               description:
-                translation?.description || roadmap.theme.description,
+                translation?.description || roadmap.theme!.description,
             };
           })();
 
@@ -61,7 +61,7 @@ const FeaturedCarousel = ({ roadmaps }: { roadmaps: Roadmap[] }) => {
             );
             return translation?.title ?? roadmap.title ?? "";
           })();
-          console.log("Localized Theme Name:", roadmap.theme.imageUrl);
+          console.log("Localized Theme Name:", roadmap.theme!.imageUrl);
           return (
             <div
               key={roadmap.id}
@@ -69,7 +69,7 @@ const FeaturedCarousel = ({ roadmaps }: { roadmaps: Roadmap[] }) => {
             >
               {/* Background Image */}
               <img
-                src={roadmap.theme.imageUrl}
+                src={roadmap.theme!.imageUrl!}
                 alt={localizedTheme.name}
                 className="w-full h-full object-cover"
               />

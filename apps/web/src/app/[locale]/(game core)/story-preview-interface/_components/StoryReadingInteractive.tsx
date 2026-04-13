@@ -331,7 +331,7 @@ const StoryReadingInteractive = ({ story }: StoryReadingInteractiveProps) => {
             >
               <RiddleInteractive
                 challenge={currentChallenge}
-                storyImage={currentPageData?.image}
+                storyImage={currentPageData!.image!}
                 storyImageAlt={currentPageData?.alt}
                 onChallengeSubmitted={handleChallengeSubmitted}
                 onClose={() => setShowRiddle(false)}

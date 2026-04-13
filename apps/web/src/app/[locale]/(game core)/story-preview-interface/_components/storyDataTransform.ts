@@ -7,7 +7,7 @@ import { Story, Chapter } from "@readdly/shared-types";
 export interface StoryPage {
   pageNumber: number;
   text: string;
-  image?: string;
+  image: string | null;
   alt: string;
   hasRiddle: boolean;
 }

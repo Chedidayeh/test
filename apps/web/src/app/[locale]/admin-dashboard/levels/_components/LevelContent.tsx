@@ -33,7 +33,6 @@ import {
 } from "@/src/lib/content-service/server-actions";
 import { useRouter } from "next/navigation";
 
-
 interface LevelContentProps {
   levels: Level[];
 }
@@ -143,7 +142,7 @@ const getTargetLanguages = (source: TranslationSourceType): string[] => {
 };
 
 export function LevelContent({ levels: initialLevels }: LevelContentProps) {
-    const router = useRouter();
+  const router = useRouter();
   const [levels, setLevels] = useState<Level[]>(initialLevels);
   const [searchTerm, setSearchTerm] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -166,8 +165,12 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [viewingLevel, setViewingLevel] = useState<Level | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
-  const [editingTranslations, setEditingTranslations] = useState<ManualTranslationEdit[]>([]);
-  const [newLevelTranslations, setNewLevelTranslations] = useState<ManualTranslationEdit[]>([
+  const [editingTranslations, setEditingTranslations] = useState<
+    ManualTranslationEdit[]
+  >([]);
+  const [newLevelTranslations, setNewLevelTranslations] = useState<
+    ManualTranslationEdit[]
+  >([
     { languageCode: "EN", name: "", description: "" },
     { languageCode: "FR", name: "", description: "" },
     { languageCode: "AR", name: "", description: "" },
@@ -226,7 +229,7 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
       badgeNameSchema.parse(badgeName);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const fieldName = isAutoTranslateMode(translationSource) 
+        const fieldName = isAutoTranslateMode(translationSource)
           ? `Badge name (${getSourceLanguageLabel(translationSource)})`
           : "Badge name";
         errors.badgeName = error.issues[0]?.message || `Invalid ${fieldName}`;
@@ -247,7 +250,11 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
     }
 
     // For manual mode, validate that translations exist if we're editing
-    if (translationSource === TranslationSourceType.MANUAL && editingTranslations.length === 0 && editingLevel) {
+    if (
+      translationSource === TranslationSourceType.MANUAL &&
+      editingTranslations.length === 0 &&
+      editingLevel
+    ) {
       // We're editing but have no translations loaded
       // This is okay - user might add them later
     }
@@ -267,14 +274,14 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
     }
 
     // Determine translation source based on available translations
-    let defaultTranslationSource = TranslationSourceType.MANUAL;
-    
+    let defaultTranslationSource: TranslationSourceType =
+      TranslationSourceType.MANUAL;
     // If there are translations, check if French exists (implies FR_TO_AR_EN mode)
     if (translations.length > 0) {
       const hasFrench = translations.some((t) => t.languageCode === "FR");
       const hasEnglish = translations.some((t) => t.languageCode === "EN");
       const hasArabic = translations.some((t) => t.languageCode === "AR");
-      
+
       // If French and (Arabic or English) exist, might be FR_TO_AR_EN
       if (hasFrench && (hasArabic || hasEnglish) && !hasEnglish) {
         defaultTranslationSource = TranslationSourceType.FR_TO_AR_EN;
@@ -297,7 +304,7 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
           }
         : undefined,
     });
-    
+
     setEditingTranslations(translations);
     setEditErrors({});
     setEditDialogOpen(true);
@@ -359,7 +366,9 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
     setIsLoading(true);
     try {
       // Prepare update payload
-      const updatePayload: Partial<Omit<Level, "id" | "createdAt" | "updatedAt" | "badge">> & {
+      const updatePayload: Partial<
+        Omit<Level, "id" | "createdAt" | "updatedAt" | "badge">
+      > & {
         badge?: {
           id: string;
           name: string;
@@ -386,7 +395,10 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
       }
 
       // Include translations only for manual mode
-      if (editingLevel.translationSource === TranslationSourceType.MANUAL && editingTranslations.length > 0) {
+      if (
+        editingLevel.translationSource === TranslationSourceType.MANUAL &&
+        editingTranslations.length > 0
+      ) {
         updatePayload.translations = editingTranslations;
       }
 
@@ -458,9 +470,13 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
 
     // Validate that translations have at least names in manual mode
     if (newLevelData.translationSource === TranslationSourceType.MANUAL) {
-      const hasValidTranslations = newLevelTranslations.some((t) => t.name.trim().length > 0);
+      const hasValidTranslations = newLevelTranslations.some(
+        (t) => t.name.trim().length > 0,
+      );
       if (!hasValidTranslations) {
-        toast.error("Please provide translations for at least one language in manual mode");
+        toast.error(
+          "Please provide translations for at least one language in manual mode",
+        );
         return;
       }
     }
@@ -469,9 +485,10 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
     setIsLoading(true);
     try {
       // Filter translations to only include those with content in manual mode
-      const translationsToInclude = newLevelData.translationSource === TranslationSourceType.MANUAL
-        ? newLevelTranslations.filter((t) => t.name.trim().length > 0)
-        : [];
+      const translationsToInclude =
+        newLevelData.translationSource === TranslationSourceType.MANUAL
+          ? newLevelTranslations.filter((t) => t.name.trim().length > 0)
+          : [];
 
       // Create level with badge in one action
       const result = await createLevelAction(
@@ -486,7 +503,9 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
         },
         isAutoTranslateMode(newLevelData.translationSource),
         newLevelData.translationSource,
-        newLevelData.translationSource === TranslationSourceType.MANUAL ? translationsToInclude : undefined,
+        newLevelData.translationSource === TranslationSourceType.MANUAL
+          ? translationsToInclude
+          : undefined,
       );
 
       if (!result.success) {
@@ -748,7 +767,10 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                   <input
                     type="radio"
                     name="translationSource"
-                    checked={newLevelData.translationSource === TranslationSourceType.EN_TO_FR_AR}
+                    checked={
+                      newLevelData.translationSource ===
+                      TranslationSourceType.EN_TO_FR_AR
+                    }
                     onChange={() =>
                       setNewLevelData((prev) => ({
                         ...prev,
@@ -759,8 +781,12 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                     className="h-4 w-4"
                   />
                   <div>
-                    <div className="font-medium text-sm">Auto-translate from English</div>
-                    <div className="text-xs text-slate-500">Create in English → auto-translate to French & Arabic</div>
+                    <div className="font-medium text-sm">
+                      Auto-translate from English
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      Create in English → auto-translate to French & Arabic
+                    </div>
                   </div>
                 </label>
 
@@ -768,7 +794,10 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                   <input
                     type="radio"
                     name="translationSource"
-                    checked={newLevelData.translationSource === TranslationSourceType.FR_TO_AR_EN}
+                    checked={
+                      newLevelData.translationSource ===
+                      TranslationSourceType.FR_TO_AR_EN
+                    }
                     onChange={() =>
                       setNewLevelData((prev) => ({
                         ...prev,
@@ -779,8 +808,12 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                     className="h-4 w-4"
                   />
                   <div>
-                    <div className="font-medium text-sm">Auto-translate from French</div>
-                    <div className="text-xs text-slate-500">Create in French → auto-translate to Arabic & English</div>
+                    <div className="font-medium text-sm">
+                      Auto-translate from French
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      Create in French → auto-translate to Arabic & English
+                    </div>
                   </div>
                 </label>
 
@@ -788,7 +821,10 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                   <input
                     type="radio"
                     name="translationSource"
-                    checked={newLevelData.translationSource === TranslationSourceType.MANUAL}
+                    checked={
+                      newLevelData.translationSource ===
+                      TranslationSourceType.MANUAL
+                    }
                     onChange={() =>
                       setNewLevelData((prev) => ({
                         ...prev,
@@ -799,14 +835,22 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                     className="h-4 w-4"
                   />
                   <div>
-                    <div className="font-medium text-sm">Manual Translations</div>
-                    <div className="text-xs text-slate-500">Enter content for all languages manually</div>
+                    <div className="font-medium text-sm">
+                      Manual Translations
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      Enter content for all languages manually
+                    </div>
                   </div>
                 </label>
               </div>
               {isAutoTranslateMode(newLevelData.translationSource) && (
                 <p className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
-                  ✓ Badge content will be auto-translated to {getTargetLanguages(newLevelData.translationSource).join(" and ")} using DeepL
+                  ✓ Badge content will be auto-translated to{" "}
+                  {getTargetLanguages(newLevelData.translationSource).join(
+                    " and ",
+                  )}{" "}
+                  using DeepL
                 </p>
               )}
             </div>
@@ -814,22 +858,32 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
             {/* Badge Information */}
             <div className="space-y-2">
               <h3 className="font-semibold text-sm">Badge Information</h3>
-              
+
               {/* Auto-translate Mode: Show source language fields only */}
               {isAutoTranslateMode(newLevelData.translationSource) && (
                 <div className="bg-blue-50 border border-blue-200 rounded p-3 mb-3">
                   <p className="text-sm text-blue-900 font-medium mb-2">
-                    {getSourceLanguageLabel(newLevelData.translationSource)} Content
+                    {getSourceLanguageLabel(newLevelData.translationSource)}{" "}
+                    Content
                   </p>
                   <p className="text-xs text-blue-800">
-                    Enter the badge content in {getSourceLanguageLabel(newLevelData.translationSource).toLowerCase()} and it will be automatically translated to {getTargetLanguages(newLevelData.translationSource).join(" and ")}
+                    Enter the badge content in{" "}
+                    {getSourceLanguageLabel(
+                      newLevelData.translationSource,
+                    ).toLowerCase()}{" "}
+                    and it will be automatically translated to{" "}
+                    {getTargetLanguages(newLevelData.translationSource).join(
+                      " and ",
+                    )}
                   </p>
                 </div>
               )}
 
               <div className="grid gap-2">
                 <Label htmlFor="newBadgeName">
-                  Badge Name * {isAutoTranslateMode(newLevelData.translationSource) && `(${getSourceLanguageLabel(newLevelData.translationSource)})`}
+                  Badge Name *{" "}
+                  {isAutoTranslateMode(newLevelData.translationSource) &&
+                    `(${getSourceLanguageLabel(newLevelData.translationSource)})`}
                 </Label>
                 <Input
                   id="newBadgeName"
@@ -856,7 +910,9 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="newBadgeDescription">
-                  Badge Description {isAutoTranslateMode(newLevelData.translationSource) && `(${getSourceLanguageLabel(newLevelData.translationSource)})`}
+                  Badge Description{" "}
+                  {isAutoTranslateMode(newLevelData.translationSource) &&
+                    `(${getSourceLanguageLabel(newLevelData.translationSource)})`}
                 </Label>
                 <Input
                   id="newBadgeDescription"
@@ -926,7 +982,8 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
             </div>
 
             {/* Manual Translation Editing - Show when in MANUAL mode */}
-            {newLevelData.translationSource === TranslationSourceType.MANUAL && (
+            {newLevelData.translationSource ===
+              TranslationSourceType.MANUAL && (
               <div className="space-y-4 pt-4 border-t">
                 <h3 className="font-semibold text-sm">Badge Translations</h3>
                 <p className="text-xs text-slate-500">
@@ -939,14 +996,18 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                   <div className="grid gap-2">
                     <Input
                       placeholder="English name"
-                      value={newLevelTranslations.find((t) => t.languageCode === "EN")?.name || ""}
+                      value={
+                        newLevelTranslations.find(
+                          (t) => t.languageCode === "EN",
+                        )?.name || ""
+                      }
                       onChange={(e) =>
                         setNewLevelTranslations((prev) =>
                           prev.map((t) =>
                             t.languageCode === "EN"
                               ? { ...t, name: e.target.value }
-                              : t
-                          )
+                              : t,
+                          ),
                         )
                       }
                       disabled={isLoading}
@@ -954,14 +1015,18 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                     />
                     <Input
                       placeholder="English description"
-                      value={newLevelTranslations.find((t) => t.languageCode === "EN")?.description || ""}
+                      value={
+                        newLevelTranslations.find(
+                          (t) => t.languageCode === "EN",
+                        )?.description || ""
+                      }
                       onChange={(e) =>
                         setNewLevelTranslations((prev) =>
                           prev.map((t) =>
                             t.languageCode === "EN"
                               ? { ...t, description: e.target.value }
-                              : t
-                          )
+                              : t,
+                          ),
                         )
                       }
                       disabled={isLoading}
@@ -976,14 +1041,18 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                   <div className="grid gap-2">
                     <Input
                       placeholder="French name"
-                      value={newLevelTranslations.find((t) => t.languageCode === "FR")?.name || ""}
+                      value={
+                        newLevelTranslations.find(
+                          (t) => t.languageCode === "FR",
+                        )?.name || ""
+                      }
                       onChange={(e) =>
                         setNewLevelTranslations((prev) =>
                           prev.map((t) =>
                             t.languageCode === "FR"
                               ? { ...t, name: e.target.value }
-                              : t
-                          )
+                              : t,
+                          ),
                         )
                       }
                       disabled={isLoading}
@@ -991,14 +1060,18 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                     />
                     <Input
                       placeholder="French description"
-                      value={newLevelTranslations.find((t) => t.languageCode === "FR")?.description || ""}
+                      value={
+                        newLevelTranslations.find(
+                          (t) => t.languageCode === "FR",
+                        )?.description || ""
+                      }
                       onChange={(e) =>
                         setNewLevelTranslations((prev) =>
                           prev.map((t) =>
                             t.languageCode === "FR"
                               ? { ...t, description: e.target.value }
-                              : t
-                          )
+                              : t,
+                          ),
                         )
                       }
                       disabled={isLoading}
@@ -1013,14 +1086,18 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                   <div className="grid gap-2">
                     <Input
                       placeholder="Arabic name"
-                      value={newLevelTranslations.find((t) => t.languageCode === "AR")?.name || ""}
+                      value={
+                        newLevelTranslations.find(
+                          (t) => t.languageCode === "AR",
+                        )?.name || ""
+                      }
                       onChange={(e) =>
                         setNewLevelTranslations((prev) =>
                           prev.map((t) =>
                             t.languageCode === "AR"
                               ? { ...t, name: e.target.value }
-                              : t
-                          )
+                              : t,
+                          ),
                         )
                       }
                       disabled={isLoading}
@@ -1028,14 +1105,18 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                     />
                     <Input
                       placeholder="Arabic description"
-                      value={newLevelTranslations.find((t) => t.languageCode === "AR")?.description || ""}
+                      value={
+                        newLevelTranslations.find(
+                          (t) => t.languageCode === "AR",
+                        )?.description || ""
+                      }
                       onChange={(e) =>
                         setNewLevelTranslations((prev) =>
                           prev.map((t) =>
                             t.languageCode === "AR"
                               ? { ...t, description: e.target.value }
-                              : t
-                          )
+                              : t,
+                          ),
                         )
                       }
                       disabled={isLoading}
@@ -1154,13 +1235,17 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                     <input
                       type="radio"
                       name="editTranslationSource"
-                      checked={editingLevel.translationSource === TranslationSourceType.EN_TO_FR_AR}
+                      checked={
+                        editingLevel.translationSource ===
+                        TranslationSourceType.EN_TO_FR_AR
+                      }
                       onChange={() =>
                         setEditingLevel((prev) =>
                           prev
                             ? {
                                 ...prev,
-                                translationSource: TranslationSourceType.EN_TO_FR_AR,
+                                translationSource:
+                                  TranslationSourceType.EN_TO_FR_AR,
                               }
                             : null,
                         )
@@ -1169,8 +1254,12 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                       className="h-4 w-4"
                     />
                     <div>
-                      <div className="font-medium text-sm">Auto-translate from English</div>
-                      <div className="text-xs text-slate-500">Update English → auto-translate to French & Arabic</div>
+                      <div className="font-medium text-sm">
+                        Auto-translate from English
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        Update English → auto-translate to French & Arabic
+                      </div>
                     </div>
                   </label>
 
@@ -1178,13 +1267,17 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                     <input
                       type="radio"
                       name="editTranslationSource"
-                      checked={editingLevel.translationSource === TranslationSourceType.FR_TO_AR_EN}
+                      checked={
+                        editingLevel.translationSource ===
+                        TranslationSourceType.FR_TO_AR_EN
+                      }
                       onChange={() =>
                         setEditingLevel((prev) =>
                           prev
                             ? {
                                 ...prev,
-                                translationSource: TranslationSourceType.FR_TO_AR_EN,
+                                translationSource:
+                                  TranslationSourceType.FR_TO_AR_EN,
                               }
                             : null,
                         )
@@ -1193,8 +1286,12 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                       className="h-4 w-4"
                     />
                     <div>
-                      <div className="font-medium text-sm">Auto-translate from French</div>
-                      <div className="text-xs text-slate-500">Update French → auto-translate to Arabic & English</div>
+                      <div className="font-medium text-sm">
+                        Auto-translate from French
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        Update French → auto-translate to Arabic & English
+                      </div>
                     </div>
                   </label>
 
@@ -1202,7 +1299,10 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                     <input
                       type="radio"
                       name="editTranslationSource"
-                      checked={editingLevel.translationSource === TranslationSourceType.MANUAL}
+                      checked={
+                        editingLevel.translationSource ===
+                        TranslationSourceType.MANUAL
+                      }
                       onChange={() =>
                         setEditingLevel((prev) =>
                           prev
@@ -1217,14 +1317,22 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                       className="h-4 w-4"
                     />
                     <div>
-                      <div className="font-medium text-sm">Manual Translations</div>
-                      <div className="text-xs text-slate-500">Edit translations for all languages manually</div>
+                      <div className="font-medium text-sm">
+                        Manual Translations
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        Edit translations for all languages manually
+                      </div>
                     </div>
                   </label>
                 </div>
                 {isAutoTranslateMode(editingLevel.translationSource) && (
                   <p className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
-                    ✓ Badge content will be auto-translated to {getTargetLanguages(editingLevel.translationSource).join(" and ")} using DeepL
+                    ✓ Badge content will be auto-translated to{" "}
+                    {getTargetLanguages(editingLevel.translationSource).join(
+                      " and ",
+                    )}{" "}
+                    using DeepL
                   </p>
                 )}
               </div>
@@ -1239,41 +1347,65 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                 {isAutoTranslateMode(editingLevel.translationSource) && (
                   <div className="bg-blue-50 border border-blue-200 rounded p-3 mb-3">
                     <p className="text-sm text-blue-900 font-medium mb-2">
-                      {getSourceLanguageLabel(editingLevel.translationSource)} Content
+                      {getSourceLanguageLabel(editingLevel.translationSource)}{" "}
+                      Content
                     </p>
                     <p className="text-xs text-blue-800">
-                      Update the badge content in {getSourceLanguageLabel(editingLevel.translationSource).toLowerCase()} and it will be automatically translated to {getTargetLanguages(editingLevel.translationSource).join(" and ")}
+                      Update the badge content in{" "}
+                      {getSourceLanguageLabel(
+                        editingLevel.translationSource,
+                      ).toLowerCase()}{" "}
+                      and it will be automatically translated to{" "}
+                      {getTargetLanguages(editingLevel.translationSource).join(
+                        " and ",
+                      )}
                     </p>
                   </div>
                 )}
 
                 <div className="grid gap-2">
                   <Label htmlFor="badgeName">
-                    Badge Name {isAutoTranslateMode(editingLevel.translationSource) && `(${getSourceLanguageLabel(editingLevel.translationSource)})`}
+                    Badge Name{" "}
+                    {isAutoTranslateMode(editingLevel.translationSource) &&
+                      `(${getSourceLanguageLabel(editingLevel.translationSource)})`}
                   </Label>
                   <Input
                     id="badgeName"
                     type="text"
                     value={
                       isAutoTranslateMode(editingLevel.translationSource)
-                        ? editingTranslations.find(
-                            (t) => t.languageCode === getSourceLanguage(editingLevel.translationSource).toUpperCase()
-                          )?.name ?? ""
-                        : editingLevel.badge.name ?? ""
+                        ? (editingTranslations.find(
+                            (t) =>
+                              t.languageCode ===
+                              getSourceLanguage(
+                                editingLevel.translationSource,
+                              ).toUpperCase(),
+                          )?.name ?? "")
+                        : (editingLevel.badge.name ?? "")
                     }
                     onChange={(e) => {
                       if (isAutoTranslateMode(editingLevel.translationSource)) {
-                        const sourceLangCode = getSourceLanguage(editingLevel.translationSource).toUpperCase();
+                        const sourceLangCode = getSourceLanguage(
+                          editingLevel.translationSource,
+                        ).toUpperCase();
                         setEditingTranslations((prev) => {
-                          const existing = prev.find((t) => t.languageCode === sourceLangCode);
+                          const existing = prev.find(
+                            (t) => t.languageCode === sourceLangCode,
+                          );
                           if (existing) {
                             return prev.map((t) =>
                               t.languageCode === sourceLangCode
                                 ? { ...t, name: e.target.value }
-                                : t
+                                : t,
                             );
                           } else {
-                            return [...prev, { languageCode: sourceLangCode, name: e.target.value }];
+                            return [
+                              ...prev,
+                              {
+                                languageCode: sourceLangCode,
+                                name: e.target.value,
+                              },
+                            ];
                           }
                         });
                       } else {
@@ -1302,31 +1434,48 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="badgeDescription">
-                    Badge Description {isAutoTranslateMode(editingLevel.translationSource) && `(${getSourceLanguageLabel(editingLevel.translationSource)})`}
+                    Badge Description{" "}
+                    {isAutoTranslateMode(editingLevel.translationSource) &&
+                      `(${getSourceLanguageLabel(editingLevel.translationSource)})`}
                   </Label>
                   <Input
                     id="badgeDescription"
                     type="text"
                     value={
                       isAutoTranslateMode(editingLevel.translationSource)
-                        ? editingTranslations.find(
-                            (t) => t.languageCode === getSourceLanguage(editingLevel.translationSource).toUpperCase()
-                          )?.description ?? ""
-                        : editingLevel.badge.description ?? ""
+                        ? (editingTranslations.find(
+                            (t) =>
+                              t.languageCode ===
+                              getSourceLanguage(
+                                editingLevel.translationSource,
+                              ).toUpperCase(),
+                          )?.description ?? "")
+                        : (editingLevel.badge.description ?? "")
                     }
                     onChange={(e) => {
                       if (isAutoTranslateMode(editingLevel.translationSource)) {
-                        const sourceLangCode = getSourceLanguage(editingLevel.translationSource).toUpperCase();
+                        const sourceLangCode = getSourceLanguage(
+                          editingLevel.translationSource,
+                        ).toUpperCase();
                         setEditingTranslations((prev) => {
-                          const existing = prev.find((t) => t.languageCode === sourceLangCode);
+                          const existing = prev.find(
+                            (t) => t.languageCode === sourceLangCode,
+                          );
                           if (existing) {
                             return prev.map((t) =>
                               t.languageCode === sourceLangCode
                                 ? { ...t, description: e.target.value }
-                                : t
+                                : t,
                             );
                           } else {
-                            return [...prev, { languageCode: sourceLangCode, name: "", description: e.target.value }];
+                            return [
+                              ...prev,
+                              {
+                                languageCode: sourceLangCode,
+                                name: "",
+                                description: e.target.value,
+                              },
+                            ];
                           }
                         });
                       } else {
@@ -1404,9 +1553,7 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
             {editingLevel?.translationSource === TranslationSourceType.MANUAL &&
               editingTranslations.length > 0 && (
                 <div className="space-y-4 pt-4 border-t">
-                  <h3 className="font-semibold text-sm">
-                    Badge Translations
-                  </h3>
+                  <h3 className="font-semibold text-sm">Badge Translations</h3>
                   <p className="text-xs text-slate-500">
                     Edit translations for each language
                   </p>
@@ -1420,7 +1567,7 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                           placeholder="Arabic name"
                           value={
                             editingTranslations.find(
-                              (t) => t.languageCode === "AR"
+                              (t) => t.languageCode === "AR",
                             )?.name || ""
                           }
                           onChange={(e) =>
@@ -1428,8 +1575,8 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                               prev.map((t) =>
                                 t.languageCode === "AR"
                                   ? { ...t, name: e.target.value }
-                                  : t
-                              )
+                                  : t,
+                              ),
                             )
                           }
                           disabled={isLoading}
@@ -1439,7 +1586,7 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                           placeholder="Arabic description"
                           value={
                             editingTranslations.find(
-                              (t) => t.languageCode === "AR"
+                              (t) => t.languageCode === "AR",
                             )?.description || ""
                           }
                           onChange={(e) =>
@@ -1447,8 +1594,8 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                               prev.map((t) =>
                                 t.languageCode === "AR"
                                   ? { ...t, description: e.target.value }
-                                  : t
-                              )
+                                  : t,
+                              ),
                             )
                           }
                           disabled={isLoading}
@@ -1467,7 +1614,7 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                           placeholder="French name"
                           value={
                             editingTranslations.find(
-                              (t) => t.languageCode === "FR"
+                              (t) => t.languageCode === "FR",
                             )?.name || ""
                           }
                           onChange={(e) =>
@@ -1475,8 +1622,8 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                               prev.map((t) =>
                                 t.languageCode === "FR"
                                   ? { ...t, name: e.target.value }
-                                  : t
-                              )
+                                  : t,
+                              ),
                             )
                           }
                           disabled={isLoading}
@@ -1486,7 +1633,7 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                           placeholder="French description"
                           value={
                             editingTranslations.find(
-                              (t) => t.languageCode === "FR"
+                              (t) => t.languageCode === "FR",
                             )?.description || ""
                           }
                           onChange={(e) =>
@@ -1494,8 +1641,8 @@ export function LevelContent({ levels: initialLevels }: LevelContentProps) {
                               prev.map((t) =>
                                 t.languageCode === "FR"
                                   ? { ...t, description: e.target.value }
-                                  : t
-                              )
+                                  : t,
+                              ),
                             )
                           }
                           disabled={isLoading}

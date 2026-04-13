@@ -31,7 +31,7 @@ export const themeSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(2, "Theme name must be at least 2 characters"),
   description: z.string().min(5, "Description must be at least 5 characters"),
-  imageUrl: z.string().url("Invalid image URL").optional().or(z.literal("")),
+  imageUrl: z.string().url("Invalid image URL").nullable().or(z.literal("")),
   translationSource: z.nativeEnum(TranslationSourceType),
   translations: z.array(themeTranslationEditSchema).optional(),
 });
@@ -46,8 +46,8 @@ export const worldSchema = z.object({
   id: z.string().optional(),
   roadmapId: z.string().min(1, "Roadmap ID required"),
   name: z.string().min(2, "World name must be at least 2 characters"),
-  description: z.string().optional(),
-  imageUrl: z.string().url("Invalid image URL").optional().or(z.literal("")),
+  description: z.string().nullable(),
+  imageUrl: z.string().url("Invalid image URL").nullable().or(z.literal("")),
   order: z.number().int().min(1, "Order must be at least 1"),
   translationSource: z.nativeEnum(TranslationSourceType),
   translations: z.array(worldTranslationEditSchema).optional(),
@@ -79,7 +79,7 @@ export const roadmapFormSchema = z.object({
   title: z
     .string()
     .min(2, "Roadmap title must be at least 2 characters")
-    .optional(),
+    .nullable(),
   translationSource: z.nativeEnum(TranslationSourceType),
   translations: z.array(roadmapTranslationEditSchema).optional(),
 });

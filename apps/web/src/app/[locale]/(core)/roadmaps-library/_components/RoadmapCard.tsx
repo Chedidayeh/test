@@ -27,12 +27,12 @@ const RoadmapCard = ({
 
   // Localize theme name/description and roadmap title using translations arrays
   const localizedTheme = (() => {
-    const translation = roadmap.theme.translations?.find(
+    const translation = roadmap.theme!.translations?.find(
       (tr: { languageCode: LanguageCode }) => tr.languageCode === langCode,
     );
     return {
-      name: translation?.name || roadmap.theme.name,
-      description: translation?.description || roadmap.theme.description,
+      name: translation?.name || roadmap.theme!.name,
+      description: translation?.description || roadmap.theme!.description,
     };
   })();
 
@@ -44,10 +44,10 @@ const RoadmapCard = ({
   })();
 
     const localizedAgeGroupName = (() => {
-    const translation = roadmap.ageGroup.translations?.find(
+    const translation = roadmap.ageGroup!.translations?.find(
       (tr: { languageCode: LanguageCode }) => tr.languageCode === langCode,
     );
-    return translation?.name ?? roadmap.ageGroup.name ?? "";
+    return translation?.name ?? roadmap.ageGroup!.name ?? "";
   })();
 
   const localizedReadingLevel = (() => {

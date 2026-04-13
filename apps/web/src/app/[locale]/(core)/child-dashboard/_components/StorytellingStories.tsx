@@ -54,7 +54,7 @@ const StorytellingStories = ({ childProfile }: StorytellingStoriesProps) => {
 
   const getStoryHref = (story: StorytellingStory): string => {
     if (shouldShowReadingInterface(story.status)) {
-      return `/story-reading-interface/${story.storyId}?childId=${childProfile.child.id}`;
+      return `/story-reading-interface/${story.storyId}?childId=${childProfile.child!.id}`;
     }
     // For completed stories, link to story detail/summary page
     return `/storytelling/${story.storyId}`;

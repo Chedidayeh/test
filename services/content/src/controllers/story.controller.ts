@@ -276,11 +276,11 @@ export class StoryController {
 
       logger.info("Story with chapters created successfully", {
         storyId: result.id,
-        chaptersCreated: result.chapters.length,
-        challengesCreated: result.chapters.filter((c) => c.challenge !== null)
+        chaptersCreated: result.chapters?.length,
+        challengesCreated: result.chapters?.filter((c) => c.challenge !== null)
           .length,
-        answersCreated: result.chapters.reduce((acc, chapter) => {
-          return acc + (chapter.challenge?.answers.length || 0);
+        answersCreated: result.chapters?.reduce((acc, chapter) => {
+          return acc + (chapter.challenge?.answers?.length || 0);
         }, 0),
       });
 
@@ -342,7 +342,7 @@ export class StoryController {
 
       logger.info("Story with chapters edited successfully", {
         storyId: result.id,
-        chaptersCount: result.chapters.length,
+        chaptersCount: result.chapters?.length,
       });
 
       sendSuccess(res, result, 200);
@@ -412,7 +412,7 @@ export class StoryController {
         storyId: translatedStory.id,
         translationSource: body.translationSource,
         storyTranslationsCount: translatedStory.translations?.length || 0,
-        chaptersCount: translatedStory.chapters.length,
+        chaptersCount: translatedStory.chapters?.length || 0,
       });
 
       sendSuccess(res, translatedStory, 200);
@@ -468,7 +468,7 @@ export class StoryController {
       logger.info("Storytelling story created successfully", {
         storyId: story.id,
         aiGeneratedStoryId: generatedStory.id,
-        chaptersCreated: story.chapters.length,
+        chaptersCreated: story.chapters?.length || 0,
       });
 
       sendSuccess(res, story, 201);

@@ -43,14 +43,19 @@ export const TRANSLATION_CONFIG = {
  * Translation strategy configuration for different source languages
  * Maps translation source types to their source and target languages
  */
-export type TranslationStrategyType = TranslationSourceType.EN_TO_FR_AR | TranslationSourceType.FR_TO_AR_EN;
+export type TranslationStrategyType =
+  | typeof TranslationSourceType.EN_TO_FR_AR
+  | typeof TranslationSourceType.FR_TO_AR_EN;
 
 export interface TranslationStrategy {
   sourceLanguage: LanguageCode;
   targetLanguages: LanguageCode[];
 }
 
-export const TRANSLATION_STRATEGIES: Record<TranslationStrategyType, TranslationStrategy> = {
+export const TRANSLATION_STRATEGIES: Record<
+  TranslationStrategyType,
+  TranslationStrategy
+> = {
   en_to_fr_ar: {
     sourceLanguage: LanguageCode.EN,
     targetLanguages: [LanguageCode.FR, LanguageCode.AR],

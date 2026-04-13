@@ -28,7 +28,7 @@ export class WorldService {
       });
 
       logger.info("Worlds retrieved successfully", { count: worlds.length });
-      return worlds as World[];
+      return worlds
     } catch (error) {
       logger.error("Error fetching worlds", { error: String(error) });
       throw error;
@@ -57,7 +57,7 @@ export class WorldService {
       }
 
       logger.info("World retrieved successfully", { worldId });
-      return world as World;
+      return world
     } catch (error) {
       logger.error("Error fetching world", { worldId, error: String(error) });
       throw error;
@@ -86,7 +86,7 @@ export class WorldService {
         count: worlds.length,
       });
 
-      return worlds as World[];
+      return worlds
     } catch (error) {
       logger.error("Error fetching worlds by roadmap", {
         roadmapId,
@@ -196,7 +196,7 @@ export class WorldService {
         return newWorld;
       });
 
-      return world as World;
+      return world
     } catch (error) {
       logger.error("Error creating world", {
         data,
@@ -276,7 +276,7 @@ export class WorldService {
         return updatedWorld;
       });
 
-      return world as World;
+      return world
     } catch (error) {
       logger.error("Error updating world", {
         worldId,
@@ -303,7 +303,7 @@ export class WorldService {
         roadmapId: world.roadmapId,
       });
 
-      return world as World;
+      return world
     } catch (error) {
       logger.error("Error deleting world", {
         worldId,
@@ -336,7 +336,7 @@ export class WorldService {
       const translationRecords = await tx.worldTranslation.createMany({
         data: manualTranslations.map((t) => ({
           worldId,
-          languageCode: t.languageCode as LanguageCode,
+          languageCode: t.languageCode,
           name: t.name || sourceName,
           description: t.description || sourceDescription,
         })),

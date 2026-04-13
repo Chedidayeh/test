@@ -99,7 +99,7 @@ export function WorldForm({
       ? {
           roadmapId: world.roadmapId,
           name: world.name,
-          description: world.description,
+          description: world.description || "",
           imageUrl: world.imageUrl || "",
           order: world.order,
           translationSource: TranslationSourceType.MANUAL,

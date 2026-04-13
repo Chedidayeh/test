@@ -23,7 +23,7 @@ import Link from "next/link";
  */
 function getStoriesCompleted(profile: ChildProfile): number {
   return new Set(
-    profile.progress
+    profile.progress!
       .filter((p) => p.status === ProgressStatus.COMPLETED)
       .map((p) => p.storyId),
   ).size;
@@ -34,10 +34,10 @@ function getStoriesCompleted(profile: ChildProfile): number {
  * Counts consecutive days from today going backwards where child had at least one completed checkpoint
  */
 function getCurrentStreak(profile: ChildProfile): number {
-  if (profile.progress.length === 0) return 0;
+  if (profile.progress!.length === 0) return 0;
 
   // Collect all completed checkpoints from all game sessions
-  const allCheckpoints = profile.progress
+  const allCheckpoints = profile.progress!
     .flatMap((p) => p.gameSession?.checkpoints || [])
     .filter((checkpoint) => checkpoint.pausedAt !== null);
 

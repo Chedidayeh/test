@@ -132,11 +132,11 @@ export default function ParentOnboarding({
     if (!selectedAgeGroup) return [];
 
     // Extract unique themes from roadmaps
-    const themes = selectedAgeGroup.roadmaps.map((roadmap) => roadmap.theme);
+    const themes = selectedAgeGroup.roadmaps!.map((roadmap) => roadmap.theme);
     const uniqueThemes = Array.from(
-      new Map(themes.map((t) => [t.id, t])).values(),
+      new Map(themes!.map((t) => [t!.id, t])).values(),
     );
-    return uniqueThemes;
+    return uniqueThemes as Theme[];
   };
 
   // Step 1: Child Basic Info

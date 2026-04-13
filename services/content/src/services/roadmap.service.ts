@@ -35,7 +35,7 @@ export class RoadmapService {
         count: roadmaps.length,
       });
 
-      return roadmaps as Roadmap[];
+      return roadmaps
     } catch (error) {
       logger.error("Error fetching roadmaps", { error: String(error) });
       throw error;
@@ -66,7 +66,7 @@ export class RoadmapService {
       }
 
       logger.info("Roadmap retrieved successfully", { roadmapId });
-      return roadmap as Roadmap;
+      return roadmap
     } catch (error) {
       logger.error("Error fetching roadmap", {
         roadmapId,
@@ -101,7 +101,7 @@ export class RoadmapService {
         count: roadmaps.length,
       });
 
-      return roadmaps as Roadmap[];
+      return roadmaps
     } catch (error) {
       logger.error("Error fetching roadmaps by age group", {
         ageGroupId,
@@ -156,7 +156,7 @@ export class RoadmapService {
         foundCount: roadmaps.length,
       });
 
-      return roadmaps as Roadmap[];
+      return roadmaps
     } catch (error) {
       logger.error("Error fetching roadmaps by IDs", {
         roadmapIds,
@@ -179,7 +179,7 @@ export class RoadmapService {
         },
       });
 
-      return roadmap as Roadmap[];
+      return roadmap
     } catch (error) {
       logger.error("Error fetching roadmap by theme ID", {
         themeId,
@@ -264,7 +264,7 @@ export class RoadmapService {
         return newRoadmap;
       });
 
-      return roadmap as Roadmap;
+      return roadmap 
     } catch (error) {
       logger.error("Error creating roadmap", {
         data,
@@ -348,7 +348,7 @@ export class RoadmapService {
         return updatedRoadmap;
       });
 
-      return roadmap as Roadmap;
+      return roadmap
     } catch (error) {
       logger.error("Error updating roadmap", {
         roadmapId,
@@ -379,7 +379,7 @@ export class RoadmapService {
         themeId: roadmap.themeId,
       });
 
-      return roadmap as Roadmap;
+      return roadmap
     } catch (error) {
       logger.error("Error deleting roadmap", {
         roadmapId,
@@ -411,7 +411,7 @@ export class RoadmapService {
       const translationRecords = await tx.roadmapTranslation.createMany({
         data: manualTranslations.map((t) => ({
           roadmapId,
-          languageCode: t.languageCode as LanguageCode,
+          languageCode: t.languageCode,
           title: t.title || sourceText,
         })),
         skipDuplicates: true,

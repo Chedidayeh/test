@@ -413,7 +413,7 @@ const StoryReadingInteractive = ({
             >
               <RiddleInteractive
                 challenge={currentChallenge}
-                storyImage={currentPageData?.image}
+                storyImage={currentPageData!.image!}
                 storyImageAlt={currentPageData?.alt}
                 gameSessionId={currentProgress?.gameSession?.id}
                 onChallengeSubmitted={handleChallengeSubmitted}

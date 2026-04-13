@@ -131,7 +131,7 @@ export async function generateWeeklyReport(
     // =========================================================================
     const analysisInput: AnalyticsInput = {
       childName: childProfile.name,
-      childAge: childProfile.ageGroupName,
+      childAge: childProfile.ageGroupName!,
       favoriteThemes: childProfile.favoriteThemes || [],
       currentSkillScores: buildSkillScores(childProfile),
       thisWeekMetrics,

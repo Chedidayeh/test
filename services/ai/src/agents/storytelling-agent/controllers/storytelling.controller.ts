@@ -637,7 +637,7 @@ export class StorytellingController {
         create: {
           childId: profileData.id,
           name: profileData.name || "Child",
-          age: profileData.ageGroupName,
+          age: profileData.ageGroupName!,
           gender: profileData.gender || undefined,
           interests: profileData.storytelling?.favoriteThemes || [],
           objectives: profileData.storytelling?.learningObjectives || [],

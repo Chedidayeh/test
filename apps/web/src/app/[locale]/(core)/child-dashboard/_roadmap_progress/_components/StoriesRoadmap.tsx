@@ -13,6 +13,7 @@ import {
   RoleType,
   Local,
   LanguageCode,
+  Story,
 } from "@readdly/shared-types";
 import { getEnrichedStoriesForWorld } from "../../_lib/helpers";
 import { getLanguageCode } from "@/src/lib/translation-utils";
@@ -36,7 +37,7 @@ export default function StoriesRoadmap({
 
   const langCode = getLanguageCode(locale);
 
-  const getLocalizedStory = (story: World["stories"][0]) => {
+  const getLocalizedStory = (story: Story) => {
     const translation = story.translations?.find(
       (tr: { languageCode: LanguageCode }) => tr.languageCode === langCode,
     );
@@ -113,7 +114,7 @@ export default function StoriesRoadmap({
             >
               {/* Background Image */}
               <img
-                src={roadmap.theme.imageUrl}
+                src={roadmap.theme!.imageUrl!}
                 alt={story.name}
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
               />
@@ -167,7 +168,7 @@ export default function StoriesRoadmap({
                     <div className="flex items-center gap-1 text-white backdrop-blur-sm bg-accent rounded-2xl px-3 py-1">
                       <BookOpen className="w-4 h-4" />
                       <div className="text-sm">
-                        {story.chapters.length}{" "}
+                        {story.chapters!.length}{" "}
                         {t("roadmapPage.storiesRoadmap.chapters")}
                       </div>
                     </div>
@@ -186,7 +187,7 @@ export default function StoriesRoadmap({
                   <div className="max-w-max mx-auto transition-all duration-200 md:scale-95 md:translate-y-2 md:pointer-events-none opacity-100 md:group-hover:scale-100 md:group-hover:translate-y-0 md:group-hover:pointer-events-auto">
                     {story.status === "completed" && (
                       <Link
-                        href={`/story-replaying-interface/${story.id}?childId=${childProfile.child.id}`}
+                        href={`/story-replaying-interface/${story.id}?childId=${childProfile.child!.id}`}
                       >
                         <Button size={"sm"} variant={"accent"} className="w-max">
                           {t("roadmapPage.storiesRoadmap.buttons.readAgain")}
@@ -196,7 +197,7 @@ export default function StoriesRoadmap({
 
                     {story.status === "in_progress" && (
                       <Link
-                        href={`/story-reading-interface/${story.id}?childId=${childProfile.child.id}`}
+                        href={`/story-reading-interface/${story.id}?childId=${childProfile.child!.id}`}
                       >
                         <Button size={"sm"} className="w-max">
                           {t(
@@ -208,7 +209,7 @@ export default function StoriesRoadmap({
 
                     {story.status === "not_started" && (
                       <Link
-                        href={`/story-reading-interface/${story.id}?childId=${childProfile.child.id}`}
+                        href={`/story-reading-interface/${story.id}?childId=${childProfile.child!.id}`}
                       >
                         <Button size={"sm"}  className="w-max">
                           {t("roadmapPage.storiesRoadmap.buttons.startReading")}

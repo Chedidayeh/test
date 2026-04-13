@@ -24,7 +24,7 @@ export interface RoadmapDisplay {
  * Maps theme data to display properties, counts worlds/stories
  */
 export function transformRoadmapForDisplay(roadmap: Roadmap): RoadmapDisplay {
-  const storyCount = roadmap.worlds.reduce(
+  const storyCount = roadmap.worlds!.reduce(
     (total, world) => total + (world.stories?.length ?? 0),
     0
   );
@@ -32,13 +32,13 @@ export function transformRoadmapForDisplay(roadmap: Roadmap): RoadmapDisplay {
   return {
     id: roadmap.id,
     title: roadmap.title || "Untitled Roadmap",
-    themeName: roadmap.theme.name,
-    category: roadmap.theme.name, 
-    themeDescription: roadmap.theme.description || '',
-    coverImage: roadmap.theme.imageUrl || '/images/placeholder-roadmap.jpg',
+    themeName: roadmap.theme!.name,
+    category: roadmap.theme!.name, 
+    themeDescription: roadmap.theme!.description || '',
+    coverImage: roadmap.theme!.imageUrl || '/images/placeholder-roadmap.jpg',
     readingLevel: roadmap.readingLevel,
     ageGroup: roadmap.ageGroup,
-    worldCount: roadmap.worlds.length,
+    worldCount: roadmap.worlds!.length,
     storyCount,
     theme: roadmap.theme,
     translations: roadmap.translations,

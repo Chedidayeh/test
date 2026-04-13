@@ -81,8 +81,8 @@ const ChildDashboardInteractive = ({
           <div className="lg:hidden space-y-4 container mx-auto px-4 py-4">
             {/* Welcome Banner */}
             <WelcomeBanner
-              childName={child.child.name || "Young Reader"}
-              avatar={child.child.avatar}
+              childName={child.child!.name || "Young Reader"}
+              avatar={child.child!.avatar!}
               currentLevel={child.currentLevel || 1}
               totalStars={child.totalStars || 0}
               recentBadges={childBadges}
@@ -133,8 +133,8 @@ const ChildDashboardInteractive = ({
             <div className="lg:col-span-3 space-y-4">
               {/* Welcome Banner */}
               <WelcomeBanner
-                childName={child.child.name || "Young Reader"}
-                avatar={child.child.avatar}
+                childName={child.child!.name || "Young Reader"}
+                avatar={child.child!.avatar!}
                 currentLevel={child.currentLevel || 1}
                 totalStars={child.totalStars || 0}
                 recentBadges={childBadges}

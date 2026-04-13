@@ -49,24 +49,24 @@ const RoadmapsLibrary = ({
   // Build localized theme names map
   const localizedThemeNames = new Map<string, string>();
   roadmaps.forEach((roadmap) => {
-    const themeTranslation = roadmap.theme.translations?.find(
+    const themeTranslation = roadmap.theme!.translations?.find(
       (tr: { languageCode: LanguageCode }) => tr.languageCode === langCode
     );
     localizedThemeNames.set(
-      roadmap.theme.id,
-      themeTranslation?.name || roadmap.theme.name
+      roadmap.theme!.id,
+      themeTranslation?.name || roadmap.theme!.name
     );
   });
 
   // Build localized age group names map
   const localizedAgeGroupNames = new Map<string, string>();
   roadmaps.forEach((roadmap) => {
-    const ageGroupTranslation = roadmap.ageGroup.translations?.find(
+    const ageGroupTranslation = roadmap.ageGroup!.translations?.find(
       (tr: { languageCode: LanguageCode }) => tr.languageCode === langCode
     );
     localizedAgeGroupNames.set(
-      roadmap.ageGroup.id,
-      ageGroupTranslation?.name || roadmap.ageGroup.name
+      roadmap.ageGroup!.id,
+      ageGroupTranslation?.name || roadmap.ageGroup!.name
     );
   });
 
@@ -84,12 +84,12 @@ const RoadmapsLibrary = ({
 
   // Get unique localized themes/categories from roadmaps
   const uniqueThemes = Array.from(
-    new Set(roadmaps.map((r) => localizedThemeNames.get(r.theme.id) || r.theme.name)),
+    new Set(roadmaps.map((r) => localizedThemeNames.get(r.theme!.id) || r.theme!.name)),
   );
 
   // Get unique localized age groups from roadmaps
   const uniqueAgeGroups = Array.from(
-    new Set(roadmaps.map((r) => localizedAgeGroupNames.get(r.ageGroup.id) || r.ageGroup.name)),
+    new Set(roadmaps.map((r) => localizedAgeGroupNames.get(r.ageGroup!.id) || r.ageGroup!.name)),
   );
 
   const getFilteredRoadmaps = () => {
@@ -110,8 +110,8 @@ const RoadmapsLibrary = ({
       filtered = filtered.filter((roadmap) => {
         const originalRoadmap = roadmapMap.get(roadmap.id);
         if (!originalRoadmap) return false;
-        const localizedThemeName = localizedThemeNames.get(originalRoadmap.theme.id);
-        return filters.categories.includes(localizedThemeName || originalRoadmap.theme.name);
+        const localizedThemeName = localizedThemeNames.get(originalRoadmap.theme!.id);
+        return filters.categories.includes(localizedThemeName || originalRoadmap.theme!.name);
       });
     }
 
@@ -139,8 +139,8 @@ const RoadmapsLibrary = ({
       filtered = filtered.filter((roadmap) => {
         const originalRoadmap = roadmapMap.get(roadmap.id);
         if (!originalRoadmap) return false;
-        const localizedAgeGroupName = localizedAgeGroupNames.get(originalRoadmap.ageGroup.id);
-        return filters.ageGroups.includes(localizedAgeGroupName || originalRoadmap.ageGroup.name);
+        const localizedAgeGroupName = localizedAgeGroupNames.get(originalRoadmap.ageGroup!.id);
+        return filters.ageGroups.includes(localizedAgeGroupName || originalRoadmap.ageGroup!.name);
       });
     }
 

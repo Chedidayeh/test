@@ -51,7 +51,7 @@ export default function TimeAnalyticsTab({ selectedChild }: AnalyticsTabProps) {
       <div className="space-y-6 md:space-y-8">
         <div>
           <TimeAnalytics
-            childProgress={selectedChild.progress}
+            childProgress={selectedChild.progress!}
             childProfile={selectedChild}
           />
         </div>

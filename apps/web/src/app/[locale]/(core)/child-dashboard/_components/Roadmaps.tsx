@@ -51,14 +51,14 @@ const Roadmaps = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
         {roadmaps.map((roadmap) => {
           const localizedTheme = (() => {
-            const translation = roadmap.theme.translations?.find(
+            const translation = roadmap.theme!.translations?.find(
               (tr: { languageCode: LanguageCode }) =>
                 tr.languageCode === langCode,
             );
             return {
-              name: translation?.name || roadmap.theme.name,
+              name: translation?.name || roadmap.theme!.name,
               description:
-                translation?.description || roadmap.theme.description,
+                translation?.description || roadmap.theme!.description,
             };
           })();
 
@@ -80,7 +80,7 @@ const Roadmaps = ({
               {/* Cover Image */}
               <div className="relative h-40 md:h-48 overflow-hidden">
                 <img
-                  src={roadmap.theme.imageUrl}
+                  src={roadmap.theme!.imageUrl!}
                   alt={t("roadmaps.coverAlt", { name: localizedTheme.name })}
                   className="w-full h-full object-cover transition-transform duration-500 transform group-hover:scale-110"
                 />

@@ -3,22 +3,25 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import Link from "next/link";
 import { StoryCreateClient } from "../_components/StoryCreateClient";
+import { World } from "@readdly/shared-types";
 
 export default async function NewStoryPage() {
   // Fetch data server-side
   const ageGroups = await getAgeGroupsForAdmin();
   // filter age groups that have no roadmaps
   const filteredAgeGroups = ageGroups.filter(
-    (group) => group.roadmaps.length > 0,
+    (group) => group.roadmaps!.length > 0,
   );
 
   const roadmaps = filteredAgeGroups.map((group) => group.roadmaps).flat();
-  // filter roadmaps that have worlds
+  // filter roadmaps that have worlds or undefined roadmaps
   const filteredRoadmaps = roadmaps.filter(
-    (roadmap) => roadmap.worlds.length > 0,
+    (roadmap): roadmap is NonNullable<typeof roadmap> =>
+      roadmap !== undefined && roadmap.worlds !== undefined,
   );
-  const worlds = filteredRoadmaps.map((roadmap) => roadmap.worlds).flat();
-
+  const worlds = filteredRoadmaps.map((roadmap) => roadmap!.worlds).flat();
+  // Filter out any undefined values from worlds and roadmaps
+  const filteredWorlds = worlds.filter((w): w is World => w !== undefined);
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -39,7 +42,7 @@ export default async function NewStoryPage() {
       <StoryCreateClient
         ageGroups={filteredAgeGroups}
         roadmaps={filteredRoadmaps}
-        worlds={worlds}
+        worlds={filteredWorlds}
       />
     </div>
   );
