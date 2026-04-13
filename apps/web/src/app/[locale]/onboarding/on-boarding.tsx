@@ -81,6 +81,9 @@ export default function ParentOnboarding({
 
       // Wait a moment for service worker to be ready
       await new Promise((resolve) => setTimeout(resolve, 500));
+      console.log("Starting Pusher Beams client...", {
+        instanceId: process.env.NEXT_PUBLIC_PUSHER_BEAMS_INSTANCE_ID,
+      });
 
       const beamsClient = new PusherPushNotifications.Client({
         instanceId: `${process.env.NEXT_PUBLIC_PUSHER_BEAMS_INSTANCE_ID}`,
@@ -245,7 +248,7 @@ export default function ParentOnboarding({
         allocatedRoadmaps,
         sessionsPerWeek,
         activateNotifications,
-      }
+      };
       console.log("Creating child profile with payload:", payload);
 
       const result = await createChildProfileAction(payload);
@@ -856,8 +859,13 @@ export default function ParentOnboarding({
               </p>
               <ol className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-decimal list-inside">
                 <li>{t("step1BrowserPrompt") || "Click the button below"}</li>
-                <li>{t("step2AcceptPrompt") || "Your browser will ask you to allow notifications"}</li>
-                <li>{t("step3ClickAllow") || "Click 'Allow' in the browser popup"}</li>
+                <li>
+                  {t("step2AcceptPrompt") ||
+                    "Your browser will ask you to allow notifications"}
+                </li>
+                <li>
+                  {t("step3ClickAllow") || "Click 'Allow' in the browser popup"}
+                </li>
                 <li>
                   {t("step4IfNoPopup") ||
                     "If no popup appears, go to your browser settings and allow notifications for this site"}
