@@ -535,6 +535,12 @@
 		"step2AcceptPrompt": "Votre navigateur vous demandera d'autoriser les notifications",
 		"step3ClickAllow": "Cliquez sur « Autoriser » dans la fenêtre contextuelle du navigateur",
 		"step4IfNoPopup": "Si aucune fenêtre contextuelle n'apparaît, allez aux paramètres de votre navigateur et autorisez les notifications pour ce site",
+		"enableNotificationsRequired": "Vous devez activer les notifications pour continuer",
+		"serviceWorkerNotSupported": "Les service workers ne sont pas supportés par ce navigateur",
+		"serviceWorkerRegistrationFailed": "Échec de l'enregistrement du service worker",
+		"enableNotificationsInBrowser": "Veuillez activer les notifications dans votre navigateur",
+		"enableNotificationsFailed": "Échec de l'activation des notifications",
+		"enableNotificationsSuccess": "Notifications activées avec succès!",
 		"gender": {
 			"boy": "Garçon",
 			"girl": "Fille"

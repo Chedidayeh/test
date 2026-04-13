@@ -533,6 +533,12 @@
 		"step2AcceptPrompt": "سيطلب منك متصفحك السماح بالإشعارات",
 		"step3ClickAllow": "انقر على 'السماح' في النافذة المنبثقة للمتصفح",
 		"step4IfNoPopup": "إذا لم تظهر أي نافذة منبثقة، انتقل إلى إعدادات متصفحك وسمح بالإشعارات لهذا الموقع",
+		"enableNotificationsRequired": "يجب عليك تفعيل الإشعارات للمتابعة",
+		"serviceWorkerNotSupported": "خدمات العامل ليست مدعومة في هذا المتصفح",
+		"serviceWorkerRegistrationFailed": "فشل تسجيل خدمة العامل",
+		"enableNotificationsInBrowser": "يرجى تفعيل الإشعارات في متصفحك",
+		"enableNotificationsFailed": "فشل تفعيل الإشعارات",
+		"enableNotificationsSuccess": "تم تفعيل الإشعارات بنجاح!",
 		"gender": {
 			"boy": "ولد",
 			"girl": "بنت"

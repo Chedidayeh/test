@@ -9,6 +9,7 @@ import { Session } from "next-auth";
 import { useTranslations } from "next-intl";
 import { useLocale } from "@/src/contexts/LocaleContext";
 import Link from "next/link";
+import { usePusherBeams } from "@/src/hooks/use-pusher";
 
 export default function Hero({ session }: { session: Session | null }) {
   const t = useTranslations("Hero");
@@ -19,7 +20,7 @@ export default function Hero({ session }: { session: Session | null }) {
   const router = useRouter();
   const loginModal = useLoginModal();
 
-
+  usePusherBeams(session);
   return (
     <div>
       {/* Hero Content */}

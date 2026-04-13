@@ -19,6 +19,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { updateNotificationSettingsAction } from "@/src/lib/progress-service/server-actions";
+import { useRouter } from "next/navigation";
 
 interface OverviewTabProps {
   parentName?: string;
@@ -42,7 +43,7 @@ export default function OverviewTab({
   const riddlesSolved = getRiddlesSolved(selectedChild);
   const averagePerDay = getAverageReadingTimePerDay(selectedChild);
   const streak = getCurrentStreak(selectedChild);
-
+  const router = useRouter();
   const handleSaveNotifications = async () => {
     setIsSaving(true);
     try {
@@ -62,6 +63,7 @@ export default function OverviewTab({
             "Notification settings saved!",
         );
         setShowNotificationModal(false);
+        router.refresh();
       } else {
         toast.error(result.error || "Failed to save notification settings");
       }
@@ -126,11 +128,11 @@ export default function OverviewTab({
                   })}
                   {' '}
                   <span className={`px-2 py-1 rounded font-semibold inline-block ${
-                    selectedChild?.activateNotifications
+                    notificationToggle
                       ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200"
                       : "bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-200"
                   }`}>
-                    {selectedChild?.activateNotifications
+                    {notificationToggle
                       ? t("notificationSettings.enabledStatus")
                       : t("notificationSettings.disabledStatus")}
                   </span>

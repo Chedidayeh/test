@@ -535,6 +535,12 @@
 		"step2AcceptPrompt": "Your browser will ask you to allow notifications",
 		"step3ClickAllow": "Click 'Allow' in the browser popup",
 		"step4IfNoPopup": "If no popup appears, go to your browser settings and allow notifications for this site",
+		"enableNotificationsRequired": "You must enable notifications to continue",
+		"serviceWorkerNotSupported": "Service workers are not supported in this browser",
+		"serviceWorkerRegistrationFailed": "Failed to register service worker",
+		"enableNotificationsInBrowser": "Please enable notifications in your browser",
+		"enableNotificationsFailed": "Failed to enable notifications",
+		"enableNotificationsSuccess": "Notifications enabled successfully!",
 		"gender": {
 			"boy": "Boy",
 			"girl": "Girl"

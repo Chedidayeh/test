@@ -19,6 +19,7 @@ import {
   FieldLabel,
 } from "@/src/components/ui/field";
 import { Checkbox } from "@/src/components/ui/checkbox";
+import { Switch } from "@/src/components/ui/switch";
 import {
   Select,
   SelectTrigger,
@@ -48,67 +49,45 @@ export default function ParentOnboarding({
   const beamsClientRef = useRef<PusherPushNotifications.Client | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
-
-  // Load notification status from localStorage on component mount
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedNotificationStatus = localStorage.getItem(
-        "notificationsEnabled",
-      );
-      if (savedNotificationStatus === "true") {
-        setNotificationsEnabled(true);
-        console.log("Notifications enabled from localStorage");
-      }
-    }
-  }, []);
-
-  // Function to initialize Pusher Beams when user clicks the button
+  
   const handleEnableNotifications = async () => {
     setIsEnablingNotifications(true);
-    try {
-      // Get parent ID from session
-      const parentId = session?.user?.id;
 
-      // Register service worker first
-      if ("serviceWorker" in navigator) {
-        try {
-          await navigator.serviceWorker.register("/service-worker.js");
-          console.log("Service Worker registered successfully");
-        } catch (error) {
-          console.error("Service Worker registration failed:", error);
-        }
+    try {
+      // 1. Check browser support
+      if (!("serviceWorker" in navigator)) {
+        toast.error(t("serviceWorkerNotSupported"));
+        return;
       }
 
-      // Wait a moment for service worker to be ready
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      console.log("Starting Pusher Beams client...", {
-        instanceId: process.env.NEXT_PUBLIC_PUSHER_BEAMS_INSTANCE_ID,
-      });
+      // 2. Register Service Worker
+      try {
+        await navigator.serviceWorker.register("/service-worker.js");
+        console.log("Service Worker registered successfully");
+      } catch (error) {
+        console.error("Service Worker registration failed:", error);
+        toast.error(t("serviceWorkerRegistrationFailed"));
+        return;
+      }
 
-      const beamsClient = new PusherPushNotifications.Client({
-        instanceId: `${process.env.NEXT_PUBLIC_PUSHER_BEAMS_INSTANCE_ID}`,
-      });
+      // 3. Request Notification Permission (UX step)
+      const permission = await Notification.requestPermission();
 
-      await beamsClient.start();
-      // Subscribe to parent's ID so cron job can target this device
-      await beamsClient.addDeviceInterest(parentId);
-      console.log(
-        "Successfully registered and subscribed to parent interest!",
-        { parentId },
-      );
+      if (permission !== "granted") {
+        toast.error(t("enableNotificationsInBrowser"));
+        setNotificationsEnabled(false);
+        return;
+      }
 
-      // Store the client instance for later cleanup
-      beamsClientRef.current = beamsClient;
-
-      // Persist the preference to localStorage
-      localStorage.setItem("notificationsEnabled", "true");
-      localStorage.setItem("parentId", parentId); // Also store for disable function
+      // 4. Save UX preference only (NOT Beams subscription)
+      localStorage.setItem("notificationsPermission", "granted");
       setNotificationsEnabled(true);
-      toast.success("Notifications enabled successfully!");
+
+      toast.success(t("enableNotificationsSuccess"));
       setShowPermissionsModal(false);
     } catch (error) {
-      console.error("Pusher Beams initialization failed:", error);
-      toast.error("Failed to enable notifications");
+      console.error("Notification setup failed:", error);
+      toast.error(t("enableNotificationsFailed"));
       setNotificationsEnabled(false);
     } finally {
       setIsEnablingNotifications(false);
@@ -174,7 +153,9 @@ export default function ParentOnboarding({
   // Step 3: Reading Settings
   const readingSettingsSchema = z.object({
     sessionsPerWeek: z.number().min(1, "Select reading frequency").max(7),
-    enableReminders: z.boolean(),
+    enableReminders: z.boolean().refine((val) => val === true, {
+      message: t("enableNotificationsRequired") || "You must enable notifications to continue",
+    }),
   });
 
   const readingSettingsForm = useForm({
@@ -660,10 +641,15 @@ export default function ParentOnboarding({
 
                   {/* Enable Reminders Toggle */}
                   <Field>
-                    <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+                    <div className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
+                      readingSettingsForm.formState.errors.enableReminders
+                        ? "border-destructive bg-destructive/5"
+                        : "bg-muted/30 border-muted"
+                    }`}>
                       <div>
                         <FieldLabel className="mb-1">
                           {t("enableReadingReminders")}
+                          <span className="text-destructive ml-1">*</span>
                         </FieldLabel>
                         <FieldDescription>
                           {t("enableRemindersDescription", {
@@ -675,31 +661,25 @@ export default function ParentOnboarding({
                         control={readingSettingsForm.control}
                         name="enableReminders"
                         render={({ field }) => (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (!field.value) {
+                          <Switch
+                          dir="ltr"
+                            checked={field.value}
+                            onCheckedChange={(checked) => {
+                              field.onChange(checked);
+                              if (checked) {
                                 // When toggling ON, show permissions modal
-                                field.onChange(true);
                                 setShowPermissionsModal(true);
-                              } else {
-                                // When toggling OFF, just turn it off
-                                field.onChange(false);
                               }
                             }}
-                            className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
-                              field.value ? "bg-primary" : "bg-gray-300"
-                            }`}
-                          >
-                            <span
-                              className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
-                                field.value ? "translate-x-7" : "translate-x-1"
-                              }`}
-                            />
-                          </button>
+                          />
                         )}
                       />
                     </div>
+                    {readingSettingsForm.formState.errors.enableReminders && (
+                      <FieldDescription className="text-destructive mt-2">
+                        {readingSettingsForm.formState.errors.enableReminders.message}
+                      </FieldDescription>
+                    )}
                   </Field>
                 </FieldGroup>
 

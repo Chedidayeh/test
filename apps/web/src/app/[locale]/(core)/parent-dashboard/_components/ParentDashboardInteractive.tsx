@@ -14,6 +14,7 @@ import ChildStorytellingTab from "./ChildStorytellingTab";
 import { getParentWithProfilesAction } from "@/src/lib/progress-service/server-actions";
 import { Button } from "@/src/components/ui/button";
 import { Settings } from "lucide-react";
+import { usePusherBeams } from "@/src/hooks/use-pusher";
 
 export default function ParentDashboardInteractive({
   parentData: initialParentData,
@@ -28,6 +29,7 @@ export default function ParentDashboardInteractive({
   session: Session;
   userRole: RoleType;
 }) {
+  usePusherBeams(session);
   const [parentData, setParentData] = useState(initialParentData);
   const children = parentData?.children || [];
   const [selectedChildId, setSelectedChildId] = useState(
