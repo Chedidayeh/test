@@ -162,6 +162,8 @@ export async function createChildProfileAction(payload: {
   ageGroupName: string;
   themeIds: string[];
   allocatedRoadmaps: string[];
+  sessionsPerWeek: number;
+  activateNotifications: boolean;
 }) {
   try {
     const child = await createChildProfile(payload);

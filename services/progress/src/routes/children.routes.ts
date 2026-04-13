@@ -8,9 +8,9 @@ router.post("/create-child-profile", (req, res) =>
   ChildrenController.createChild(req, res),
 );
 
-// Get all children with pagination
-router.get("/children/all", (req, res) =>
-  ChildrenController.getAllChildren(req, res),
+// Get children that have progress data in the last week (for weekly analytics)
+router.get("/children/week", (req, res) =>
+  ChildrenController.getWeekChildren(req, res),
 );
 
 // Get all children with storytelling profiles
@@ -21,6 +21,11 @@ router.get("/children/storytelling-all", (req, res) =>
 // Get all children with pagination
 router.get("/children", (req, res) =>
   ChildrenController.getAllChildrenWithPagination(req, res),
+);
+
+// Get children for push notifications
+router.get("/push-notifications/children", (req, res) =>
+  ChildrenController.getChildrenForPushNotifications(req, res),
 );
 
 // Get children statistics (activeChildren, totalStoriesCompleted, totalChallengesSolved)
@@ -88,6 +93,11 @@ router.post("/children/:childId/badges", (req, res) =>
 // Allocate roadmap to child
 router.post("/children/:childId/allocate-roadmap", (req, res) =>
   ChildrenController.allocateRoadmapToChild(req, res),
+);
+
+// Update child notification settings
+router.patch("/children/:childId/notifications", (req, res) =>
+  ChildrenController.updateNotificationSettings(req, res),
 );
 
 // Storytelling endpoints

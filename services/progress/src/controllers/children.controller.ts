@@ -33,6 +33,8 @@ export class ChildrenController {
         themeIds,
         allocatedRoadmaps,
         badgeId,
+        sessionsPerWeek,
+        activateNotifications,
       } = req.body;
 
       // Validation
@@ -69,6 +71,8 @@ export class ChildrenController {
         themeIds: themeIds || [],
         allocatedRoadmaps: allocatedRoadmaps || [],
         badgeId,
+        sessionsPerWeek: sessionsPerWeek ,
+        activateNotifications: activateNotifications,
       });
 
       res.status(201).json({
@@ -151,17 +155,12 @@ export class ChildrenController {
     }
   }
 
-  /**
-   * Fetch all children with stats
-   */
-  static async getAllChildren(
+  static async getWeekChildren(
     req: Request,
     res: Response<ApiResponse<{ children: ChildProfile[]; total: number }>>,
   ): Promise<void> {
     try {
-      // Get all children with pagination
-
-      const result = await ChildrenService.getAllChildren();
+      const result = await ChildrenService.getWeekChildren();
 
       res.json({
         success: true,
@@ -207,6 +206,37 @@ export class ChildrenController {
             error instanceof Error
               ? error.message
               : "Failed to fetch children with storytelling",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  /**
+   * Fetch all children with parent information for push notifications
+   */
+  static async getChildrenForPushNotifications(
+    req: Request,
+    res: Response<ApiResponse<ChildProfile[]>>,
+  ): Promise<void> {
+    try {
+      const result = await ChildrenService.getChildrenForPushNotifications();
+
+      res.json({
+        success: true,
+        data: result,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error fetching children for push notifications:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "FETCH_ERROR",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to fetch children for push notifications",
         },
         timestamp: new Date(),
       });
@@ -440,7 +470,7 @@ export class ChildrenController {
       const updatedSession = await ChildrenService.saveCheckpoint(
         gameSessionId,
         chapterId,
-        elapsedTime
+        elapsedTime,
       );
 
       res.status(200).json({
@@ -677,8 +707,10 @@ export class ChildrenController {
         return;
       }
 
-      const completedSession =
-        await ChildrenService.completeStory(gameSessionId, elapsedTime);
+      const completedSession = await ChildrenService.completeStory(
+        gameSessionId,
+        elapsedTime,
+      );
 
       res.status(200).json({
         success: true,
@@ -922,6 +954,81 @@ export class ChildrenController {
   }
 
   /**
+   * Update child's notification settings
+   * Body: { activateNotifications }
+   */
+  static async updateNotificationSettings(
+    req: Request,
+    res: Response<ApiResponse<ChildProfile>>,
+  ): Promise<void> {
+    try {
+      const { childId } = req.params;
+      const { activateNotifications } = req.body;
+
+      // Validation
+      if (!childId) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required parameter: childId",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      if (activateNotifications === undefined || activateNotifications === null) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required field: activateNotifications",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      const updatedChild = await ChildrenService.updateNotificationSettings(
+        childId,
+        activateNotifications,
+      );
+
+      if (!updatedChild) {
+        res.status(404).json({
+          success: false,
+          error: {
+            code: "NOT_FOUND",
+            message: "Child profile not found",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: updatedChild,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error updating notification settings:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "UPDATE_ERROR",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to update notification settings",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  /**
    * Get aggregated children statistics for admin dashboard
    * Returns: totalChildren, activeChildren, totalStoriesCompleted, totalChallengesSolved
    */
@@ -978,25 +1085,33 @@ export class ChildrenController {
       } = req.body;
 
       // Validation
-      if (!childProfileId || !childName || !childLanguage || !Array.isArray(favoriteThemes)) {
+      if (
+        !childProfileId ||
+        !childName ||
+        !childLanguage ||
+        !Array.isArray(favoriteThemes)
+      ) {
         res.status(400).json({
           success: false,
           error: {
             code: "BAD_REQUEST",
-            message: "Missing required fields: childProfileId, childName, childLanguage, favoriteThemes",
+            message:
+              "Missing required fields: childProfileId, childName, childLanguage, favoriteThemes",
           },
           timestamp: new Date(),
         });
         return;
       }
 
-      const storytellingProfile = await ChildrenService.saveStorytellingProfile({
-        childProfileId,
-        childName,
-        childLanguage,
-        favoriteThemes,
-        learningObjectives: learningObjectives || [],
-      });
+      const storytellingProfile = await ChildrenService.saveStorytellingProfile(
+        {
+          childProfileId,
+          childName,
+          childLanguage,
+          favoriteThemes,
+          learningObjectives: learningObjectives || [],
+        },
+      );
 
       res.status(200).json({
         success: true,
@@ -1044,7 +1159,10 @@ export class ChildrenController {
         return;
       }
 
-      const result = await ChildrenService.updateStorytellingStory(childId, story as Story);
+      const result = await ChildrenService.updateStorytellingStory(
+        childId,
+        story as Story,
+      );
 
       res.status(200).json({
         success: true,

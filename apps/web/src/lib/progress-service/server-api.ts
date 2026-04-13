@@ -752,6 +752,71 @@ export async function allocateRoadmapToChild(
 }
 
 /**
+ * Update child's notification preferences
+ * Updates the activateNotifications flag for a specific child
+ *
+ * @param childId - The child's ID
+ * @param activateNotifications - Whether to activate or deactivate notifications
+ * @returns Updated ChildProfile
+ *
+ * @example
+ * const updated = await updateChildNotifications("child-123", true);
+ * console.log("Notifications enabled for:", updated.name);
+ *
+ * @throws Throws error if the update fails
+ */
+export async function updateChildNotifications(
+  childId: string,
+  activateNotifications: boolean,
+): Promise<ChildProfile> {
+  console.log(
+    "[Progress Service API] Updating child notification preferences",
+    {
+      childId,
+      activateNotifications,
+    },
+  );
+
+  const response = await apiRequest<ApiResponse<ChildProfile>>(
+    `/children/${childId}/notifications`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ activateNotifications }),
+    },
+  );
+
+  if (isApiError(response)) {
+    const errorMessage =
+      response.error.message || "Failed to update notification settings";
+    console.error(
+      "[Progress Service API] Error updating notification preferences:",
+      errorMessage,
+    );
+    throw new Error(errorMessage);
+  }
+
+  if (!response.success) {
+    console.error(
+      "[Progress Service API] Notification update failed: API returned success=false",
+    );
+    throw new Error(
+      response.error?.message || "Failed to update notification settings",
+    );
+  }
+
+  console.log(
+    "[Progress Service API] Notification preferences updated successfully",
+    {
+      childId,
+      activateNotifications,
+      childName: response.data?.name,
+    },
+  );
+
+  return response.data as ChildProfile;
+}
+
+/**
  * Get comprehensive dashboard statistics for admin overview
  * Gateway orchestrates Auth, Progress, and Content services to aggregate metrics
  *

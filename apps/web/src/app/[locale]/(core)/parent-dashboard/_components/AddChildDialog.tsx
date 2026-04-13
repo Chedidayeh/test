@@ -9,6 +9,7 @@ import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, ChevronLeft, CircleCheck } from "lucide-react";
 import { toast } from "sonner";
+import { Switch } from "@/src/components/ui/switch";
 
 import {
   Dialog,
@@ -60,6 +61,7 @@ export default function AddChildDialog({
 }: AddChildDialogProps) {
   const [step, setStep] = useState(1);
   const t = useTranslations("ParentDashboard");
+  const tOnboarding = useTranslations("Onboarding");
   const { isRTL, locale } = useLocale();
   const langCode = getLanguageCode(locale);
 
@@ -67,9 +69,11 @@ export default function AddChildDialog({
   const [formData, setFormData] = useState<{
     childBasic: { childName: string; childAge: string; childGender: string };
     childPreferences: { favoriteThemes: string[] };
+    readingSettings: { sessionsPerWeek?: number; enableReminders?: boolean };
   }>({
     childBasic: { childName: "", childAge: "", childGender: "" },
     childPreferences: { favoriteThemes: [] },
+    readingSettings: {},
   });
 
   // Schema for step 1 (using translated messages)
@@ -96,6 +100,12 @@ export default function AddChildDialog({
       .min(1, t("addChildDialog.errors.selectAtLeastOneTheme")),
   });
 
+  // Schema for step 3 (reading settings)
+  const readingSettingsSchema = z.object({
+    sessionsPerWeek: z.number().min(1, "Select reading frequency").max(7),
+    enableReminders: z.boolean(),
+  });
+
   const childBasicForm = useForm({
     resolver: zodResolver(childBasicSchema),
     defaultValues: { childName: "", childAge: "", childGender: "" },
@@ -104,6 +114,11 @@ export default function AddChildDialog({
   const childPreferencesForm = useForm({
     resolver: zodResolver(childPreferencesSchema),
     defaultValues: { favoriteThemes: [] },
+  });
+
+  const readingSettingsForm = useForm({
+    resolver: zodResolver(readingSettingsSchema),
+    defaultValues: { sessionsPerWeek: 3, enableReminders: false },
   });
 
   const selectedAgeGroupId = childBasicForm.watch("childAge");
@@ -130,11 +145,18 @@ export default function AddChildDialog({
     setStep(3);
   };
 
+  const handleStep3Submit = async (data: any) => {
+    setFormData({ ...formData, readingSettings: data });
+    setStep(4);
+  };
+
   const handleFinalSubmit = async () => {
     setIsLoading(true);
     try {
       const ageGroupId = formData.childBasic.childAge;
       const themeIds = formData.childPreferences.favoriteThemes || [];
+      const sessionsPerWeek = formData.readingSettings.sessionsPerWeek || 3;
+      const activateNotifications = formData.readingSettings.enableReminders ?? false;
 
       const selectedAgeGroupData = ageGroups?.find((ag) => ag.id === ageGroupId);
       const allocatedRoadmaps =
@@ -154,6 +176,8 @@ export default function AddChildDialog({
         ageGroupName,
         themeIds,
         allocatedRoadmaps,
+        sessionsPerWeek,
+        activateNotifications,
       };
 
       const result = await createChildProfileAction(payload);
@@ -167,10 +191,12 @@ export default function AddChildDialog({
       // Reset form and close dialog
       childBasicForm.reset();
       childPreferencesForm.reset();
+      readingSettingsForm.reset();
       setStep(1);
       setFormData({
         childBasic: { childName: "", childAge: "", childGender: "" },
         childPreferences: { favoriteThemes: [] },
+        readingSettings: {},
       });
       onOpenChange(false);
 
@@ -197,16 +223,18 @@ export default function AddChildDialog({
       // Reset form on dialog close
       childBasicForm.reset();
       childPreferencesForm.reset();
+      readingSettingsForm.reset();
       setStep(1);
       setFormData({
         childBasic: { childName: "", childAge: "", childGender: "" },
         childPreferences: { favoriteThemes: [] },
+        readingSettings: {},
       });
     }
     onOpenChange(newOpen);
   };
 
-  const progressPercentage = ((step - 1) / 2) * 100;
+  const progressPercentage = ((step - 1) / 3) * 100;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -219,7 +247,7 @@ export default function AddChildDialog({
           {/* Progress Indicator */}
           <div className="mb-6">
             <div className="flex justify-between mb-3">
-              {[1, 2, 3].map((s) => (
+              {[1, 2, 3, 4].map((s) => (
                 <motion.div
                   key={s}
                   className={`h-8 w-8 rounded-full flex items-center justify-center font-medium text-sm transition-all ${
@@ -508,8 +536,119 @@ export default function AddChildDialog({
               </motion.form>
             )}
 
-            {/* Step 3: Confirmation */}
+            {/* Step 3: Reading Settings */}
             {step === 3 && (
+              <motion.form
+                key="step3"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+                onSubmit={readingSettingsForm.handleSubmit(handleStep3Submit)}
+              >
+                <div className="mb-4">
+                  <h3 className="font-medium text-sm mb-1">
+                    {tOnboarding("titleStep3") || "Reading Settings"}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {tOnboarding("descStep3ReadingSettings") ||
+                      "Set up reading goals and preferences"}
+                  </p>
+                </div>
+
+                <FieldGroup className="space-y-6">
+                  {/* Sessions Per Week */}
+                  <Field>
+                    <FieldLabel htmlFor="sessionsPerWeek">
+                      {tOnboarding("sessionsPerWeekLabel", {
+                        childName: formData.childBasic.childName,
+                      }) || "How often should this child read?"}
+                    </FieldLabel>
+                    <FieldDescription className="mb-3">
+                      {tOnboarding("selectReadingFrequency") ||
+                        "Select a reading frequency"}
+                    </FieldDescription>
+                    <Controller
+                      control={readingSettingsForm.control}
+                      name="sessionsPerWeek"
+                      render={({ field }) => (
+                        <div className="grid grid-cols-7 gap-2">
+                          {[1, 2, 3, 4, 5, 6, 7].map((day) => (
+                            <button
+                              key={day}
+                              type="button"
+                              onClick={() => field.onChange(day)}
+                              className={`p-2 border rounded-lg font-medium text-sm transition-all ${
+                                field.value === day
+                                  ? "border-primary bg-primary/10 text-primary"
+                                  : "border-muted hover:border-primary/50"
+                              }`}
+                            >
+                              {day}x
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    />
+                  </Field>
+
+                  {/* Enable Reminders Toggle */}
+                  <Field>
+                    <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+                      <div>
+                        <FieldLabel className="mb-1">
+                          {tOnboarding("enableReadingReminders") ||
+                            "Enable Reading Reminders"}
+                        </FieldLabel>
+                        <FieldDescription>
+                          {tOnboarding("enableRemindersDescription", {
+                            childName: formData.childBasic.childName,
+                          }) || "Get notifications for reading sessions"}
+                        </FieldDescription>
+                      </div>
+                      <Controller
+                        control={readingSettingsForm.control}
+                        name="enableReminders"
+                        render={({ field }) => (
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        )}
+                      />
+                    </div>
+                  </Field>
+                </FieldGroup>
+
+                <div className="flex gap-2 mt-6">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handlePrevious}
+                    disabled={isLoading}
+                    className="flex-1"
+                  >
+                    {isRTL ? (
+                      <ChevronRight className="w-4 h-4 mr-2" />
+                    ) : (
+                      <ChevronLeft className="w-4 h-4 mr-2" />
+                    )}
+                    {tOnboarding("previous") || "Back"}
+                  </Button>
+                  <Button type="submit" disabled={isLoading} className="flex-1">
+                    {tOnboarding("next") || "Next"}
+                    {isRTL ? (
+                      <ChevronLeft className="w-4 h-4 ml-2" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 ml-2" />
+                    )}
+                  </Button>
+                </div>
+              </motion.form>
+            )}
+
+            {/* Step 4: Confirmation */}
+            {step === 4 && (
               <motion.div
                 key="step3"
                 initial={{ opacity: 0, scale: 0.96 }}
@@ -578,6 +717,26 @@ export default function AddChildDialog({
                         },
                       )}
                     </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">
+                      {tOnboarding("readingFrequency") || "Reading Frequency"}
+                    </p>
+                    <p className="font-medium">
+                      {tOnboarding("sessionsPerWeekDisplay", {
+                        count: formData.readingSettings.sessionsPerWeek || 3,
+                      }) || `${formData.readingSettings.sessionsPerWeek || 3}x per week`}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">
+                      {tOnboarding("readingReminders") || "Reading Reminders"}
+                    </p>
+                    <p className="font-medium">
+                      {formData.readingSettings.enableReminders
+                        ? tOnboarding("enabled") || "✓ Enabled"
+                        : tOnboarding("disabled") || "Disabled"}
+                    </p>
                   </div>
                 </div>
 

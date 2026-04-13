@@ -21,11 +21,6 @@ export interface GenerateHintsActionResult {
   error?: string;
 }
 
-// export interface GetChildAnalyticsActionResult {
-//   success: boolean;
-//   data?: AIProgressInsight[];
-//   error?: string;
-// }
 
 /**
  * Server action to validate a child's answer using LLM
@@ -231,57 +226,6 @@ export async function generateHintsAction(
     };
   }
 }
-
-/**
- * Server action to fetch analytics for a child
- * Wraps the getChildAnalytics API call with error handling
- *
- * @param childId - ID of the child to fetch analytics for
- * @returns Result object with success status and data/error
- *
- * @example
- * const result = await getChildAnalyticsAction("child-123");
- * if (result.success) {
- *   result.data?.forEach(insight => {
- *     console.log("Reading Level:", insight.readingLevel);
- *     console.log("Engagement Score:", insight.engagementScore);
- *   });
- * }
- */
-// export async function getChildAnalyticsAction(
-//   childId: string,
-// ): Promise<GetChildAnalyticsActionResult> {
-//   try {
-//     console.log("[AI Service] Fetching analytics via server action:", {
-//       childId,
-//     });
-
-//     const result = await getChildAnalytics(childId);
-
-//     console.log("[AI Service] Analytics fetched via server action:", {
-//       childId,
-//       recordCount: result.length,
-//     });
-
-//     return {
-//       success: true,
-//       data: result,
-//     };
-//   } catch (error) {
-//     const errorMessage =
-//       error instanceof Error ? error.message : "Unknown error occurred";
-
-//     console.error("[AI Service] Error fetching analytics:", {
-//       childId,
-//       error: errorMessage,
-//     });
-
-//     return {
-//       success: false,
-//       error: errorMessage,
-//     };
-//   }
-// }
 
 
 

@@ -29,6 +29,8 @@ export class ChildrenService {
     themeIds: string[];
     allocatedRoadmaps: string[];
     badgeId: string;
+    sessionsPerWeek: number;
+    activateNotifications: boolean;
   }): Promise<ChildProfile> {
     const childProfile = await prisma.childProfile.create({
       data: {
@@ -40,8 +42,13 @@ export class ChildrenService {
         favoriteThemes: payload.themeIds,
         allocatedRoadmaps: payload.allocatedRoadmaps,
         childId: payload.childId,
+        sessionsPerWeek: payload.sessionsPerWeek,
+        activateNotifications: payload.activateNotifications,
         badges: {
           create: { badgeId: payload.badgeId },
+        },
+        dailyActivity: {
+          create: {}, // Create empty daily activity record for tracking
         },
       },
       include: {
@@ -130,7 +137,7 @@ export class ChildrenService {
    * Only returns children that have progress data in the last 7 days
    * Only returns progress records from the past 7 days
    */
-  static async getAllChildren(): Promise<{
+  static async getWeekChildren(): Promise<{
     children: ChildProfile[];
     total: number;
   }> {
@@ -309,6 +316,61 @@ export class ChildrenService {
     // Cast to ChildProfile[] - Prisma handles enum conversion
     return childProfiles as unknown as ChildProfile[];
   }
+
+  /**
+   * Fetch all children with parent information for push notifications
+   * Returns all children with their parent details included
+   * Used by the daily parent notification cron job
+   */
+  /**
+   * Fetch all children with parent information and daily activity for push notifications
+   * Returns children who have notifications enabled with their activity tracking
+   * Used to check if they missed today's session
+   */
+  static async getChildrenForPushNotifications(): Promise<ChildProfile[]> {
+    const childProfiles = await prisma.childProfile.findMany({
+      where: {
+        activateNotifications: true,
+      },
+      include: {
+        dailyActivity: true, // Include activity tracking to check lastActiveAt
+      },
+    });
+
+    // Cast to ChildProfile[] - Prisma handles enum conversion
+    const typedProfiles = childProfiles as unknown as ChildProfile[];
+
+    return typedProfiles;
+  }
+
+  /**
+   * Update child's daily activity - called when child completes a story/challenge
+   * Updates lastActiveAt to track when child was last active
+   */
+  static async updateChildDailyActivity(childId: string): Promise<any> {
+    const childProfile = await prisma.childProfile.findUnique({
+      where: { childId },
+    });
+
+    if (!childProfile) {
+      throw new Error(`Child profile not found for childId: ${childId}`);
+    }
+
+    // Update or create daily activity record
+    const dailyActivity = await prisma.childDailyActivity.upsert({
+      where: { childProfileId: childProfile.id },
+      update: {
+        lastActiveAt: new Date(),
+      },
+      create: {
+        childProfileId: childProfile.id,
+        lastActiveAt: new Date(),
+      },
+    });
+
+    return dailyActivity;
+  }
+
   /**
    * Fetch children for a specific parent ID
    */
@@ -572,7 +634,7 @@ export class ChildrenService {
         pausedAt: null,
       },
       orderBy: {
-        startedAt: 'desc',
+        startedAt: "desc",
       },
     });
 
@@ -825,6 +887,23 @@ export class ChildrenService {
       },
     });
 
+    // ✓ Update child's daily activity to mark as active today
+    // Fetch progress info to get childId
+    const progress = await prisma.progress.findFirst({
+      where: {
+        gameSession: {
+          id: payload.gameSessionId,
+        },
+      },
+      include: {
+        childProfile: true,
+      },
+    });
+
+    if (progress?.childProfile) {
+      await this.updateChildDailyActivity(progress.childProfile.childId);
+    }
+
     // Return the results
     return {
       attempt: updatedAttempt as unknown as ChallengeAttempt,
@@ -897,7 +976,6 @@ export class ChildrenService {
       throw new Error(`Game session not found for ID: ${gameSessionId}`);
     }
 
-
     // Find and update the progress record to mark as completed
     const progress = await prisma.progress.findFirst({
       where: {
@@ -939,9 +1017,9 @@ export class ChildrenService {
     if (progress) {
       const childProfile = await prisma.childProfile.findUnique({
         where: { id: progress.childProfileId },
-        include : {
-          storytelling: true
-        }
+        include: {
+          storytelling: true,
+        },
       });
 
       if (childProfile) {
@@ -972,6 +1050,9 @@ export class ChildrenService {
             });
           }
         }
+
+        // ✓ Update child's daily activity to mark as active today
+        await this.updateChildDailyActivity(childProfile.childId);
       }
     }
 
@@ -1021,6 +1102,39 @@ export class ChildrenService {
           },
         },
         badges: true,
+      },
+    });
+
+    return updatedChild as unknown as ChildProfile;
+  }
+
+  /**
+   * Update notification settings for a child
+   * Allows enabling or disabling push notifications
+   */
+  static async updateNotificationSettings(
+    childId: string,
+    activateNotifications: boolean,
+  ): Promise<ChildProfile | null> {
+    // Validate inputs
+    if (!childId || activateNotifications === undefined || activateNotifications === null) {
+      throw new Error("Invalid childId or notification setting");
+    }
+
+    // Check if child profile exists
+    const childProfile = await prisma.childProfile.findUnique({
+      where: { id : childId },
+    });
+
+    if (!childProfile) {
+      throw new Error(`Child profile not found for childId: ${childId}`);
+    }
+
+    // Update child's notification settings
+    const updatedChild = await prisma.childProfile.update({
+      where: { id: childProfile.id },
+      data: {
+        activateNotifications,
       },
     });
 

@@ -14,6 +14,7 @@ import {
   forwardPauseGameSession,
   forwardAllocateRoadmapToChild,
   forwardGetDashboardStats,
+  forwardUpdateNotificationSettings,
 } from "../helpers/progress.helpers";
 import { API_BASE_URL_V1 } from "@shared/src/types";
 
@@ -42,6 +43,15 @@ router.post("/children/:childId/badges", (req: Request, res: Response) => {
 // Allocate roadmap to child (must be before the generic /children middleware)
 router.post("/children/:childId/allocate-roadmap", (req: Request, res: Response) => {
   forwardAllocateRoadmapToChild(req, res);
+});
+
+// Update child notification settings (must be before the generic /children middleware)
+router.patch("/children/:childId/notifications", (req: Request, res: Response) => {
+  forwardUpdateNotificationSettings(
+    req,
+    res,
+    `${API_BASE_URL_V1}/children/${req.params.childId}/notifications`,
+  );
 });
 
 // Generic children middleware (must be after specific routes)

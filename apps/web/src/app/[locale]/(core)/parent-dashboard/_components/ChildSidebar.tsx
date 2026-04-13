@@ -75,7 +75,7 @@ export default function ChildSidebar({
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 lg:flex lg:flex-col lg:text-left">
-                <p className="font-semibold text-xs lg:text-sm text-foreground">
+                <p className="font-medium text-xs lg:text-sm text-foreground">
                   {profile.child?.name || t("unknown")}
                 </p>
                 <p className="text-xs text-muted-foreground">

@@ -1769,6 +1769,141 @@ export async function forwardAllocateRoadmapToChild(
 }
 
 /**
+ * Helper function to update a child's notification preferences
+ * Updates the activateNotifications flag for a specific child
+ * Forwards the request to Progress Service
+ */
+export async function forwardUpdateNotificationSettings(
+  req: Request,
+  res: Response<ApiResponse<ChildProfile>>,
+  basePath: string,
+): Promise<void> {
+  try {
+    const { childId } = req.params;
+    const { activateNotifications } = req.body;
+
+    if (!childId) {
+      logger.warn("Missing childId parameter");
+      res.status(400).json({
+        success: false,
+        error: {
+          code: "BAD_REQUEST",
+          message: "Missing required parameter: childId",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    if (activateNotifications === undefined) {
+      logger.warn("Missing activateNotifications in request body");
+      res.status(400).json({
+        success: false,
+        error: {
+          code: "BAD_REQUEST",
+          message: "Missing required field: activateNotifications",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Updating child notification settings", {
+      childId,
+      activateNotifications,
+    });
+
+    // Forward to Progress Service
+    const url = `${PROGRESS_SERVICE_URL}${basePath}`;
+    const updateResponse = await axios.patch<ApiResponse<ChildProfile>>(
+      url,
+      {
+        activateNotifications,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
+          }),
+        },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug("Progress service update notification settings response received", {
+      status: updateResponse.status,
+      hasProfile: !!updateResponse.data?.data,
+    });
+
+    // Handle progress service error
+    if (updateResponse.status !== 200 && updateResponse.status !== 201) {
+      const errorMessage =
+        updateResponse.data?.error?.message ||
+        "Failed to update notification settings";
+
+      logger.error(
+        "Progress service error updating notification settings",
+        {
+          status: updateResponse.status,
+          error: errorMessage,
+        },
+      );
+
+      res.status(updateResponse.status || 503).json({
+        success: false,
+        error: {
+          code: "SERVICE_ERROR",
+          message: errorMessage,
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    const updatedChild = updateResponse.data?.data;
+
+    if (!updatedChild) {
+      logger.error("No child profile returned from Progress Service");
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "No child profile returned from services",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Child notification settings updated successfully", {
+      childId,
+      activateNotifications,
+      childName: updatedChild.name,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: updatedChild,
+      timestamp: new Date(),
+    });
+  } catch (error) {
+    logger.error("Update notification settings forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Failed to update notification settings",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+/**
  * Get comprehensive admin dashboard statistics
  * Orchestrates Content, Auth, and Progress services to aggregate metrics:
  * - Content counts: age groups, roadmaps, worlds, stories, chapters, challenges

@@ -405,10 +405,22 @@ export interface ChildProfile {
   totalStars: number;
   storytelling?: StorytellingProfile;
 
+  activateNotifications: boolean; // Whether the child has enabled notifications
+  sessionsPerWeek: number; // Number of sessions the child should ideally have per week (for activity tracking)
+  dailyActivity: ChildDailyActivity; // Tracks daily activity for the child
   createdAt: Date;
   updatedAt: Date;
   progress: Progress[];
   badges: ChildBadge[];
+}
+
+export interface ChildDailyActivity {
+  id: string;
+  childProfileId: string;
+  childProfile: ChildProfile;
+  lastActiveAt: Date; // Timestamp of the last time the child was active (e.g., had a game session)
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface StorytellingProfile {

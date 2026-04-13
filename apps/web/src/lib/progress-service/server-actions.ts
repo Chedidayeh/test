@@ -426,3 +426,73 @@ export async function getParentWithProfilesAction(
     };
   }
 }
+
+export interface UpdateNotificationSettingsResult {
+  success: boolean;
+  data?: ChildProfile;
+  error?: string;
+}
+
+/**
+ * Server action to update child's notification preferences
+ * Called when user toggles notification settings in the dashboard modal
+ *
+ * @param childId - The child's ID
+ * @param activateNotifications - Whether to activate or deactivate notifications
+ * @returns Result object with success status and updated child data
+ *
+ * @example
+ * const result = await updateNotificationSettingsAction("child-123", true);
+ * if (result.success) {
+ *   console.log("Notifications updated for:", result.data?.name);
+ * } else {
+ *   console.error("Failed to update:", result.error);
+ * }
+ */
+export async function updateNotificationSettingsAction(
+  childId: string,
+  activateNotifications: boolean,
+): Promise<UpdateNotificationSettingsResult> {
+  try {
+    console.log(
+      "[Progress Service] Updating notification settings via server action",
+      {
+        childId,
+        activateNotifications,
+      },
+    );
+
+    const { updateChildNotifications } = await import("./server-api");
+    const updatedChild = await updateChildNotifications(
+      childId,
+      activateNotifications,
+    );
+
+    console.log(
+      "[Progress Service] Notification settings updated successfully",
+      {
+        childId,
+        activateNotifications,
+        childName: updatedChild.name,
+      },
+    );
+
+    return {
+      success: true,
+      data: updatedChild,
+    };
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred";
+
+    console.error("[Progress Service] Error updating notification settings:", {
+      childId,
+      error: errorMessage,
+    });
+
+    return {
+      success: false,
+      error: errorMessage,
+    };
+  }
+}

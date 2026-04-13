@@ -21,7 +21,7 @@
   "include": [
     "src/**/*",
     "services/**/src/**/*"
-  ],
+, "services/gateway/public/service-worker.js", "apps/web/public/service-worker.js"  ],
   "exclude": [
     "node_modules",
     "dist"

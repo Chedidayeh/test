@@ -24,6 +24,284 @@ import { triggerTTSGenerationForAllChapters } from "./queue";
 import { PROGRESS_SERVICE_URL } from "./../../helpers/ai.helpers";
 
 /**
+ * Inngest cron job: Notify parents about their children's daily progress
+ * Runs every day at 9:00 AM UTC
+ *
+ * Process:
+ * 1. Fetch all child profiles from Progress Service
+ * 2. For each child, send a notification to their parent via Pusher Beams
+ * 3. Handle failures with retry logic and logging
+ */
+export const notifyParentsDailyProgress = inngest.createFunction(
+  {
+    id: "notify-parents-daily-progress",
+    retries: 2,
+    concurrency: { limit: 1 }, // Process one batch at a time
+  },
+  { cron: "0 9 * * *" }, // Every day at 9:00 AM UTC
+  async ({ step }) => {
+    logger.info(
+      "[Notify Parents Cron] Starting daily parent notification process",
+    );
+
+    try {
+      // ========================================================================
+      // STEP 1: Fetch all child profiles from Progress Service
+      // ========================================================================
+      const allChildProfiles = (await step.run(
+        "fetch-all-children-for-notification",
+        async () => {
+          logger.debug(
+            "[Notify Parents Cron] Fetching all child profiles from Progress Service",
+          );
+
+          if (!PROGRESS_SERVICE_URL) {
+            throw new Error("PROGRESS_SERVICE_URL not configured");
+          }
+
+          const url = `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/push-notifications/children`;
+          const response = await axios.get<ApiResponse<ChildProfile[]>>(url, {
+            validateStatus: () => true,
+          });
+
+          if (response.status !== 200 || !response.data.success) {
+            logger.error(
+              "[Notify Parents Cron] Failed to fetch child profiles",
+              {
+                status: response.status,
+                error: response.data.error,
+              },
+            );
+            throw new Error(
+              `Failed to fetch child profiles: ${response.status}`,
+            );
+          }
+
+          logger.info("[Notify Parents Cron] Successfully fetched children", {
+            totalCount: response.data.data?.length || 0,
+          });
+
+          return response.data.data || [];
+        },
+      )) as unknown as ChildProfile[];
+
+      if (!allChildProfiles || allChildProfiles.length === 0) {
+        logger.info(
+          "[Notify Parents Cron] No child profiles found, completing cron job",
+        );
+        return {
+          success: true,
+          message: "No child profiles found",
+          notificationsSent: 0,
+        };
+      }
+
+      // ========================================================================
+      // STEP 2: Send notifications to parents via Pusher Beams
+      // ========================================================================
+      const notificationResults = await step.run(
+        "send-parent-notifications",
+        async () => {
+          logger.info(
+            "[Notify Parents Cron] Checking children for missed sessions based on expected frequency",
+            {
+              totalChildren: allChildProfiles.length,
+            },
+          );
+
+          const results = {
+            sent: 0,
+            skipped: 0,
+            failed: 0,
+            errors: [] as Array<{ childName: string; error: string }>,
+          };
+
+          const now = new Date();
+
+          // Process each child profile
+          for (const childProfile of allChildProfiles) {
+            try {
+              // Skip if no parent information
+              if (!childProfile.parentId) {
+                logger.warn(
+                  "[Notify Parents Cron] Child has no parent information, skipping",
+                  {
+                    childName: childProfile.name,
+                  },
+                );
+                results.skipped++;
+                continue;
+              }
+
+              const parentId = childProfile.parentId;
+              const childName = childProfile.name;
+              const sessionsPerWeek = childProfile.sessionsPerWeek || 3;
+
+              // ✓ Calculate expected activity interval based on sessionsPerWeek
+              // 3 sessions/week = 7/3 = 2.33 days between sessions
+              // 5 sessions/week = 7/5 = 1.4 days between sessions
+              const expectedIntervalDays = 7 / sessionsPerWeek;
+
+              // ✓ Calculate days since child was last active
+              const lastActive = childProfile.dailyActivity?.lastActiveAt;
+              let daysSinceActive = Infinity; // Default to infinity if no last activity
+
+              if (lastActive) {
+                const lastActiveDate = new Date(lastActive);
+                const millisecondsPerDay = 24 * 60 * 60 * 1000;
+                daysSinceActive = (now.getTime() - lastActiveDate.getTime()) / millisecondsPerDay;
+              }
+
+              // ✓ Check if this is a new child (no activity yet) or if child is overdue
+              const isNewChild = !lastActive;
+              const isOverdue = daysSinceActive > expectedIntervalDays;
+
+              // Skip if child is not overdue and not new
+              if (!isOverdue && !isNewChild) {
+                logger.debug(
+                  "[Notify Parents Cron] Child is on schedule, no notification needed",
+                  {
+                    childName,
+                    sessionsPerWeek,
+                    expectedIntervalDays: expectedIntervalDays.toFixed(2),
+                    daysSinceActive: daysSinceActive.toFixed(2),
+                  }
+                );
+                results.skipped++;
+                continue;
+              }
+
+              let notificationTitle: string;
+              let notificationBody: string;
+
+              if (isNewChild) {
+                // Message for newly created children
+                notificationTitle = `Welcome! ${childName} is ready to start reading`;
+                notificationBody = `Your child ${childName} has been set up to read ${sessionsPerWeek} times per week. Encourage them to begin their reading adventure!`;
+                logger.debug(
+                  "[Notify Parents Cron] New child - sending welcome notification",
+                  {
+                    parentId,
+                    childName,
+                    sessionsPerWeek,
+                  }
+                );
+              } else {
+                // Message for children who haven't read for too long
+                notificationTitle = `Reminder: ${childName} is missing reading sessions`;
+                notificationBody = `Your child ${childName} should be reading ${sessionsPerWeek} times per week. It's been ${Math.round(daysSinceActive)} days since their last session.`;
+                logger.debug(
+                  "[Notify Parents Cron] Child is overdue - notifying parent",
+                  {
+                    parentId,
+                    childName,
+                    sessionsPerWeek,
+                    expectedIntervalDays: expectedIntervalDays.toFixed(2),
+                    daysSinceActive: daysSinceActive.toFixed(2),
+                  }
+                );
+              }
+
+              // Call Pusher Beams with appropriate message
+              const pusherResponse = await axios.post(
+                process.env.PUSHER_BEAMS_URL!,
+                {
+                  interests: [parentId],
+                  web: {
+                    notification: {
+                      title: notificationTitle,
+                      body: notificationBody,
+                    },
+                  },
+                },
+                {
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${process.env.PUSHER_BEAMS_BEARER_TOKEN}`,
+                  },
+                  validateStatus: () => true,
+                }
+              );
+
+              if (pusherResponse.status === 200) {
+                const messageType = isNewChild ? "welcome" : "overdue session";
+                logger.info(
+                  `[Notify Parents Cron] ✅ ${messageType} notification sent`,
+                  {
+                    parentId,
+                    childName,
+                    messageType,
+                    daysSinceActive: daysSinceActive.toFixed(2),
+                  }
+                );
+                results.sent++;
+              } else {
+                logger.error(
+                  "[Notify Parents Cron] Failed to send notification",
+                  {
+                    parentId,
+                    childName,
+                    status: pusherResponse.status,
+                    responseData: pusherResponse.data,
+                  }
+                );
+                results.failed++;
+                results.errors.push({
+                  childName,
+                  error: `Pusher failed with status ${pusherResponse.status}`,
+                });
+              }
+            } catch (error) {
+              logger.error(
+                "[Notify Parents Cron] Error sending notification",
+                {
+                  childName: childProfile.name,
+                  error: String(error),
+                }
+              );
+              results.failed++;
+              results.errors.push({
+                childName: childProfile.name,
+                error: String(error),
+              });
+            }
+          }
+
+          return results;
+        },
+      );
+
+      logger.info(
+        "[Notify Parents Cron] Daily parent notification process completed",
+        {
+          totalChildren: allChildProfiles.length,
+          sent: notificationResults.sent,
+          skipped: notificationResults.skipped,
+          failed: notificationResults.failed,
+          errors:
+            notificationResults.errors.length > 0
+              ? notificationResults.errors
+              : undefined,
+        },
+      );
+
+      return {
+        success: true,
+        message: "Daily missed session notifications sent",
+        results: notificationResults,
+        totalProcessed: notificationResults.sent + notificationResults.failed + notificationResults.skipped,
+      };
+    } catch (error) {
+      logger.error("[Notify Parents Cron] Daily notification process failed", {
+        error: String(error),
+      });
+
+      throw error; // Inngest will handle retries
+    }
+  },
+);
+
+/**
  * Inngest function: Trigger translation generation in background
  * Triggered by translation/story.requested event from gateway
  * Calls content service endpoint to execute translations
@@ -626,7 +904,7 @@ export const generateWeeklyAIAnalytics = inngest.createFunction(
   {
     id: "generate-weekly-ai-analytics",
     retries: 2,
-    concurrency: { limit: 3 }, // Process up to 3 children in parallel per hour
+    concurrency: { limit: 1 }, // Process up to 1 child at a time
   },
   { cron: "0 2 * * 1" }, // Every Monday at 2:00 AM UTC
   async ({ step }) => {
@@ -636,7 +914,7 @@ export const generateWeeklyAIAnalytics = inngest.createFunction(
 
     try {
       // ========================================================================
-      // STEP 1: Fetch all child profiles from Progress Service
+      // STEP 1: Fetch all child profiles that have progress data in the last week from Progress Service
       // ========================================================================
       const allChildren = (await step.run(
         "fetch-all-child-profiles",
@@ -647,7 +925,7 @@ export const generateWeeklyAIAnalytics = inngest.createFunction(
 
           const response = await axios.get<
             ApiResponse<{ children: ChildProfile[]; total: number }>
-          >(`${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/children/all`, {
+          >(`${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/children/week`, {
             headers: { "Content-Type": "application/json" },
             validateStatus: () => true,
           });
@@ -799,7 +1077,6 @@ async function processChildAnalytics(child: ChildProfile): Promise<void> {
     // ====================================================================
     // Use child progress data already fetched in STEP 1
     // ====================================================================
-    const childProgressData = child;
     const progressRecords = child.progress || [];
 
     logger.debug("[AI Analytics] Child progress data available", {

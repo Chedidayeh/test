@@ -27,7 +27,12 @@ model ChildProfile {
   currentLevel      Int      @default(1)
   totalStars        Int      @default(0)
 
+  // push notification preferences
+  activateNotifications Boolean  @default(false)
+  sessionsPerWeek   Int      @default(3)
+
   storytelling StorytellingProfile?
+  dailyActivity ChildDailyActivity?
 
   progress Progress[]
   badges   ChildBadge[]
@@ -36,6 +41,17 @@ model ChildProfile {
   updatedAt DateTime @updatedAt
 
   @@index([childId])
+}
+
+// child daily activity for notifications push
+model ChildDailyActivity {
+  id             String       @id @default(cuid())
+  childProfileId String       @unique
+  childProfile   ChildProfile @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
+  lastActiveAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model StorytellingProfile {

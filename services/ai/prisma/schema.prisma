@@ -13,6 +13,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// TTS audio service schema for storing generated audio and metadata
 // TTSAudio: stores generated TTS recordings and metadata
 model TTSAudio {
   id String @id @default(cuid())
@@ -43,6 +44,8 @@ model TTSAudio {
   @@index([chapterId])
 }
 
+
+// LLM Validation service schema for tracking AI validation of challenge attempts
 // LLMValidationResult stores AI validation responses for challenge attempts
 // Tracks the LLM's confidence, reasoning, and child-friendly message
 model LLMValidationResult {
@@ -66,33 +69,8 @@ model LLMValidationResult {
   @@index([attemptNumber])
 }
 
-// AIProgressInsight stores the complete analytics response from generateAnalytics controller
-// Contains reading level, engagement score, insights, and metrics for future reference
-// Allows multiple insights per child per week for comparison and tracking evolution
-model AIProgressInsight {
-  id String @id @default(cuid())
 
-  // Child reference (foreign key to Progress Service)
-  childId String
-
-  // Time period this insight covers (weekly analytics)
-  periodStart DateTime
-  periodEnd   DateTime
-
-  // Full report data: structured JSON containing summary, metrics, insights, and recommendations
-  // Structure: { summary, metrics, insights, recommendations, metadata }
-  reportData Json?
-
-  // Audit trail
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Indexes for efficient queries
-  @@index([childId])
-  @@index([periodStart])
-  @@index([periodEnd])
-}
-
+// storytelling service schema for child profiles, story planning, and generation tracking
 // ============================================================================
 // CHILD PROFILE WITH SKILL TRACKING
 // ============================================================================
@@ -123,7 +101,7 @@ model ChildProfile {
   // Relations
   storyPlan        StoryPlan?
   generatedStories GeneratedStory[]
-  narrativeMemory  NarrativeMemory?        @relation(fields: [narrativeMemoryId], references: [id])
+  narrativeMemory  NarrativeMemory? @relation(fields: [narrativeMemoryId], references: [id])
   performanceEvals PerformanceEvaluation[]
 
   createdAt         DateTime @default(now())
@@ -133,7 +111,7 @@ model ChildProfile {
   @@index([childId])
 }
 
-// ISSUE 5 FIX: Current skill scores
+// Current skill scores
 model SkillScore {
   id             String       @id @default(uuid())
   childProfileId String
@@ -149,7 +127,7 @@ model SkillScore {
   @@index([childProfileId])
 }
 
-// ISSUE 5 FIX: Skill progression tracking
+// Skill progression tracking
 model SkillHistory {
   id             String       @id @default(uuid())
   childProfileId String
@@ -338,7 +316,7 @@ model GeneratedStory {
   skillsReinforced  String[]
   difficultyApplied Float
 
-  // ISSUE 4 FIX: Memory snapshot injected
+  // Memory snapshot injected
   memorySnapshotUsed Json? // What memory was passed to LLM
 
   // ISSUE 2 FIX: LLM only outputs content, not persistence
@@ -359,7 +337,7 @@ model GeneratedStory {
 }
 
 // ============================================================================
-// ISSUE 4 FIX: RICH NARRATIVE MEMORY SYSTEM
+// RICH NARRATIVE MEMORY SYSTEM
 // ============================================================================
 
 model NarrativeMemory {
@@ -384,7 +362,7 @@ model NarrativeMemory {
   @@index([childProfileId])
 }
 
-// ISSUE 4 FIX: Character persistence
+// Character persistence
 model NarrativeCharacter {
   id       String          @id @default(uuid())
   memoryId String
@@ -408,7 +386,7 @@ model NarrativeCharacter {
   @@index([memoryId, name])
 }
 
-// ISSUE 4 FIX: World state tracking
+// World state tracking
 model NarrativeWorldState {
   id       String          @id @default(uuid())
   memoryId String          @unique
@@ -422,7 +400,7 @@ model NarrativeWorldState {
   lastUpdated DateTime @default(now())
 }
 
-// ISSUE 4 FIX: Narrative threads
+// Narrative threads
 model NarrativeThread {
   id       String          @id @default(uuid())
   memoryId String
@@ -439,7 +417,7 @@ model NarrativeThread {
   @@index([memoryId, status])
 }
 
-// ISSUE 4 FIX: Story reference history
+// Story reference history
 model NarrativeStoryRef {
   id       String          @id @default(uuid())
   memoryId String
@@ -457,7 +435,7 @@ model NarrativeStoryRef {
 }
 
 // ============================================================================
-// ISSUE 5 FIX: PERFORMANCE-BASED SKILL UPDATE TRACKING
+// PERFORMANCE-BASED SKILL UPDATE TRACKING
 // ============================================================================
 
 model PerformanceEvaluation {
@@ -568,5 +546,45 @@ model HintGenerationLog {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([createdAt])
+}
+
+// ============================================================================
+// WEEKLY ANALYTICS REPORTS FOR PARENTS
+// ============================================================================
+
+// WeeklyAnalyticsReport: Stores AI-generated weekly progress reports for parents
+// Used for:
+// - Weekly snapshots of child progress (7-day aggregation)
+// - Parent insights into learning trends and improvements
+// - Historical tracking for week-over-week comparisons
+// - Trend analysis (success rate, hint usage, speed, difficulty)
+model WeeklyAnalyticsReport {
+  id String @id @default(cuid())
+
+  // Reference to the child this report is about (stored as ID only, no foreign key constraint)
+  // This avoids cross-service database constraints in microservices architecture
+  childProfileId String
+
+  // Week identifier (ISO week number or calendar week)
+  week Int
+
+  // AI-generated report content
+  executiveSummary String // TL;DR: Human-friendly summary of the week (max 150 words)
+  progressTrends   String // Week-over-week comparisons and trends analysis (max 200 words)
+  recommendations  String[] // Actionable suggestions for parents (max 5 items)
+
+  // Metrics snapshot: raw data used for generation (for audit trail and debugging)
+  metricsSnapshot Json // { storiesCount, challenges, successRate, hintUsagePattern, timeSpent, skillsExercised, difficultiesHandled }
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Unique constraint ensures only one report per child per week
+  @@unique([childProfileId, week])
+  // Index for querying reports by child (most recent first)
+  @@index([childProfileId, createdAt])
+  // Index for sorting by creation date
   @@index([createdAt])
 }

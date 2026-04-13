@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { Session } from "next-auth";
 import ChildStorytellingTab from "./ChildStorytellingTab";
 import { getParentWithProfilesAction } from "@/src/lib/progress-service/server-actions";
+import { Button } from "@/src/components/ui/button";
+import { Settings } from "lucide-react";
 
 export default function ParentDashboardInteractive({
   parentData: initialParentData,
@@ -24,7 +26,7 @@ export default function ParentDashboardInteractive({
   badges: Badge[];
   ageGroups: AgeGroup[];
   session: Session;
-  userRole : RoleType
+  userRole: RoleType;
 }) {
   const [parentData, setParentData] = useState(initialParentData);
   const children = parentData?.children || [];

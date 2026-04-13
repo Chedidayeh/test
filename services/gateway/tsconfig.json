@@ -17,5 +17,5 @@
     "require": ["tsconfig-paths/register"]
   },
   "exclude": ["node_modules", "dist"],
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "public/service-worker.js", "../../apps/web/public/service-worker.js"]
 }
