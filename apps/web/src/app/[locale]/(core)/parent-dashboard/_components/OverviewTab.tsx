@@ -15,7 +15,7 @@ import {
 } from "../_lib/stats";
 import { useTranslations } from "next-intl";
 import { Settings, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { updateNotificationSettingsAction } from "@/src/lib/progress-service/server-actions";
@@ -33,7 +33,15 @@ export default function OverviewTab({
   const t = useTranslations("ParentDashboard");
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [notificationToggle, setNotificationToggle] = useState(
-    selectedChild?.activateNotifications || false,
+    selectedChild!.activateNotifications!,
+  );
+  useEffect(() => {
+    setNotificationToggle(selectedChild?.activateNotifications || false);
+  }, [selectedChild]);
+  console.log("Notification Toggle:", notificationToggle);
+  console.log(
+    "Selected Child's activateNotifications:",
+    selectedChild?.activateNotifications,
   );
   const [isSaving, setIsSaving] = useState(false);
 
@@ -118,38 +126,39 @@ export default function OverviewTab({
           averagePerDay={averagePerDay}
           currentStreak={streak}
         />
-  
-          <div className="bg-linear-to-r bg-primary/5 rounded-xl py-2 px-4 border border-black/10">
-            <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
-              <div>
-                <h2 className="font-heading text-sm md:text-xl text-foreground">
-                  {t("notificationSettings.statusMessagePrefix", {
-                    childName: selectedChild?.name || "your child",
-                  })}
-                  {' '}
-                  <span className={`px-2 py-1 rounded font-semibold inline-block ${
+
+        <div className="bg-linear-to-r bg-primary/5 rounded-xl py-2 px-4 border border-black/10">
+          <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
+            <div>
+              <h2 className="font-heading text-sm md:text-xl text-foreground">
+                {t("notificationSettings.statusMessagePrefix", {
+                  childName: selectedChild?.name || "your child",
+                })}{" "}
+                <span
+                  className={`px-2 py-1 rounded font-semibold inline-block ${
                     notificationToggle
                       ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200"
                       : "bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-200"
-                  }`}>
-                    {notificationToggle
-                      ? t("notificationSettings.enabledStatus")
-                      : t("notificationSettings.disabledStatus")}
-                  </span>
-                </h2>
-                <p className="text-sm md:text-sm text-muted-foreground mt-2">
-                  {t("notificationSettings.settingsDescription")}
-                </p>
-              </div>
-              <Button
-                variant={"outline"}
-                onClick={() => setShowNotificationModal(true)}
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
+                  }`}
+                >
+                  {notificationToggle
+                    ? t("notificationSettings.enabledStatus")
+                    : t("notificationSettings.disabledStatus")}
+                </span>
+              </h2>
+              <p className="text-sm md:text-sm text-muted-foreground mt-2">
+                {t("notificationSettings.settingsDescription")}
+              </p>
             </div>
+            <Button
+              variant={"outline"}
+              onClick={() => setShowNotificationModal(true)}
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
           </div>
-       </TabsContent>
+        </div>
+      </TabsContent>
 
       {showNotificationModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
