@@ -150,6 +150,58 @@ export async function getAllChildren(params?: PaginationParams) {
   };
 }
 
+export async function getAllChildrenProfiles() {
+  console.log(
+    "[Progress Service API] Fetching all children profiles:",
+  );
+
+  const response = await apiRequest<ApiResponse<ChildProfile[]>>(
+    `/children-profiles`,
+  );
+
+  if (isApiError(response)) {
+    console.warn(
+      "[Progress Service API] Failed to fetch children profiles:",
+      response.error.message,
+    );
+    return {
+      children: [],
+      pagination: undefined,
+    };
+  }
+
+  console.log(
+    "[Progress Service API] Received response for progress service:",
+    {
+      success: response.success,
+      dataLength: response.data?.length,
+      pagination: response.pagination,
+    },
+  );
+
+  if (!response.success) {
+    console.warn(
+      "[Progress Service API] Failed to fetch children: API returned success=false",
+    );
+    return {
+      children: [],
+      pagination: undefined,
+    };
+  }
+
+  return {
+    children: response.data || [],
+    pagination: response.pagination
+      ? {
+          total: response.pagination.total,
+          page: response.pagination.page,
+          pageSize: response.pagination.pageSize,
+          hasMore: response.pagination.hasMore,
+        }
+      : undefined,
+  };
+}
+
 /**
  * Fetch a single child by ID
  * Combines data from Auth Service (child profile) and Progress Service (stats)
@@ -299,13 +351,10 @@ export async function getChildProfilesByParent(
     return [];
   }
 
-  console.log(
-    "[Progress Service API] Child profiles fetched successfully",
-    {
-      parentId,
-      childCount: response.data?.length || 0,
-    },
-  );
+  console.log("[Progress Service API] Child profiles fetched successfully", {
+    parentId,
+    childCount: response.data?.length || 0,
+  });
 
   return response.data || [];
 }
@@ -890,18 +939,15 @@ export async function updateChildGeneralSettings(
   sessionsPerWeek: number,
   ageGroup: string,
 ): Promise<ChildProfile> {
-  console.log(
-    "[Progress Service API] Updating child general settings",
-    {
-      childId,
-      name,
-      ageGroupId,
-      favoriteThemesCount: favoriteThemes.length,
-      allocatedRoadmapsCount: allocatedRoadmaps.length,
-      sessionsPerWeek,
-      ageGroup,
-    },
-  );
+  console.log("[Progress Service API] Updating child general settings", {
+    childId,
+    name,
+    ageGroupId,
+    favoriteThemesCount: favoriteThemes.length,
+    allocatedRoadmapsCount: allocatedRoadmaps.length,
+    sessionsPerWeek,
+    ageGroup,
+  });
 
   const response = await apiRequest<ApiResponse<ChildProfile>>(
     `/children/${childId}/settings`,
@@ -964,10 +1010,7 @@ export async function updateChildGeneralSettings(
  * @throws Throws error if the delete fails
  */
 export async function deleteChild(childId: string): Promise<void> {
-  console.log(
-    "[Progress Service API] Deleting child profile",
-    { childId },
-  );
+  console.log("[Progress Service API] Deleting child profile", { childId });
 
   const response = await apiRequest<ApiResponse<{ message: string }>>(
     `/children/${childId}`,
@@ -977,12 +1020,8 @@ export async function deleteChild(childId: string): Promise<void> {
   );
 
   if (isApiError(response)) {
-    const errorMessage =
-      response.error.message || "Failed to delete child";
-    console.error(
-      "[Progress Service API] Error deleting child:",
-      errorMessage,
-    );
+    const errorMessage = response.error.message || "Failed to delete child";
+    console.error("[Progress Service API] Error deleting child:", errorMessage);
     throw new Error(errorMessage);
   }
 
@@ -990,15 +1029,10 @@ export async function deleteChild(childId: string): Promise<void> {
     console.error(
       "[Progress Service API] Child deletion failed: API returned success=false",
     );
-    throw new Error(
-      response.error?.message || "Failed to delete child",
-    );
+    throw new Error(response.error?.message || "Failed to delete child");
   }
 
-  console.log(
-    "[Progress Service API] Child deleted successfully",
-    { childId },
-  );
+  console.log("[Progress Service API] Child deleted successfully", { childId });
 }
 
 /**
@@ -1019,10 +1053,10 @@ export async function toggleWeeklyReports(
   childId: string,
   isActive: boolean,
 ): Promise<ChildProfile> {
-  console.log(
-    "[Progress Service API] Toggling weekly reports for child",
-    { childId, isActive },
-  );
+  console.log("[Progress Service API] Toggling weekly reports for child", {
+    childId,
+    isActive,
+  });
 
   const response = await apiRequest<ApiResponse<ChildProfile>>(
     `/children/${childId}/weekly-reports`,
@@ -1053,10 +1087,10 @@ export async function toggleWeeklyReports(
     );
   }
 
-  console.log(
-    "[Progress Service API] Weekly reports toggled successfully",
-    { childId, isActive },
-  );
+  console.log("[Progress Service API] Weekly reports toggled successfully", {
+    childId,
+    isActive,
+  });
 
   return response.data as ChildProfile;
 }
@@ -1077,10 +1111,10 @@ export async function toggleStorytelling(
   childId: string,
   isActive: boolean,
 ): Promise<ChildProfile> {
-  console.log(
-    "[Progress Service API] Toggling storytelling for child",
-    { childId, isActive },
-  );
+  console.log("[Progress Service API] Toggling storytelling for child", {
+    childId,
+    isActive,
+  });
 
   const response = await apiRequest<ApiResponse<ChildProfile>>(
     `/children/${childId}/storytelling`,
@@ -1106,15 +1140,13 @@ export async function toggleStorytelling(
     console.error(
       "[Progress Service API] Toggle storytelling failed: API returned success=false",
     );
-    throw new Error(
-      response.error?.message || "Failed to toggle storytelling",
-    );
+    throw new Error(response.error?.message || "Failed to toggle storytelling");
   }
 
-  console.log(
-    "[Progress Service API] Storytelling toggled successfully",
-    { childId, isActive },
-  );
+  console.log("[Progress Service API] Storytelling toggled successfully", {
+    childId,
+    isActive,
+  });
 
   return response.data as ChildProfile;
 }

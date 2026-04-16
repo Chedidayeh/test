@@ -70,7 +70,7 @@ export default function Profile({ session }: { session: Session }) {
                 <User className="w-4 h-4" />
                 <span>{t("profile")}</span>
               </button>
-              <button
+              {/* <button
                 onClick={() => setActiveTab("settings")}
                 className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${
                   activeTab === "settings"
@@ -80,7 +80,7 @@ export default function Profile({ session }: { session: Session }) {
               >
                 <Settings className="w-4 h-4" />
                 <span>{t("settings")}</span>
-              </button>
+              </button> */}
               {session?.user?.role === RoleType.ADMIN && (
                 <Link href="/admin-dashboard">
                   <button
@@ -152,9 +152,9 @@ export default function Profile({ session }: { session: Session }) {
                   <h2 className="text-lg md:text-xl font-medium mb-3 md:mb-4">
                     {t("profileInformation")}
                   </h2>
-                  <div className="bg-card rounded-lg border border-primary/20 p-3 md:p-4 space-y-4 md:space-y-5">
+                  <div className="bg-card rounded-lg border border-primary/20 p-3 md:p-4 space-y-4">
                     {/* Name */}
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between pb-3 md:pb-4 border-b border-gray-200">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between ">
                       <div className="mb-2 md:mb-0">
                         <label className="text-xs md:text-sm font-medium text-gray-500">
                           {t("fullName")}
@@ -166,7 +166,7 @@ export default function Profile({ session }: { session: Session }) {
                     </div>
 
                     {/* Email */}
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between pb-3 md:pb-4 border-b border-gray-200">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between ">
                       <div className="mb-2 md:mb-0">
                         <label className="text-xs md:text-sm font-medium text-gray-500">
                           {t("emailAddress")}

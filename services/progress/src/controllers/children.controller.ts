@@ -155,6 +155,44 @@ export class ChildrenController {
     }
   }
 
+  /**
+   * Fetch all children profiles with pagination
+   * Query params: limit, offset, childIds (filter by specific child IDs)
+   */
+  static async getAllChildrenProfiles(
+    req: Request,
+    res: Response<ApiResponse<ChildProfile[]>>,
+  ): Promise<void> {
+    try {
+
+
+      const result = await ChildrenService.getAllChildrenProfiles();
+
+      res.json({
+        success: true,
+        data: result,
+        pagination: {
+          total: result.length,
+          page: 1,
+          pageSize: result.length,
+          hasMore: false,
+        },
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error fetching children profiles:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "FETCH_ERROR",
+          message:
+            error instanceof Error ? error.message : "Failed to fetch children profiles",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
   static async getWeekChildren(
     req: Request,
     res: Response<ApiResponse<{ children: ChildProfile[]; total: number }>>,

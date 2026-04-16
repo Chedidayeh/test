@@ -71,16 +71,16 @@ const navigationSections: NavSection[] = [
     ],
   },
 
-  {
-    title: "System",
-    items: [
-      {
-        name: "Settings",
-        href: "/admin-dashboard/settings",
-        icon: <Settings className="w-5 h-5" />,
-      },
-    ],
-  },
+  // {
+  //   title: "System",
+  //   items: [
+  //     {
+  //       name: "Settings",
+  //       href: "/admin-dashboard/settings",
+  //       icon: <Settings className="w-5 h-5" />,
+  //     },
+  //   ],
+  // },
 ];
 
 export function AdminSidebar() {

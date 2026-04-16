@@ -23,6 +23,11 @@ router.get("/children", (req, res) =>
   ChildrenController.getAllChildrenWithPagination(req, res),
 );
 
+// Get all children profiles with pagination
+router.get("/children-profiles", (req, res) =>
+  ChildrenController.getAllChildrenProfiles(req, res),
+);
+
 // Get children for push notifications
 router.get("/push-notifications/children", (req, res) =>
   ChildrenController.getChildrenForPushNotifications(req, res),

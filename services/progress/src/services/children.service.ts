@@ -133,6 +133,35 @@ export class ChildrenService {
   }
 
   /**
+   * Fetch all children profiles without pagination
+   * Returns all child profiles with their full relations included
+   */
+  static async getAllChildrenProfiles(): Promise<ChildProfile[]> {
+    const childProfiles = await prisma.childProfile.findMany({
+      include: {
+        progress: {
+          include: {
+            gameSession: {
+              include: {
+                challengeAttempts: {
+                  include: {
+                    starEvent: true,
+                  },
+                },
+                checkpoints: true,
+              },
+            },
+          },
+        },
+        badges: true,
+      },
+    });
+
+    // Cast to ChildProfile[] - Prisma handles enum conversion
+    return childProfiles;
+  }
+
+  /**
    * Fetch all children with their progress stats from the past week
    * Only returns children that have progress data in the last 7 days
    * Only returns progress records from the past 7 days

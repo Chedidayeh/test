@@ -20,6 +20,7 @@ import {
   forwardToggleWeeklyReports,
   forwardToggleStorytelling,
   forwardGetChildProfilesByParent,
+  forwardToGetChildProfiles,
 } from "../helpers/progress.helpers";
 import { API_BASE_URL_V1 } from "@shared/src/types";
 
@@ -90,6 +91,11 @@ router.delete("/children/:childId", (req: Request, res: Response) => {
 // Generic children middleware (must be after specific routes)
 router.use("/children", (req: Request, res: Response) => {
   forwardToProgressService(req, res, `${API_BASE_URL_V1}/children${req.path}`);
+});
+
+// Generic children middleware (must be after specific routes)
+router.use("/children-profiles", (req: Request, res: Response) => {
+  forwardToGetChildProfiles(req, res, `${API_BASE_URL_V1}/children-profiles${req.path}`);
 });
 
 // Get child profiles for a parent (must be before the generic /parent-data route)

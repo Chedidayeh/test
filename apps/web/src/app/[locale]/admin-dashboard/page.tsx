@@ -12,12 +12,19 @@ import {
 } from "lucide-react";
 import { StatCard } from "./_components/StatCard";
 import { ChartContainer } from "./_components/ChartContainer";
-import { getDashboardStats } from "@/src/lib/progress-service/server-api";
+import { getAllChildrenProfiles, getDashboardStats } from "@/src/lib/progress-service/server-api";
+import { transformChildrenToSessionData } from "@/src/lib/progress-service/transform-children-data";
+import { ChartComponent } from "./_components/ChartComponent";
 
 export default async function AdminDashboard() {
   // Fetch dashboard statistics from backend services
   const stats = await getDashboardStats();
-
+  const childrenProfilesResponse = await getAllChildrenProfiles();
+  console.log("Children Profiles Response:", childrenProfilesResponse.children[1]);
+  // Transform children profile data into daily session insights
+  const sessionData = transformChildrenToSessionData(childrenProfilesResponse.children || []);
+  console.log("Session Data:", sessionData);
+  
   const activeChildren = stats.activeChildren;
   const totalChildren = stats.totalChildren;
   const totalParents = stats.totalParents;
@@ -67,6 +74,7 @@ export default async function AdminDashboard() {
               icon={<Lightbulb className="w-6 h-6" />}
             />
           </div>
+          <ChartComponent data={sessionData} />
         </div>
 
         {/* Right Column - Quick Actions & Important Info */}
