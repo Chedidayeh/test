@@ -57,7 +57,7 @@ const StorytellingStories = ({ childProfile }: StorytellingStoriesProps) => {
       return `/story-reading-interface/${story.storyId}?childId=${childProfile.child!.id}`;
     }
     // For completed stories, link to story detail/summary page
-    return `/storytelling/${story.storyId}`;
+    return `/story-replaying-interface/${story.storyId}?childId=${childProfile.child!.id}`;
   };
 
   return (
@@ -107,7 +107,7 @@ const StorytellingStories = ({ childProfile }: StorytellingStoriesProps) => {
       </div>
 
       {/* Show more stories link if available */}
-      {stories.length > 0 && (
+      {/* {stories.length > 0 && (
         <Link
           href="/storytelling"
           className="flex items-center gap-2 text-primary hover:text-primary/80 transition-smooth mt-4"
@@ -121,7 +121,7 @@ const StorytellingStories = ({ childProfile }: StorytellingStoriesProps) => {
             <ChevronRightIcon size={18} />
           )}
         </Link>
-      )}
+      )} */}
     </div>
   );
 };

@@ -94,7 +94,7 @@
 		"tabs": {
 			"overview": "Aperçu",
 			"achievements": "Réalisations",
-			"aiInsights": "Aperçus IA",
+			"weeklyReports": "Rapports hebdomadaires",
 			"riddleStatistics": "Statistiques des énigmes",
 			"timeAnalytics": "Analyse du temps",
 			"childStorytelling": "Histoires personnalisées"
@@ -183,45 +183,6 @@
 				"incorrect": "✗ Incorrect"
 			}
 		},
-		"aiInsights": {
-			"title": {
-				"title": "Aperçus d'apprentissage alimentés par l'IA",
-				"description": "Aperçus personnalisés du parcours de lecture de {childName}, alimentés par une analyse avancée de l'IA",
-				"dashboardButton": "Tableau de bord de {childName} →",
-				"currentInsights": "Aperçus actuels",
-				"historicalInsights": "Aperçus historiques"
-			},
-			"label": {
-				"readingLevel": "Niveau de lecture",
-				"engagementScore": "Score d'engagement",
-				"period": "Période d'analyse",
-				"strengths": "Forces",
-				"weaknesses": "Domaines d'amélioration",
-				"recommendations": "Recommandations",
-				"tips": "Conseils d'apprentissage",
-				"summary": "Résumé",
-				"keyMetrics": "Métriques clés"
-			},
-			"metric": {
-				"totalStoriesCompleted": "Histoires terminées",
-				"successRate": "Taux de réussite",
-				"challengesAttempted": "Défis résolus",
-				"avgAttemptsPerChallenge": "Moyenne de tentatives par défi",
-				"hintDependencyRate": "Taux de dépendance aux indices",
-				"starsEarned": "Étoiles gagnées",
-				"totalTimeSpent": "Temps total passé"
-			},
-			"action": {
-				"refresh": "Rafraîchir les aperçus"
-			},
-			"message": {
-				"noInsights": "Aucun aperçu IA disponible pour le moment",
-				"noInsightsSubtext": "{childName} n'a pas encore terminé suffisamment d'activités pour obtenir des aperçus alimentés par l'IA. Continuez à lire !"
-			},
-			"error": {
-				"fetchFailed": "Échec de la récupération des analyses"
-			}
-		},
 		"timeAnalytics": {
 			"title": "Analyse du temps",
 			"description": "Aperçu approfondi du temps de lecture et de la régularité de {childName}.",
@@ -257,11 +218,48 @@
 		},
 		"childStorytelling": {
 			"activated": "Activé",
+			"deactivated": "Désactivé",
 			"title": "Récit d'histoire pour l'enfant",
 			"description": "Créez des histoires personnalisées mettant en vedette {childName} comme héros ! Aventures adaptées en fonction de leurs centres d'intérêt et de leur parcours de lecture.",
 			"dashboardButton": "Tableau de bord de {childName} →",
 			"activateOption": "Activer le récit d'histoire pour {childName} →",
-			"storytellingDashboard": "Tableau de bord du récit d'histoire de {childName}"
+			"storytellingDashboard": "Tableau de bord du récit d'histoire de {childName}",
+			"status": {
+				"completed": "Terminé",
+				"inProgress": "En cours",
+				"notStarted": "Non commencé"
+			},
+			"generatedDate": "Généré le",
+			"inactiveTitle": "Inactif",
+			"inactiveDescription": "Le récit d'histoire est inactif pour {childName}.",
+			"noStoriesTitle": "Pas d'histoires pour le moment",
+			"deactivateOption": "Désactiver le récit d'histoire",
+			"noStoriesDescription": "Les histoires apparaîtront ici une fois générées pour {childName}. À bientôt !"
+		},
+		"weeklyReports": {
+			"title": "Rapports de progrès hebdomadaires",
+			"active": "Actif",
+			"inactive": "Inactif",
+			"activateButton": "Activer les rapports hebdomadaires",
+			"deactivateButton": "Désactiver les rapports hebdomadaires",
+			"description": "Informations hebdomadaires générées par l'IA sur la progression de la lecture et l'apprentissage de {childName}",
+			"loading": "Chargement du rapport hebdomadaire...",
+			"errorTitle": "Impossible de charger le rapport",
+			"failedToLoadReport": "Échec du chargement du rapport hebdomadaire. Veuillez réessayer plus tard.",
+			"noReportYet": "Aucun rapport disponible",
+			"reportAvailableSoon": "Les rapports hebdomadaires pour {childName} seront disponibles bientôt au fur et à mesure de sa progression en lecture.",
+			"noReportForWeek": "Aucun rapport disponible pour la semaine {week}",
+			"executiveSummary": "Résumé exécutif",
+			"progressTrends": "Tendances du progrès",
+			"recommendations": "Recommandations",
+			"metricsSnapshot": "Aperçu des métriques",
+			"week": "Semaine {week}",
+			"previousWeek": "← Semaine précédente",
+			"nextWeek": "Semaine suivante →",
+			"inactiveTitle": "Inactif",
+			"inactiveDescription": "Les rapports hebdomadaires sont inactifs pour {childName}.",
+			"generatedOn": "Généré le {date} à {time}",
+			"noRecommendations": "Aucune recommandation particulière pour cette semaine."
 		},
 		"notificationSettings": {
 			"title": "Paramètres de notification",
@@ -277,6 +275,49 @@
 			"save": "Enregistrer",
 			"saving": "Enregistrement...",
 			"savedSuccess": "Paramètres de notification enregistrés !"
+		},
+		"childSettings": {
+			"title": "Paramètres de l'enfant",
+			"generalTab": "Général",
+			"notificationsTab": "Notifications",
+			"deleteChildTab": "Supprimer",
+			"childName": "Nom de l'enfant",
+			"childNamePlaceholder": "Entrez le nom de l'enfant",
+			"ageGroup": "Groupe d'âge",
+			"ageGroups": {
+				"6to8": "6-8 ans",
+				"9to12": "9-12 ans",
+				"13plus": "13+ ans"
+			},
+			"favoriteThemes": "Thèmes préférés",
+			"themesInputPlaceholder": "par exemple, Aventure, Fantasy, Mystère (séparés par des virgules)",
+			"themesDescription": "Séparez plusieurs thèmes par des virgules",
+			"sessionsPerWeek": "Séances par semaine",
+			"selectAgeGroupFirst": "Veuillez d'abord sélectionner un groupe d'âge",
+			"savedSuccess": "Paramètres enregistrés avec succès!",
+			"generalInfoMessage": "Les paramètres généraux aident à personnaliser l'expérience d'apprentissage de votre enfant.",
+			"saving": "Enregistrement...",
+			"saveGeneral": "Enregistrer les modifications",
+			"notificationsDescription": "Une fois activé, vous recevrez des rappels sur la progression de lecture et l'activité de votre enfant.",
+			"dangerZone": "Zone Danger",
+			"dangerZoneDescription": "Ces actions ne peuvent pas être annulées. Veuillez procéder avec prudence.",
+			"deleteChildTitle": "Supprimer le profil de l'enfant",
+			"deleteChildDescription": "Cela supprimera définitivement le profil de {childName} et toutes les données associées.",
+			"deleteChild": "Supprimer le profil de l'enfant",
+			"deleteConfirmation": "Veuillez taper le nom de l'enfant pour confirmer la suppression",
+			"confirmPlaceholder": "Tapez le nom de l'enfant",
+			"cancel": "Annuler",
+			"close": "Fermer",
+			"deleting": "Suppression...",
+			"confirmDelete": "Supprimer"
+		},
+		"errors": {
+			"childNotFound": "Enfant non trouvé. Veuillez vérifier et réessayer."
+		},
+		"inactivityReminder": {
+			"title": "C'est le moment de lire une nouvelle histoire!",
+			"description": "{childName} n'a pas lu d'histoires depuis {daysSince} {daysLabel}. Il/elle a pour objectif {sessionsPerWeek} sessions de lecture par semaine.",
+			"weeklyProgress": "{sessionsThisWeek} sur {sessionsNeeded} sessions cette semaine ({percentage}%)"
 		}
 	},
 	"ChildDashboard": {
@@ -606,7 +647,7 @@
 		"feature2Desc": "Des histoires alignées sur les compétences que vous souhaitez développer chez votre enfant",
 		"feature3Title": " Aventures captivantes",
 		"feature3Desc": "Défis interactifs pour atteindre les objectifs et renforcer la confiance",
-		"mainDescription": "Votre enfant embarquera chaque semaine dans des aventures où il est le héros ! Les histoires sont adaptées à ses intérêts et conçues pour l'aider à atteindre vos objectifs d'apprentissage choisis. Regardez-le grandir en confiance, élargir son vocabulaire et développer sa pensée critique—tout par la joie de la lecture.",
+		"mainDescription": "Votre enfant embarquera chaque semaine dans des aventures où il est le héros ! Les histoires sont adaptées à ses intérêts et conçues pour l'aider à atteindre vos objectifs d'apprentissage choisis. Regardez-le grandir en confiance, élargir son vocabulaire et développer sa pensée critique tout par la joie de la lecture.",
 		"continueButton": "Continuer vers la configuration"
 	},
 	"StoryReadingInterface": {

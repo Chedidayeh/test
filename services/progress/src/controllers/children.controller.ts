@@ -336,6 +336,54 @@ export class ChildrenController {
   }
 
   /**
+   * Fetch child profile IDs for a specific parent
+   * Returns an array of child profile ID strings
+   */
+  static async getChildProfilesByParent(
+    req: Request,
+    res: Response<ApiResponse<ChildProfile[]>>,
+  ): Promise<void> {
+    try {
+      const { parentId } = req.params;
+
+      if (!parentId) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required parameter: parentId",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      const children = await ChildrenService.getChildProfilesByParent(
+        parentId,
+      );
+
+      res.json({
+        success: true,
+        data: children,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error fetching child profile IDs:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "FETCH_ERROR",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to fetch child profile IDs",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  /**
    * Create a new story progress record for a child
    */
   static async startStoryProgress(
@@ -1022,6 +1070,297 @@ export class ChildrenController {
             error instanceof Error
               ? error.message
               : "Failed to update notification settings",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  /**
+   * Update child's general settings (name, age group, favorite themes)
+   * Body: { name, ageGroupId, favoriteThemes }
+   */
+  static async updateChildGeneralSettings(
+    req: Request,
+    res: Response<ApiResponse<ChildProfile>>,
+  ): Promise<void> {
+    try {
+      const { childId } = req.params;
+      const { name, ageGroupId, favoriteThemes , allocatedRoadmaps, sessionsPerWeek, ageGroup } = req.body;
+
+      // Validation
+      if (!childId) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required parameter: childId",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      if (!name || !ageGroupId) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required fields: name and ageGroupId",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      const updatedChild = await ChildrenService.updateChildGeneralSettings(
+        childId,
+        name,
+        ageGroupId,
+        favoriteThemes || [],
+        allocatedRoadmaps || [],
+        sessionsPerWeek || 0,
+        ageGroup || "",
+      );
+
+      if (!updatedChild) {
+        res.status(404).json({
+          success: false,
+          error: {
+            code: "NOT_FOUND",
+            message: "Child profile not found",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: updatedChild,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error updating child general settings:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "UPDATE_ERROR",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to update child general settings",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  /**
+   * Delete a child profile permanently
+   * Param: childId (route parameter)
+   * Removes the child and all associated data from the system
+   */
+  static async deleteChild(
+    req: Request,
+    res: Response<ApiResponse<{ message: string }>>,
+  ): Promise<void> {
+    try {
+      const { childId } = req.params;
+
+      // Validate childId
+      if (!childId) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required parameter: childId",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      console.log("Deleting child profile:", { childId });
+
+      // Delete child from service
+      const result = await ChildrenService.deleteChild(childId);
+
+      if (!result) {
+        res.status(404).json({
+          success: false,
+          error: {
+            code: "NOT_FOUND",
+            message: "Child profile not found",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: { message: "Child profile deleted successfully" },
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error deleting child:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "DELETE_ERROR",
+          message:
+            error instanceof Error ? error.message : "Failed to delete child",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  /**
+   * Toggle weekly reports activation for a child
+   * Body: { activateWeeklyReports }
+   */
+  static async toggleWeeklyReports(
+    req: Request,
+    res: Response<ApiResponse<ChildProfile>>,
+  ): Promise<void> {
+    try {
+      const { childId } = req.params;
+      const { activateWeeklyReports } = req.body;
+
+      // Validation
+      if (!childId) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required parameter: childId",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      if (activateWeeklyReports === undefined || activateWeeklyReports === null) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required field: activateWeeklyReports",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      const updatedChild = await ChildrenService.toggleWeeklyReports(
+        childId,
+        activateWeeklyReports,
+      );
+
+      if (!updatedChild) {
+        res.status(404).json({
+          success: false,
+          error: {
+            code: "NOT_FOUND",
+            message: "Child profile not found",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: updatedChild,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error toggling weekly reports:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "TOGGLE_ERROR",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to toggle weekly reports",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  /**
+   * Toggle storytelling activation for a child
+   * Body: { isActive }
+   */
+  static async toggleStorytelling(
+    req: Request,
+    res: Response<ApiResponse<ChildProfile>>,
+  ): Promise<void> {
+    try {
+      const { childId } = req.params;
+      const { isActive } = req.body;
+
+      // Validation
+      if (!childId) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required parameter: childId",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      if (isActive === undefined || isActive === null) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required field: isActive",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      const updatedChild = await ChildrenService.toggleStorytelling(
+        childId,
+        isActive,
+      );
+
+      if (!updatedChild) {
+        res.status(404).json({
+          success: false,
+          error: {
+            code: "NOT_FOUND",
+            message: "Child profile not found",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: updatedChild,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error toggling storytelling:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "TOGGLE_ERROR",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to toggle storytelling",
         },
         timestamp: new Date(),
       });

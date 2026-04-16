@@ -7,7 +7,13 @@ import {
   AvatarImage,
 } from "@/src/components/ui/avatar";
 import { Button } from "@/src/components/ui/button";
-import { ParentUser, AgeGroup, RoleType } from "@readdly/shared-types";
+import {
+  ParentUser,
+  AgeGroup,
+  RoleType,
+  ChildProfile,
+  User,
+} from "@readdly/shared-types";
 import type { ClassValue } from "clsx";
 import { clsx } from "clsx";
 import { Plus } from "lucide-react";
@@ -22,25 +28,26 @@ function cn(...inputs: ClassValue[]) {
 
 interface ChildSidebarProps {
   session: Session;
-  parentData: ParentUser | null | undefined;
+  childProfiles: ChildProfile[];
   selectedChildId: string | undefined;
   onChildSelect: (childId: string) => void;
   ageGroups: AgeGroup[];
   onChildAdded: () => void;
   userRole: RoleType;
+  parentData: User;
 }
 
 export default function ChildSidebar({
   session,
-  parentData,
+  childProfiles,
   selectedChildId,
   onChildSelect,
   ageGroups,
   onChildAdded,
   userRole,
+  parentData,
 }: ChildSidebarProps) {
   const t = useTranslations("ParentDashboard");
-  const children = parentData?.children || [];
   const [addChildDialogOpen, setAddChildDialogOpen] = useState(false);
 
   return (
@@ -53,7 +60,7 @@ export default function ChildSidebar({
         </div>
 
         <div className="flex lg:flex-col overflow-x-auto lg:overflow-x-visible gap-2 lg:space-y-2 pb-2 lg:pb-0">
-          {children.map((profile) => (
+          {childProfiles.map((profile) => (
             <button
               key={profile.childId}
               onClick={() => onChildSelect(profile.childId)}
@@ -71,12 +78,12 @@ export default function ChildSidebar({
                   alt={profile.child?.name}
                 />
                 <AvatarFallback>
-                  {profile.child?.name?.[0]?.toUpperCase() || "?"}
+                  {profile.name?.[0]?.toUpperCase() || "?"}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 lg:flex lg:flex-col lg:text-left">
                 <p className="font-medium text-xs lg:text-sm text-foreground">
-                  {profile.child?.name || t("unknown")}
+                  {profile.name || t("unknown")}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {t("stars", { count: profile.totalStars || 0 })}
@@ -89,7 +96,12 @@ export default function ChildSidebar({
           ))}
         </div>
         {userRole === RoleType.PARENT && (
-          <Button size={"sm"} variant="outline" className="w-full lg:w-auto" onClick={() => setAddChildDialogOpen(true)}>
+          <Button
+            size={"sm"}
+            variant="outline"
+            className="w-full lg:w-auto"
+            onClick={() => setAddChildDialogOpen(true)}
+          >
             <Plus className="h-4 w-4 mr-1" />
             {t("addChild")}
           </Button>
@@ -100,8 +112,7 @@ export default function ChildSidebar({
         open={addChildDialogOpen}
         onOpenChange={setAddChildDialogOpen}
         ageGroups={ageGroups}
-        parentId={parentData?.id || ""}
-        parentEmail={parentData?.email || ""}
+        parentData={parentData}
         session={session}
         onChildAdded={onChildAdded}
       />

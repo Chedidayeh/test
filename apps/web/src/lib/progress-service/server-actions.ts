@@ -1,8 +1,16 @@
 "use server";
 
-import { ChildProfile, GameSession, SessionCheckpoint, ParentUser, ChallengeType } from "@readdly/shared-types";
+import {
+  ChildProfile,
+  GameSession,
+  SessionCheckpoint,
+  ParentUser,
+  ChallengeType,
+} from "@readdly/shared-types";
 import {
   getAllChildren,
+  getChildById,
+  getChildProfilesByParent,
   PaginationParams,
   saveCheckpoint,
   submitChallengeAnswer,
@@ -12,8 +20,12 @@ import {
   pauseGameSession,
   allocateRoadmapToChild,
   getParentWithProfiles,
+  updateChildGeneralSettings,
+  deleteChild,
+  updateChildNotifications,
+  toggleWeeklyReports,
+  toggleStorytelling,
 } from "./server-api";
-import { validateAnswerAction } from "../ai-service/server-actions";
 
 type FetchChildrenResult =
   | {
@@ -58,6 +70,101 @@ export async function fetchChildrenAction(
   }
 }
 
+/**
+ * Server Action for fetching a single child by ID
+ * This can be called from client components to fetch a specific child's data
+ *
+ * @param childId - The ID of the child to fetch
+ * @returns Result object with success status and child data
+ *
+ * @example
+ * const result = await getChildByIdAction("child-123");
+ * if (result) {
+ *   console.log("Child:", result.name);
+ * } else {
+ *   console.error("Failed to fetch child");
+ * }
+ */
+export async function getChildByIdAction(
+  childId: string,
+): Promise<ChildProfile | null> {
+  try {
+    console.log("[Progress Service] Fetching child by ID via server action", {
+      childId,
+    });
+
+    const child = await getChildById(childId);
+
+    console.log(
+      "[Progress Service] Child fetched successfully via server action",
+      {
+        childId,
+        childName: child?.name,
+      },
+    );
+
+    return child;
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to fetch child";
+
+    console.error("[Progress Service] Error fetching child:", {
+      childId,
+      error: errorMessage,
+    });
+
+    return null;
+  }
+}
+
+/**
+ * Server Action for fetching child profiles by parent ID
+ * This can be called from client components to fetch all children for a parent
+ *
+ * @param parentId - The parent ID to fetch children for
+ * @returns Array of child profiles
+ *
+ * @example
+ * const children = await getChildProfilesByParentAction("parent-123");
+ * console.log("Children:", children);
+ */
+export async function getChildProfilesByParentAction(
+  parentId: string,
+): Promise<ChildProfile[]> {
+  try {
+    console.log(
+      "[Progress Service] Fetching child profiles by parent via server action",
+      {
+        parentId,
+      },
+    );
+
+    const childProfiles = await getChildProfilesByParent(parentId);
+
+    console.log(
+      "[Progress Service] Child profiles fetched successfully via server action",
+      {
+        parentId,
+        childCount: childProfiles.length,
+      },
+    );
+
+    return childProfiles;
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "Failed to fetch child profiles";
+
+    console.error("[Progress Service] Error fetching child profiles:", {
+      parentId,
+      error: errorMessage,
+    });
+
+    return [];
+  }
+}
+
 export interface SaveCheckpointResult {
   success: boolean;
   data?: GameSession | null;
@@ -92,7 +199,11 @@ export async function saveCheckpointAction(
       elapsedTime,
     });
 
-    const updatedSession = await saveCheckpoint(gameSessionId, chapterId, elapsedTime);
+    const updatedSession = await saveCheckpoint(
+      gameSessionId,
+      chapterId,
+      elapsedTime,
+    );
 
     return {
       success: true,
@@ -160,7 +271,6 @@ export async function submitChallengeAnswerAction(
         actions: request.actions,
       },
     );
-
 
     // Step 2: Submit challenge answer to progress service
     const result = await submitChallengeAnswer(request);
@@ -252,8 +362,6 @@ export async function completeStoryAction(
     };
   }
 }
-
-
 
 export interface AggregateSessionTimeResult {
   success: boolean;
@@ -462,7 +570,6 @@ export async function updateNotificationSettingsAction(
       },
     );
 
-    const { updateChildNotifications } = await import("./server-api");
     const updatedChild = await updateChildNotifications(
       childId,
       activateNotifications,
@@ -486,6 +593,269 @@ export async function updateNotificationSettingsAction(
       error instanceof Error ? error.message : "Unknown error occurred";
 
     console.error("[Progress Service] Error updating notification settings:", {
+      childId,
+      error: errorMessage,
+    });
+
+    return {
+      success: false,
+      error: errorMessage,
+    };
+  }
+}
+
+export interface UpdateChildGeneralSettingsResult {
+  success: boolean;
+  data?: ChildProfile;
+  error?: string;
+}
+
+/**
+ * Server action to update child's general settings
+ * Called when user saves changes to child name, age group, or favorite themes
+ *
+ * @param childId - The child's ID
+ * @param name - The child's updated name
+ * @param ageGroupId - The child's updated age group ID
+ * @param favoriteThemes - Array of favorite theme IDs
+ * @returns Result object with success status and updated child data
+ *
+ * @example
+ * const result = await updateChildGeneralSettingsAction("child-123", "John", "age-group-5", ["theme-1", "theme-2"]);
+ * if (result.success) {
+ *   console.log("General settings updated for:", result.data?.name);
+ * } else {
+ *   console.error("Failed to update:", result.error);
+ * }
+ */
+export async function updateChildGeneralSettingsAction(
+  childId: string,
+  name: string,
+  ageGroupId: string,
+  favoriteThemes: string[],
+  allocatedRoadmaps: string[],
+  sessionsPerWeek: number,
+  ageGroup: string,
+): Promise<UpdateChildGeneralSettingsResult> {
+  try {
+    console.log(
+      "[Progress Service] Updating child general settings via server action",
+      {
+        childId,
+        name,
+        ageGroupId,
+        favoriteThemesCount: favoriteThemes.length,
+      },
+    );
+
+    const updatedChild = await updateChildGeneralSettings(
+      childId,
+      name,
+      ageGroupId,
+      favoriteThemes,
+      allocatedRoadmaps,
+      sessionsPerWeek,
+      ageGroup,
+    );
+
+    console.log(
+      "[Progress Service] Child general settings updated successfully",
+      {
+        childId,
+        name: updatedChild.name,
+        ageGroupId: updatedChild.ageGroupId,
+        favoriteThemesCount: updatedChild.favoriteThemes?.length || 0,
+      },
+    );
+
+    return {
+      success: true,
+      data: updatedChild,
+    };
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred";
+
+    console.error("[Progress Service] Error updating child general settings:", {
+      childId,
+      error: errorMessage,
+    });
+
+    return {
+      success: false,
+      error: errorMessage,
+    };
+  }
+}
+
+export interface DeleteChildResult {
+  success: boolean;
+  error?: string;
+}
+
+/**
+ * Server action to delete a child profile permanently
+ * Called when parent confirms child deletion in settings modal
+ * Removes the child and all associated data from the system
+ *
+ * @param childId - The child's ID to delete
+ * @returns Result object with success status and optional error
+ *
+ * @example
+ * const result = await deleteChildAction("child-123");
+ * if (result.success) {
+ *   console.log("Child deleted successfully");
+ *   // Redirect or refresh
+ * } else {
+ *   console.error("Failed to delete:", result.error);
+ * }
+ */
+export async function deleteChildAction(
+  childId: string,
+): Promise<DeleteChildResult> {
+  try {
+    console.log("[Progress Service] Deleting child via server action", {
+      childId,
+    });
+
+    await deleteChild(childId);
+
+    console.log("[Progress Service] Child deleted successfully", { childId });
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred";
+
+    console.error("[Progress Service] Error deleting child:", {
+      childId,
+      error: errorMessage,
+    });
+
+    return {
+      success: false,
+      error: errorMessage,
+    };
+  }
+}
+
+export interface ToggleWeeklyReportsResult {
+  success: boolean;
+  data?: ChildProfile;
+  error?: string;
+}
+
+/**
+ * Server action to toggle weekly reports activation for a child
+ * Called when parent clicks activate/deactivate button in parent dashboard
+ *
+ * @param childId - The child's ID
+ * @param isActive - Whether to activate or deactivate weekly reports
+ * @returns Result object with success status and updated child data
+ *
+ * @example
+ * const result = await toggleWeeklyReportsAction("child-123", true);
+ * if (result.success) {
+ *   console.log("Weekly reports toggled for:", result.data?.name);
+ * } else {
+ *   console.error("Failed to toggle:", result.error);
+ * }
+ */
+export async function toggleWeeklyReportsAction(
+  childId: string,
+  isActive: boolean,
+): Promise<ToggleWeeklyReportsResult> {
+  try {
+    console.log(
+      "[Progress Service] Toggling weekly reports via server action",
+      {
+        childId,
+        isActive,
+      },
+    );
+
+    const updatedChild = await toggleWeeklyReports(childId, isActive);
+
+    console.log("[Progress Service] Weekly reports toggled successfully", {
+      childId,
+      isActive,
+      childName: updatedChild.name,
+    });
+
+    return {
+      success: true,
+      data: updatedChild,
+    };
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred";
+
+    console.error("[Progress Service] Error toggling weekly reports:", {
+      childId,
+      error: errorMessage,
+    });
+
+    return {
+      success: false,
+      error: errorMessage,
+    };
+  }
+}
+
+export interface ToggleStorytellingResult {
+  success: boolean;
+  data?: ChildProfile;
+  error?: string;
+}
+
+/**
+ * Server action to toggle storytelling activation for a child
+ * Called when parent clicks activate/deactivate button for AI-generated storytelling
+ *
+ * @param childId - The child's ID
+ * @param isActive - Whether to activate or deactivate storytelling
+ * @returns Result object with success status and updated child data
+ *
+ * @example
+ * const result = await toggleStorytellingAction("child-123", true);
+ * if (result.success) {
+ *   console.log("Storytelling toggled for:", result.data?.name);
+ * } else {
+ *   console.error("Failed to toggle:", result.error);
+ * }
+ */
+export async function toggleStorytellingAction(
+  childId: string,
+  isActive: boolean,
+): Promise<ToggleStorytellingResult> {
+  try {
+    console.log(
+      "[Progress Service] Toggling storytelling via server action",
+      {
+        childId,
+        isActive,
+      },
+    );
+
+    const updatedChild = await toggleStorytelling(childId, isActive);
+
+    console.log("[Progress Service] Storytelling toggled successfully", {
+      childId,
+      isActive,
+      childName: updatedChild.name,
+    });
+
+    return {
+      success: true,
+      data: updatedChild,
+    };
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred";
+
+    console.error("[Progress Service] Error toggling storytelling:", {
       childId,
       error: errorMessage,
     });

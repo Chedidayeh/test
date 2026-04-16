@@ -1,11 +1,17 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { z } from "zod";
-import { ChildProfile, PrismaClient } from "@prisma/client";
+import { ChildProfile, PrismaClient, Prisma } from "@prisma/client";
 import { logger } from "../../../lib/logger";
 import model from "../../../lib/model";
 import type { PlanContext } from "./plan-completion";
 
 const prisma = new PrismaClient();
+
+/**
+ * E9 FIX: Support for transaction clients
+ * Type alias for Prisma client that can be either the global client or a transaction client
+ */
+type PrismaClientOrTx = PrismaClient | Prisma.TransactionClient;
 
 /**
  * ISSUE 1 FIX: NO LangGraph agents. Simple, explicit service function.
@@ -60,13 +66,18 @@ type PlanOutput = z.infer<typeof PlanSchema>;
  * ISSUE 6 FIX: Sets extension point for automatic plan expansion
  * ISSUE 7 FIX: Enforces sequential world + story ordering
  * PHASE 3: Accepts previous plan context for continuation planning
+ * E9 FIX: Accepts optional transaction client for atomic regeneration
  */
 export async function generateStoryPlan(
   childProfileId: string,
   previousPlanContext?: PlanContext,
+  txClient?: PrismaClientOrTx,
 ) {
   try {
-    const child = await prisma.childProfile.findUnique({
+    // E9 FIX: Use provided tx client if available, otherwise use global prisma
+    const client = txClient || prisma;
+
+    const child = await client.childProfile.findUnique({
       where: { id: childProfileId },
     });
 
@@ -79,6 +90,7 @@ export async function generateStoryPlan(
       readingLevel: child.readingLevel,
       isPlanContinuation: !!previousPlanContext,
       planVersion: previousPlanContext?.planVersion,
+      usingTransaction: !!txClient,
     });
 
     const plan = await retryWithBackoff(
@@ -95,6 +107,7 @@ export async function generateStoryPlan(
       childProfileId,
       plan,
       previousPlanContext,
+      client, // E9 FIX: Pass tx client to persistPlan
     );
 
     logger.info("[Planning Service] Plan generation completed", {
@@ -104,6 +117,7 @@ export async function generateStoryPlan(
         (sum, w) => sum + w.estimatedStoryCount,
         0,
       ),
+      usingTransaction: !!txClient,
     });
 
     return savedPlan;
@@ -111,6 +125,7 @@ export async function generateStoryPlan(
     logger.error("[Planning Service] Failed to generate plan", {
       error: String(error),
       childProfileId,
+      usingTransaction: !!txClient,
     });
     throw error;
   }
@@ -394,13 +409,18 @@ CRITICAL REQUIREMENTS:
  * ISSUE 7 FIX: Enforces strict ordering through sequenceOrder and order fields
  * ISSUE 8 FIX: Calculates age-calibrated linguistic constraints
  * PHASE 3: Links to previous plan via planVersionChainId and previousPlanId
+ * E9 FIX: Accepts transaction client for atomic persistence
  */
 async function persistPlan(
   childProfileId: string,
   plan: PlanOutput,
   previousPlanContext?: PlanContext,
+  txClient?: PrismaClientOrTx,
 ) {
   try {
+    // E9 FIX: Use provided tx client if available, otherwise use global prisma
+    const client = txClient || prisma;
+
     // ISSUE 6 FIX: Calculate when to trigger plan extension
     const totalEstimatedStories = plan.worlds.reduce(
       (sum, w) => sum + w.estimatedStoryCount,
@@ -420,7 +440,7 @@ async function persistPlan(
       previousPlanId = previousPlanContext.completedPlanId;
 
       // Get the previous plan to access its chain ID
-      const prevPlan = await prisma.storyPlan.findUnique({
+      const prevPlan = await client.storyPlan.findUnique({
         where: { id: previousPlanContext.completedPlanId },
         select: { planVersionChainId: true, planVersion: true },
       });
@@ -434,7 +454,7 @@ async function persistPlan(
       }
     }
 
-    const storyPlan = await prisma.storyPlan.create({
+    const storyPlan = await client.storyPlan.create({
       data: {
         childProfileId,
         globalGoal: plan.globalGoal,
@@ -499,7 +519,7 @@ async function persistPlan(
     });
 
     // PHASE 3: Record plan creation in history (with parent reference)
-    await prisma.planHistory.create({
+    await client.planHistory.create({
       data: {
         storyPlanId: storyPlan.id,
         event: previousPlanContext ? "regenerated" : "created",
@@ -511,6 +531,7 @@ async function persistPlan(
               planVersion: storyPlan.planVersion,
               previousPlanId: storyPlan.previousPlanId,
               createdAt: storyPlan.createdAt.toISOString(),
+              usingTransaction: !!txClient,
             }
           : undefined,
       },
@@ -523,6 +544,7 @@ async function persistPlan(
       nextExtensionPoint,
       planVersion: storyPlan.planVersion,
       isPlanContinuation: !!previousPlanContext,
+      usingTransaction: !!txClient,
     });
 
     return storyPlan;
@@ -530,6 +552,7 @@ async function persistPlan(
     logger.error("[Planning Service] Failed to persist plan", {
       error: String(error),
       childProfileId,
+      usingTransaction: !!txClient,
     });
     throw error;
   }

@@ -52,12 +52,12 @@ const ChildDashboardInteractive = ({
 
   // Filter to only include roadmap progress (exclude storytelling progress)
   const roadmapProgresses = currentProgresses.filter(
-    (progress) => !progress.storytellingStoryId
+    (progress) => !progress.storytellingStoryId,
   );
 
   // Check if child has any in-progress roadmap stories
   const hasInProgressStories = roadmapProgresses.some(
-    (progress) => progress.status === ProgressStatus.IN_PROGRESS
+    (progress) => progress.status === ProgressStatus.IN_PROGRESS,
   );
 
   console.log(roadmapProgresses, "Roadmap Progresses");
@@ -100,15 +100,15 @@ const ChildDashboardInteractive = ({
               />
             )}
 
+            {/* Storytelling Weekly Stories */}
+            <StorytellingStories childProfile={child} />
+
             {/* Roadmaps */}
             <Roadmaps
               roadmaps={roadmaps}
               setSelectedRoadmap={setSelectedRoadmap}
               setSeeRoadmap={setSeeRoadmap}
             />
-
-            {/* Storytelling Weekly Stories */}
-            <StorytellingStories childProfile={child} />
 
             {/* Progress Tracker */}
             <ProgressTracker
@@ -152,15 +152,15 @@ const ChildDashboardInteractive = ({
                 />
               )}
 
+              {/* Storytelling Weekly Stories */}
+              <StorytellingStories childProfile={child} />
+
               {/* Roadmaps */}
               <Roadmaps
                 roadmaps={roadmaps}
                 setSelectedRoadmap={setSelectedRoadmap}
                 setSeeRoadmap={setSeeRoadmap}
               />
-
-              {/* Storytelling Weekly Stories */}
-              <StorytellingStories childProfile={child} />
             </div>
           </div>
         </>

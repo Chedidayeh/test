@@ -29,7 +29,6 @@ export const TranslationSourceType = {
 export type TranslationSourceType =
   (typeof TranslationSourceType)[keyof typeof TranslationSourceType];
 
-  
 export const RoleType = {
   PARENT: "PARENT",
   ADMIN: "ADMIN",
@@ -428,7 +427,7 @@ export interface ChildProfile {
   currentLevel: number;
   totalStars: number;
   storytelling?: StorytellingProfile | null; // Optional storytelling profile for AI-generated stories
-
+  activateWeeklyReports: boolean; // Whether the child has enabled weekly progress reports
   activateNotifications: boolean; // Whether the child has enabled notifications
   sessionsPerWeek: number; // Number of sessions the child should ideally have per week (for activity tracking)
   dailyActivity?: ChildDailyActivity | null; // Tracks daily activity for the child
@@ -456,8 +455,8 @@ export interface StorytellingProfile {
   favoriteThemes: string[]; // hand picked by the parent during onboarding
   learningObjectives: string[]; // optional learning objectives for the AI to focus on
 
-  onboardingCompleted: Boolean;
-  isActive: Boolean;
+  onboardingCompleted: boolean;
+  isActive: boolean;
 
   stories?: StorytellingStory[];
 
@@ -472,6 +471,7 @@ export interface StorytellingStory {
 
   // Reference to content service StorytellingStory.id
   storyId: string;
+  generatedStoryId: string | null; //  reference to the original generated story ID from AI Service
 
   // AI-generated story content
   title: string;
@@ -493,6 +493,7 @@ export interface Progress {
   roadmapId: string | null; // References Content.Roadmap.id - current roadmap being progressed through
   worldId: string | null; // References Content.World.id - current world being progressed through
   storyId: string | null; // References Content.Story.id - current story being progressed through
+  generatedStoryId: string | null; //  reference to the original generated story ID from AI Service
   status: ProgressStatus;
   totalTimeSpent: number; // Total time spent on this story across all sessions (in seconds)
   completedAt: Date | null;
@@ -615,6 +616,7 @@ export const ContentLanguageToTTSLanguageMap: Record<
   [LanguageCode.FR]: TTSLanguageCodes.FRENCH,
 };
 
+// TTS audio service
 export interface TTSAudio {
   id: string;
 
@@ -638,7 +640,7 @@ export interface TTSAudio {
   generatedAt: Date;
   createdAt: Date;
 }
-
+//STORY PLANNING WITH EXTENSION LOGIC
 export interface StoryPlanWorld {
   id: string;
 
@@ -700,6 +702,28 @@ export interface GeneratedStory {
   content: JSON; // { chapters: [...] }
   status: string; // "pending" | "generating" | "generated" | "synced"
 
+  createdAt: Date;
+  updatedAt: Date;
+}
+// WEEKLY ANALYTICS REPORTS FOR PARENTS
+export interface WeeklyAnalyticsReport {
+  id: string;
+
+  // Reference to the child this report is about (stored as ID only, no foreign key constraint)
+  // This avoids cross-service database constraints in microservices architecture
+  childProfileId: string;
+
+  week: number;
+
+  // AI-generated report content
+  executiveSummary: string; // TL;DR: Human-friendly summary of the week (max 150 words)
+  progressTrends: string; // Week-over-week comparisons and trends analysis (max 200 words)
+  recommendations: string[]; // Actionable suggestions for parents (max 5 items)
+
+  // Metrics snapshot: raw data used for generation (for audit trail and debugging)
+  metricsSnapshot: any; // { storiesCount, challenges, successRate, hintUsagePattern, timeSpent, skillsExercised, difficultiesHandled }
+
+  // Timestamps
   createdAt: Date;
   updatedAt: Date;
 }

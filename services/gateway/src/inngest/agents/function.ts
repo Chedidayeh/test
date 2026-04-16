@@ -1167,7 +1167,7 @@ async function processChildAnalytics(child: ChildProfile): Promise<void> {
     // ====================================================================
     // STEP 4: Handle AI Service Response
     // ====================================================================
-    if (aiResponse.status === 200 && aiResponse.data.success) {
+    if ((aiResponse.status === 200 || aiResponse.status === 201) && aiResponse.data.success) {
       const analyticsData = aiResponse.data.data;
 
       logger.info(

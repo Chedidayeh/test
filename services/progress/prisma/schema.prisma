@@ -27,11 +27,12 @@ model ChildProfile {
   currentLevel      Int      @default(1)
   totalStars        Int      @default(0)
 
+  activateWeeklyReports Boolean @default(false)
   // push notification preferences
-  activateNotifications Boolean  @default(false)
-  sessionsPerWeek   Int      @default(3)
+  activateNotifications Boolean @default(false)
+  sessionsPerWeek       Int     @default(3)
 
-  storytelling StorytellingProfile?
+  storytelling  StorytellingProfile?
   dailyActivity ChildDailyActivity?
 
   progress Progress[]
@@ -48,7 +49,7 @@ model ChildDailyActivity {
   id             String       @id @default(cuid())
   childProfileId String       @unique
   childProfile   ChildProfile @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
-  lastActiveAt DateTime?
+  lastActiveAt   DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -77,12 +78,11 @@ model StorytellingStory {
   id                    String              @id @default(cuid())
   storytellingProfileId String
   storytellingProfile   StorytellingProfile @relation(fields: [storytellingProfileId], references: [id], onDelete: Cascade)
-  
 
   // Reference to content service StorytellingStory.id
-  storyId String
-  title   String
-
+  storyId          String
+  title            String
+  generatedStoryId String? //  reference to the original generated story ID from AI Service
 
   status   ProgressStatus @default(NOT_STARTED) // "not_started", "in_progress", "completed"
   progress Progress?
@@ -106,13 +106,14 @@ model Progress {
   childProfileId String
   childProfile   ChildProfile @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
 
-  storytellingStoryId String?  @unique // Optional reference to StorytellingStory for AI-generated stories
+  storytellingStoryId String?            @unique // Optional reference to StorytellingStory for AI-generated stories
   storytellingStory   StorytellingStory? @relation(fields: [storytellingStoryId], references: [id], onDelete: Cascade)
 
   // References to content service (string IDs only - no direct FK)
-  roadmapId String? // Reference to content service Roadmap.id
-  worldId   String? // Reference to content service World.id
-  storyId   String? // Reference to content service Story.id
+  roadmapId        String? // Reference to content service Roadmap.id
+  worldId          String? // Reference to content service World.id
+  storyId          String? // Reference to content service Story.id
+  generatedStoryId String? //  reference to the original generated story ID from AI Service
 
   status ProgressStatus @default(NOT_STARTED) // "not_started", "in_progress", "completed"
 
@@ -149,8 +150,8 @@ model GameSession {
   // Time tracking fields (calculated from checkpoints)
   elapsedTimeSeconds Int @default(0) // Time spent in current session (in seconds, calculated from chapters checkpoints)
   // totalTimeSpent Int @default(0) // Total active time in seconds (sum of all pause-to-resume durations)
-  sessionCount   Int @default(1) // Number of separate sessions (pause/resume cycles)
-  totalIdleTime  Int @default(0) // Total time child was away between sessions (sum of idle periods)
+  sessionCount       Int @default(1) // Number of separate sessions (pause/resume cycles)
+  totalIdleTime      Int @default(0) // Total time child was away between sessions (sum of idle periods)
 
   // Rewards earned in this session
   starsEarned Int @default(0)
@@ -185,7 +186,7 @@ model SessionCheckpoint {
   pausedAt DateTime?
 
   // Duration from started to paused in seconds
-  sessionDurationSeconds Int @default(0)
+  sessionDurationSeconds Int      @default(0)
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
 

@@ -253,7 +253,6 @@ model StoryPlanWorld {
   @@index([storyPlanId, order])
 }
 
-// ISSUE 7 FIX: Strict ordering within world
 model StoryPlanItem {
   id      String         @id @default(uuid())
   worldId String
@@ -383,7 +382,8 @@ model NarrativeCharacter {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([memoryId, name])
+  @@unique([memoryId, name])
+  @@index([memoryId])
 }
 
 // World state tracking
@@ -566,7 +566,6 @@ model WeeklyAnalyticsReport {
   // This avoids cross-service database constraints in microservices architecture
   childProfileId String
 
-  // Week identifier (ISO week number or calendar week)
   week Int
 
   // AI-generated report content

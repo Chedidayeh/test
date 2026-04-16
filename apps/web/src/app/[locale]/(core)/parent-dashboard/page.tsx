@@ -1,9 +1,10 @@
 import { Metadata } from "next";
 import ParentDashboardInteractive from "./_components/ParentDashboardInteractive";
 import { auth } from "@/src/auth";
-import { getParentWithProfiles } from "@/src/lib/progress-service/server-api";
+import { getChildProfilesByParent } from "@/src/lib/progress-service/server-api";
 import { getBadges, getAgeGroups } from "@/src/lib/content-service/server-api";
 import { RoleType } from "@readdly/shared-types";
+import { getParentById } from "@/src/lib/auth-service/server-api";
 
 export const metadata: Metadata = {
   title: "Parent Dashboard - Readdly",
@@ -22,17 +23,18 @@ export default async function ParentDashboardPage({
   const session = await auth();
   const sessionParentId = session?.user?.id;
   const userRole = session!.user!.role;
-  // Fetch data on the server
-  const parentData = await getParentWithProfiles(
-    userRole === RoleType.PARENT ? sessionParentId! : parentId,
-  ).catch(() => null);
+
+  const usedParentId = userRole === RoleType.PARENT ? sessionParentId! : parentId;
+  const parentData = await getParentById(usedParentId);
+  const childProfiles = await getChildProfilesByParent(usedParentId).catch(() => []);
   const badges = await getBadges().catch(() => []);
   const ageGroups = await getAgeGroups().catch(() => []);
   return (
-    <div className="min-h-screen p-4">
+    <div className="p-4">
       <ParentDashboardInteractive
         session={session!}
-        parentData={parentData}
+        parentData={parentData!}
+        childProfiles={childProfiles}
         badges={badges}
         ageGroups={ageGroups}
         userRole={userRole}

@@ -525,3 +525,430 @@ export async function getPlanHistory(childProfileId: string) {
     throw error;
   }
 }
+
+/**
+ * FIX: Validate and ensure an active plan exists for child
+ * Detects orphaned plan states where child has no active plan
+ * This can happen if plan regeneration fails mid-process
+ * 
+ * @param childProfileId - Child ID to check
+ * @returns true if active plan exists, false otherwise
+ */
+export async function ensureActivePlanExists(
+  childProfileId: string,
+): Promise<boolean> {
+  try {
+    const activePlan = await prisma.storyPlan.findFirst({
+      where: {
+        childProfileId,
+        planStatus: { in: ["active", "generating"] },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (activePlan) {
+      logger.debug("[Plan Completion Service] Active plan verified", {
+        childProfileId,
+        planId: activePlan.id,
+        status: activePlan.planStatus,
+      });
+      return true;
+    }
+
+    logger.warn(
+      "[Plan Completion Service] CRITICAL: No active plan found for child - checking recovery options",
+      {
+        childProfileId,
+      },
+    );
+
+    // Try to recover: Mark most recent completed plan as active
+    // This handles edge case where regeneration failed
+    const mostRecentPlan = await prisma.storyPlan.findFirst({
+      where: { childProfileId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (mostRecentPlan && mostRecentPlan.planStatus === "completed") {
+      logger.warn(
+        "[Plan Completion Service] Recovering orphaned child - restoring most recent plan to active status",
+        {
+          childProfileId,
+          planId: mostRecentPlan.id,
+          fromStatus: mostRecentPlan.planStatus,
+        },
+      );
+
+      // Restore plan to active status
+      await prisma.storyPlan.update({
+        where: { id: mostRecentPlan.id },
+        data: { planStatus: "active" },
+      });
+
+      // Record recovery event
+      await prisma.planHistory.create({
+        data: {
+          storyPlanId: mostRecentPlan.id,
+          event: "recovered",
+          description: "Plan recovered from orphaned state during regeneration failure",
+          metadata: {
+            recoveryReason: "No active plan found",
+            recoveredAt: new Date().toISOString(),
+          },
+        },
+      });
+
+      logger.info("[Plan Completion Service] Plan successfully recovered", {
+        childProfileId,
+        planId: mostRecentPlan.id,
+      });
+
+      return true;
+    }
+
+    logger.error(
+      "[Plan Completion Service] CRITICAL: Cannot recover - no plans exist for child",
+      {
+        childProfileId,
+      },
+    );
+    return false;
+  } catch (error) {
+    logger.error("[Plan Completion Service] Failed to validate/restore active plan", {
+      childProfileId,
+      error: String(error),
+    });
+    throw error;
+  }
+}
+
+/**
+ * RC-3 FIX: Atomic Plan Regeneration to Prevent Race Condition
+ * E9 FIX: Transaction ensures new plan creation is atomic with old plan completion
+ * 
+ * This function prevents the race condition where two concurrent requests
+ * both detect plan completion and attempt to regenerate a new plan.
+ * 
+ * RACE SCENARIO (VULNERABLE - fixed by this function):
+ *   Request A: shouldGenerateNewPlan() → true
+ *   Request B: shouldGenerateNewPlan() → true (same time)
+ *   Request A: extractContext → generatePlan → completePlan ✓
+ *   Request B: extractContext → generatePlan → completePlan (DUPLICATE!)
+ * 
+ * TRANSACTION GAP (E9 - also fixed by this function):
+ *   Request A: generatePlan() creates new plan using global prisma (outside transaction)
+ *   Request A: completePlan() happens inside transaction
+ *   If failure between these: New plan exists, old plan still active (orphaned state)
+ * 
+ * SOLUTION: Use Prisma transaction to atomically:
+ *   1. Re-check plan is actually complete (not already regenerated)
+ *   2. Generate new plan (using transaction client for atomicity)
+ *   3. Mark old plan completed
+ *   4. Record regeneration link
+ * 
+ * If Request B executes after Request A, it will see the old plan is already
+ * completed and skip regeneration, preventing duplicates.
+ * 
+ * All operations happen in same transaction - if new plan generation fails,
+ * nothing is committed and old plan stays active for retry.
+ * 
+ * @param childProfileId - Child whose plan should be regenerated
+ * @param generateNewPlanFn - Function to generate new plan with context AND transaction client
+ * @returns Object with status and plan IDs { regenerated: boolean, oldPlanId, newPlanId }
+ */
+export async function attemptAtomicPlanRegeneration(
+  childProfileId: string,
+  generateNewPlanFn: (planContext: PlanContext, txClient: any) => Promise<any>,
+): Promise<{
+  regenerated: boolean;
+  oldPlanId?: string;
+  newPlanId?: string;
+  reason?: string;
+}> {
+  const transactionStart = Date.now();
+
+  try {
+    logger.info("[Plan Completion Service] Starting atomic plan regeneration attempt", {
+      childProfileId,
+      reason: "E9 FIX: Atomic generation with transaction client",
+    });
+
+    // Use Prisma transaction to ensure atomicity
+    // E9 FIX: Everything happens in same transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // STEP 1: Re-check that plan is actually complete (inside transaction)
+      // This is the key to preventing race conditions
+      const plan = await tx.storyPlan.findFirst({
+        where: {
+          childProfileId,
+          planStatus: { in: ["active", "generating"] }, // Only unfinished plans
+        },
+        orderBy: { createdAt: "desc" },
+        include: {
+          worlds: {
+            include: {
+              stories: true,
+            },
+          },
+          childProfile: {
+            include: {
+              skillScores: true,
+              narrativeMemory: {
+                include: {
+                  characters: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      // If no active plan found, regeneration already happened or plan doesn't exist
+      if (!plan) {
+        logger.debug(
+          "[Plan Completion Service] No active plan found in transaction - regeneration may have already occurred",
+          { childProfileId }
+        );
+        return {
+          regenerated: false,
+          reason: "No active plan found (already regenerated or not created)",
+        };
+      }
+
+      // STEP 2: Double-check completion status
+      let completedWorldCount = plan.worlds.filter(w => w.isCompleted).length;
+      let completedStoryCount = 0;
+      plan.worlds.forEach(world => {
+        completedStoryCount += world.stories.filter(s => s.isCompleted).length;
+      });
+
+      const totalEstimatedStories = plan.worlds.reduce(
+        (sum, w) => sum + w.estimatedStoryCount,
+        0,
+      );
+
+      const completionPercentage =
+        totalEstimatedStories > 0
+          ? Math.round((completedStoryCount / totalEstimatedStories) * 100)
+          : 0;
+
+      const isFullyCompleted =
+        completedWorldCount === plan.worlds.length &&
+        completedStoryCount >= totalEstimatedStories * 0.95;
+
+      if (!isFullyCompleted) {
+        logger.debug(
+          "[Plan Completion Service] Plan not fully complete in transaction - skipping regeneration",
+          {
+            childProfileId,
+            completionPercentage,
+            completedStories: completedStoryCount,
+            totalEstimated: totalEstimatedStories,
+          }
+        );
+        return {
+          regenerated: false,
+          reason: "Plan not fully complete",
+        };
+      }
+
+      // STEP 3: Generate new plan with context
+      logger.debug("[Plan Completion Service] Plan confirmed complete, extracting context for new plan", {
+        childProfileId,
+        oldPlanId: plan.id,
+        completionPercentage,
+      });
+
+      const planContext = await extractPlanContextFromPlan(plan);
+      
+      let newPlan;
+      try {
+        // E9 FIX: Pass transaction client to generateNewPlanFn
+        // This ensures new plan creation happens INSIDE the same transaction
+        newPlan = await generateNewPlanFn(planContext, tx);
+      } catch (generationError) {
+        logger.error(
+          "[Plan Completion Service] New plan generation failed in transaction",
+          {
+            childProfileId,
+            error: String(generationError),
+          }
+        );
+        // Re-throw to trigger transaction rollback
+        throw new Error(
+          `New plan generation failed: ${String(generationError)}`
+        );
+      }
+
+      // STEP 4: Mark old plan as completed (still in transaction)
+      // E9 FIX: This happens after new plan is created, but both are in same transaction
+      // If this fails, both the new plan creation AND this update are rolled back
+      const completedPlan = await tx.storyPlan.update({
+        where: { id: plan.id },
+        data: {
+          planStatus: "completed",
+          completedAt: new Date(),
+          completedPercentage: 100,
+        },
+      });
+
+      logger.debug("[Plan Completion Service] Old plan marked completed in transaction", {
+        childProfileId,
+        oldPlanId: plan.id,
+      });
+
+      // STEP 5: Record regeneration link in history (still in transaction)
+      await tx.planHistory.create({
+        data: {
+          storyPlanId: plan.id,
+          event: "regenerated",
+          description: "Atomic plan regeneration completed with transaction client",
+          metadata: {
+            newPlanId: newPlan.id,
+            regeneratedAt: new Date().toISOString(),
+            transactionDuration: Date.now() - transactionStart,
+            e9FixApplied: true, // E9 FIX marker
+          },
+        },
+      });
+
+      logger.info("[Plan Completion Service] Atomic plan regeneration completed", {
+        childProfileId,
+        oldPlanId: plan.id,
+        newPlanId: newPlan.id,
+        planVersion: newPlan.planVersion,
+        transactionDurationMs: Date.now() - transactionStart,
+        e9FixApplied: true,
+      });
+
+      return {
+        regenerated: true,
+        oldPlanId: plan.id,
+        newPlanId: newPlan.id,
+      };
+    });
+
+    return result;
+  } catch (error) {
+    logger.error(
+      "[Plan Completion Service] Atomic plan regeneration failed - transaction rolled back",
+      {
+        childProfileId,
+        error: String(error),
+        transactionDurationMs: Date.now() - transactionStart,
+      }
+    );
+
+    // Return failure status (don't throw, let caller decide what to do)
+    return {
+      regenerated: false,
+      reason: `Transaction failed: ${String(error)}`,
+    };
+  }
+}
+
+/**
+ * Helper function to extract context from an existing plan object
+ * (used inside transaction where we already have the plan loaded)
+ */
+async function extractPlanContextFromPlan(plan: any): Promise<PlanContext> {
+  const taughtThemes: string[] = plan.worlds.map((w: any) => w.theme);
+  const taughtObjectives: string[] = [
+    ...new Set(
+      plan.worlds
+        .flatMap((w: any) => w.stories.flatMap((s: any) => s.objectives))
+        .filter((obj: any) => typeof obj === 'string')
+    ),
+  ] as string[];
+
+  const skillScores = plan.childProfile.skillScores || [];
+  const masteredSkills = skillScores
+    .filter((s: any) => s.score >= 0.75)
+    .map((s: any) => s.skillName);
+  const needsDevelopmentSkills = skillScores
+    .filter((s: any) => s.score < 0.6)
+    .map((s: any) => s.skillName);
+
+  const difficulties: number[] = plan.worlds
+    .flatMap((w: any) => w.stories.map((s: any) => s.baseDifficulty))
+    .filter((d: any) => d !== undefined);
+  const startingDifficulty = difficulties[0] || 1;
+  const endingDifficulty = difficulties[difficulties.length - 1] || 5;
+  const averageDifficulty: number =
+    difficulties.length > 0
+      ? difficulties.reduce((a: number, b: number) => a + b, 0) / difficulties.length
+      : 2.5;
+
+  const startingReadingLevel = plan.childProfile.readingLevel;
+  const endingReadingLevel = Math.min(
+    5,
+    startingReadingLevel + Math.floor(plan.planVersion / 2),
+  );
+
+  const characters = plan.childProfile.narrativeMemory?.characters || [];
+  const frequentCharacters: string[] = characters
+    .sort((a: any, b: any) => (b.appearances?.length || 0) - (a.appearances?.length || 0))
+    .slice(0, 5)
+    .map((c: any) => c.name);
+
+  const worldThemes = taughtThemes;
+
+  const avoid = {
+    themes: taughtThemes.slice(0, Math.ceil(taughtThemes.length * 0.5)),
+    objectives: taughtObjectives.slice(0, Math.ceil(taughtObjectives.length * 0.3)),
+    conflicts: [] as string[],
+  };
+
+  const totalStoriesCompleted = plan.worlds.reduce((sum: number, w: any) => {
+    return sum + w.stories.filter((s: any) => s.isCompleted).length;
+  }, 0);
+
+  return {
+    childName: plan.childProfile.name,
+    taughtThemes,
+    taughtObjectives,
+    masteredSkills,
+    needsDevelopmentSkills,
+    startingDifficulty,
+    endingDifficulty,
+    averageDifficulty,
+    startingReadingLevel,
+    endingReadingLevel,
+    frequentCharacters,
+    worldThemes,
+    avoid,
+    achievements: [
+      `Completed ${plan.worlds.length} themed worlds`,
+      `Mastered ${masteredSkills.length} reading skills`,
+      `Progressed from reading level ${startingReadingLevel} to ${endingReadingLevel}`,
+      `Engaged with ${frequentCharacters.length} memorable characters`,
+    ],
+    completedPlanId: plan.id,
+    completedAt: plan.completedAt || new Date(),
+    planVersion: plan.planVersion,
+    totalStoriesCompleted,
+    estimatedLearningGains: generateLearningGainsSummary(
+      startingReadingLevel,
+      endingReadingLevel,
+      taughtObjectives.length,
+    ),
+  };
+}
+
+/**
+ * Generate a summary of learning gains
+ */
+function generateLearningGainsSummary(
+  startingLevel: number,
+  endingLevel: number,
+  objectiveCount: number,
+): string {
+  return `
+Child has demonstrated progression in:
+- Reading level: ${startingLevel} → ${endingLevel}
+- Vocabulary mastery across ${objectiveCount} learning objectives
+- Character comprehension and narrative understanding
+- Complex plot reasoning and inference skills
+Ready for: More sophisticated storytelling, deeper themes, greater autonomy
+  `.trim();
+}

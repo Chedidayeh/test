@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import axios from "axios";
 import { logger } from "../utils/logger";
 import { forwardToContentService } from "../helpers/content.helpers";
-import { API_BASE_URL_V1, ApiResponse, TTSAudio } from "@shared/src/types";
+import { API_BASE_URL_V1, ApiResponse, TTSAudio, WeeklyAnalyticsReport } from "@shared/src/types";
 import { generateStorytelling } from "../helpers/ai.helpers";
 
 const router = Router();
@@ -56,30 +56,31 @@ router.post(`/generate-hints`, async (req: Request, res: Response) => {
 	}
 });
 
-// GET /api/v1/analytics/:childId - Forward analytics retrieval request to AI service
-// router.get(`/analytics/:childId`, async (req: Request, res: Response<ApiResponse<AIProgressInsight[]>>) => {
-// 	try {
-// 		if (!AI_SERVICE_URL) {
-// 			logger.error("AI_SERVICE_URL not configured");
-// 			return res.status(500).json({ success: false, error: { code: "CONFIG_ERROR", message: "AI service not configured" } });
-// 		}
 
-// 		const url = `${AI_SERVICE_URL}${API_BASE_URL_V1}/analytics/${req.params.childId}`;
-// 		const response = await axios.get<ApiResponse<AIProgressInsight[]>>(url, { timeout: 30000 });
+// POST /api/v1/week-report/:childId - Forward week-specific analytics request to AI service
+router.post(`/week-report/:childId`, async (req: Request, res: Response<ApiResponse<
+      { report: WeeklyAnalyticsReport | null; totalWeeks: number }>>) => {
+	try {
+		if (!AI_SERVICE_URL) {
+			logger.error("AI_SERVICE_URL not configured");
+			return res.status(500).json({ success: false, error: { code: "CONFIG_ERROR", message: "AI service not configured" } });
+		}
 
-// 		return res.status(response.status).json(response.data);
-// 	} catch (error) {
-// 		logger.error("Error forwarding analytics/:childId", { error: error instanceof Error ? error.message : String(error) });
+		const { childId } = req.params;
+		const url = `${AI_SERVICE_URL}${API_BASE_URL_V1}/week-report/${childId}`;
+		const response = await axios.post<ApiResponse<{ report: WeeklyAnalyticsReport | null; totalWeeks: number }>>(url, req.body);
 
-// 		if (axios.isAxiosError(error) && error.response) {
-// 			return res.status(error.response.status).json(error.response.data);
-// 		}
+		return res.status(response.status).json(response.data);
+	} catch (error) {
+		logger.error("Error forwarding week-report/:childId", { error: error instanceof Error ? error.message : String(error) });
 
-// 		return res.status(500).json({ success: false, error: { code: "SERVICE_ERROR", message: "Failed to contact AI service" } });
-// 	}
-// });
+		if (axios.isAxiosError(error) && error.response) {
+			return res.status(error.response.status).json(error.response.data);
+		}
 
-
+		return res.status(500).json({ success: false, error: { code: "SERVICE_ERROR", message: "Failed to contact AI service" } });
+	}
+});
 
 // POST /api/v1/generate-storytelling - call ai helper function
 router.post(`/generate-storytelling`, async (req: Request, res: Response) => {

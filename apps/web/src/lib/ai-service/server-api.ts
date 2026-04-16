@@ -7,7 +7,7 @@
  * Pattern follows progress-service/server-api.ts for consistency.
  */
 
-import type { ApiResponse } from "@readdly/shared-types";
+import type { ApiResponse, WeeklyAnalyticsReport } from "@readdly/shared-types";
 import { apiRequest, isApiError } from "../helpers";
 
 /**
@@ -274,6 +274,82 @@ export async function generateHints(
   } catch (error) {
     console.error(
       "[AI Service API] Error generating hints:",
+      error instanceof Error ? error.message : String(error),
+    );
+    return null;
+  }
+}
+
+/**
+ * Fetch a specific week's analytics report for a child
+ * Calls the gateway to retrieve the weekly report from AI service
+ *
+ * @param childId - The child's profile ID
+ * @param week - The week number to retrieve (1-indexed)
+ * @returns Weekly analytics report or null if retrieval fails
+ *
+ * @example
+ * const report = await getWeeklyAnalyticsReport("child-123", 1);
+ * if (report) {
+ *   console.log("Summary:", report.executiveSummary);
+ *   console.log("Success rate:", report.metricsSnapshot.successRate);
+ *   console.log("Recommendations:", report.recommendations);
+ * }
+ */
+export async function getWeeklyAnalyticsReport(
+  childId: string,
+  week: number,
+): Promise<{ report: WeeklyAnalyticsReport | null; totalWeeks: number } | null> {
+  try {
+    console.log("[AI Service API] Fetching weekly analytics report:", {
+      childId,
+      week,
+    });
+
+    if (!childId || typeof childId !== "string") {
+      console.warn("[AI Service API] Invalid childId provided");
+      return null;
+    }
+
+    if (!Number.isInteger(week) || week < 1) {
+      console.warn("[AI Service API] Invalid week number provided:", { week });
+      return null;
+    }
+
+    const response = await apiRequest<
+      ApiResponse<{ report: WeeklyAnalyticsReport | null; totalWeeks: number } | null>
+    >(`/week-report/${childId}`, {
+      method: "POST",
+      body: JSON.stringify({ week }),
+    });
+
+    if (isApiError(response)) {
+      console.warn(
+        "[AI Service API] Failed to fetch weekly report:",
+        response.error.message,
+      );
+      return null;
+    }
+
+    if (!response.success || !response.data) {
+      console.warn(
+        "[AI Service API] Failed to fetch weekly report: API returned success=false or data is null ",
+      );
+      return null;
+    }
+
+    console.log(
+      "[AI Service API] Weekly analytics report retrieved successfully:",
+      {
+        childId,
+        week,
+      },
+    );
+
+    return response.data
+  } catch (error) {
+    console.error(
+      "[AI Service API] Error fetching weekly report:",
       error instanceof Error ? error.message : String(error),
     );
     return null;

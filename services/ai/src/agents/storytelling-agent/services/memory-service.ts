@@ -78,43 +78,49 @@ export async function updateNarrativeMemory(
       }
     }
 
-    // Update characters (merge with existing)
-    for (const char of characters) {
-      const existing = memory.characters.find((c) => c.name === char.name);
+    // N+1 FIX: Update characters (merge with existing) using batch transaction
+    // Instead of individual queries per character, use single transaction with upserts
+    if (characters.length > 0) {
+      await prisma.$transaction(
+        characters.map((char) => {
+          const existing = memory.characters.find((c) => c.name === char.name);
 
-      if (existing) {
-        // Character seen before - update appearance tracking
-        const updatedAppearances = Array.from(
-          new Set([...existing.appearances, storyIndex])
-        );
-        const existingRelationships = (existing.relationships as Record<string, string>) || {};
-        await prisma.narrativeCharacter.update({
-          where: { id: existing.id },
-          data: {
-            appearances: updatedAppearances,
-            lastSeenStory: storyIndex,
-            relationships: { ...existingRelationships, ...char.relationships },
-            emotionalTrials: Array.from(
-              new Set([...existing.emotionalTrials, ...char.emotionalTrials])
-            ),
-          },
-        });
-      } else {
-        // New character
-        await prisma.narrativeCharacter.create({
-          data: {
-            memoryId: memory.id,
-            name: char.name,
-            role: char.role,
-            firstAppearance: storyIndex,
-            appearances: [storyIndex],
-            personality: char.personality,
-            relationships: char.relationships,
-            emotionalTrials: char.emotionalTrials,
-            lastSeenStory: storyIndex,
-          },
-        });
-      }
+          if (existing) {
+            // Character seen before - update appearance tracking
+            const updatedAppearances = Array.from(
+              new Set([...existing.appearances, storyIndex])
+            );
+            const existingRelationships = (existing.relationships as Record<string, string>) || {};
+            
+            return prisma.narrativeCharacter.update({
+              where: { id: existing.id },
+              data: {
+                appearances: updatedAppearances,
+                lastSeenStory: storyIndex,
+                relationships: { ...existingRelationships, ...char.relationships },
+                emotionalTrials: Array.from(
+                  new Set([...existing.emotionalTrials, ...char.emotionalTrials])
+                ),
+              },
+            });
+          } else {
+            // New character - create directly
+            return prisma.narrativeCharacter.create({
+              data: {
+                memoryId: memory.id,
+                name: char.name,
+                role: char.role,
+                firstAppearance: storyIndex,
+                appearances: [storyIndex],
+                personality: char.personality,
+                relationships: char.relationships,
+                emotionalTrials: char.emotionalTrials,
+                lastSeenStory: storyIndex,
+              },
+            });
+          }
+        })
+      );
     }
 
     // Update world state
@@ -138,35 +144,52 @@ export async function updateNarrativeMemory(
       });
     }
 
-    // Update narrative threads
-    for (const thread of threads) {
-      const existing = await prisma.narrativeThread.findFirst({
-        where: { memoryId: memory.id, name: thread.name },
-      });
+    // N+1 FIX: Update narrative threads using batch fetch + transaction
+    // First fetch ALL existing threads by name in single query
+    const existingThreadNames = threads.map(t => t.name);
+    const existingThreads = existingThreadNames.length > 0 
+      ? await prisma.narrativeThread.findMany({
+          where: { 
+            memoryId: memory.id, 
+            name: { in: existingThreadNames }
+          },
+        })
+      : [];
+    
+    // Create lookup map for O(1) thread finding
+    const threadsByName = new Map(existingThreads.map(t => [t.name, t]));
 
-      if (existing) {
-        await prisma.narrativeThread.update({
-          where: { id: existing.id },
-          data: {
-            status: thread.status,
-            keyEvents: [...new Set([...existing.keyEvents, ...thread.keyEvents])],
-            description: thread.description,
-            resolutionGoal: thread.resolutionGoal || existing.resolutionGoal,
-          },
-        });
-      } else {
-        await prisma.narrativeThread.create({
-          data: {
-            memoryId: memory.id,
-            name: thread.name,
-            introducedInStory: storyIndex,
-            status: thread.status,
-            description: thread.description,
-            keyEvents: thread.keyEvents,
-            resolutionGoal: thread.resolutionGoal,
-          },
-        });
-      }
+    // Now batch all updates/creates in single transaction
+    if (threads.length > 0) {
+      await prisma.$transaction(
+        threads.map((thread) => {
+          const existing = threadsByName.get(thread.name);
+
+          if (existing) {
+            return prisma.narrativeThread.update({
+              where: { id: existing.id },
+              data: {
+                status: thread.status,
+                keyEvents: [...new Set([...existing.keyEvents, ...thread.keyEvents])],
+                description: thread.description,
+                resolutionGoal: thread.resolutionGoal || existing.resolutionGoal,
+              },
+            });
+          } else {
+            return prisma.narrativeThread.create({
+              data: {
+                memoryId: memory.id,
+                name: thread.name,
+                introducedInStory: storyIndex,
+                status: thread.status,
+                description: thread.description,
+                keyEvents: thread.keyEvents,
+                resolutionGoal: thread.resolutionGoal,
+              },
+            });
+          }
+        })
+      );
     }
 
     // Add story to history

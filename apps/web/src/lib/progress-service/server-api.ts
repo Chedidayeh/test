@@ -262,6 +262,55 @@ export async function getParentWithProfiles(parentId: string) {
 }
 
 /**
+ * Get all child profiles for a parent
+ * Fetches the list of child profiles associated with a parent account
+ *
+ * @param parentId - The parent ID
+ * @returns Array of child profiles
+ *
+ * @example
+ * const childProfiles = await getChildProfilesByParent("parent-123");
+ * console.log("Children:", childProfiles); // [{ id: "child-1", name: "Child 1" }, { id: "child-2", name: "Child 2" }]
+ */
+export async function getChildProfilesByParent(
+  parentId: string,
+): Promise<ChildProfile[]> {
+  console.log(
+    "[Progress Service API] Fetching child profiles for parent:",
+    parentId,
+  );
+
+  const response = await apiRequest<ApiResponse<ChildProfile[]>>(
+    `/parent-data/${parentId}/children`,
+  );
+
+  if (isApiError(response)) {
+    console.warn(
+      "[Progress Service API] Failed to fetch child profiles:",
+      response.error.message,
+    );
+    return [];
+  }
+
+  if (!response.success) {
+    console.warn(
+      "[Progress Service API] Failed to fetch child profiles: API returned success=false",
+    );
+    return [];
+  }
+
+  console.log(
+    "[Progress Service API] Child profiles fetched successfully",
+    {
+      parentId,
+      childCount: response.data?.length || 0,
+    },
+  );
+
+  return response.data || [];
+}
+
+/**
  * Start a new story for a child
  * Saves a new progress record for the child profile with initial game session
  * Initializes progress at page 1 (chapter 1)
@@ -811,6 +860,260 @@ export async function updateChildNotifications(
       activateNotifications,
       childName: response.data?.name,
     },
+  );
+
+  return response.data as ChildProfile;
+}
+
+/**
+ * Update child's general settings (name, age group, favorite themes)
+ * Updates multiple child profile fields in a single request
+ *
+ * @param childId - The child's ID
+ * @param name - The child's updated name
+ * @param ageGroupId - The child's updated age group ID
+ * @param favoriteThemes - Array of favorite theme IDs
+ * @returns Updated ChildProfile
+ *
+ * @example
+ * const updated = await updateChildGeneralSettings("child-123", "John", "age-group-5", ["theme-1", "theme-2"]);
+ * console.log("Settings updated for:", updated.name);
+ *
+ * @throws Throws error if the update fails
+ */
+export async function updateChildGeneralSettings(
+  childId: string,
+  name: string,
+  ageGroupId: string,
+  favoriteThemes: string[],
+  allocatedRoadmaps: string[],
+  sessionsPerWeek: number,
+  ageGroup: string,
+): Promise<ChildProfile> {
+  console.log(
+    "[Progress Service API] Updating child general settings",
+    {
+      childId,
+      name,
+      ageGroupId,
+      favoriteThemesCount: favoriteThemes.length,
+      allocatedRoadmapsCount: allocatedRoadmaps.length,
+      sessionsPerWeek,
+      ageGroup,
+    },
+  );
+
+  const response = await apiRequest<ApiResponse<ChildProfile>>(
+    `/children/${childId}/settings`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        name,
+        ageGroupId,
+        favoriteThemes,
+        allocatedRoadmaps,
+        sessionsPerWeek,
+        ageGroup,
+      }),
+    },
+  );
+
+  if (isApiError(response)) {
+    const errorMessage =
+      response.error.message || "Failed to update child settings";
+    console.error(
+      "[Progress Service API] Error updating general settings:",
+      errorMessage,
+    );
+    throw new Error(errorMessage);
+  }
+
+  if (!response.success) {
+    console.error(
+      "[Progress Service API] General settings update failed: API returned success=false",
+    );
+    throw new Error(
+      response.error?.message || "Failed to update child settings",
+    );
+  }
+
+  console.log(
+    "[Progress Service API] Child general settings updated successfully",
+    {
+      childId,
+      name: response.data?.name,
+      ageGroupId: response.data?.ageGroupId,
+      favoriteThemesCount: response.data?.favoriteThemes?.length || 0,
+    },
+  );
+
+  return response.data as ChildProfile;
+}
+
+/**
+ * Delete a child profile permanently
+ * Removes the child and all associated data
+ *
+ * @param childId - The child's ID to delete
+ * @returns Success message or throws error
+ *
+ * @example
+ * await deleteChild("child-123");
+ * console.log("Child deleted successfully");
+ *
+ * @throws Throws error if the delete fails
+ */
+export async function deleteChild(childId: string): Promise<void> {
+  console.log(
+    "[Progress Service API] Deleting child profile",
+    { childId },
+  );
+
+  const response = await apiRequest<ApiResponse<{ message: string }>>(
+    `/children/${childId}`,
+    {
+      method: "DELETE",
+    },
+  );
+
+  if (isApiError(response)) {
+    const errorMessage =
+      response.error.message || "Failed to delete child";
+    console.error(
+      "[Progress Service API] Error deleting child:",
+      errorMessage,
+    );
+    throw new Error(errorMessage);
+  }
+
+  if (!response.success) {
+    console.error(
+      "[Progress Service API] Child deletion failed: API returned success=false",
+    );
+    throw new Error(
+      response.error?.message || "Failed to delete child",
+    );
+  }
+
+  console.log(
+    "[Progress Service API] Child deleted successfully",
+    { childId },
+  );
+}
+
+/**
+ * Toggle weekly reports activation for a child
+ * Updates the child's activateWeeklyReports setting
+ *
+ * @param childId - The child's ID
+ * @param isActive - Whether to activate or deactivate weekly reports
+ * @returns Updated ChildProfile
+ *
+ * @example
+ * const updated = await toggleWeeklyReports("child-123", true);
+ * console.log("Weekly reports activated for:", updated.name);
+ *
+ * @throws Throws error if the update fails
+ */
+export async function toggleWeeklyReports(
+  childId: string,
+  isActive: boolean,
+): Promise<ChildProfile> {
+  console.log(
+    "[Progress Service API] Toggling weekly reports for child",
+    { childId, isActive },
+  );
+
+  const response = await apiRequest<ApiResponse<ChildProfile>>(
+    `/children/${childId}/weekly-reports`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        activateWeeklyReports: isActive,
+      }),
+    },
+  );
+
+  if (isApiError(response)) {
+    const errorMessage =
+      response.error.message || "Failed to toggle weekly reports";
+    console.error(
+      "[Progress Service API] Error toggling weekly reports:",
+      errorMessage,
+    );
+    throw new Error(errorMessage);
+  }
+
+  if (!response.success) {
+    console.error(
+      "[Progress Service API] Toggle weekly reports failed: API returned success=false",
+    );
+    throw new Error(
+      response.error?.message || "Failed to toggle weekly reports",
+    );
+  }
+
+  console.log(
+    "[Progress Service API] Weekly reports toggled successfully",
+    { childId, isActive },
+  );
+
+  return response.data as ChildProfile;
+}
+
+/**
+ * Toggle storytelling activation for a child
+ * Activates or deactivates AI-generated storytelling for the child
+ *
+ * @param childId - The child's ID
+ * @param isActive - Whether to activate or deactivate storytelling
+ * @returns Updated child profile with storytelling status
+ *
+ * @example
+ * const updatedChild = await toggleStorytelling("child-123", true);
+ * console.log("Storytelling active:", updatedChild.storytelling?.isActive);
+ */
+export async function toggleStorytelling(
+  childId: string,
+  isActive: boolean,
+): Promise<ChildProfile> {
+  console.log(
+    "[Progress Service API] Toggling storytelling for child",
+    { childId, isActive },
+  );
+
+  const response = await apiRequest<ApiResponse<ChildProfile>>(
+    `/children/${childId}/storytelling`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        isActive,
+      }),
+    },
+  );
+
+  if (isApiError(response)) {
+    const errorMessage =
+      response.error.message || "Failed to toggle storytelling";
+    console.error(
+      "[Progress Service API] Error toggling storytelling:",
+      errorMessage,
+    );
+    throw new Error(errorMessage);
+  }
+
+  if (!response.success) {
+    console.error(
+      "[Progress Service API] Toggle storytelling failed: API returned success=false",
+    );
+    throw new Error(
+      response.error?.message || "Failed to toggle storytelling",
+    );
+  }
+
+  console.log(
+    "[Progress Service API] Storytelling toggled successfully",
+    { childId, isActive },
   );
 
   return response.data as ChildProfile;

@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import {
   forwardAssignBadgeToChild,
   forwardCompleteStory,
+  forwardDeleteChild,
   forwardGetChildById,
   forwardGetChildProgress,
   forwardParentWithProfiles,
@@ -15,6 +16,10 @@ import {
   forwardAllocateRoadmapToChild,
   forwardGetDashboardStats,
   forwardUpdateNotificationSettings,
+  forwardUpdateChildGeneralSettings,
+  forwardToggleWeeklyReports,
+  forwardToggleStorytelling,
+  forwardGetChildProfilesByParent,
 } from "../helpers/progress.helpers";
 import { API_BASE_URL_V1 } from "@shared/src/types";
 
@@ -54,9 +59,42 @@ router.patch("/children/:childId/notifications", (req: Request, res: Response) =
   );
 });
 
+// Update child general settings (must be before the generic /children middleware)
+router.patch("/children/:childId/settings", (req: Request, res: Response) => {
+  forwardUpdateChildGeneralSettings(
+    req,
+    res,
+    `${API_BASE_URL_V1}/children/${req.params.childId}/settings`,
+  );
+});
+
+// Toggle weekly reports for child (must be before the generic /children middleware)
+router.patch("/children/:childId/weekly-reports", (req: Request, res: Response) => {
+  forwardToggleWeeklyReports(req, res, `${API_BASE_URL_V1}/children/${req.params.childId}/weekly-reports`);
+});
+
+// Toggle storytelling for child (must be before the generic /children middleware)
+router.patch("/children/:childId/storytelling", (req: Request, res: Response) => {
+  forwardToggleStorytelling(req, res, `${API_BASE_URL_V1}/children/${req.params.childId}/storytelling`);
+});
+
+// Delete child profile (must be before the generic /children middleware)
+router.delete("/children/:childId", (req: Request, res: Response) => {
+  forwardDeleteChild(
+    req,
+    res,
+    `${API_BASE_URL_V1}/children/${req.params.childId}`,
+  );
+});
+
 // Generic children middleware (must be after specific routes)
 router.use("/children", (req: Request, res: Response) => {
   forwardToProgressService(req, res, `${API_BASE_URL_V1}/children${req.path}`);
+});
+
+// Get child profiles for a parent (must be before the generic /parent-data route)
+router.get("/parent-data/:parentId/children", (req: Request, res: Response) => {
+  forwardGetChildProfilesByParent(req, res);
 });
 
 // Get parent with child profiles

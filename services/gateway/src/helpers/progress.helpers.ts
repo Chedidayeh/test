@@ -19,12 +19,10 @@ import {
   API_BASE_URL_V1,
 } from "@shared/src/types";
 
-export const PROGRESS_SERVICE_URL =
-  process.env.PROGRESS_SERVICE_URL
-const AUTH_SERVICE_URL =
-  process.env.AUTH_SERVICE_URL
-const CONTENT_SERVICE_URL =
-  process.env.CONTENT_SERVICE_URL
+export const PROGRESS_SERVICE_URL = process.env.PROGRESS_SERVICE_URL;
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL;
+const CONTENT_SERVICE_URL = process.env.CONTENT_SERVICE_URL;
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL;
 /**
  * Helper function to fetch a specific child by ID
  * Orchestrates Progress Service (child profile) and Auth Service (child data)
@@ -155,7 +153,6 @@ export async function forwardGetChildById(
       });
       // Continue without auth data if it fails
     }
-
 
     logger.info("Child profile fetched successfully", { childId });
 
@@ -487,6 +484,98 @@ export async function forwardParentWithProfiles(
 }
 
 /**
+ * Helper function to get all child profiles for a parent
+ * Fetches the list of child profiles associated with a parent account from Progress Service
+ */
+export async function forwardGetChildProfilesByParent(
+  req: Request,
+  res: Response<ApiResponse<ChildProfile[]>>,
+): Promise<void> {
+  try {
+    const { parentId } = req.params;
+
+    if (!parentId) {
+      logger.warn("Parent ID is required for fetching child profiles");
+      res.status(400).json({
+        success: false,
+        error: {
+          code: "INVALID_REQUEST",
+          message: "Parent ID is required",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Fetching child profiles for parent", { parentId });
+
+    // Forward request to Progress Service
+    const childProfilesResponse = await axios.get<ApiResponse<ChildProfile[]>>(
+      `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/parent-data/${parentId}/children`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
+          }),
+        },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug("Progress service child profiles response received", {
+      status: childProfilesResponse.status,
+      childCount: childProfilesResponse.data?.data?.length,
+    });
+
+    // Handle progress service error
+    if (childProfilesResponse.status !== 200) {
+      logger.warn("Progress service returned error for child profiles", {
+        status: childProfilesResponse.status,
+        error: childProfilesResponse.data?.error?.message,
+      });
+      res.status(childProfilesResponse.status).json({
+        success: false,
+        error: {
+          code: "PROGRESS_SERVICE_ERROR",
+          message:
+            childProfilesResponse.data?.error?.message ||
+            "Failed to fetch child profiles",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    const childProfiles = childProfilesResponse.data?.data || [];
+
+    logger.info("Child profiles fetched successfully", {
+      parentId,
+      childCount: childProfiles.length,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: childProfiles,
+      timestamp: new Date(),
+    });
+  } catch (error) {
+    logger.error("Get child profiles forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Failed to fetch child profiles",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+/**
  * Helper function to start a new story for a child
  * Creates a new progress record with initial game session at page 1
  * Fetches story details from Content Service first
@@ -596,8 +685,8 @@ export async function forwardStartStory(
     const roadmapId = story.world?.roadmapId;
 
     // Extract challenge IDs from all chapters
-    const challengeIds = story.chapters!
-      .map((chapter) => chapter.challenge?.id)
+    const challengeIds = story
+      .chapters!.map((chapter) => chapter.challenge?.id)
       .filter((id) => id !== undefined) as string[];
 
     if (!firstChapterId) {
@@ -1010,7 +1099,7 @@ export async function forwardSaveCheckpoint(
   res: Response<ApiResponse<GameSession | null>>,
 ): Promise<void> {
   try {
-    const { gameSessionId, chapterId , elapsedTime } = req.body;
+    const { gameSessionId, chapterId, elapsedTime } = req.body;
 
     if (!gameSessionId || !chapterId) {
       logger.warn("Missing required fields for save checkpoint", {
@@ -1404,6 +1493,64 @@ export async function forwardCompleteStory(
     logger.info("Story completed successfully", {
       gameSessionId,
     });
+    console.log("================================");
+    // check if storytelling story ,then call ai service to mark the story as completed
+    if (updatedSession.progress?.storytellingStory) {
+      logger.info("Notifying AI service of story completion", {
+        gameSessionId,
+        generatedStoryId:
+          updatedSession.progress.storytellingStory.generatedStoryId,
+        childProfileId: updatedSession.progress.childProfileId,
+      });
+      try {
+        const aiResponse = await axios.post(
+          `${AI_SERVICE_URL}${API_BASE_URL_V1}/complete-story`,
+          {
+            storyId: updatedSession.progress.storytellingStory.generatedStoryId,
+            childProfileId: updatedSession.progress.childProfileId,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              ...(req.headers.authorization && {
+                Authorization: req.headers.authorization,
+              }),
+            },
+            validateStatus: () => true,
+          },
+        );
+        logger.debug("AI service complete-story response received", {
+          status: aiResponse.status,
+          statusText: aiResponse.statusText,
+          hasError: !!aiResponse.data?.error,
+          errorCode: aiResponse.data?.error?.code,
+          errorMessage: aiResponse.data?.error?.message,
+        });
+        if (aiResponse.status === 200) {
+          logger.info("AI service story completion successful", {
+            gameSessionId,
+            generatedStoryId:
+              updatedSession.progress.storytellingStory.generatedStoryId,
+            childProfileId: updatedSession.progress.childProfileId,
+          });
+        } else {
+          logger.warn("AI service story completion failed", {
+            gameSessionId,
+            status: aiResponse.status,
+            error: aiResponse.data?.error?.message || "Unknown error",
+            generatedStoryId:
+              updatedSession.progress.storytellingStory.generatedStoryId,
+          });
+        }
+      } catch (aiError) {
+        logger.warn("Failed to notify AI service of story completion", {
+          error: String(aiError),
+          generatedStoryId:
+            updatedSession.progress.storytellingStory.generatedStoryId,
+        });
+      }
+    }
+    console.log("================================");
 
     res.status(200).json({
       success: true,
@@ -1831,10 +1978,13 @@ export async function forwardUpdateNotificationSettings(
       },
     );
 
-    logger.debug("Progress service update notification settings response received", {
-      status: updateResponse.status,
-      hasProfile: !!updateResponse.data?.data,
-    });
+    logger.debug(
+      "Progress service update notification settings response received",
+      {
+        status: updateResponse.status,
+        hasProfile: !!updateResponse.data?.data,
+      },
+    );
 
     // Handle progress service error
     if (updateResponse.status !== 200 && updateResponse.status !== 201) {
@@ -1842,13 +1992,10 @@ export async function forwardUpdateNotificationSettings(
         updateResponse.data?.error?.message ||
         "Failed to update notification settings";
 
-      logger.error(
-        "Progress service error updating notification settings",
-        {
-          status: updateResponse.status,
-          error: errorMessage,
-        },
-      );
+      logger.error("Progress service error updating notification settings", {
+        status: updateResponse.status,
+        error: errorMessage,
+      });
 
       res.status(updateResponse.status || 503).json({
         success: false,
@@ -1897,6 +2044,513 @@ export async function forwardUpdateNotificationSettings(
       error: {
         code: "INTERNAL_ERROR",
         message: "Failed to update notification settings",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+/**
+ * Helper function to update a child's general settings
+ * Updates name, age group, and favorite themes for a specific child
+ * Forwards the request to Progress Service
+ */
+export async function forwardUpdateChildGeneralSettings(
+  req: Request,
+  res: Response<ApiResponse<ChildProfile>>,
+  basePath: string,
+): Promise<void> {
+  try {
+    const { childId } = req.params;
+    const { name, ageGroupId, favoriteThemes } = req.body;
+
+    // Validation
+    if (!childId) {
+      logger.warn("Missing childId parameter");
+      res.status(400).json({
+        success: false,
+        error: {
+          code: "BAD_REQUEST",
+          message: "Missing required parameter: childId",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    if (!name || !ageGroupId) {
+      logger.warn("Invalid request body for update general settings", {
+        childId,
+        hasName: !!name,
+        hasAgeGroupId: !!ageGroupId,
+      });
+      res.status(400).json({
+        success: false,
+        error: {
+          code: "BAD_REQUEST",
+          message: "Missing required fields: name and ageGroupId",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Updating child general settings", {
+      childId,
+      name,
+      ageGroupId,
+      favoriteThemesCount: favoriteThemes?.length || 0,
+    });
+
+    // Forward to Progress Service
+    const url = `${PROGRESS_SERVICE_URL}${basePath}`;
+    const updateResponse = await axios.patch<ApiResponse<ChildProfile>>(
+      url,
+      {
+        name,
+        ageGroupId,
+        favoriteThemes: favoriteThemes || [],
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
+          }),
+        },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug("Progress service update general settings response received", {
+      status: updateResponse.status,
+      hasProfile: !!updateResponse.data?.data,
+    });
+
+    // Handle progress service error
+    if (updateResponse.status !== 200 && updateResponse.status !== 201) {
+      const errorMessage =
+        updateResponse.data?.error?.message ||
+        "Failed to update child general settings";
+
+      logger.error("Progress service error updating general settings", {
+        status: updateResponse.status,
+        error: errorMessage,
+      });
+
+      res.status(updateResponse.status || 503).json({
+        success: false,
+        error: {
+          code: "SERVICE_ERROR",
+          message: errorMessage,
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    const updatedChild = updateResponse.data?.data;
+
+    if (!updatedChild) {
+      logger.error("No child profile returned from Progress Service");
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "No child profile returned from services",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Child general settings updated successfully", {
+      childId,
+      name: updatedChild.name,
+      ageGroupId: updatedChild.ageGroupId,
+      favoriteThemesCount: updatedChild.favoriteThemes?.length || 0,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: updatedChild,
+      timestamp: new Date(),
+    });
+  } catch (error) {
+    logger.error("Update general settings forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Failed to update child general settings",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+/**
+ * Helper function to delete a child profile
+ * Removes the child and all associated data from the system
+ */
+export async function forwardDeleteChild(
+  req: Request,
+  res: Response<ApiResponse<{ message: string }>>,
+  basePath: string,
+): Promise<void> {
+  try {
+    const { childId } = req.params;
+
+    // Validation
+    if (!childId) {
+      logger.warn("Missing childId parameter for delete");
+      res.status(400).json({
+        success: false,
+        error: {
+          code: "BAD_REQUEST",
+          message: "Missing required parameter: childId",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Deleting child profile", { childId });
+
+    // Forward to Progress Service
+    const url = `${PROGRESS_SERVICE_URL}${basePath}`;
+    const deleteResponse = await axios.delete<ApiResponse<{ message: string }>>(
+      url,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
+          }),
+        },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug("Progress service delete response received", {
+      status: deleteResponse.status,
+    });
+
+    // Handle progress service error
+    if (deleteResponse.status !== 200 && deleteResponse.status !== 204) {
+      const errorMessage =
+        deleteResponse.data?.error?.message || "Failed to delete child";
+
+      logger.error("Progress service error deleting child", {
+        status: deleteResponse.status,
+        error: errorMessage,
+      });
+
+      res.status(deleteResponse.status || 503).json({
+        success: false,
+        error: {
+          code: "SERVICE_ERROR",
+          message: errorMessage,
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Child profile deleted successfully", { childId });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        message: "Child profile deleted successfully",
+      },
+      timestamp: new Date(),
+    });
+  } catch (error) {
+    logger.error("Delete child forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Failed to delete child",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+/**
+ * Helper function to toggle weekly reports activation for a child
+ * Updates the activateWeeklyReports flag for a specific child
+ * Forwards the request to Progress Service
+ */
+export async function forwardToggleWeeklyReports(
+  req: Request,
+  res: Response<ApiResponse<ChildProfile>>,
+  basePath: string,
+): Promise<void> {
+  try {
+    const { childId } = req.params;
+    const { activateWeeklyReports } = req.body;
+
+    // Validation
+    if (!childId) {
+      logger.warn("Missing childId parameter");
+      res.status(400).json({
+        success: false,
+        error: {
+          code: "BAD_REQUEST",
+          message: "Missing required parameter: childId",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    if (activateWeeklyReports === undefined || activateWeeklyReports === null) {
+      logger.warn("Missing activateWeeklyReports in request body");
+      res.status(400).json({
+        success: false,
+        error: {
+          code: "BAD_REQUEST",
+          message: "Missing required field: activateWeeklyReports",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Toggling weekly reports for child", {
+      childId,
+      activateWeeklyReports,
+    });
+
+    // Forward to Progress Service
+    const toggleResponse = await axios.patch<ApiResponse<ChildProfile>>(
+      `${PROGRESS_SERVICE_URL}${basePath}`,
+      {
+        activateWeeklyReports,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
+          }),
+        },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug("Progress service toggle weekly reports response received", {
+      status: toggleResponse.status,
+      hasProfile: !!toggleResponse.data?.data,
+    });
+
+    // Handle progress service error
+    if (toggleResponse.status !== 200) {
+      const errorMessage =
+        toggleResponse.data?.error?.message ||
+        "Failed to toggle weekly reports";
+
+      logger.error("Progress service error toggling weekly reports", {
+        status: toggleResponse.status,
+        error: errorMessage,
+      });
+
+      res.status(toggleResponse.status || 503).json({
+        success: false,
+        error: {
+          code: "SERVICE_ERROR",
+          message: errorMessage,
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    const updatedChild = toggleResponse.data?.data;
+
+    if (!updatedChild) {
+      logger.error("No child profile returned after toggling weekly reports", {
+        childId,
+      });
+
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "INVALID_RESPONSE",
+          message: "Invalid response from Progress Service",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Child weekly reports toggled successfully", {
+      childId,
+      childName: updatedChild.name,
+      activateWeeklyReports,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: updatedChild,
+      timestamp: new Date(),
+    });
+  } catch (error) {
+    logger.error("Toggle weekly reports forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Failed to toggle weekly reports",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+/**
+ * Toggle storytelling activation for a child
+ * Forwards PATCH request to Progress Service to activate/deactivate AI-generated storytelling
+ *
+ * @param req - Express request with childId param and isActive in body
+ * @param res - Express response with updated ChildProfile
+ * @param basePath - Base path for the Progress Service endpoint
+ */
+export async function forwardToggleStorytelling(
+  req: Request,
+  res: Response<ApiResponse<ChildProfile>>,
+  basePath: string,
+): Promise<void> {
+  try {
+    const { childId } = req.params;
+    const { isActive } = req.body;
+
+    // Validation
+    if (!childId) {
+      logger.warn("Missing childId parameter");
+      res.status(400).json({
+        success: false,
+        error: {
+          code: "BAD_REQUEST",
+          message: "Missing required parameter: childId",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    if (isActive === undefined || isActive === null) {
+      logger.warn("Missing isActive in request body");
+      res.status(400).json({
+        success: false,
+        error: {
+          code: "BAD_REQUEST",
+          message: "Missing required field: isActive",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Toggling storytelling for child", {
+      childId,
+      isActive,
+    });
+
+    // Forward to Progress Service
+    const toggleResponse = await axios.patch<ApiResponse<ChildProfile>>(
+      `${PROGRESS_SERVICE_URL}${basePath}`,
+      {
+        isActive,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
+          }),
+        },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug("Progress service toggle storytelling response received", {
+      status: toggleResponse.status,
+      hasProfile: !!toggleResponse.data?.data,
+    });
+
+    // Handle progress service error
+    if (toggleResponse.status !== 200) {
+      const errorMessage =
+        toggleResponse.data?.error?.message || "Failed to toggle storytelling";
+
+      logger.error("Progress service error toggling storytelling", {
+        status: toggleResponse.status,
+        error: errorMessage,
+      });
+
+      res.status(toggleResponse.status || 503).json({
+        success: false,
+        error: {
+          code: "SERVICE_ERROR",
+          message: errorMessage,
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    const updatedChild = toggleResponse.data?.data;
+
+    if (!updatedChild) {
+      logger.error("No child profile returned after toggling storytelling", {
+        childId,
+      });
+
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "INVALID_RESPONSE",
+          message: "Invalid response from Progress Service",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Child storytelling toggled successfully", {
+      childId,
+      childName: updatedChild.name,
+      isActive,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: updatedChild,
+      timestamp: new Date(),
+    });
+  } catch (error) {
+    logger.error("Toggle storytelling forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Failed to toggle storytelling",
       },
       timestamp: new Date(),
     });
@@ -1984,7 +2638,10 @@ export async function forwardGetDashboardStats(
         },
       );
 
-      if (parentsRes.status === 200 && parentsRes.data?.data?.count !== undefined) {
+      if (
+        parentsRes.status === 200 &&
+        parentsRes.data?.data?.count !== undefined
+      ) {
         totalParents = parentsRes.data.data.count;
       }
 
@@ -2003,9 +2660,7 @@ export async function forwardGetDashboardStats(
     let totalChallengesSolved = 0;
 
     try {
-      logger.debug(
-        "Fetching child statistics from Progress Service",
-      );
+      logger.debug("Fetching child statistics from Progress Service");
 
       // Fetch aggregated children stats
       const statsRes = await axios.get<
@@ -2015,18 +2670,15 @@ export async function forwardGetDashboardStats(
           totalStoriesCompleted: number;
           totalChallengesSolved: number;
         }>
-      >(
-        `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/children/stats`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            ...(req.headers.authorization && {
-              Authorization: req.headers.authorization,
-            }),
-          },
-          validateStatus: () => true,
+      >(`${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/children/stats`, {
+        headers: {
+          "Content-Type": "application/json",
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
+          }),
         },
-      );
+        validateStatus: () => true,
+      });
 
       if (statsRes.status === 200 && statsRes.data?.data) {
         const childStats = statsRes.data.data;

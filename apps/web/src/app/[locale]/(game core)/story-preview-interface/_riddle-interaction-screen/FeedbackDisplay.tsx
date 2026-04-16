@@ -37,7 +37,7 @@ const FeedbackDisplay2 = ({
   isVisible,
 }: FeedbackDisplayProps) => {
   const t = useTranslations("StoryReadingInterface.riddleInterface");
-  
+
   if (!isVisible || !type) return null;
 
   const getTitleForType = (feedbackType: "solved" | "almost" | "incorrect") => {
@@ -74,10 +74,16 @@ const FeedbackDisplay2 = ({
         {/* Header */}
         <div className="flex items-center justify-between p-3 sm:p-4 border-b-2 border-border">
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className={`w-8 h-8 sm:w-10 sm:h-10 text-white ${type === "incorrect" ? "bg-red-500" : "bg-primary"}
-             rounded-full flex items-center justify-center flex-shrink-0`}>
-              {type === "incorrect" && <CircleX size={18} className="sm:size-6" />}
-              {type === "solved" && <CircleCheck size={18} className="sm:size-6" />}
+            <div
+              className={`w-8 h-8 sm:w-10 sm:h-10 text-white ${type === "incorrect" ? "bg-red-500" : "bg-primary"}
+             rounded-full flex items-center justify-center flex-shrink-0`}
+            >
+              {type === "incorrect" && (
+                <CircleX size={18} className="sm:size-6" />
+              )}
+              {type === "solved" && (
+                <CircleCheck size={18} className="sm:size-6" />
+              )}
             </div>
             <div>
               <h2 className="font-heading text-base sm:text-xl text-foreground">
@@ -85,6 +91,17 @@ const FeedbackDisplay2 = ({
               </h2>
             </div>
           </div>
+          {type !== "solved" ? (
+            <Button
+              variant={"outline"}
+              onClick={() => onContinue("skipped")}
+              className="text-xs sm:text-sm flex-1 max-w-max"
+            >
+              {t("feedbackDisplay.skipButton")}
+            </Button>
+          ) : (
+            <div className="w-24" /> // Placeholder to keep spacing consistent
+          )}
         </div>
 
         <div className="p-4 sm:p-6">
@@ -111,7 +128,10 @@ const FeedbackDisplay2 = ({
           {/* Stars Earned (for correct answers) */}
           {type === "solved" && starsEarned > 0 && (
             <div className="flex items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-6 p-3 sm:p-4 bg-primary/40 rounded-xl">
-              <Star size={20} className="sm:size-6 fill-amber-500 text-amber-500" />
+              <Star
+                size={20}
+                className="sm:size-6 fill-amber-500 text-amber-500"
+              />
               <span className="font-heading text-xl sm:text-2xl text-foreground">
                 {t("feedbackDisplay.starsEarned", { count: starsEarned })}
               </span>
@@ -132,13 +152,6 @@ const FeedbackDisplay2 = ({
               </div>
             ) : (
               <div className="flex items-center justify-between gap-2 sm:gap-4">
-                <Button
-                  variant={"outline"}
-                  onClick={() => onContinue("skipped")}
-                  className="text-xs sm:text-sm flex-1 max-w-max"
-                >
-                  {t("feedbackDisplay.skipButton")}
-                </Button>
                 <Button
                   variant={"secondary"}
                   onClick={onTryAgain}

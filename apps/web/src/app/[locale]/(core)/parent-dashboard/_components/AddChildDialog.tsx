@@ -34,7 +34,7 @@ import {
   SelectItem,
 } from "@/src/components/ui/select";
 
-import { AgeGroup, LanguageCode, Theme } from "@readdly/shared-types";
+import { AgeGroup, LanguageCode, Theme, User } from "@readdly/shared-types";
 import { createChildProfileAction } from "@/src/lib/auth-service/server-actions";
 import { Session } from "next-auth";
 import { useLocale } from "@/src/contexts/LocaleContext";
@@ -45,8 +45,7 @@ interface AddChildDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   ageGroups: AgeGroup[];
-  parentId: string;
-  parentEmail: string;
+  parentData: User;
   onChildAdded: () => void;
 }
 
@@ -55,8 +54,7 @@ export default function AddChildDialog({
   open,
   onOpenChange,
   ageGroups,
-  parentId,
-  parentEmail,
+  parentData,
   onChildAdded,
 }: AddChildDialogProps) {
   const [step, setStep] = useState(1);
@@ -87,9 +85,13 @@ export default function AddChildDialog({
       }),
     childGender: z
       .string()
-      .min(1, t("addChildDialog.errors.selectGender") || "Please select a gender")
+      .min(
+        1,
+        t("addChildDialog.errors.selectGender") || "Please select a gender",
+      )
       .refine((v) => ["boy", "girl"].includes(v), {
-        message: t("addChildDialog.errors.selectGender") || "Please select a gender",
+        message:
+          t("addChildDialog.errors.selectGender") || "Please select a gender",
       }),
   });
 
@@ -122,13 +124,17 @@ export default function AddChildDialog({
   });
 
   const selectedAgeGroupId = childBasicForm.watch("childAge");
-  const selectedAgeGroup = ageGroups?.find((ag) => ag.id === selectedAgeGroupId);
+  const selectedAgeGroup = ageGroups?.find(
+    (ag) => ag.id === selectedAgeGroupId,
+  );
 
   const getThemesForAgeGroup = (ageGroupId: string): Theme[] => {
     const ag = ageGroups?.find((a) => a.id === ageGroupId);
     if (!ag) return [];
     const themes = ag.roadmaps!.map((roadmap) => roadmap.theme);
-    return Array.from(new Map(themes.map((t) => [t!.id, t])).values()) as Theme[];
+    return Array.from(
+      new Map(themes.map((t) => [t!.id, t])).values(),
+    ) as Theme[];
   };
 
   const availableThemes = selectedAgeGroupId
@@ -156,9 +162,12 @@ export default function AddChildDialog({
       const ageGroupId = formData.childBasic.childAge;
       const themeIds = formData.childPreferences.favoriteThemes || [];
       const sessionsPerWeek = formData.readingSettings.sessionsPerWeek || 3;
-      const activateNotifications = formData.readingSettings.enableReminders ?? false;
+      const activateNotifications =
+        formData.readingSettings.enableReminders ?? false;
 
-      const selectedAgeGroupData = ageGroups?.find((ag) => ag.id === ageGroupId);
+      const selectedAgeGroupData = ageGroups?.find(
+        (ag) => ag.id === ageGroupId,
+      );
       const allocatedRoadmaps =
         selectedAgeGroupData?.roadmaps
           ?.filter((roadmap) => themeIds.includes(roadmap.themeId))
@@ -168,8 +177,8 @@ export default function AddChildDialog({
 
       const payload = {
         session,
-        parentEmail,
-        parentId,
+        parentEmail: parentData.email,
+        parentId: parentData.id,
         name: formData.childBasic.childName,
         gender: formData.childBasic.childGender,
         ageGroupId,
@@ -361,7 +370,9 @@ export default function AddChildDialog({
                   </Field>
 
                   <Field>
-                    <FieldLabel>{t("addChildDialog.step1.genderLabel") || "Gender"}</FieldLabel>
+                    <FieldLabel>
+                      {t("addChildDialog.step1.genderLabel") || "Gender"}
+                    </FieldLabel>
                     <Controller
                       control={childBasicForm.control}
                       name="childGender"
@@ -375,8 +386,8 @@ export default function AddChildDialog({
                                   ? option === "boy"
                                     ? "border-sky-500 bg-sky-500/10"
                                     : option === "girl"
-                                    ? "border-rose-500 bg-rose-500/10"
-                                    : "border-primary bg-primary/10"
+                                      ? "border-rose-500 bg-rose-500/10"
+                                      : "border-primary bg-primary/10"
                                   : "border-muted hover:border-primary/50"
                               }`}
                             >
@@ -388,7 +399,9 @@ export default function AddChildDialog({
                                 onChange={() => field.onChange(option)}
                                 className="hidden"
                               />
-                              <span className="font-medium capitalize">{option}</span>
+                              <span className="font-medium capitalize">
+                                {option}
+                              </span>
                             </label>
                           ))}
                         </div>
@@ -725,7 +738,8 @@ export default function AddChildDialog({
                     <p className="font-medium">
                       {tOnboarding("sessionsPerWeekDisplay", {
                         count: formData.readingSettings.sessionsPerWeek || 3,
-                      }) || `${formData.readingSettings.sessionsPerWeek || 3}x per week`}
+                      }) ||
+                        `${formData.readingSettings.sessionsPerWeek || 3}x per week`}
                     </p>
                   </div>
                   <div>

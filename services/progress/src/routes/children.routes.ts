@@ -43,6 +43,11 @@ router.get("/children/parent/:parentId", (req, res) =>
   ChildrenController.getChildrenByParentId(req, res),
 );
 
+// Get child profiles for a parent
+router.get("/parent-data/:parentId/children", (req, res) =>
+  ChildrenController.getChildProfilesByParent(req, res),
+);
+
 // Story progress endpoints
 // Create new story progress record
 router.post("/progress/:childId/stories/:storyId/start", (req, res) =>
@@ -98,6 +103,26 @@ router.post("/children/:childId/allocate-roadmap", (req, res) =>
 // Update child notification settings
 router.patch("/children/:childId/notifications", (req, res) =>
   ChildrenController.updateNotificationSettings(req, res),
+);
+
+// Update child general settings (name, age group, favorite themes)
+router.patch("/children/:childId/settings", (req, res) =>
+  ChildrenController.updateChildGeneralSettings(req, res),
+);
+
+// Toggle weekly reports for child
+router.patch("/children/:childId/weekly-reports", (req, res) =>
+  ChildrenController.toggleWeeklyReports(req, res),
+);
+
+// Toggle storytelling for child
+router.patch("/children/:childId/storytelling", (req, res) =>
+  ChildrenController.toggleStorytelling(req, res),
+);
+
+// Delete child profile permanently
+router.delete("/children/:childId", (req, res) =>
+  ChildrenController.deleteChild(req, res),
 );
 
 // Storytelling endpoints

@@ -1,13 +1,14 @@
 
 "use server";
 
+import { WeeklyAnalyticsReport } from "@readdly/shared-types";
 /**
  * Server Actions for AI Service
  *
  * Wraps `ai-service` server-api calls for use in Server Components / Actions
  */
 
-import { validateAnswer, LLMValidationResult, ValidateAnswerRequest, generateStorytelling, GenerateStorytellingRequest, generateHints, GenerateHintsRequest, HintResponse } from "./server-api";
+import { validateAnswer, LLMValidationResult, ValidateAnswerRequest, generateStorytelling, GenerateStorytellingRequest , GenerateHintsRequest, HintResponse, getWeeklyAnalyticsReport, generateHints } from "./server-api";
 
 export interface ValidateAnswerActionResult {
   success: boolean;
@@ -224,6 +225,70 @@ export async function generateHintsAction(
       success: false,
       error: errorMessage,
     };
+  }
+}
+
+/**
+ * Server action to fetch a specific week's analytics report for a child
+ * Wraps the getWeeklyAnalyticsReport API call with error handling
+ *
+ * @param childId - The child's profile ID
+ * @param week - The week number to retrieve (1-indexed)
+ * @returns Result object with success status and data/error
+ *
+ * @example
+ * const result = await getWeeklyAnalyticsReportAction("child-123", 1);
+ * if (result.success) {
+ *   console.log("Summary:", result.data?.executiveSummary);
+ *   console.log("Success rate:", result.data?.metricsSnapshot.successRate);
+ *   console.log("Recommendations:", result.data?.recommendations);
+ * }
+ */
+export async function getWeeklyAnalyticsReportAction(
+  childId: string,
+  week: number,
+) : Promise<{ report: WeeklyAnalyticsReport | null; totalWeeks: number } | null> {
+  try {
+    console.log(
+      "[AI Service] Fetching weekly analytics report via server action:",
+      {
+        childId,
+        week,
+      },
+    );
+
+    const result = await getWeeklyAnalyticsReport(childId, week);
+
+    if (!result) {
+      console.warn(
+        "[AI Service] Weekly analytics report retrieval returned null",
+      );
+      return null
+    }
+
+    console.log(
+      "[AI Service] Weekly analytics report retrieved via server action:",
+      {
+        childId,
+        week,
+      },
+    );
+
+    return result;
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred";
+
+    console.error(
+      "[AI Service] Error fetching weekly analytics report:",
+      {
+        childId,
+        week,
+        error: errorMessage,
+      },
+    );
+
+    return null;
   }
 }
 

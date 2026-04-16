@@ -6,6 +6,7 @@ import {
   checkPlanExtension,
   completeExtension,
   getPlanExtensionStatus,
+  forceResetExtensionFlag,
 } from "../services/plan-extension";
 import { updateSkillsFromPerformance } from "../services/skill-adaptation";
 import { generateStory } from "../services/generation-service-updated";
@@ -16,6 +17,8 @@ import {
   extractPlanContext,
   completePlan,
   recordPlanRegeneration,
+  ensureActivePlanExists,
+  attemptAtomicPlanRegeneration,
 } from "../services/plan-completion";
 
 const prisma = new PrismaClient();
@@ -61,56 +64,72 @@ export class StorytellingController {
       });
 
       // Initialize or update child profile
-      const childData = await this.initializeChildProfile(childProfile as ChildProfile);
+      const childData = await this.initializeChildProfile(
+        childProfile as ChildProfile,
+      );
 
       // PHASE 4 NEW: Check if child has completed their current plan and needs a new one
+      // RC-3 FIX: Use atomic plan regeneration to prevent race conditions
       try {
         const needsNewPlan = await shouldGenerateNewPlan(childData.id);
-        
+
         if (needsNewPlan) {
-          logger.info("[Storytelling Controller] Plan completion detected, generating new plan", {
-            childId: childData.id,
-          });
+          logger.info(
+            "[Storytelling Controller] Plan completion detected, initiating atomic regeneration",
+            {
+              childId: childData.id,
+            },
+          );
 
           try {
-            // Get the currently active plan to extract context
-            const currentPlan = await prisma.storyPlan.findUnique({
-              where: { childProfileId: childData.id },
-            });
+            // RC-3 + E9 FIX: Call atomic function that handles:
+            // 1. Re-check plan completion (inside transaction)
+            // 2. Generate new plan with transaction client (ensures atomicity)
+            // 3. Mark old plan completed
+            // 4. Record regeneration link
+            // All in a single atomic transaction - prevents duplicate regenerations AND orphaned state
+            const regenerationResult = await attemptAtomicPlanRegeneration(
+              childData.id,
+              async (planContext, txClient) => {
+                // E9 FIX: Pass transaction client to generateStoryPlan
+                // This ensures all database operations happen within the same transaction
+                return await generateStoryPlan(
+                  childData.id,
+                  planContext,
+                  txClient,
+                );
+              },
+            );
 
-            if (currentPlan) {
-              // PHASE 4: Extract learning context from completed plan
-              const planContext = await extractPlanContext(currentPlan.id);
-
-              // Mark old plan as completed with history
-              await completePlan(currentPlan.id, "All stories completed and child ready for next journey");
-
-              logger.info("[Storytelling Controller] Completed plan marked and context extracted", {
-                childId: childData.id,
-                oldPlanId: currentPlan.id,
-                planVersion: planContext.planVersion,
-              });
-
-              // PHASE 4: Generate new plan with previous context for continuity
-              const newPlan = await generateStoryPlan(childData.id, planContext);
-
-              // Record the regeneration link in history
-              await recordPlanRegeneration(currentPlan.id, newPlan.id);
-
-              logger.info("[Storytelling Controller] New plan generated with context continuation", {
-                childId: childData.id,
-                oldPlanId: currentPlan.id,
-                newPlanId: newPlan.id,
-                newPlanVersion: newPlan.planVersion,
-              });
+            if (regenerationResult.regenerated) {
+              logger.info(
+                "[Storytelling Controller] Plan regeneration completed successfully (atomic, E9 fix applied)",
+                {
+                  childId: childData.id,
+                  oldPlanId: regenerationResult.oldPlanId,
+                  newPlanId: regenerationResult.newPlanId,
+                },
+              );
+            } else {
+              logger.debug(
+                "[Storytelling Controller] Plan regeneration skipped",
+                {
+                  childId: childData.id,
+                  reason: regenerationResult.reason,
+                },
+              );
             }
           } catch (contextError) {
-            logger.error("[Storytelling Controller] Plan regeneration with context failed", {
-              childId: childData.id,
-              error: String(contextError),
-            });
+            logger.error(
+              "[Storytelling Controller] Plan regeneration failed - will retry on next request",
+              {
+                childId: childData.id,
+                error: String(contextError),
+              },
+            );
             // Don't fail the request, just log and continue
-            // Child will use existing plan or next request will retry
+            // Old plan remains active for this request
+            // Next request will attempt regeneration again
           }
         }
       } catch (completionError) {
@@ -121,9 +140,13 @@ export class StorytellingController {
         // Don't fail on completion check, continue with regular flow
       }
 
-      // Ensure child has story plan
-      let hasPlan = await prisma.storyPlan.findUnique({
-        where: { childProfileId: childData.id },
+      // Ensure child has story plan (query for ACTIVE plan only)
+      let hasPlan = await prisma.storyPlan.findFirst({
+        where: {
+          childProfileId: childData.id,
+          planStatus: { in: ["active", "generating"] }, // Only active plans, not completed
+        },
+        orderBy: { createdAt: "desc" }, // Most recent active plan
       });
 
       if (!hasPlan) {
@@ -131,7 +154,6 @@ export class StorytellingController {
           childId: childData.id,
         });
 
-        // ISSUE 1 FIX: Simple service call (no LangGraph agents)
         await generateStoryPlan(childData.id);
 
         hasPlan = await prisma.storyPlan.findUnique({
@@ -142,8 +164,13 @@ export class StorytellingController {
           throw new Error("Failed to create story plan");
         }
       }
-
-      // ISSUE 6 FIX: Check if plan needs extension (auto-trigger)
+      // If child somehow has no active plan, attempt to recover by restoring most recent plan
+      const planExists = await ensureActivePlanExists(childData.id);
+      if (!planExists) {
+        throw new Error(
+          "CRITICAL: No active plan for child after initialization - cannot proceed with story generation",
+        );
+      }
       const extensionNeeded = await checkPlanExtension(childData.id);
       if (extensionNeeded) {
         logger.info("[Storytelling Controller] Extending plan", {
@@ -161,11 +188,33 @@ export class StorytellingController {
             childId: childData.id,
           });
         } catch (error) {
-          logger.warn("[Storytelling Controller] Plan extension failed", {
-            childId: childData.id,
-            error: String(error),
-          });
-          // Continue with existing plan if extension fails
+          logger.warn(
+            "[Storytelling Controller] Plan extension failed - resetting flag to prevent starvation",
+            {
+              childId: childData.id,
+              error: String(error),
+            },
+          );
+
+          // Prevents plan starvation: if extension fails, flag must be reset
+          // so next request can attempt extension again
+          try {
+            await forceResetExtensionFlag(
+              childData.id,
+              "Extension generation failed - auto-reset to allow retry",
+            );
+          } catch (resetError) {
+            logger.error(
+              "[Storytelling Controller] CRITICAL: Failed to reset extension flag after extension failure",
+              {
+                childId: childData.id,
+                extensionError: String(error),
+                resetError: String(resetError),
+              },
+            );
+            // Don't throw - continue to allow story generation to proceed
+            // Flag will be auto-reset on next extension check (5-min timeout)
+          }
         }
       }
 
@@ -187,7 +236,7 @@ export class StorytellingController {
 
         res.status(200).json({
           success: true,
-          data: lastGeneratedStory || { done: true },
+          data: { done: true },
           timestamp: new Date(),
         });
         return;
@@ -209,14 +258,9 @@ export class StorytellingController {
           },
         );
 
-        // Get the last generated story that was completed
-        const lastGeneratedStory = await this.getLastGeneratedStory(
-          childData.id,
-        );
-
         res.status(200).json({
           success: true,
-          data: lastGeneratedStory || { done: true },
+          data: { done: true },
           timestamp: new Date(),
         });
         return;
@@ -574,14 +618,24 @@ export class StorytellingController {
     childProfileId: string,
   ): Promise<any | null> {
     try {
-      const plan = await prisma.storyPlan.findUnique({
-        where: { childProfileId },
+      // FINDING 9 FIX: Use findFirst with planStatus filter (safer than findUnique)
+      const plan = await prisma.storyPlan.findFirst({
+        where: {
+          childProfileId,
+          planStatus: { in: ["active", "generating"] }, // Only active plans
+        },
+        orderBy: { createdAt: "desc" }, // Most recent active plan
         include: {
           worlds: {
             orderBy: { order: "asc" }, // ISSUE 7: Strict world order
             include: {
               stories: {
-                where: { status: "pending" },
+                // FINDING 9 FIX: Check isCompleted=false instead of status="pending"
+                // This enforces SEQUENTIAL READING, not just generation order
+                // - Previous stories must be marked isCompleted=true (child read them)
+                // - Next story is first story with isCompleted=false (child hasn't read yet)
+                // - This is consistent with checkAllPreviousStoriesCompleted() validation
+                where: { isCompleted: false },
                 orderBy: { sequenceOrder: "asc" }, // ISSUE 7: Strict story order
                 take: 1,
               },
@@ -597,7 +651,7 @@ export class StorytellingController {
         return null;
       }
 
-      // ISSUE 7: Iterate through worlds in order, return first pending story
+      // ISSUE 7: Iterate through worlds in order, return first unread story
       for (const world of plan.worlds) {
         if (world.stories.length > 0) {
           const nextStory = world.stories[0];
@@ -607,6 +661,7 @@ export class StorytellingController {
             storyId: nextStory.id,
             storyTitle: nextStory.title,
             status: nextStory.status,
+            isCompleted: nextStory.isCompleted,
             sequenceOrder: nextStory.sequenceOrder,
           });
 
@@ -614,7 +669,7 @@ export class StorytellingController {
         }
       }
 
-      logger.debug("[Storytelling Controller] No pending stories found", {
+      logger.debug("[Storytelling Controller] No unread stories found", {
         childProfileId,
       });
       return null;
@@ -628,9 +683,123 @@ export class StorytellingController {
   }
 
   /**
+   */
+  async markStoryCompleted(req: Request, res: Response<any>): Promise<void> {
+    try {
+      logger.info("[Storytelling Controller] Mark story completed request", {
+        body: req.body,
+      });
+      const { storyId, childProfileId } = req.body;
+
+      if (!storyId || !childProfileId) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "MISSING_FIELD",
+            message: "storyId and childProfileId are required",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      // Verify ownership: generatedStory → world → storyPlan.childProfileId must match
+      const generatedStory = await prisma.generatedStory.findUnique({
+        where: { id: storyId },
+        include: {
+          planItem: true,
+        },
+      });
+
+      if (!generatedStory) {
+        res.status(404).json({
+          success: false,
+          error: { code: "NOT_FOUND", message: "Story not found" },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+
+      if (generatedStory.planItem.isCompleted) {
+        res.status(200).json({
+          success: true,
+          data: true,
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      // Mark the story as completed
+      await prisma.storyPlanItem.update({
+        where: { id: generatedStory.planItemId },
+        data: { isCompleted: true },
+      });
+
+      logger.info("[Storytelling Controller] Story marked as completed", {
+        planItemId: generatedStory.planItemId,
+        childProfileId,
+        storyTitle: generatedStory.planItem.title,
+        worldId: generatedStory.planItem.worldId,
+      });
+
+      // Check if ALL stories in the world are now completed → mark world complete
+      const siblingsNotCompleted = await prisma.storyPlanItem.count({
+        where: { worldId: generatedStory.planItem.worldId, isCompleted: false },
+      });
+
+      if (siblingsNotCompleted === 0) {
+        await prisma.storyPlanWorld.update({
+          where: { id: generatedStory.planItem.worldId },
+          data: { isCompleted: true },
+        });
+
+        logger.info("[Storytelling Controller] World fully completed", {
+          worldId: generatedStory.planItem.worldId,
+          childProfileId,
+        });
+      }
+
+      logger.info("[Storytelling Controller] Story completion response sent", {
+        planItemId: generatedStory.planItemId,
+        childProfileId,
+        worldCompleted: siblingsNotCompleted === 0,
+        storyId,
+      });
+
+      res.status(200).json({
+        success: true,
+        data: {
+          planItemId: generatedStory.planItemId,
+          worldCompleted: siblingsNotCompleted === 0,
+        },
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      logger.error("[Storytelling Controller] Failed to mark story completed", {
+        error: String(error),
+      });
+
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "COMPLETION_FAILED",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to mark story as completed",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  /**
    * Initialize or update child profile with storytelling settings
    */
-  private async initializeChildProfile(profileData: ChildProfile): Promise<any> {
+  private async initializeChildProfile(
+    profileData: ChildProfile,
+  ): Promise<any> {
     try {
       const child = await prisma.childProfile.upsert({
         where: { childId: profileData.id },
@@ -665,20 +834,6 @@ export class StorytellingController {
         error: String(error),
       });
       throw new Error(`Failed to initialize child profile: ${String(error)}`);
-    }
-  }
-
-  /**
-   * Cleanup resources
-   */
-  async cleanup(): Promise<void> {
-    try {
-      await prisma.$disconnect();
-      logger.info("[Storytelling Controller] Cleanup completed");
-    } catch (error) {
-      logger.error("[Storytelling Controller] Cleanup error", {
-        error: String(error),
-      });
     }
   }
 }

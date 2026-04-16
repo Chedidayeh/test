@@ -1022,3 +1022,105 @@ export function localizeChallengStatsWithMaps(
     };
   });
 }
+
+// ============================================================================
+// INACTIVITY REMINDER HELPERS
+// ============================================================================
+
+/**
+ * Calculate days since child's last reading activity
+ * @param profile - ChildProfile data
+ * @returns Number of days since lastActiveAt, or null if no activity data
+ */
+export function getDaysSinceLastRead(
+  profile: ChildProfile | undefined,
+): number | null {
+  if (!profile?.dailyActivity?.lastActiveAt) {
+    return null;
+  }
+
+  const lastActive = new Date(profile.dailyActivity.lastActiveAt);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  lastActive.setHours(0, 0, 0, 0);
+
+  const diffTime = Math.abs(today.getTime() - lastActive.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  return diffDays;
+}
+
+/**
+ * Determine if inactivity reminder should be displayed
+ * Shows when child hasn't read for more than their ideal session frequency
+ * @param profile - ChildProfile data
+ * @returns true if reminder should display, false otherwise
+ */
+export function shouldShowInactivityReminder(
+  profile: ChildProfile | undefined,
+): boolean {
+  if (!profile) return false;
+
+  const daysSince = getDaysSinceLastRead(profile);
+  if (daysSince === null) return false;
+
+  // Calculate expected interval: 7 days / sessionsPerWeek
+  const sessionsPerWeek = profile.sessionsPerWeek || 3;
+  const expectedIntervalDays = 7 / sessionsPerWeek;
+
+  return daysSince > expectedIntervalDays;
+}
+
+/**
+ * Calculate weekly reading session progress
+ * @param profile - ChildProfile data
+ * @returns Object with sessionsThisWeek, sessionsNeeded, and percentage
+ */
+export function getWeeklySessionProgress(
+  profile: ChildProfile | undefined,
+): { sessionsThisWeek: number; sessionsNeeded: number; percentage: number } {
+  if (!profile?.progress || !Array.isArray(profile.progress)) {
+    return {
+      sessionsThisWeek: 0,
+      sessionsNeeded: profile?.sessionsPerWeek || 3,
+      percentage: 0,
+    };
+  }
+
+  // Get current week's date range (Monday to Sunday)
+  const today = new Date();
+  const currentDay = today.getDay();
+  const diff = today.getDate() - currentDay + (currentDay === 0 ? -6 : 1); // Adjust when day is Sunday
+  const weekStart = new Date(today.setDate(diff));
+  weekStart.setHours(0, 0, 0, 0);
+
+  // Count unique days with reading activity in current week
+  const daysWithReading = new Set<string>();
+
+  for (const progress of profile.progress) {
+    if (
+      progress.gameSession?.checkpoints &&
+      Array.isArray(progress.gameSession.checkpoints)
+    ) {
+      for (const checkpoint of progress.gameSession.checkpoints) {
+        if (checkpoint.pausedAt) {
+          const pausedDate = new Date(checkpoint.pausedAt);
+          pausedDate.setHours(0, 0, 0, 0);
+
+          if (pausedDate >= weekStart && pausedDate <= today) {
+            daysWithReading.add(formatDateLocal(pausedDate));
+          }
+        }
+      }
+    }
+  }
+
+  const sessionsThisWeek = daysWithReading.size;
+  const sessionsNeeded = profile.sessionsPerWeek || 3;
+  const percentage =
+    sessionsNeeded > 0
+      ? Math.round((sessionsThisWeek / sessionsNeeded) * 100)
+      : 0;
+
+  return { sessionsThisWeek, sessionsNeeded, percentage };
+}

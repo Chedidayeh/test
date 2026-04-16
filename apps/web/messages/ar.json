@@ -98,7 +98,7 @@
 		"tabs": {
 			"overview": "نظرة عامة",
 			"achievements": "الإنجازات",
-			"aiInsights": " تحليلات الذكاء الاصطناعي ",
+			"weeklyReports": "التقارير الأسبوعية",
 			"riddleStatistics": "إحصائيات الألغاز",
 			"timeAnalytics": "تحليلات الوقت",
 			"childStorytelling": "قصص مخصصة للطفل"
@@ -171,45 +171,6 @@
 				"incorrect": "✗ غير صحيح"
 			}
 		},
-		"aiInsights": {
-			"title": {
-				"title": "تحليلات التعلم المدعومة بالذكاء الاصطناعي",
-				"description": "تحليلات شخصية لرحلة قراءة {childName}، مدعومة بتحليل متقدم للذكاء الاصطناعي",
-				"dashboardButton": "فضاء التعلم لطفلك {childName} →",
-				"currentInsights": "تحليلات الذكاء الاصطناعي الحالية",
-				"historicalInsights": "تحليلات الذكاء الاصطناعي التاريخية"
-			},
-			"label": {
-				"readingLevel": "مستوى القراءة",
-				"engagementScore": "درجة الانخراط",
-				"period": "الفترة الزمنية",
-				"strengths": "النقاط القوية",
-				"weaknesses": "المناطق للتحسين",
-				"recommendations": "التوصيات",
-				"tips": "نصائح التعلم",
-				"summary": "الملخص",
-				"keyMetrics": "المقاييس الرئيسية"
-			},
-			"metric": {
-				"totalStoriesCompleted": "القصص المكتملة",
-				"successRate": "نسبة النجاح",
-				"challengesAttempted": "التحديات المحلول",
-				"avgAttemptsPerChallenge": "متوسط المحاولات لكل تحدى",
-				"hintDependencyRate": "نسبة الاعتماد على التلميحات",
-				"starsEarned": "النجوم المكتسبة",
-				"totalTimeSpent": "إجمالي الوقت المستغرق"
-			},
-			"action": {
-				"refresh": "تحديث التحليلات"
-			},
-			"message": {
-				"noInsights": "لا توجد تحليلات الذكاء الاصطناعي المتاحة بعد",
-				"noInsightsSubtext": "{childName} لم يكمل عدد كافٍ من الأنشطة للحصول على تحليلات مدعومة بالذكاء الاصطناعي. استمر في القراءة!"
-			},
-			"error": {
-				"fetchFailed": "فشل في جلب التحليلات"
-			}
-		},
 		"timeAnalytics": {
 			"title": "تحليلات الوقت",
 			"description": "رؤى متعمقة حول قراءة {childName} من حيث الوقت والاتساق",
@@ -245,11 +206,48 @@
 		},
 		"childStorytelling": {
 			"activated": "تم التفعيل",
+			"deactivated": "غير مفعّل",
 			"title": "قصص مخصصة للطفل",
 			"description": "أنشئ قصصًا مخصصة يظهر فيها {childName} كبطل! مغامرات مُصممة وفقًا لاهتماماته ومسار تقدمه في القراءة.",
 			"dashboardButton": "لوحة تحكم {childName} →",
 			"activateOption": "تفعيل ميزة سرد القصص لـ {childName} →",
-			"storytellingDashboard": "لوحة تحكم سرد القصص لـ {childName}"
+			"storytellingDashboard": "لوحة تحكم سرد القصص لـ {childName}",
+			"status": {
+				"completed": "تم الانتهاء",
+				"inProgress": "قيد التقدم",
+				"notStarted": "لم يبدأ بعد"
+			},
+			"generatedDate": "تم إنشاؤها في",
+			"inactiveTitle": "غير مفعّل",
+			"inactiveDescription": "ميزة سرد القصص غير مفعلة لـ {childName}.",
+			"noStoriesTitle": "لا توجد قصص حتى الآن",
+			"deactivateOption": "تعطيل ميزة سرد القصص",
+			"noStoriesDescription": "ستظهر القصص هنا بمجرد إنشاؤها لـ {childName}. عودة قريبًا!"
+		},
+		"weeklyReports": {
+			"title": "تقارير التقدم الأسبوعية",
+			"active": "مفعّل",
+			"inactive": "معطّل",
+			"activateButton": "تفعيل التقارير الأسبوعية",
+			"deactivateButton": "تعطيل التقارير الأسبوعية",
+			"description": "رؤى أسبوعية مولدة بالذكاء الاصطناعي حول تقدم القراءة والتعلم لـ {childName}",
+			"loading": "جاري تحميل التقرير الأسبوعي...",
+			"errorTitle": "تعذر تحميل التقرير",
+			"failedToLoadReport": "فشل تحميل التقرير الأسبوعي. يرجى المحاولة مرة أخرى لاحقًا.",
+			"noReportYet": "لا يوجد تقرير حتى الآن",
+			"reportAvailableSoon": "ستكون التقارير الأسبوعية لـ {childName} متاحة قريبًا مع استمراره في رحلة القراءة.",
+			"noReportForWeek": "لا يوجد تقرير متاح للأسبوع {week}",
+			"executiveSummary": "الملخص التنفيذي",
+			"progressTrends": "اتجاهات التقدم",
+			"recommendations": "التوصيات",
+			"metricsSnapshot": "لقطة للمقاييس",
+			"week": "الأسبوع {week}",
+			"previousWeek": "← الأسبوع السابق",
+			"nextWeek": "الأسبوع القادم →",
+			"inactiveTitle": "غير مفعّل",
+			"inactiveDescription": "التقارير الأسبوعية غير مفعلة لـ {childName}.",
+			"generatedOn": "تم التوليد في {date} الساعة {time}",
+			"noRecommendations": "لا توجد توصيات محددة لهذا الأسبوع."
 		},
 		"notificationSettings": {
 			"title": "إعدادات الإخطارات",
@@ -258,11 +256,56 @@
 			"remindersDescription": "احصل على إخطارات عندما يفوّت {childName} جلسات القراءة",
 			"enabledStatus": "مفعلة",
 			"disabledStatus": "غير مفعلة",
-			"statusMessage": "تنبيهات القراءة {status} لـ {childName}",			"statusMessagePrefix": "تذكيرات القراءة لـ {childName}",			"settingsDescription": "استخدم زر الإعدادات لإدارة تفضيلات الإخطارات لهذا الطفل.",
+			"statusMessage": "تنبيهات القراءة {status} لـ {childName}",
+			"statusMessagePrefix": "تذكيرات القراءة لـ {childName}",
+			"settingsDescription": "استخدم زر الإعدادات لإدارة تفضيلات الإخطارات لهذا الطفل.",
 			"cancel": "إلغاء",
 			"save": "حفظ",
 			"saving": "جاري الحفظ...",
 			"savedSuccess": "تم حفظ إعدادات الإخطارات!"
+		},
+		"childSettings": {
+			"title": "إعدادات الطفل",
+			"generalTab": "عام",
+			"notificationsTab": "الإخطارات",
+			"deleteChildTab": "حذف",
+			"childName": "اسم الطفل",
+			"childNamePlaceholder": "أدخل اسم الطفل",
+			"ageGroup": "فئة العمر",
+			"ageGroups": {
+				"6to8": "6-8 سنوات",
+				"9to12": "9-12 سنة",
+				"13plus": "13+ سنة"
+			},
+			"favoriteThemes": "المواضيع المفضلة",
+			"themesInputPlaceholder": "مثال: مغامرة، خيال، لغز (مفصولة بفواصل)",
+			"themesDescription": "افصل المواضيع المتعددة بفواصل",
+			"sessionsPerWeek": "الجلسات في الأسبوع",
+			"selectAgeGroupFirst": "يرجى تحديد مجموعة عمرية أولاً",
+			"savedSuccess": "تم حفظ الإعدادات بنجاح!",
+			"generalInfoMessage": "تساعد الإعدادات العامة على تخصيص تجربة التعلم لطفلك.",
+			"saving": "جاري الحفظ...",
+			"saveGeneral": "حفظ التغييرات",
+			"notificationsDescription": "عند التفعيل، ستتلقى تنبيهات حول تقدم القراءة والنشاط لطفلك.",
+			"dangerZone": "منطقة الخطر",
+			"dangerZoneDescription": "لا يمكن التراجع عن هذه الإجراءات. يرجى المتابعة بحذر.",
+			"deleteChildTitle": "حذف ملف الطفل",
+			"deleteChildDescription": "سيؤدي هذا إلى حذف ملف {childName} وجميع البيانات المرتبطة به بشكل دائم.",
+			"deleteChild": "حذف ملف الطفل",
+			"deleteConfirmation": "يرجى إدخال اسم الطفل لتأكيد الحذف",
+			"confirmPlaceholder": "اكتب اسم الطفل",
+			"cancel": "إلغاء",
+			"close": "إغلاق",
+			"deleting": "جاري الحذف...",
+			"confirmDelete": "حذف"
+		},
+		"errors": {
+			"childNotFound": "الطفل غير موجود. يرجى التحقق والمحاولة مرة أخرى."
+		},
+		"inactivityReminder": {
+			"title": "حان وقت مغامرة القراءة!",
+			"description": "طفلك لم يقرأ أي قصص منذ {daysSince} {daysLabel}. يهدف إلى {sessionsPerWeek} جلسات قراءة في الأسبوع",
+			"weeklyProgress": "{sessionsThisWeek} من {sessionsNeeded} جلسات هذا الأسبوع ({percentage}%)"
 		}
 	},
 	"ChildDashboard": {
@@ -604,7 +647,7 @@
 		"feature2Desc": "قصص محاذاة للمهارات التي تريد تطويرها عند طفلك",
 		"feature3Title": "مغامرات جذابة",
 		"feature3Desc": "تحديات تفاعلية لتحقيق الأهداف وبناء الثقة",
-		"mainDescription": "سيشهد طفلك كل أسبوع مغامرات حيث يكون هو البطل! تُصمم القصص وفقاً لاهتماماته وتهدف إلى مساعدته على تحقيق أهداف التعلم التي اخترتها. شاهد بينما ينمو بالثقة، يوسع مفرداته، ويطور مهارات التفكير النقدي—كل هذا من خلال متعة القراءة.",
+		"mainDescription": "سيشهد طفلك كل أسبوع مغامرات حيث يكون هو البطل! تُصمم القصص وفقاً لاهتماماته وتهدف إلى مساعدته على تحقيق أهداف التعلم التي اخترتها. شاهد بينما ينمو بالثقة، يوسع مفرداته، ويطور مهارات التفكير النقدي كل هذا من خلال متعة القراءة.",
 		"continueButton": "المتابعة إلى الإعداد"
 	},
 	"StoryReadingInterface": {

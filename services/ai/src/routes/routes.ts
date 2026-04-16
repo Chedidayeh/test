@@ -85,20 +85,33 @@ router.post("/analytics/generate", (req, res) =>
   analyticsController.generateAnalytics(req, res),
 );
 
-// router.get("/analytics/:childId", (req, res) =>
-//   analyticsController.getChildAnalytics(req, res),
-// );
+router.post("/week-report/:childId", (req, res) =>
+  analyticsController.getChildWeeklyAnalytics(req, res),
+);
 
 /**
  * Storytelling Routes
  *
  * POST /api/v1/generate-child-storytelling - Generate personalized AI story for a child
+ *   Request body: { childProfile: ChildProfile }
+ *
+ * POST /api/v1/complete-story - Mark a story as read/completed by the child
+ *   Request body: { planItemId: string, childProfileId: string }
+ *   Must be called after child finishes reading a story to unlock the next one.
+ *
+ * POST /api/v1/record-performance - Record challenge performance and update skill scores
+ *   Request body: { childProfileId: string, storyId: string, performance: ChallengePerformance[] }
+ *
+ * GET /api/v1/plan-status/:childProfileId - Get current plan progress and statistics
  *
  */
 router.post("/generate-child-storytelling", (req, res) =>
   storytellingController.generateChildStorytelling(req, res),
 );
 
+router.post("/complete-story", (req, res) =>
+  storytellingController.markStoryCompleted(req, res),
+);
 
 router.post("/generate-hints", (req, res) =>
   hintGeneratorController.generateHints(req, res),

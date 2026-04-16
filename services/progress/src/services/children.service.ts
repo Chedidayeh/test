@@ -143,11 +143,12 @@ export class ChildrenService {
   }> {
     // Calculate date from 7 days ago
     const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 30);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
     // Fetch child profiles with relations, only those with progress in the past week
     const childProfiles = await prisma.childProfile.findMany({
       where: {
+        activateWeeklyReports: true, // Only include children who have weekly reports enabled
         progress: {
           some: {
             // Filter for progress records from the past 7 days
@@ -381,28 +382,48 @@ export class ChildrenService {
       where: {
         parentId,
       },
-      include: {
-        storytelling: true,
-        progress: {
-          include: {
-            gameSession: {
-              include: {
-                challengeAttempts: {
-                  include: {
-                    starEvent: true,
-                    actions: true,
-                  },
-                },
-                checkpoints: true,
-              },
-            },
-          },
-        },
-        badges: true,
-      },
+      // include: {
+      //   storytelling: true,
+      //   progress: {
+      //     include: {
+      //       gameSession: {
+      //         include: {
+      //           challengeAttempts: {
+      //             include: {
+      //               starEvent: true,
+      //               actions: true,
+      //             },
+      //           },
+      //           checkpoints: true,
+      //         },
+      //       },
+      //     },
+      //   },
+      //   badges: true,
+      // },
     });
 
     // Cast to ChildProfile[] - Prisma handles enum conversion
+    return childProfiles
+  }
+
+  /**
+   * Fetch child profile IDs for a specific parent
+   * Returns only the child profile ID strings, not full profiles
+   */
+  static async getChildProfilesByParent(
+    parentId: string,
+  ): Promise<ChildProfile[]> {
+    const childProfiles = await prisma.childProfile.findMany({
+      where: {
+        parentId,
+      },
+      orderBy: {
+        createdAt: "asc",
+      }
+    });
+
+    // Extract and return only the childId values
     return childProfiles
   }
 
@@ -1004,6 +1025,11 @@ export class ChildrenService {
         endedAt: completionTime,
       },
       include: {
+        progress: {
+          include: {
+            storytellingStory : true,
+          }
+        },
         challengeAttempts: {
           include: {
             starEvent: true,
@@ -1045,7 +1071,7 @@ export class ChildrenService {
             await prisma.storytellingStory.update({
               where: { id: storytellingStory.id },
               data: {
-                status: ProgressStatus.IN_PROGRESS,
+                status: ProgressStatus.COMPLETED,
               },
             });
           }
@@ -1056,7 +1082,7 @@ export class ChildrenService {
       }
     }
 
-    return completedSession as unknown as GameSession;
+    return completedSession
   }
 
   /**
@@ -1139,6 +1165,188 @@ export class ChildrenService {
     });
 
     return updatedChild 
+  }
+
+  /**
+   * Toggle weekly reports for a child
+   * Allows enabling or disabling weekly analytics reports
+   */
+  static async toggleWeeklyReports(
+    childId: string,
+    activateWeeklyReports: boolean,
+  ): Promise<ChildProfile | null> {
+    // Validate inputs
+    if (!childId || activateWeeklyReports === undefined || activateWeeklyReports === null) {
+      throw new Error("Invalid childId or weekly reports setting");
+    }
+
+    // Check if child profile exists
+    const childProfile = await prisma.childProfile.findUnique({
+      where: { id: childId },
+    });
+
+    if (!childProfile) {
+      throw new Error(`Child profile not found for childId: ${childId}`);
+    }
+
+    // Update child's weekly reports settings
+    const updatedChild = await prisma.childProfile.update({
+      where: { id: childProfile.id },
+      data: {
+        activateWeeklyReports,
+      },
+    });
+
+    return updatedChild;
+  }
+
+  /**
+   * Toggle storytelling activation for a child
+   * Enables or disables AI-generated storytelling feature
+   */
+  static async toggleStorytelling(
+    childId: string,
+    isActive: boolean,
+  ): Promise<ChildProfile | null> {
+    // Validate inputs
+    if (!childId || isActive === undefined || isActive === null) {
+      throw new Error("Invalid childId or storytelling setting");
+    }
+
+    // Check if child profile exists
+    const childProfile = await prisma.childProfile.findUnique({
+      where: { id : childId },
+      include: {
+        storytelling: {
+          include: {
+            stories: true,
+          },
+        },
+      },
+    });
+
+    if (!childProfile) {
+      throw new Error(`Child profile not found for childId: ${childId}`);
+    }
+
+    // Update child's storytelling settings
+    const updatedChild = await prisma.childProfile.update({
+      where: { id: childProfile.id },
+      data: {
+        storytelling: {
+          update: {
+            isActive,
+          },
+        },
+      },
+      include: {
+        storytelling: {
+          include: {
+            stories: true,
+          },
+        },
+      },
+    });
+
+    return updatedChild;
+  }
+
+  /**
+   * Update child's general settings (name, age group, favorite themes)
+   * Called when parent updates child profile in settings modal
+   */
+  static async updateChildGeneralSettings(
+    childId: string,
+    name: string,
+    ageGroupId: string,
+    favoriteThemes: string[],
+    allocatedRoadmaps: string[],
+    sessionsPerWeek: number,
+    ageGroup: string,
+  ): Promise<ChildProfile | null> {
+    // Validate inputs
+    if (!childId || !name || !ageGroupId) {
+      console.error(
+        "Invalid inputs for updateChildGeneralSettings",
+        { childId, name, ageGroupId },
+      );
+      throw new Error(
+        "Missing required fields: childId, name, and ageGroupId",
+      );
+    }
+
+    // Check if child profile exists
+    const childProfile = await prisma.childProfile.findUnique({
+      where: { childId },
+    });
+
+    if (!childProfile) {
+      console.error("Child profile not found", { childId });
+      return null;
+    }
+
+    // Merge allocated roadmaps: add new ones, ignore duplicates
+    const existingRoadmaps = childProfile.allocatedRoadmaps || [];
+    const mergedRoadmaps = Array.from(new Set([...existingRoadmaps, ...allocatedRoadmaps]));
+
+    // Update child's general settings
+    const updatedChild = await prisma.childProfile.update({
+      where: { id: childProfile.id },
+      data: {
+        name,
+        ageGroupId,
+        favoriteThemes,
+        allocatedRoadmaps: mergedRoadmaps,
+        sessionsPerWeek,
+        ageGroupName: ageGroup,
+      },
+    });
+
+    return updatedChild;
+  }
+
+  /**
+   * Delete a child profile permanently
+   * Removes the child and all associated data including:
+   * - Child profile record
+   * - Associated progress records
+   * - Game sessions and challenge attempts
+   * - Checkpoints and badges
+   * - Daily activity
+   * - All related data cascading through relationships
+   */
+  static async deleteChild(childId: string): Promise<boolean> {
+    // Validate input
+    if (!childId) {
+      throw new Error("Missing required field: childId");
+    }
+
+    try {
+      // Find child profile first
+      const childProfile = await prisma.childProfile.findUnique({
+        where: { id : childId },
+      });
+
+      if (!childProfile) {
+        console.error("Child profile not found", { childId });
+        return false;
+      }
+
+      // Delete child profile (cascade deletes all related records due to Prisma schema relations)
+      await prisma.childProfile.delete({
+        where: { id: childProfile.id },
+      });
+
+      console.log("Child profile deleted successfully", {
+        childId,
+        profileId: childProfile.id,
+      });
+
+      return true;
+    } catch (error) {
+      console.error("Error deleting child profile", { childId, error });
+      throw error;
+    }
   }
 
   /**
@@ -1402,6 +1610,7 @@ export class ChildrenService {
         data: {
           title: story.title,
           storyId: story.id,
+          generatedStoryId : story.generatedStoryId
         },
       });
     } else {
@@ -1411,6 +1620,7 @@ export class ChildrenService {
           storytellingProfileId: storytellingProfile.id,
           storyId: story.id,
           title: story.title,
+          generatedStoryId : story.generatedStoryId,
           status: ProgressStatus.NOT_STARTED, // New story starts as NOT_STARTED
         },
       });
