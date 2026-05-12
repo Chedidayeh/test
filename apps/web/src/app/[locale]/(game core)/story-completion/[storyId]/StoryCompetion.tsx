@@ -4,12 +4,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRef, useState } from "react";
-import {
-  Star,
-  ChevronRight,
-  Award,
-  ChevronLeft,
-} from "lucide-react";
+import { Star, ChevronRight, Award, ChevronLeft } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
   Card,
@@ -17,10 +12,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/ui/card";
-import { ChildProfile, LanguageCode, Progress, Story } from "@readdly/shared-types";
+import {
+  ChildProfile,
+  LanguageCode,
+  Progress,
+  Story,
+} from "@readdly/shared-types";
 import { LevelProgressAnalysis } from "../_lib/progress-analysis";
 import { useLocale } from "@/src/contexts/LocaleContext";
 import { getLanguageCode } from "@/src/lib/translation-utils";
+import { Badge } from "@/src/components/ui/badge";
 
 interface StoryCompletionProps {
   child: ChildProfile;
@@ -53,13 +54,33 @@ export default function StoryCompletion({
     };
   })();
 
+  const localizeBadge = (() => {
+    if (!levelAnalysis.nextBadge) {
+      return {
+        name: "",
+        description: "",
+      };
+    }
+    const translation = levelAnalysis.nextBadge.translations?.find(
+      (tr: { languageCode: LanguageCode }) => tr.languageCode === langCode,
+    );
+    return {
+      name: translation?.name || levelAnalysis.nextBadge.name,
+      description:
+        translation?.description || levelAnalysis.nextBadge.description,
+    };
+  })();
+
   const starsEarned = progress.gameSession?.starsEarned || 0;
 
   // Calculate old progress percentage (before this story)
   const oldTotalStars = levelAnalysis.totalStarsEarned - starsEarned;
   const oldProgressPercentage =
     levelAnalysis.nextLevelStarsRequired > 0
-      ? Math.min(100, (oldTotalStars / levelAnalysis.nextLevelStarsRequired) * 100)
+      ? Math.min(
+          100,
+          (oldTotalStars / levelAnalysis.nextLevelStarsRequired) * 100,
+        )
       : 100;
 
   const handleShowProgress = () => {
@@ -97,8 +118,16 @@ export default function StoryCompletion({
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <div className="w-full max-w-2xl">
         {/* Hidden Audio Elements */}
-        <audio ref={audioRef} preload="auto" src="/soundtracks/progress-sound.mp3" />
-        <audio ref={levelUpAudioRef} preload="auto" src="/soundtracks/story-completed.mp3" />
+        <audio
+          ref={audioRef}
+          preload="auto"
+          src="/soundtracks/progress-sound.mp3"
+        />
+        <audio
+          ref={levelUpAudioRef}
+          preload="auto"
+          src="/soundtracks/story-completed.mp3"
+        />
 
         <AnimatePresence mode="wait">
           {!showProgress ? (
@@ -121,7 +150,7 @@ export default function StoryCompletion({
                 >
                   <div className="text-6xl">🎉</div>
                 </motion.div>
-                <h1 className="text-5xl font-bold text-primary mb-4">
+                <h1 className="text-5xl font-semibold mb-4">
                   {t("completionMessage.title")}
                 </h1>
                 <p className="text-xl text-gray-400 mb-8">
@@ -136,10 +165,10 @@ export default function StoryCompletion({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.3 }}
-                  className="inline-flex items-center gap-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-full px-6 py-3 mb-10"
+                  className="inline-flex items-center gap-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-full px-6 py-3"
                 >
                   <Star className="w-6 h-6 text-yellow-500 fill-yellow-500" />
-                  <span className="text-lg font-semibold">
+                  <span className="text-lg font-medium ">
                     {t("completionMessage.starsEarned", {
                       count: starsEarned,
                     })}
@@ -177,17 +206,6 @@ export default function StoryCompletion({
               className="mb-8"
             >
               <Card className="border">
-                <CardHeader className="border-b">
-                  <CardTitle className="text-xl text-center">
-                    <div className="flex items-center justify-center text-xl gap-2">
-                      {t("progressCard.starsEarned")}
-                      <Star className="w-8 h-8 text-yellow-500 fill-yellow-500" />
-                      <span className="text-3xl font-bold">
-                        {levelAnalysis.totalStarsEarned}
-                      </span>
-                    </div>
-                  </CardTitle>
-                </CardHeader>
                 <CardContent className="pt-6 space-y-4">
                   {/* Current Level */}
                   <div className="flex items-center text-xl justify-between">
@@ -245,10 +263,14 @@ export default function StoryCompletion({
                     <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                       <motion.div
                         className="bg-linear-to-r from-primary to-primary/80 h-3 rounded-full"
-                        initial={{ width: `${Math.min(100, oldProgressPercentage)}%` }}
+                        initial={{
+                          width: `${Math.min(100, oldProgressPercentage)}%`,
+                        }}
                         animate={
                           animationStarted
-                            ? { width: `${Math.min(100, levelAnalysis.progressPercentage)}%` }
+                            ? {
+                                width: `${Math.min(100, levelAnalysis.progressPercentage)}%`,
+                              }
                             : {}
                         }
                         transition={
@@ -262,7 +284,7 @@ export default function StoryCompletion({
                       />
                     </div>
 
-                    <div className=" text-gray-500 text-lg text-center">
+                    <div className="  text-lg text-center">
                       {levelAnalysis.willReachNextLevel ? (
                         <motion.span
                           initial={{ opacity: 0 }}
@@ -271,14 +293,15 @@ export default function StoryCompletion({
                             duration: 0.5,
                             delay: animationStarted ? 2.5 : 0,
                           }}
-                          className="text-primary text-xl font-semibold"
+                          className="text-primary text-xl font-medium"
                         >
                           {t("progressCard.levelUnlocked", {
                             nextLevel: levelAnalysis.nextLevelNumber,
                           })}
                         </motion.span>
                       ) : (
-                        <span className="text-primary text-xl mt-2">
+                        <span className="text-xl mt-2 flex items-center justify-center gap-1 inline-flex">
+                          <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
                           {t("progressCard.starsNeeded", {
                             count: levelAnalysis.starsNeededForNextLevel,
                           })}
@@ -295,20 +318,24 @@ export default function StoryCompletion({
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.5, delay: 2.8 }}
-                        className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-3"
+                        className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-200/10 border border-yellow-200 dark:border-yellow-50/10 rounded-lg flex items-center gap-3"
                       >
-                        <Award className="w-7 h-7 text-yellow-500" />
                         <div className="flex-1">
-                          <p className="font-semibold text-yellow-900">
-                            {t("badgeInfo.unlocked", {
-                              badgeName: levelAnalysis.nextBadge.name,
-                            })}
+                          <p className="font-medium dark:text-yellow-500 flex items-center gap-1  text-yellow-700">
+                            <Award className="w-5 h-5 text-yellow-500" />
+                            {t("badgeInfo.unlocked")}
                           </p>
-                          {levelAnalysis.nextBadge.description && (
-                            <p className="text-yellow-700 mt-1">
-                              {levelAnalysis.nextBadge.description}
-                            </p>
-                          )}
+                          <div className="flex items-center justify-center gap-1 flex-col">
+                            <Badge className="font-medium text-base px-5 mt-3">
+                              <Award className="w-8 h-8 " />
+                              {localizeBadge.name}
+                            </Badge>
+                            {localizeBadge.description && (
+                              <p className="dark:text-yellow-500 text-yellow-800">
+                                {localizeBadge.description}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </motion.div>
                     )}
@@ -325,10 +352,7 @@ export default function StoryCompletion({
                 }}
                 className="gap-3 flex items-center justify-center mt-8"
               >
-                <Button
-                  className="max-w-max"
-                  onClick={handleReturnToDashboard}
-                >
+                <Button className="max-w-max" onClick={handleReturnToDashboard}>
                   {t("buttons.continueReading")}
                   {isRTL ? (
                     <ChevronLeft className="w-4 h-4 mr-1" />

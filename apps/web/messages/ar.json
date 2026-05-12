@@ -803,11 +803,11 @@
 			"totalStars": "إجمالي النجوم",
 			"progressToLevel": "التقدم إلى المستوى {nextLevel}",
 			"progressPercentage": "{percentage}%",
-			"levelUnlocked": "🎉 لقد وصلت إلى المستوى {nextLevel}!",
+			"levelUnlocked": " لقد وصلت إلى المستوى {nextLevel}!",
 			"starsNeeded": "{count} نجمة إضافية مطلوبة"
 		},
 		"badgeInfo": {
-			"unlocked": "شارة جديدة مفتوحة: {badgeName}"
+			"unlocked": "شارة جديدة مفتوحة:"
 		},
 		"buttons": {
 			"continueReading": "متابعة القراءة",

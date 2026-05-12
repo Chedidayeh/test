@@ -803,11 +803,11 @@
 			"totalStars": "Total des Étoiles",
 			"progressToLevel": "Progression vers le Niveau {nextLevel}",
 			"progressPercentage": "{percentage}%",
-			"levelUnlocked": "🎉 Tu as atteint le Niveau {nextLevel}!",
+			"levelUnlocked": " Tu as atteint le Niveau {nextLevel}!",
 			"starsNeeded": "{count} étoiles supplémentaires nécessaires"
 		},
 		"badgeInfo": {
-			"unlocked": "Nouveau Badge Débloqué: {badgeName}"
+			"unlocked": "Nouveau Badge Débloqué:"
 		},
 		"buttons": {
 			"continueReading": "Continuer à Lire",

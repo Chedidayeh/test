@@ -11,7 +11,7 @@ const buttonVariants = cva(
       variant: {
         // playful, child-friendly default: warm gradient, rounded, and soft shadow
         default:
-          "bg-gradient-to-r text-white bg-primary hover:bg-primary/90 rounded-2xl  transform hover:-translate-y-0.5",
+          "bg-gradient-to-r text-white dark:text-gray-900 bg-primary hover:bg-primary/90 rounded-2xl  transform hover:-translate-y-0.5",
         destructive:
           "bg-destructive rounded-2xl text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
         accent:
