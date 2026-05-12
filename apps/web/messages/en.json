@@ -212,7 +212,8 @@
 				"from": "From",
 				"selectStartDate": "select a start date",
 				"apply": "Apply",
-				"showing": "Showing"
+				"showing": "Showing",
+				"presetBeforeJoining": "This date range is before your child joined"
 			},
 			"noActivityMessage": "No reading activity yet. Start playing to see reading statistics!"
 		},
@@ -520,7 +521,14 @@
 			"loginFailedAfterRegistration": "Login failed after registration",
 			"loginFailed": "Login failed",
 			"accountCreatedAndLoggedIn": "Account created and logged in successfully!",
-			"loggedIn": "Logged in successfully!"
+			"loggedIn": "Logged in successfully!",
+			"unauthorized": "No account found with this email",
+			"invalidCredentials": "Invalid email or password",
+			"userNotFound": "User not found",
+			"emailAlreadyExists": "Email already exists",
+			"invalidEmail": "Invalid email address",
+			"passwordTooWeak": "Password is too weak",
+			"passwordIncorrect": "Password is incorrect, please try again"
 		}
 	},
 	"Onboarding": {
@@ -636,6 +644,13 @@
 		"selectAgeGroup": "Please select an age group for your child",
 		"invalidAgeGroup": "Selected age group is invalid",
 		"selectAtLeastOneTheme": "Select at least one theme",
+		"theme_space": "Space",
+		"theme_magic": "Magic",
+		"theme_fantasy": "Fantasy",
+		"theme_animals": "Animals",
+		"theme_adventure": "Adventure",
+		"theme_robots": "Robots",
+		"theme_mystery": "Mystery",
 		"stepOf": "Step {step} of {total}"
 	},
 	"AiStorytellingIntro": {
@@ -777,6 +792,11 @@
 			"title": "Story Completed!",
 			"subtitle": "Great job, {childName}! You finished \"{storyTitle}\"."
 		},
+		"completionMessage": {
+			"title": "Story Completed!",
+			"subtitle": "Great job, {childName}! You finished \"{storyTitle}\".",
+			"starsEarned": "{count} Stars Earned!"
+		},
 		"progressCard": {
 			"starsEarned": "Stars Earned:",
 			"currentLevel": "Current Level",
@@ -790,7 +810,8 @@
 			"unlocked": "New Badge Unlocked: {badgeName}"
 		},
 		"buttons": {
-			"continueReading": "Continue Reading"
+			"continueReading": "Continue Reading",
+			"showProgressButton": "Show Progress"
 		}
 	}
 }

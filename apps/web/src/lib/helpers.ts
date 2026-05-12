@@ -9,6 +9,7 @@ import { auth } from "../auth";
 export interface ApiError {
   success: false;
   error: {
+    code?: string;
     message: string;
     status?: number;
   };
@@ -107,7 +108,8 @@ export async function apiRequest<T = any>(
       return {
         success: false,
         error: {
-          message: `${error.error || error.message || "Unknown error"}`,
+          code: error.error?.code,
+          message: `${error.error?.message || error.message || "Unknown error"}`,
           status: response.status,
         },
       } as ApiError;

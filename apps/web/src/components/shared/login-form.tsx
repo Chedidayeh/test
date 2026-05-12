@@ -38,6 +38,37 @@ interface LoginFormProps extends React.ComponentProps<"div"> {
   onOpenChange?: (open: boolean) => void;
 }
 
+/**
+ * Map API error codes to translation keys
+ */
+function getErrorTranslationKey(code?: string, message?: string): string {
+  if (!code) return "errors.loginFailed";
+
+  // Handle message-specific translations for UNAUTHORIZED errors
+  if (code === "UNAUTHORIZED" && message) {
+    if (message.toLowerCase().includes("password")) {
+      return "errors.passwordIncorrect";
+    }
+    if (message.toLowerCase().includes("email") || message.toLowerCase().includes("account")) {
+      return "errors.unauthorized";
+    }
+  }
+
+  const errorCodeMap: Record<string, string> = {
+    "UNAUTHORIZED": "errors.unauthorized",
+    "CONFLICT": "errors.emailAlreadyExists",
+    "INVALID_CREDENTIALS": "errors.invalidCredentials",
+    "USER_NOT_FOUND": "errors.userNotFound",
+    "EMAIL_ALREADY_EXISTS": "errors.emailAlreadyExists",
+    "INVALID_EMAIL": "errors.invalidEmail",
+    "PASSWORD_TOO_WEAK": "errors.passwordTooWeak",
+    "REGISTRATION_FAILED": "errors.registrationFailed",
+    "LOGIN_ERROR": "errors.loginFailed",
+  };
+
+  return errorCodeMap[code] || "errors.loginFailed";
+}
+
 export function LoginForm({ className, hideTrigger = false, open, onOpenChange }: LoginFormProps) {
   const t = useTranslations("LoginForm");
   const [isSignUp, setIsSignUp] = useState(false);
@@ -75,7 +106,8 @@ export function LoginForm({ className, hideTrigger = false, open, onOpenChange }
         const registerResult = await registerAction({ email, password, name });
 
         if (!registerResult.success) {
-          setError(registerResult.error?.message || t("errors.registrationFailed"));
+          const errorKey = getErrorTranslationKey(registerResult.error?.code, registerResult.error?.message);
+          setError(t(errorKey));
           return;
         }
 
@@ -83,7 +115,8 @@ export function LoginForm({ className, hideTrigger = false, open, onOpenChange }
         const loginResult = await loginAction({ email, password });
 
         if (!loginResult.success) {
-          setError(loginResult.error?.message || t("errors.loginFailedAfterRegistration"));
+          const errorKey = getErrorTranslationKey(loginResult.error?.code, loginResult.error?.message);
+          setError(t(errorKey));
           return;
         }
 
@@ -101,7 +134,8 @@ export function LoginForm({ className, hideTrigger = false, open, onOpenChange }
         const loginResult = await loginAction({ email, password });
 
         if (!loginResult.success) {
-          setError(loginResult.error?.message || t("errors.loginFailed"));
+          const errorKey = getErrorTranslationKey(loginResult.error?.code, loginResult.error?.message);
+          setError(t(errorKey));
           return;
         }
 

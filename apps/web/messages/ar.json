@@ -87,7 +87,7 @@
 		"stats": {
 			"totalStars": "إجمالي النجوم",
 			"storiesCompleted": "القصص المكتملة",
-			"riddlesSolved": "الألغاز المحلولة",
+			"riddlesSolved": "الألغاز التي تم حلها",
 			"totalReadingTime": "إجمالي وقت القراءة",
 			"averagePerDay": "المتوسط يوميًا",
 			"currentStreak": "السلسلة الحالية",
@@ -201,7 +201,8 @@
 				"from": "من",
 				"selectStartDate": "اختر تاريخ البدء",
 				"apply": "تطبيق",
-				"showing": "يظهر"
+				"showing": "يظهر",
+				"presetBeforeJoining": "هذا النطاق الزمني قبل انضمام طفلك"
 			}
 		},
 		"childStorytelling": {
@@ -250,7 +251,7 @@
 			"noRecommendations": "لا توجد توصيات محددة لهذا الأسبوع."
 		},
 		"notificationSettings": {
-			"title": "إعدادات الإخطارات",
+			"title": "إعدادات الإشعارات",
 			"description": "إدارة تنبيهات القراءة لـ {childName}",
 			"enableReminders": "تفعيل التنبيهات",
 			"remindersDescription": "احصل على إخطارات عندما يفوّت {childName} جلسات القراءة",
@@ -258,16 +259,16 @@
 			"disabledStatus": "غير مفعلة",
 			"statusMessage": "تنبيهات القراءة {status} لـ {childName}",
 			"statusMessagePrefix": "تذكيرات القراءة لـ {childName}",
-			"settingsDescription": "استخدم زر الإعدادات لإدارة تفضيلات الإخطارات لهذا الطفل.",
+			"settingsDescription": "استخدم زر الإعدادات لإدارة تفضيلات الإشعارات لهذا الطفل.",
 			"cancel": "إلغاء",
 			"save": "حفظ",
 			"saving": "جاري الحفظ...",
-			"savedSuccess": "تم حفظ إعدادات الإخطارات!"
+			"savedSuccess": "تم حفظ إعدادات الإشعارات!"
 		},
 		"childSettings": {
 			"title": "إعدادات الطفل",
 			"generalTab": "عام",
-			"notificationsTab": "الإخطارات",
+			"notificationsTab": "الإشعارات",
 			"deleteChildTab": "حذف",
 			"childName": "اسم الطفل",
 			"childNamePlaceholder": "أدخل اسم الطفل",
@@ -520,7 +521,14 @@
 			"loginFailedAfterRegistration": "فشل تسجيل الدخول بعد التسجيل",
 			"loginFailed": "فشل تسجيل الدخول",
 			"accountCreatedAndLoggedIn": "تم إنشاء الحساب وتسجيل الدخول بنجاح!",
-			"loggedIn": "تم تسجيل الدخول بنجاح!"
+			"loggedIn": "تم تسجيل الدخول بنجاح!",
+			"unauthorized": "لم يتم العثور على حساب بهذا البريد الإلكتروني",
+			"invalidCredentials": "بريد إلكتروني أو كلمة مرور غير صحيحة",
+			"userNotFound": "لم يتم العثور على المستخدم",
+			"emailAlreadyExists": "هذا البريد الإلكتروني موجود بالفعل",
+			"invalidEmail": "عنوان بريد إلكتروني غير صحيح",
+			"passwordTooWeak": "كلمة المرور ضعيفة جداً",
+			"passwordIncorrect": "كلمة المرور غير صحيحة، يرجى المحاولة مرة أخرى"
 		}
 	},
 	"Onboarding": {
@@ -636,6 +644,13 @@
 		"selectAgeGroup": "يرجى تحديد فئة عمرية لطفلك",
 		"invalidAgeGroup": "فئة العمر المحددة غير صالحة",
 		"selectAtLeastOneTheme": "حدد موضوعًا واحدًا على الأقل",
+		"theme_space": "الفضاء",
+		"theme_magic": "السحر",
+		"theme_fantasy": "الخيال العلمي",
+		"theme_animals": "الحيوانات",
+		"theme_adventure": "المغامرة",
+		"theme_robots": "الروبوتات",
+		"theme_mystery": "الغموض",
 		"stepOf": "الخطوة {step} من {total}"
 	},
 	"AiStorytellingIntro": {
@@ -777,6 +792,11 @@
 			"title": "تمت القصة!",
 			"subtitle": "عمل رائع، {childName} لقد أكملت قصة \"{storyTitle}\""
 		},
+		"completionMessage": {
+			"title": "تمت القصة!",
+			"subtitle": "عمل رائع، {childName} لقد أكملت قصة \"{storyTitle}\"",
+			"starsEarned": "{count} نجمة مكتسبة!"
+		},
 		"progressCard": {
 			"starsEarned": "النجوم المكتسبة:",
 			"currentLevel": "المستوى الحالي",
@@ -790,7 +810,8 @@
 			"unlocked": "شارة جديدة مفتوحة: {badgeName}"
 		},
 		"buttons": {
-			"continueReading": "متابعة القراءة"
+			"continueReading": "متابعة القراءة",
+			"showProgressButton": "عرض التقدم"
 		}
 	}
 }

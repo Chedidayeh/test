@@ -46,7 +46,7 @@ export async function loginAction(payload: {
       return {
         success: false,
         error: {
-          code: "INVALID_CREDENTIALS",
+          code: result.code || "INVALID_CREDENTIALS",
           message: result.message || "Invalid credentials",
         },
         timestamp: new Date(),
@@ -92,8 +92,8 @@ export async function registerAction(payload: {
       return {
         success: false,
         error: {
-          code: "REGISTRATION_FAILED",
-          message: (result as { error: string }).error || "Registration failed",
+          code: (result as any).code || "REGISTRATION_FAILED",
+          message: (result as any).error || "Registration failed",
         },
         timestamp: new Date(),
       };

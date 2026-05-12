@@ -64,13 +64,13 @@ export default function ParentOnboarding({
 
   // Define available themes
   const allThemes = [
-    { id: "space", name: "Space" },
-    { id: "magic", name: "Magic" },
-    { id: "fantasy", name: "Fantasy" },
-    { id: "animals", name: "Animals" },
-    { id: "adventure", name: "Adventure" },
-    { id: "robots", name: "Robots" },
-    { id: "mystery", name: "Mystery" },
+    { id: "space", name: t("theme_space") },
+    { id: "magic", name: t("theme_magic") },
+    { id: "fantasy", name: t("theme_fantasy") },
+    { id: "animals", name: t("theme_animals") },
+    { id: "adventure", name: t("theme_adventure") },
+    { id: "robots", name: t("theme_robots") },
+    { id: "mystery", name: t("theme_mystery") },
   ];
 
   // Merge default themes with custom themes

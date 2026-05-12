@@ -11,6 +11,7 @@ import { getDateRangePresets, type TimeRange } from "../_lib/stats";
 interface DateRangePickerProps {
   value: TimeRange;
   onRangeChange: (range: TimeRange) => void;
+  childJoiningDate?: Date; // Earliest date child can have data for
 }
 
 /**
@@ -19,7 +20,7 @@ interface DateRangePickerProps {
  * Presets: Last 3 Days, Last 7 Days, Last 30 Days
  * Custom: Click calendar icon to select custom date range
  */
-export default function DateRangePicker({ value, onRangeChange }: DateRangePickerProps) {
+export default function DateRangePicker({ value, onRangeChange, childJoiningDate }: DateRangePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const t = useTranslations("ParentDashboard");
   
@@ -28,6 +29,14 @@ export default function DateRangePicker({ value, onRangeChange }: DateRangePicke
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return today;
+  };
+
+  // Get the earliest selectable date (child joining date or today - 30 days, whichever is later)
+  const getEarliestDate = () => {
+    if (!childJoiningDate) return new Date(new Date().setDate(new Date().getDate() - 30));
+    const joining = new Date(childJoiningDate);
+    joining.setHours(0, 0, 0, 0);
+    return joining;
   };
 
   const [dateRange, setDateRange] = useState<{
@@ -99,17 +108,24 @@ export default function DateRangePicker({ value, onRangeChange }: DateRangePicke
           {t("timeAnalytics.dateRangePicker.selectTimePeriod")}
         </p>
         <div className="flex flex-wrap gap-2">
-          {Object.entries(presets).map(([key, preset]) => (
-            <Button
-              key={key}
-              variant={activePreset === key ? "default" : "outline"}
-              size="sm"
-              onClick={() => handlePresetClick(key)}
-              className="rounded-lg"
-            >
-              {t(`timeAnalytics.presets.${key}`)}
-            </Button>
-          ))}
+          {Object.entries(presets).map(([key, preset]) => {
+            const earliestDate = getEarliestDate();
+            // Disable preset if it goes before child joining date
+            const isDisabled = preset.startDate < earliestDate;
+            return (
+              <Button
+                key={key}
+                variant={activePreset === key ? "default" : "outline"}
+                size="sm"
+                onClick={() => handlePresetClick(key)}
+                disabled={isDisabled}
+                className="rounded-lg"
+                title={isDisabled ? t("timeAnalytics.dateRangePicker.presetBeforeJoining") : ""}
+              >
+                {t(`timeAnalytics.presets.${key}`)}
+              </Button>
+            );
+          })}
 
           <Popover open={isOpen} onOpenChange={setIsOpen}>
             <PopoverTrigger asChild>
@@ -132,8 +148,9 @@ export default function DateRangePicker({ value, onRangeChange }: DateRangePicke
                     onSelect={(date) => setDateRange({ ...dateRange, from: date })}
                     disabled={(date) => {
                       const today = getToday();
-                      // Disable dates after today
-                      return date > today;
+                      const earliestDate = getEarliestDate();
+                      // Disable dates after today or before child joining date
+                      return date > today || date < earliestDate;
                     }}
                   />
                 </div>

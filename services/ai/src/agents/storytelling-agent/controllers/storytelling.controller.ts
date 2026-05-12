@@ -80,9 +80,8 @@ export class StorytellingController {
               childId: childData.id,
             },
           );
-
           try {
-            // RC-3 + E9 FIX: Call atomic function that handles:
+  
             // 1. Re-check plan completion (inside transaction)
             // 2. Generate new plan with transaction client (ensures atomicity)
             // 3. Mark old plan completed

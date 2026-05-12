@@ -212,7 +212,8 @@
 				"from": "Depuis",
 				"selectStartDate": "sélectionnez une date de début",
 				"apply": "Appliquer",
-				"showing": "Affichage"
+				"showing": "Affichage",
+				"presetBeforeJoining": "Cette plage de dates est antérieure à l'adhésion de votre enfant"
 			},
 			"noActivityMessage": "Aucune activité de lecture pour le moment. Commencez à jouer pour voir les statistiques !"
 		},
@@ -520,7 +521,14 @@
 			"loginFailedAfterRegistration": "Échec de la connexion après l'inscription",
 			"loginFailed": "Échec de la connexion",
 			"accountCreatedAndLoggedIn": "Compte créé et connecté avec succès !",
-			"loggedIn": "Connecté avec succès !"
+			"loggedIn": "Connecté avec succès !",
+			"unauthorized": "Aucun compte trouvé avec cet e-mail",
+			"invalidCredentials": "E-mail ou mot de passe invalide",
+			"userNotFound": "Utilisateur non trouvé",
+			"emailAlreadyExists": "Cet e-mail existe déjà",
+			"invalidEmail": "Adresse e-mail invalide",
+			"passwordTooWeak": "Le mot de passe est trop faible",
+			"passwordIncorrect": "Le mot de passe est incorrect, veuillez réessayer"
 		}
 	},
 	"Onboarding": {
@@ -636,6 +644,13 @@
 		"selectAgeGroup": "Veuillez sélectionner une tranche d'âge pour votre enfant",
 		"invalidAgeGroup": "La tranche d'âge sélectionnée est invalide",
 		"selectAtLeastOneTheme": "Sélectionnez au moins un thème",
+		"theme_space": "Espace",
+		"theme_magic": "Magie",
+		"theme_fantasy": "Fantaisie",
+		"theme_animals": "Animaux",
+		"theme_adventure": "Aventure",
+		"theme_robots": "Robots",
+		"theme_mystery": "Mystère",
 		"stepOf": "Étape {step} sur {total}"
 	},
 	"AiStorytellingIntro": {
@@ -777,6 +792,11 @@
 			"title": "Histoire Terminée!",
 			"subtitle": "Bravo, {childName}! Tu as fini \"{storyTitle}\"."
 		},
+		"completionMessage": {
+			"title": "Histoire Terminée!",
+			"subtitle": "Bravo, {childName}! Tu as fini \"{storyTitle}\".",
+			"starsEarned": "{count} Étoiles Gagnées!"
+		},
 		"progressCard": {
 			"starsEarned": "Étoiles Gagnées:",
 			"currentLevel": "Niveau Actuel",
@@ -790,7 +810,8 @@
 			"unlocked": "Nouveau Badge Débloqué: {badgeName}"
 		},
 		"buttons": {
-			"continueReading": "Continuer à Lire"
+			"continueReading": "Continuer à Lire",
+			"showProgressButton": "Afficher la Progression"
 		}
 	}
 }

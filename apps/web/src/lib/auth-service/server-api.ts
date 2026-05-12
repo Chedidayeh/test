@@ -35,7 +35,7 @@ export async function loginUser(payload: { email: string; password: string }) {
 
   if (isApiError(response)) {
     console.warn("[Auth Service API] Login failed:", response.error.message);
-    return { valid: false, message: response.error.message };
+    return { valid: false, message: response.error.message, code: response.error.code };
   }
 
   return { valid: true, data: response };
@@ -58,7 +58,7 @@ export async function registerUser(payload: {
       "[Auth Service API] Registration failed:",
       response.error.message,
     );
-    return { success: false, error: response.error.message };
+    return { success: false, error: response.error.message, code: response.error.code };
   }
 
   return response;

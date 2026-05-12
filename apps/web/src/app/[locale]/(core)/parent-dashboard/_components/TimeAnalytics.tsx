@@ -36,15 +36,26 @@ interface TimeAnalyticsProps {
  */
 export default function TimeAnalytics({ childProgress, childProfile }: TimeAnalyticsProps) {
   const t = useTranslations("ParentDashboard");
-  // Initialize with "last 3 days" preset
+  // Initialize with "last 3 days" preset or earliest date if child joined recently
   const presets = getDateRangePresets();
-  const defaultRange = presets.last3Days || {
-    startDate: (() => {
+  const childJoiningDate = new Date(childProfile.createdAt);
+  childJoiningDate.setHours(0, 0, 0, 0);
+  
+  // Calculate the effective start date (max of: preset start, joining date)
+  const getValidStartDate = () => {
+    const preset3DaysStart = (() => {
       const date = new Date();
       date.setDate(date.getDate() - 3);
       date.setHours(0, 0, 0, 0);
       return date;
-    })(),
+    })();
+    
+    // If child joined less than 3 days ago, start from joining date
+    return preset3DaysStart < childJoiningDate ? childJoiningDate : preset3DaysStart;
+  };
+  
+  const defaultRange = {
+    startDate: getValidStartDate(),
     endDate: (() => {
       const date = new Date();
       date.setHours(0, 0, 0, 0);
@@ -164,7 +175,7 @@ export default function TimeAnalytics({ childProgress, childProfile }: TimeAnaly
           </p>
         </div>
       </div>
-      <DateRangePicker value={dateRange} onRangeChange={setDateRange} />
+      <DateRangePicker value={dateRange} onRangeChange={setDateRange} childJoiningDate={childJoiningDate} />
 
       <div className="rounded-xl bg-card border border-black/30 p-6 shadow-warm-lg overflow-x-auto">
         <h3 className="font-heading text-lg text-foreground mb-4">{t("timeAnalytics.stats.dailyReadingTime")}</h3>

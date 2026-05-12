@@ -418,7 +418,7 @@ export default function ParentOnboarding({
                           {["boy", "girl"].map((option) => (
                             <label
                               key={option}
-                              className={`flex items-center justify-center p-3 border rounded-lg cursor-pointer transition-all ${
+                              className={`flex items-center bg-input/30 justify-center p-3 border rounded-lg cursor-pointer transition-all ${
                                 field.value === option
                                   ? option === "boy"
                                     ? "border-sky-500 bg-sky-500/10"
@@ -617,7 +617,7 @@ export default function ParentOnboarding({
                               key={day}
                               type="button"
                               onClick={() => field.onChange(day)}
-                              className={`p-3 border rounded-lg font-medium transition-all ${
+                              className={`p-3 bg-input/30 border rounded-lg font-medium transition-all ${
                                 field.value === day
                                   ? "border-primary bg-primary/10 text-primary"
                                   : "border-muted hover:border-primary/50"

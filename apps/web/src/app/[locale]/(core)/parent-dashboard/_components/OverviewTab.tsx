@@ -166,7 +166,7 @@ export default function OverviewTab({
                 onClick={() => setShowChildSettings(true)}
               >
                 <Settings className="h-4 w-4 mr-1" />
-                Child Settings
+                {t("childSettings.title") || "Child Settings"}
               </Button>
             </div>
           </div>
