@@ -89,7 +89,7 @@ const WelcomeBanner = ({
               whileHover={{ scale: 1.05 }}
               className="flex items-center gap-2 bg-yellow-100/50 dark:bg-yellow-900/20 rounded-lg px-3 lg:px-4 py-2 justify-center sm:justify-start"
             >
-              <StarIcon size={18} className="lg:w-5 lg:h-5 text-yellow-500 flex-shrink-0" />
+              <StarIcon size={18} className="lg:w-5 lg:h-5 text-yellow-500 fill-yellow-500 flex-shrink-0" />
               <div className="flex items-center gap-1 lg:gap-2 min-w-0">
                 <span className="font-body text-xs lg:text-sm text-muted-foreground truncate">
                   {t("welcomeBanner.stats.stars")}

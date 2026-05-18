@@ -101,7 +101,7 @@ const ProgressTracker = ({
                 {t("progressTracker.progressTo", { level: nextLevel.levelNumber })}
               </p>
               <div className="flex items-center justify-center gap-1">
-                <Star size={16} className="text-primary animate-pulse" />
+                <Star size={16} className="text-primary fill-primary animate-pulse" />
                 <span className="font-bold text-lg text-foreground">
                   {starsNeeded}
                 </span>

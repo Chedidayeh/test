@@ -66,6 +66,8 @@ export const ChallengeType = {
   RIDDLE: "RIDDLE", // open-ended question where child must type an answer, correctness is determined by keyword matching or manual review
   CHOOSE_ENDING: "CHOOSE_ENDING", // all anserwers are correct, see if child understandood the story
   MORAL_DECISION: "MORAL_DECISION", // all anserwers are correct, see if child understood the moral of the story
+  FILL_IN_THE_BLANK: "FILL_IN_THE_BLANK", // open-ended question with a blank to fill, correctness determined by keyword matching or ai evaluation
+  SEQUENCING: "SEQUENCING", // child must put events in the correct order, answers are predefined 
 } as const;
 
 export type ChallengeType = (typeof ChallengeType)[keyof typeof ChallengeType];
