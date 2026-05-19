@@ -247,6 +247,7 @@ enum ChallengeType {
   RIDDLE // Meaning-based riddle
   CHOOSE_ENDING // Select the right story ending, all anserwers are correct, see if child understandood the story
   MORAL_DECISION //  all anserwers are correct, see if child understood the moral of the story
+  SEQUENCING // Child must put events in the correct order, answers are predefined
 }
 
 // Challenge: Questions/riddles within chapters
@@ -258,6 +259,7 @@ model Challenge {
   type     ChallengeType
   question String
   audioUrl String?
+  imageUrl String?
 
   baseStars Int      @default(20) // Base stars for solving
   order     Int // Order in chapter
@@ -298,7 +300,8 @@ model Answer {
 
   text      String // Answer text
   isCorrect Boolean // Is this the correct answer?
-  order     Int? // For multiple choice option ordering
+  order     Int? // For multiple choice option ordering and sequencing order for SEQUENCING type
+  correctSequence Int? // For SEQUENCING challenges: correct position in sequence (1-indexed). Required for SEQUENCING type, null for others.
 
   translations AnswerTranslation[]
 

@@ -879,25 +879,25 @@ export class ChildrenService {
 
     // Calculate star rewards based on attempt result
     let totalStars = 0;
-    // let noHintBonus = 0;
-    // let firstTryBonus = 0;
+    let noHintBonus = 0;
+    let firstTryBonus = 0;
 
     // Only award stars if the attempt is correct
     // If skipped or incorrect, totalStars remains 0
     if (payload.isCorrect) {
       totalStars = payload.baseStars;
 
-      // // No hint bonus: 50% of base stars if hints were not used
-      // if (payload.usedHints === 0) {
-      //   noHintBonus = Math.ceil(payload.baseStars * 0.5);
-      //   totalStars += noHintBonus;
-      // }
+      // No hint bonus: 50% of base stars if hints were not used
+      if (payload.usedHints === 0) {
+        noHintBonus = Math.ceil(payload.baseStars * 0.5);
+        totalStars += noHintBonus;
+      }
 
-      // // First try bonus: 25% of base stars if solved on first attempt
-      // if (payload.attemptNumber === 1) {
-      //   firstTryBonus = Math.ceil(payload.baseStars * 0.25);
-      //   totalStars += firstTryBonus;
-      // }
+      // First try bonus: 25% of base stars if solved on first attempt
+      if (payload.attemptNumber === 1) {
+        firstTryBonus = Math.ceil(payload.baseStars * 0.25);
+        totalStars += firstTryBonus;
+      }
     }
 
     // Create or update a star event record linked to the challenge attempt
@@ -909,8 +909,8 @@ export class ChildrenService {
         attemptId: updatedAttempt.id,
         challengeId: payload.challengeId,
         baseStars: payload.baseStars,
-        // noHintBonus,
-        // firstTryBonus,
+        noHintBonus,
+        firstTryBonus,
         totalStars,
         attemptNumber: payload.attemptNumber,
         usedHints: payload.usedHints > 0,
@@ -918,8 +918,8 @@ export class ChildrenService {
       },
       update: {
         baseStars: payload.baseStars,
-        // noHintBonus,
-        // firstTryBonus,
+        noHintBonus,
+        firstTryBonus,
         totalStars,
         attemptNumber: payload.attemptNumber,
         usedHints: payload.usedHints > 0,

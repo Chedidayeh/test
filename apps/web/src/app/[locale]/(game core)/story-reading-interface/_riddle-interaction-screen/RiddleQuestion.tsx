@@ -33,16 +33,18 @@ const RiddleQuestion = ({
 
   const getTypeLabel = (type?: ChallengeType): string => {
     switch (type) {
-      case "TRUE_FALSE":
+      case ChallengeType.TRUE_FALSE:
         return t("riddleQuestion.trueOrFalse");
-      case "CHOOSE_ENDING":
+      case ChallengeType.CHOOSE_ENDING:
         return t("riddleQuestion.chooseEnding");
-      case "MORAL_DECISION":
+      case ChallengeType.MORAL_DECISION:
         return t("riddleQuestion.moralDecision");
-      case "MULTIPLE_CHOICE":
+      case ChallengeType.MULTIPLE_CHOICE:
         return t("riddleQuestion.multipleChoice");
-      case "RIDDLE":
+      case ChallengeType.RIDDLE:
         return t("riddleQuestion.riddle");
+      case ChallengeType.SEQUENCING:
+        return t("riddleQuestion.sequencing");
       default:
         return t("riddleQuestion.defaultQuestion");
     }

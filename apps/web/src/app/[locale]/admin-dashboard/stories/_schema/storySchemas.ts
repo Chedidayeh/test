@@ -17,6 +17,7 @@ export const ChallengTypeDescriptions: Record<ChallengeType, string> = {
   RIDDLE: "Open-ended question where child types an answer. Correctness determined by keyword matching.",
   CHOOSE_ENDING: "All answers are correct. Assesses if child understands the story.",
   MORAL_DECISION: "All answers are correct. Assesses if child understands the moral of the story.",
+  SEQUENCING: "Arrange events in correct order. Child must reorder predefined answers to match the correct sequence.",
 };
 
 /**
@@ -29,6 +30,7 @@ export const answerSchema = z.object({
   text: z.string().min(1, "Answer text is required"),
   isCorrect: z.boolean(),
   order: z.number().int().min(0).optional().default(0),
+  correctSequence: z.number().int().min(1).optional().nullable(), // For SEQUENCING challenges: correct position in sequence (1-indexed)
 });
 
 /**
@@ -40,6 +42,7 @@ export const answerFormSchema = z.object({
   text: z.string().min(1, "Answer text is required"),
   isCorrect: z.boolean(),
   order: z.number().int().min(0).default(0),
+  correctSequence: z.number().int().min(1).optional().nullable(), // For SEQUENCING challenges: correct position in sequence (1-indexed)
   translations: z.array(z.object({
     languageCode: z.string().min(1, "Language code is required"),
     text: z.string().min(1, "Answer text is required for translation"),
@@ -56,12 +59,14 @@ export const answerFormSchema = z.object({
  * Validation rules for answers:
  * - MULTIPLE_CHOICE, TRUE_FALSE, RIDDLE: At least one answer must be correct
  * - CHOOSE_ENDING, MORAL_DECISION: All answers must be correct
+ * - SEQUENCING: All answers must have unique correctSequence values 1..N (no gaps)
  */
 export const challengeSchema = z.object({
   id: z.string().optional(),
   chapterId: z.string().optional(), // Optional for form creation
   type: z.nativeEnum(ChallengeType),
   question: z.string().min(5, "Question must be at least 5 characters"),
+  imageUrl: z.string().url("Invalid image URL").optional().or(z.literal("")), // Optional image for visual context
   baseStars: z.number().int().min(5, "Base stars must be at least 5").max(100, "Base stars cannot exceed 100"),
   order: z.number().int().min(1, "Order must be at least 1"),
   hints: z.array(z.string().min(1, "Hint cannot be empty")).max(3, "Maximum 3 hints allowed").default([]),
@@ -91,6 +96,30 @@ export const challengeSchema = z.object({
         path: ["answers"],
       });
     }
+  } else if (type === ChallengeType.SEQUENCING) {
+    // For SEQUENCING, validate that all answers have unique correctSequence values 1..N
+    const sequences = answers
+      .map((a) => a.correctSequence)
+      .filter((seq) => seq !== null && seq !== undefined);
+    
+    if (sequences.length !== answers.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "All answers must have a sequence order assigned",
+        path: ["answers"],
+      });
+    } else {
+      const sorted = [...sequences].sort((a, b) => a - b);
+      const expected = Array.from({ length: answers.length }, (_, i) => i + 1);
+      
+      if (JSON.stringify(sorted) !== JSON.stringify(expected)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Sequence must be continuous (1 to ${answers.length}) with no duplicates`,
+          path: ["answers"],
+        });
+      }
+    }
   }
 });
 
@@ -102,10 +131,12 @@ export const challengeSchema = z.object({
  * Validation rules for answers:
  * - MULTIPLE_CHOICE, TRUE_FALSE, RIDDLE: At least one answer must be correct
  * - CHOOSE_ENDING, MORAL_DECISION: All answers must be correct
+ * - SEQUENCING: All answers must have unique correctSequence values 1..N (no gaps)
  */
 export const challengeFormSchema = z.object({
   type: z.nativeEnum(ChallengeType),
   question: z.string().min(5, "Question must be at least 5 characters"),
+  imageUrl: z.string().url("Invalid image URL").optional().or(z.literal("")), // Optional image for visual context
   baseStars: z.number().int().min(5).max(100),
   order: z.number().int().min(1),
   hints: z.array(z.string().min(1, "Hint cannot be empty")).max(3, "Maximum 3 hints allowed").default([]),
@@ -142,6 +173,30 @@ export const challengeFormSchema = z.object({
         message: `At least one answer must be marked as correct for ${type} challenges`,
         path: ["answers"],
       });
+    }
+  } else if (type === ChallengeType.SEQUENCING) {
+    // For SEQUENCING, validate that all answers have unique correctSequence values 1..N
+    const sequences = answers
+      .map((a) => a.correctSequence)
+      .filter((seq) => seq !== null && seq !== undefined);
+    
+    if (sequences.length !== answers.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "All answers must have a sequence order assigned",
+        path: ["answers"],
+      });
+    } else {
+      const sorted = [...sequences].sort((a, b) => a - b);
+      const expected = Array.from({ length: answers.length }, (_, i) => i + 1);
+      
+      if (JSON.stringify(sorted) !== JSON.stringify(expected)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Sequence must be continuous (1 to ${answers.length}) with no duplicates`,
+          path: ["answers"],
+        });
+      }
     }
   }
 });

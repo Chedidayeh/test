@@ -154,6 +154,10 @@
 				"questionLabel": "السؤال:",
 				"correctAnswerLabel": "الإجابة الصحيحة:",
 				"optionsLabel": "الخيارات:",
+				"sequenceItemsLabel": "التسلسل الصحيح",
+				"sequenceItemsHint": "يجب ترتيب الأحداث بهذا الترتيب:",
+				"childSequenceLabel": "التسلسل الذي رتبه الطفل",
+				"errorParsingSequence": "خطأ في عرض بيانات التسلسل",
 				"hintsLabel": "التلميحات:",
 				"hintNumber": "تلميح {n}:",
 				"childAttemptsTitle": "محاولات الطفل:",
@@ -738,6 +742,7 @@
 			"solvedAnswerMULTIPLE_CHOICE": "اختيار ممتاز! لقد فهمت القصة حقًا!",
 			"solvedAnswerCHOOSE_ENDING": "اختيار ممتاز! شكراً لمشاركة وجهة نظرك!",
 			"solvedAnswerMORAL_DECISION": "اختيار ممتاز! شكراً لمشاركة وجهة نظرك!",
+			"solvedAnswerSEQUENCING": "ممتاز! لقد رتبت الأحداث بالترتيب الصحيح!",
 			"riddleQuestion": {
 				"riddleCounter": "اللغز {current} من {total}",
 				"trueOrFalse": "اختر صحيح أو خاطئ:",
@@ -745,6 +750,7 @@
 				"moralDecision": "ماذا ستفعل؟",
 				"multipleChoice": "اختر الإجابة الصحيحة:",
 				"riddle": "حل اللغز:",
+				"sequencing": "رتب هذه الأحداث بالترتيب الصحيح:",
 				"defaultQuestion": "أجب على السؤال:",
 				"timeDisplay": "الوقت: {seconds}ث",
 				"playAudio": "قراءة اللغز بصوت عالٍ",
@@ -761,6 +767,12 @@
 			},
 			"multipleChoiceAnswer": {
 				"chooseAnswer": "اختر إجابتك:"
+			},
+			"sequencingAnswer": {
+				"instructions": "رتب هذه الأحداث بالترتيب الصحيح:",
+				"dragHint": "اسحب وأفلت لإعادة ترتيب",
+				"checking": "جاري الفحص...",
+				"submit": "التحقق من الترتيب"
 			},
 			"hintPanel": {
 				"title": "تلميح مفيد",

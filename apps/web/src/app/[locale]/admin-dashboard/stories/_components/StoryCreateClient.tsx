@@ -80,6 +80,7 @@ export function StoryCreateClient({ ageGroups, roadmaps, worlds }: StoryCreateCl
             challenge: {
               type: chapter.challenge.type,
               question: chapter.challenge.question,
+              imageUrl: chapter.challenge.imageUrl || undefined,
               baseStars: chapter.challenge.baseStars,
               order: chapter.challenge.order,
               hints: chapter.challenge.hints || [],
@@ -103,6 +104,7 @@ export function StoryCreateClient({ ageGroups, roadmaps, worlds }: StoryCreateCl
                 text: answer.text,
                 isCorrect: answer.isCorrect,
                 order: answer.order || 0,
+                correctSequence: answer.correctSequence || undefined,
                 translations:
                   validatedData.translationSource !== "manual"
                     ? [

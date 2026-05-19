@@ -444,6 +444,27 @@ export function NewStoryForm({
             correctedAnswers,
           );
         }
+        // When changing to SEQUENCING, initialize correctSequence on all answers (1, 2, 3...N)
+        else if (value === ChallengeType.SEQUENCING) {
+          const answers = chapter.challenge.answers.map((a: any, idx: number) => ({
+            ...a,
+            correctSequence: idx + 1,
+            isCorrect: true, // All answers are inherently "correct" in a sequence
+          }));
+          updateField(
+            `chapters.${chapterIndex}.challenge.answers`,
+            answers,
+          );
+        }
+        // When changing FROM SEQUENCING to other types, clear correctSequence
+        else if (chapter.challenge.type === ChallengeType.SEQUENCING) {
+          const answers = chapter.challenge.answers.map((a: any) => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { correctSequence, ...rest } = a;
+            return rest;
+          });
+          updateField(`chapters.${chapterIndex}.challenge.answers`, answers);
+        }
       }
     }
 
@@ -599,15 +620,27 @@ export function NewStoryForm({
 
   /**
    * Add answer to challenge
+   * For SEQUENCING: auto-assign correctSequence = max + 1
    */
   const addAnswerToChallenge = (chapIdx: number) => {
     const chapter = formData.chapters[chapIdx];
     if (!chapter.challenge) return;
 
+    const isSequencing = chapter.challenge.type === ChallengeType.SEQUENCING;
+    const maxSequence = isSequencing
+      ? Math.max(
+          0,
+          ...chapter.challenge.answers
+            .map((a: any) => a.correctSequence || 0)
+            .filter((s: number) => typeof s === "number"),
+        )
+      : undefined;
+
     const newAnswer = {
       text: "",
       isCorrect: false,
       order: chapter.challenge.answers.length,
+      correctSequence: isSequencing ? (maxSequence || 0) + 1 : undefined,
       translations: [],
     };
     updateChallengeField(chapIdx, "answers", [
@@ -618,6 +651,7 @@ export function NewStoryForm({
 
   /**
    * Remove answer from challenge
+   * For SEQUENCING: re-sequence remaining answers (1, 2, 3...N)
    */
   const removeAnswerFromChallenge = (
     chapterIndex: number,
@@ -626,9 +660,18 @@ export function NewStoryForm({
     const chapter = formData.chapters[chapterIndex];
     if (!chapter.challenge) return;
 
+    const isSequencing = chapter.challenge.type === ChallengeType.SEQUENCING;
     const updatedAnswers = chapter.challenge.answers.filter(
       (_, i) => i !== answerIndex,
     );
+
+    // Re-sequence if SEQUENCING type
+    if (isSequencing) {
+      updatedAnswers.forEach((answer: any, idx: number) => {
+        answer.correctSequence = idx + 1;
+      });
+    }
+
     updateChallengeField(chapterIndex, "answers", updatedAnswers);
   };
 
@@ -1467,6 +1510,9 @@ function ChallengesManagementStep({
   // Check if challenge type is RIDDLE (open-ended, no predefined answers)
   const isRiddleType = () => challenge?.type === ChallengeType.RIDDLE;
 
+  // Check if challenge type is SEQUENCING (arrange in order)
+  const isSequencingType = () => challenge?.type === ChallengeType.SEQUENCING;
+
   // Check if all answers must be marked as correct (CHOOSE_ENDING, MORAL_DECISION)
   const isAllAnswersCorrectType = () =>
     challenge?.type === ChallengeType.CHOOSE_ENDING ||
@@ -1619,7 +1665,14 @@ function ChallengesManagementStep({
       return challenge.answers.length < 4;
 
     // MORAL_DECISION: unlimited but we suggest 2-4
-    return challenge.answers.length < 4;
+    if (challengeType === ChallengeType.MORAL_DECISION)
+      return challenge.answers.length < 4;
+
+    // SEQUENCING: max 6 answers (events to sequence)
+    if (challengeType === ChallengeType.SEQUENCING)
+      return challenge.answers.length < 6;
+
+    return false;
   };
 
   const canRemoveAnswer = () => {
@@ -1627,6 +1680,9 @@ function ChallengesManagementStep({
 
     // TRUE_FALSE: always need exactly 2, can't remove
     if (isTrueFalseType()) return false;
+
+    // SEQUENCING: minimum 2 answers
+    if (isSequencingType()) return challenge.answers.length > 2;
 
     // Others: minimum 2 answers
     return challenge.answers.length > 2;
@@ -1686,6 +1742,9 @@ function ChallengesManagementStep({
                 <SelectItem value={ChallengeType.MORAL_DECISION}>
                   Moral Decision
                 </SelectItem>
+                <SelectItem value={ChallengeType.SEQUENCING}>
+                  Sequencing
+                </SelectItem>
               </SelectContent>
             </Select>
             {errors["challenge.type"] && (
@@ -1716,6 +1775,41 @@ function ChallengesManagementStep({
                 Translations will be automatically generated based on the
                 selected source language.
               </p>
+            )}
+          </div>
+
+          {/* Challenge Image URL (Optional) */}
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Image URL (Optional)
+            </label>
+            <Input
+              type="url"
+              value={challenge.imageUrl || ""}
+              onChange={(e) =>
+                onChallengeFieldChange("imageUrl", e.target.value)
+              }
+              placeholder="https://example.com/image.jpg"
+            />
+            {errors["challenge.imageUrl"] && (
+              <p className="text-sm text-red-500 mt-1">
+                {errors["challenge.imageUrl"]}
+              </p>
+            )}
+            {challenge.imageUrl && (
+              <div className="mt-3 p-3 border rounded-lg bg-slate-50">
+                <p className="text-xs font-medium text-slate-600 mb-2">
+                  Image Preview
+                </p>
+                <img
+                  src={challenge.imageUrl}
+                  alt="Challenge visual"
+                  className="max-h-32 object-contain rounded"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              </div>
             )}
           </div>
 
@@ -1810,45 +1904,85 @@ function ChallengesManagementStep({
                   Exactly 2 answers
                 </span>
               )}
+              {isSequencingType() && (
+                <span className="text-xs bg-cyan-100 text-cyan-600 px-2 py-1 rounded">
+                  Define order (2-6 events)
+                </span>
+              )}
             </div>
             <div className="space-y-3">
               {challenge.answers.map((answer: any, idx: number) => (
                 <>
                   <div key={idx} className="p-4 border rounded-lg space-y-3 ">
-                    <div className="flex gap-2">
-                      <Input
-                        value={answer.text}
-                        onChange={(e) =>
-                          onAnswerChange(idx, "text", e.target.value)
-                        }
-                        placeholder="Answer text"
-                        className="flex-1"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onRemoveAnswer(idx)}
-                        disabled={!canRemoveAnswer()}
-                        className={`${
-                          !canRemoveAnswer()
-                            ? "text-gray-400 cursor-not-allowed"
-                            : "text-red-500 hover:bg-red-100"
-                        }`}
-                        title={
-                          isTrueFalseType()
-                            ? "TRUE_FALSE requires exactly 2 answers"
-                            : isRiddleType()
-                              ? "RIDDLE requires minimum 2 reference answers"
-                              : !canRemoveAnswer()
-                                ? "Minimum 2 answers required"
-                                : "Remove answer"
-                        }
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    {!isAllAnswersCorrectType() ? (
+                    {isSequencingType() ? (
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 font-bold text-sm">
+                          {(answer.correctSequence || idx + 1)}
+                        </div>
+                        <Input
+                          value={answer.text}
+                          onChange={(e) =>
+                            onAnswerChange(idx, "text", e.target.value)
+                          }
+                          placeholder="Event text"
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onRemoveAnswer(idx)}
+                          disabled={!canRemoveAnswer()}
+                          className={`${
+                            !canRemoveAnswer()
+                              ? "text-gray-400 cursor-not-allowed"
+                              : "text-red-500 hover:bg-red-100"
+                          }`}
+                          title={
+                            !canRemoveAnswer()
+                              ? "Minimum 2 answers required"
+                              : "Remove event"
+                          }
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Input
+                          value={answer.text}
+                          onChange={(e) =>
+                            onAnswerChange(idx, "text", e.target.value)
+                          }
+                          placeholder="Answer text"
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onRemoveAnswer(idx)}
+                          disabled={!canRemoveAnswer()}
+                          className={`${
+                            !canRemoveAnswer()
+                              ? "text-gray-400 cursor-not-allowed"
+                              : "text-red-500 hover:bg-red-100"
+                          }`}
+                          title={
+                            isTrueFalseType()
+                              ? "TRUE_FALSE requires exactly 2 answers"
+                              : isRiddleType()
+                                ? "RIDDLE requires minimum 2 reference answers"
+                                : !canRemoveAnswer()
+                                  ? "Minimum 2 answers required"
+                                  : "Remove answer"
+                          }
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                    {!isAllAnswersCorrectType() && !isSequencingType() ? (
                       <div className="flex items-center gap-2">
                         <input
                           type="checkbox"
@@ -1863,6 +1997,16 @@ function ChallengesManagementStep({
                             ? "Correct Answer"
                             : "Mark as Correct"}
                         </label>
+                      </div>
+                    ) : isSequencingType() ? (
+                      <div className="flex items-center gap-2 text-sm text-cyan-600 font-medium">
+                        <input
+                          type="checkbox"
+                          checked={true}
+                          disabled
+                          className="w-4 h-4"
+                        />
+                        <label>Part of sequence</label>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2 text-sm text-green-600 font-medium">

@@ -66,7 +66,6 @@ export const ChallengeType = {
   RIDDLE: "RIDDLE", // open-ended question where child must type an answer, correctness is determined by keyword matching or manual review
   CHOOSE_ENDING: "CHOOSE_ENDING", // all anserwers are correct, see if child understandood the story
   MORAL_DECISION: "MORAL_DECISION", // all anserwers are correct, see if child understood the moral of the story
-  FILL_IN_THE_BLANK: "FILL_IN_THE_BLANK", // open-ended question with a blank to fill, correctness determined by keyword matching or ai evaluation
   SEQUENCING: "SEQUENCING", // child must put events in the correct order, answers are predefined 
 } as const;
 
@@ -323,6 +322,7 @@ export interface Challenge {
   type: ChallengeType;
   question: string;
   audioUrl: string | null;
+  imageUrl: string | null;
   description?: string | null;
   baseStars: number;
   order: number;
@@ -352,6 +352,7 @@ export interface Answer {
   text: string;
   isCorrect: boolean;
   order: number | null;
+  correctSequence: number | null; // For SEQUENCING challenges: correct position in sequence (1-indexed). Null for other challenge types.
   createdAt: Date;
   updatedAt: Date;
   translations?: AnswerTranslation[];
@@ -774,6 +775,7 @@ export interface CreateAnswerInput {
   text: string;
   isCorrect: boolean;
   order?: number | null;
+  correctSequence?: number | null; // For SEQUENCING challenges: position in correct sequence (1-indexed)
   translations?: Array<{
     languageCode: string;
     text?: string;
@@ -786,6 +788,7 @@ export interface CreateAnswerInput {
 export interface CreateChallengeInput {
   type: ChallengeType;
   question: string;
+  imageUrl?: string | null; // Optional image URL for visual context
   baseStars?: number;
   order: number;
   hints?: string[];

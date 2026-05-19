@@ -191,6 +191,15 @@ export default function RiddlesStats({ childProgress }: RiddlesStatsProps) {
   const getCorrectAnswer = (challenge: Challenge | null): string => {
     if (!challenge) return t("riddleStatistics.na");
 
+    if (challenge.type === "SEQUENCING") {
+      // Return sequence items in order
+      const items = challenge.answers
+        ?.sort((a, b) => (a.correctSequence || 0) - (b.correctSequence || 0))
+        .map((a, idx) => `${idx + 1}. ${getLocalizedAnswerText(a)}`)
+        .join(" → ");
+      return items || t("riddleStatistics.na");
+    }
+
     if (challenge.type === "CHOOSE_ENDING" || challenge.type === "MORAL_DECISION") {
       return t("riddleStatistics.multipleAnswers");
     }
@@ -408,8 +417,28 @@ export default function RiddlesStats({ childProgress }: RiddlesStatsProps) {
                 <p className="text-sm text-green-800 dark:text-green-200">{getCorrectAnswer(selectedChallenge.challenge)}</p>
               </div>
 
-              {/* Answers Options */}
-              {selectedChallenge.challenge.answers && selectedChallenge.challenge.answers.length > 0 && (
+              {/* Sequence Items - for SEQUENCING type */}
+              {selectedChallenge.challenge.type === "SEQUENCING" && selectedChallenge.challenge.answers && selectedChallenge.challenge.answers.length > 0 && (
+                <div className="space-y-3 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-700">
+                  <h4 className="font-medium text-blue-900 dark:text-blue-100">{t("riddleStatistics.modal.sequenceItemsLabel")}</h4>
+                  <p className="text-sm text-blue-800 dark:text-blue-200">{t("riddleStatistics.modal.sequenceItemsHint")}</p>
+                  <div className="space-y-2">
+                    {selectedChallenge.challenge.answers
+                      .sort((a, b) => (a.correctSequence || 0) - (b.correctSequence || 0))
+                      .map((answer, index) => (
+                        <div key={answer.id} className="flex items-start gap-3 p-2 bg-white dark:bg-blue-900 rounded">
+                          <div className="shrink-0 w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-bold">
+                            {index + 1}
+                          </div>
+                          <p className="text-sm text-blue-900 dark:text-blue-100 pt-1">{getLocalizedAnswerText(answer)}</p>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Answers Options - for non-SEQUENCING types */}
+              {selectedChallenge.challenge.type !== "SEQUENCING" && selectedChallenge.challenge.answers && selectedChallenge.challenge.answers.length > 0 && (
                 <div className="space-y-3">
                   <h4 className="font-medium">{t("riddleStatistics.modal.optionsLabel")}</h4>
                   <div className="space-y-2">
@@ -475,57 +504,91 @@ export default function RiddlesStats({ childProgress }: RiddlesStatsProps) {
                         </div>
 
                         {/* Action Details */}
-                        {attempt.actions && attempt.actions.length > 0 && (
+                        {attempt.actions && attempt.actions.length > 0 && selectedChallenge.challenge && (
                           <div className="space-y-2 pt-2">
-                            <div className="space-y-2">
-                              {attempt.actions
-                                .filter((action) => {
-                                  // Only show actions with actual content
-                                  return action.selectedAnswerText || action.answerText || action.isCorrect !== null;
-                                })
-                                .filter((action, index, self) => {
-                                  // Deduplicate by attemptNumberAtAction - keep only first occurrence
-                                  return self.findIndex(a => a.attemptNumberAtAction === action.attemptNumberAtAction) === index;
-                                })
-                                .map((action) => (
-                                <div key={action.id} className="bg-white dark:bg-gray-950 p-2 rounded border text-sm space-y-1">
-                                  <p className="font-medium">
-                                   {t("riddleStatistics.modal.attemptLabel", { n: action.attemptNumberAtAction })}
-                                  </p>
-                                  
-                                  {/* Selected Answer Text */}
-                                  {action.selectedAnswerText && (
-                                    <div className="flex items-center gap-2">
-                                        <p className="text-muted-foreground">{t("riddleStatistics.modal.selected")}</p>
-                                        <p className="font-medium text-gray-800 dark:text-gray-100">{action.selectedAnswerText}</p>
-                                    </div>
-                                  )}
-
-                                  {/* Typed Answer Text */}
-                                  {action.answerText && !action.selectedAnswerText && (
-                                    <div>
-                                        <p className="text-muted-foreground">{t("riddleStatistics.modal.typedAnswer")}</p>
-                                        <p className="font-medium text-gray-800 dark:text-gray-100">{action.answerText}</p>
-                                    </div>
-                                  )}
-
-                                  {/* Answer Correctness */}
-                                  {action.isCorrect !== null && (
-                                    <div>
-                                      <span
-                                        className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${
-                                          action.isCorrect
-                                            ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-100"
-                                            : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-100"
-                                        }`}
-                                      >
-                                        {action.isCorrect ? t("riddleStatistics.action.correct") : t("riddleStatistics.action.incorrect")}
-                                      </span>
-                                    </div>
-                                  )}
+                            {/* SEQUENCING specific display */}
+                            {selectedChallenge.challenge.type === "SEQUENCING" && attempt.textAnswer && (
+                              <div className="bg-white dark:bg-gray-950 p-3 rounded border text-sm space-y-2">
+                                <p className="font-medium text-amber-900 dark:text-amber-100">{t("riddleStatistics.modal.childSequenceLabel")}</p>
+                                <div className="space-y-2">
+                                  {(() => {
+                                    try {
+                                      const childIndices = JSON.parse(attempt.textAnswer) as number[];
+                                      return childIndices.map((originalIdx, displayPosition) => {
+                                        const answer = selectedChallenge.challenge?.answers?.find(
+                                          (a) => a.correctSequence === originalIdx
+                                        );
+                                        return (
+                                          <div key={originalIdx} className="flex items-start gap-3 p-2 bg-amber-50 dark:bg-amber-900 rounded">
+                                            <div className="shrink-0 w-7 h-7 rounded-full bg-amber-500 text-white flex items-center justify-center text-xs font-bold">
+                                              {displayPosition + 1}
+                                            </div>
+                                            <p className="text-sm text-amber-900 dark:text-amber-100 pt-0.5">
+                                              {answer ? getLocalizedAnswerText(answer) : `Item ${originalIdx}`}
+                                            </p>
+                                          </div>
+                                        );
+                                      });
+                                    } catch (error) {
+                                      return <p className="text-sm text-red-600 dark:text-red-400">{t("riddleStatistics.modal.errorParsingSequence")}</p>;
+                                    }
+                                  })()}
                                 </div>
-                              ))}
-                            </div>
+                              </div>
+                            )}
+
+                            {/* Non-SEQUENCING display */}
+                            {selectedChallenge.challenge.type !== "SEQUENCING" && (
+                              <div className="space-y-2">
+                                {attempt.actions
+                                  .filter((action) => {
+                                    // Only show actions with actual content
+                                    return action.selectedAnswerText || action.answerText || action.isCorrect !== null;
+                                  })
+                                  .filter((action, index, self) => {
+                                    // Deduplicate by attemptNumberAtAction - keep only first occurrence
+                                    return self.findIndex(a => a.attemptNumberAtAction === action.attemptNumberAtAction) === index;
+                                  })
+                                  .map((action) => (
+                                  <div key={action.id} className="bg-white dark:bg-gray-950 p-2 rounded border text-sm space-y-1">
+                                    <p className="font-medium">
+                                     {t("riddleStatistics.modal.attemptLabel", { n: action.attemptNumberAtAction })}
+                                    </p>
+                                    
+                                    {/* Selected Answer Text */}
+                                    {action.selectedAnswerText && (
+                                      <div className="flex items-center gap-2">
+                                          <p className="text-muted-foreground">{t("riddleStatistics.modal.selected")}</p>
+                                          <p className="font-medium text-gray-800 dark:text-gray-100">{action.selectedAnswerText}</p>
+                                      </div>
+                                    )}
+
+                                    {/* Typed Answer Text */}
+                                    {action.answerText && !action.selectedAnswerText && (
+                                      <div>
+                                          <p className="text-muted-foreground">{t("riddleStatistics.modal.typedAnswer")}</p>
+                                          <p className="font-medium text-gray-800 dark:text-gray-100">{action.answerText}</p>
+                                      </div>
+                                    )}
+
+                                    {/* Answer Correctness */}
+                                    {action.isCorrect !== null && (
+                                      <div>
+                                        <span
+                                          className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${
+                                            action.isCorrect
+                                              ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-100"
+                                              : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-100"
+                                          }`}
+                                        >
+                                          {action.isCorrect ? t("riddleStatistics.action.correct") : t("riddleStatistics.action.incorrect")}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         )}
 

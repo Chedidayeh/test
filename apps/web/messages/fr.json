@@ -165,8 +165,10 @@
 				"description": "Vue détaillée du défi sélectionné",
 				"questionLabel": "Question:",
 				"correctAnswerLabel": "La bonne réponse est :",
-				"optionsLabel": "Options:",
-				"hintsLabel": "Indices:",
+				"optionsLabel": "Options:",				"sequenceItemsLabel": "Séquence Correcte",
+				"sequenceItemsHint": "Les événements doivent être rangés dans cet ordre:",
+				"childSequenceLabel": "Séquence arrangée par l'enfant",
+				"errorParsingSequence": "Erreur lors de l'affichage des données de séquence",				"hintsLabel": "Indices:",
 				"hintNumber": "Indice {n}:",
 				"childAttemptsTitle": "Tentatives de l'enfant:",
 				"attempts": "Tentatives : {n}",
@@ -738,6 +740,7 @@
 			"solvedAnswerMULTIPLE_CHOICE": "Excellent choix! Vous avez vraiment compris l'histoire!",
 			"solvedAnswerCHOOSE_ENDING": "Excellent choix! Merci de partager votre perspective!",
 			"solvedAnswerMORAL_DECISION": "Excellent choix! Merci de partager votre perspective!",
+			"solvedAnswerSEQUENCING": "Excellent ! Vous avez rangé les événements dans le bon ordre!",
 			"riddleQuestion": {
 				"riddleCounter": "Énigme {current} sur {total}",
 				"trueOrFalse": "Choisissez Vrai ou Faux:",
@@ -745,6 +748,7 @@
 				"moralDecision": "Que ferez-vous?",
 				"multipleChoice": "Choisissez la bonne réponse:",
 				"riddle": "Résolvez l'énigme:",
+				"sequencing": "Mettez ces événements dans le bon ordre:",
 				"defaultQuestion": "Répondez à la question:",
 				"timeDisplay": "Temps: {seconds}s",
 				"playAudio": "Lire l'énigme à haute voix",
@@ -761,6 +765,12 @@
 			},
 			"multipleChoiceAnswer": {
 				"chooseAnswer": "Choisissez votre réponse:"
+			},
+			"sequencingAnswer": {
+				"instructions": "Rangez ces événements dans le bon ordre:",
+				"dragHint": "Glissez et déposez pour réorganiser",
+				"checking": "Vérification en cours...",
+				"submit": "Vérifier l'ordre"
 			},
 			"hintPanel": {
 				"title": "Indice Utile",

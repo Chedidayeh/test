@@ -166,6 +166,10 @@
 				"questionLabel": "Question:",
 				"correctAnswerLabel": "Correct Answer is:",
 				"optionsLabel": "Options:",
+				"sequenceItemsLabel": "Correct Sequence",
+				"sequenceItemsHint": "Events should be arranged in this order:",
+				"childSequenceLabel": "Child's Arranged Sequence",
+				"errorParsingSequence": "Error displaying sequence data",
 				"hintsLabel": "Hints:",
 				"hintNumber": "Hint {n}:",
 				"childAttemptsTitle": "Child Attempts:",
@@ -738,6 +742,7 @@
 			"solvedAnswerMULTIPLE_CHOICE": "Excellent choice! You really understood the story!",
 			"solvedAnswerCHOOSE_ENDING": "Excellent choice! Thank you for sharing your perspective!",
 			"solvedAnswerMORAL_DECISION": "Excellent choice! Thank you for sharing your perspective!",
+			"solvedAnswerSEQUENCING": "Excellent! You arranged the events in the correct order!",
 			"riddleQuestion": {
 				"riddleCounter": "Riddle {current} of {total}",
 				"trueOrFalse": "Choose True or False:",
@@ -745,6 +750,7 @@
 				"moralDecision": "What would you do?",
 				"multipleChoice": "Choose the correct answer:",
 				"riddle": "Solve the riddle:",
+				"sequencing": "Put these events in the correct order:",
 				"defaultQuestion": "Answer the question:",
 				"timeDisplay": "Time: {seconds}s",
 				"playAudio": "Read riddle aloud",
@@ -761,6 +767,12 @@
 			},
 			"multipleChoiceAnswer": {
 				"chooseAnswer": "Choose your answer:"
+			},
+			"sequencingAnswer": {
+				"instructions": "Arrange these events in the correct order:",
+				"dragHint": "Drag and drop to reorder",
+				"checking": "Checking...",
+				"submit": "Check Order"
 			},
 			"hintPanel": {
 				"title": "Helpful Hint",

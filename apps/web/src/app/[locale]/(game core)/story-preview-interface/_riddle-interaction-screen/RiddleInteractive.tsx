@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import RiddleQuestion from "./RiddleQuestion";
 import TextInputAnswer from "./TextInputAnswer";
 import MultipleChoiceAnswer from "./MultipleChoiceAnswer";
+import SequencingAnswer from "./SequencingAnswer";
 import HintPanel from "./HintPanel";
 import FeedbackDisplay from "./FeedbackDisplay";
 import { Lightbulb } from "lucide-react";
@@ -35,6 +36,7 @@ interface Riddle {
   type: ChallengeType;
   correctAnswer: string;
   choices?: Choice[];
+  sequenceAnswers?: Choice[];
   hints: Hint[];
   storyImage?: string;
   storyImageAlt: string;
@@ -52,6 +54,16 @@ interface RiddleInteractiveProps {
   ) => void;
   onClose?: () => void;
 }
+
+// Utility function to shuffle array
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
 
 const RiddleInteractive = ({
   challenge,
@@ -83,6 +95,25 @@ const RiddleInteractive = ({
       };
     });
 
+    // Build sequence answers (for SEQUENCING type) - sorted by correctSequence
+    const sequenceAnswers = challenge.type === ChallengeType.SEQUENCING
+      ? challenge.answers
+          ?.map((answer) => {
+            const answerTranslation = answer.translations?.find(
+              (t) => t.languageCode === baseLocale,
+            );
+            return {
+              id: answer.id,
+              text: answerTranslation?.text || answer.text,
+            };
+          })
+          .sort((a, b) => {
+            const aSeq = challenge.answers?.find((ans) => ans.id === a.id)?.correctSequence || 0;
+            const bSeq = challenge.answers?.find((ans) => ans.id === b.id)?.correctSequence || 0;
+            return aSeq - bSeq;
+          })
+      : undefined;
+
     // Determine correct answer text (localized if possible)
     const correctAnswerRaw =
       challenge.answers?.find((a) => a.isCorrect) || null;
@@ -103,6 +134,7 @@ const RiddleInteractive = ({
       type: challenge.type as ChallengeType,
       correctAnswer: correctAnswerText,
       choices: choices,
+      sequenceAnswers: sequenceAnswers,
       hints: hintsArray.map((hint) => ({ text: hint })),
       storyImage: storyImage,
       storyImageAlt: storyImageAlt,
@@ -116,6 +148,14 @@ const RiddleInteractive = ({
   // Use challenge data if provided, otherwise use fallback
   const [currentRiddle] = useState<Riddle>(() => {
     return transformChallengeToRiddle(challenge!);
+  });
+
+  // Shuffle sequence answers for display (so they're not already in correct order)
+  const [displayedSequenceAnswers] = useState<Choice[]>(() => {
+    if (currentRiddle.type === ChallengeType.SEQUENCING && currentRiddle.sequenceAnswers) {
+      return shuffleArray(currentRiddle.sequenceAnswers);
+    }
+    return [];
   });
 
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
@@ -185,6 +225,11 @@ const RiddleInteractive = ({
     }
   };
 
+  const handleSequencingSubmit = (reorderedIndices: number[]) => {
+    // Convert indices array to JSON string for checkAnswer
+    checkAnswer(JSON.stringify(reorderedIndices));
+  };
+
   const checkAnswer = async (answer: string) => {
     const currentAttempt = attempts + 1;
     setAttempts(currentAttempt);
@@ -197,7 +242,7 @@ const RiddleInteractive = ({
 
     // Type-specific validation logic
     switch (currentRiddle.type) {
-      case "RIDDLE":
+      case ChallengeType.RIDDLE:
         // First check for exact match
         if (normalizedAnswer === correctAnswer) {
           isCorrect = true;
@@ -247,24 +292,51 @@ const RiddleInteractive = ({
         }
         break;
 
-      case "TRUE_FALSE":
+      case ChallengeType.TRUE_FALSE:
         // For true/false: exact match only
         if (normalizedAnswer === correctAnswer) {
           isCorrect = true;
         }
         break;
 
-      case "MULTIPLE_CHOICE":
+      case ChallengeType.MULTIPLE_CHOICE:
         // For multiple choice: exact match required
         if (normalizedAnswer === correctAnswer) {
           isCorrect = true;
         }
         break;
 
-      case "CHOOSE_ENDING":
-      case "MORAL_DECISION":
+      case ChallengeType.CHOOSE_ENDING:
+      case ChallengeType.MORAL_DECISION:
         // For these types: all answers are correct (we log the child's choice to track story understanding)
         isCorrect = true;
+        break;
+
+      case ChallengeType.SEQUENCING:
+        // For SEQUENCING: compare reordered indices array
+        // answer is a JSON string of reordered indices like "[0,2,1]"
+        try {
+          const userIndices = JSON.parse(answer) as number[];
+          
+          // Map displayed indices to actual sequence order
+          // userIndices are positions in displayedSequenceAnswers
+          // We need to find where each item appears in the correct sequence (currentRiddle.sequenceAnswers)
+          const mappedToCorrectSequence = userIndices.map((displayIdx) => {
+            const itemAtDisplayPos = displayedSequenceAnswers[displayIdx];
+            // Find this item's position in the correct sequence
+            return currentRiddle.sequenceAnswers?.findIndex(
+              (item) => item.id === itemAtDisplayPos.id,
+            ) ?? -1;
+          });
+
+          // Check if the mapped positions are in ascending order [0, 1, 2, ...]
+          isCorrect = mappedToCorrectSequence.every(
+            (pos, idx) => pos === idx && pos !== -1,
+          );
+        } catch (error) {
+          console.error("[SEQUENCING] Error parsing user indices:", error);
+          isCorrect = false;
+        }
         break;
     }
 
@@ -310,11 +382,12 @@ const RiddleInteractive = ({
         MULTIPLE_CHOICE: t("solvedAnswerMULTIPLE_CHOICE"),
         CHOOSE_ENDING: t("solvedAnswerCHOOSE_ENDING"),
         MORAL_DECISION: t("solvedAnswerMORAL_DECISION"),
+        SEQUENCING: t("solvedAnswerSEQUENCING"),
       };
 
       // Use LLM message for RIDDLE type if available, otherwise use static message
       const feedbackMessage =
-        currentRiddle.type === "RIDDLE" && llmMessage
+        currentRiddle.type === ChallengeType.RIDDLE && llmMessage
           ? llmMessage
           : messages[currentRiddle.type];
 
@@ -402,7 +475,7 @@ const RiddleInteractive = ({
 
       // Use LLM message for RIDDLE type if available, otherwise use static message
       const feedbackMessage =
-        currentRiddle.type === "RIDDLE" && llmMessage
+        currentRiddle.type === ChallengeType.RIDDLE && llmMessage
           ? llmMessage
           : t("incorrectAnswer");
 
@@ -547,12 +620,19 @@ const RiddleInteractive = ({
 
         {/* Answer Input */}
         <div className="mt-4 sm:mt-6 bg-card rounded-xl shadow-warm-lg p-4 sm:p-6">
-          {currentRiddle.type === "RIDDLE" ? (
+          {currentRiddle.type === ChallengeType.RIDDLE ? (
             <TextInputAnswer
               onSubmit={handleTextSubmit}
               isDisabled={feedbackState.isVisible}
               isLoading={isValidating}
               placeholder={t("textInputAnswer.placeholder")}
+            />
+          ) : currentRiddle.type === ChallengeType.SEQUENCING ? (
+            <SequencingAnswer
+              items={displayedSequenceAnswers}
+              onSubmit={handleSequencingSubmit}
+              isDisabled={feedbackState.isVisible}
+              isLoading={isValidating}
             />
           ) : (
             <>

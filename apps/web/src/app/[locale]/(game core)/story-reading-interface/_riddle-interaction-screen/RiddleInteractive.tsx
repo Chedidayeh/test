@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import RiddleQuestion from "./RiddleQuestion";
 import TextInputAnswer from "./TextInputAnswer";
 import MultipleChoiceAnswer from "./MultipleChoiceAnswer";
+import SequencingAnswer from "./SequencingAnswer";
 import HintPanel from "./HintPanel";
 import FeedbackDisplay from "./FeedbackDisplay";
 import { Lightbulb } from "lucide-react";
@@ -37,6 +38,7 @@ interface Riddle {
   type: ChallengeType;
   correctAnswer: string;
   choices?: Choice[];
+  sequenceAnswers?: Choice[];
   hints: Hint[];
   storyImage?: string;
   storyImageAlt: string;
@@ -55,6 +57,16 @@ interface RiddleInteractiveProps {
   ) => void;
   onClose?: () => void;
 }
+
+// Utility function to shuffle array
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
 
 const RiddleInteractive = ({
   challenge,
@@ -87,6 +99,25 @@ const RiddleInteractive = ({
       };
     });
 
+    // Build sequence answers (for SEQUENCING type) - sorted by correctSequence
+    const sequenceAnswers = challenge.type === ChallengeType.SEQUENCING
+      ? challenge.answers
+          ?.map((answer) => {
+            const answerTranslation = answer.translations?.find(
+              (t) => t.languageCode === baseLocale,
+            );
+            return {
+              id: answer.id,
+              text: answerTranslation?.text || answer.text,
+            };
+          })
+          .sort((a, b) => {
+            const aSeq = challenge.answers?.find((ans) => ans.id === a.id)?.correctSequence || 0;
+            const bSeq = challenge.answers?.find((ans) => ans.id === b.id)?.correctSequence || 0;
+            return aSeq - bSeq;
+          })
+      : undefined;
+
     // Determine correct answer text (localized if possible)
     const correctAnswerRaw =
       challenge.answers?.find((a) => a.isCorrect) || null;
@@ -107,6 +138,7 @@ const RiddleInteractive = ({
       type: challenge.type as ChallengeType,
       correctAnswer: correctAnswerText,
       choices: choices,
+      sequenceAnswers: sequenceAnswers,
       hints: hintsArray.map((hint) => ({ text: hint })),
       storyImage: storyImage,
       storyImageAlt: storyImageAlt,
@@ -120,6 +152,14 @@ const RiddleInteractive = ({
   // Use challenge data if provided, otherwise use fallback
   const [currentRiddle] = useState<Riddle>(() => {
     return transformChallengeToRiddle(challenge!);
+  });
+
+  // Shuffle sequence answers for display (so they're not already in correct order)
+  const [displayedSequenceAnswers] = useState<Choice[]>(() => {
+    if (currentRiddle.type === ChallengeType.SEQUENCING && currentRiddle.sequenceAnswers) {
+      return shuffleArray(currentRiddle.sequenceAnswers);
+    }
+    return [];
   });
 
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
@@ -258,6 +298,11 @@ const RiddleInteractive = ({
     }
   };
 
+  const handleSequencingSubmit = (reorderedIndices: number[]) => {
+    // Convert indices array to JSON string for checkAnswer
+    checkAnswer(JSON.stringify(reorderedIndices));
+  };
+
   const checkAnswer = async (answer: string) => {
     const currentAttempt = attempts + 1;
     setAttempts(currentAttempt);
@@ -362,6 +407,30 @@ const RiddleInteractive = ({
           )?.text;
           answerText = answer;
           break;
+
+        case ChallengeType.SEQUENCING:
+          // For SEQUENCING: compare reordered indices array
+          try {
+            const userIndices = JSON.parse(answer) as number[];
+
+            // Map displayed indices to actual sequence order
+            const mappedToCorrectSequence = userIndices.map((displayIdx) => {
+              const itemAtDisplayPos = displayedSequenceAnswers[displayIdx];
+              // Find this item's position in the correct sequence
+              return currentRiddle.sequenceAnswers?.findIndex(
+                (item) => item.id === itemAtDisplayPos.id,
+              ) ?? -1;
+            });
+
+            // Check if the mapped positions are in ascending order [0, 1, 2, ...]
+            isCorrect = mappedToCorrectSequence.every(
+              (pos, idx) => pos === idx && pos !== -1,
+            );
+          } catch (error) {
+            console.error("[SEQUENCING] Error parsing user indices:", error);
+            isCorrect = false;
+          }
+          break;
       }
 
       stopTimerAndLog(isCorrect ? "solved" : isAlmost ? "almost" : "incorrect");
@@ -413,6 +482,7 @@ const RiddleInteractive = ({
           MULTIPLE_CHOICE: t("solvedAnswerMULTIPLE_CHOICE"),
           CHOOSE_ENDING: t("solvedAnswerCHOOSE_ENDING"),
           MORAL_DECISION: t("solvedAnswerMORAL_DECISION"),
+          SEQUENCING: t("solvedAnswerSEQUENCING"),
         };
         setFeedbackState({
           type: "solved",
@@ -636,12 +706,19 @@ const RiddleInteractive = ({
 
         {/* Answer Input */}
         <div className="mt-4 sm:mt-6 bg-card rounded-xl shadow-warm-lg p-4 sm:p-6">
-          {currentRiddle.type === "RIDDLE" ? (
+          {currentRiddle.type === ChallengeType.RIDDLE ? (
             <TextInputAnswer
               onSubmit={handleTextSubmit}
               isLoading={isValidating}
               isDisabled={feedbackState.isVisible}
               placeholder={t("textInputAnswer.placeholder")}
+            />
+          ) : currentRiddle.type === ChallengeType.SEQUENCING ? (
+            <SequencingAnswer
+              items={displayedSequenceAnswers}
+              onSubmit={handleSequencingSubmit}
+              isDisabled={feedbackState.isVisible}
+              isLoading={isValidating}
             />
           ) : (
             <>
@@ -694,7 +771,7 @@ const RiddleInteractive = ({
         <div className="fixed right-2 sm:right-4 md:right-6 lg:right-8 top-22 sm:top-24 md:top-28 lg:top-32 z-50 pointer-events-none">
           <button
             onClick={handleShowHintPanel}
-            className="pointer-events-auto flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 bg-secondary text-white rounded-full shadow-warm hover:scale-105 transition-smooth disabled:opacity-50 text-xs sm:text-sm flex-shrink-0"
+            className="pointer-events-auto flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 bg-secondary text-white rounded-full shadow-warm hover:scale-105 transition-smooth disabled:opacity-50 text-xs sm:text-sm shrink-0"
           >
             <Lightbulb size={18} className="sm:size-5" />
             <span className="hidden sm:inline font-heading font-bold">
