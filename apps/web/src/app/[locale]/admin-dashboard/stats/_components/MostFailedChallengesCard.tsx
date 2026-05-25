@@ -143,7 +143,7 @@ export default function MostFailedChallengesCard({
                       border: '1px solid #e2e8f0',
                       borderRadius: '8px',
                     }}
-                    formatter={(value) => `${value.toFixed(1)}%`}
+                    formatter={(value) => `${value}%`}
                   />
                   <Bar dataKey="failureRate" fill="#ef4444" radius={[0, 8, 8, 0]} />
                 </BarChart>

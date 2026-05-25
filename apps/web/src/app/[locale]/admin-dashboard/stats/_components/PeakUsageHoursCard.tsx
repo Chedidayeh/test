@@ -183,7 +183,8 @@ function CustomBar(props: any) {
       width={width}
       height={height}
       fill={isPeak ? '#ef4444' : fill}
-      radius={[8, 8, 0, 0]}
+      rx={8}
+      ry={8}
     />
   );
 }
