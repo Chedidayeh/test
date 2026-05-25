@@ -1222,3 +1222,624 @@ export async function getDashboardStats(): Promise<AdminDashboardStats> {
     return defaultStats;
   }
 }
+
+/**
+ * Get engagement metrics for the global statistics dashboard
+ * Includes: average session duration, sessions per child, chapters per session, stories per day
+ *
+ * @returns EngagementMetrics with aggregated engagement data
+ *
+ * @example
+ * const metrics = await getEngagementMetrics();
+ * console.log(`Avg session: ${metrics.avgSessionDurationMinutes} minutes`);
+ */
+export async function getEngagementMetrics(): Promise<{
+  avgSessionDurationMinutes: number;
+  avgSessionDurationSeconds: number;
+  sessionsPerChild: number;
+  avgChaptersPerSession: number;
+  avgStoriesCompletedPerDay: number;
+  totalSessions: number;
+  totalChildren: number;
+}> {
+  console.log("[Progress Service API] Fetching engagement metrics");
+
+  const defaultMetrics = {
+    avgSessionDurationMinutes: 0,
+    avgSessionDurationSeconds: 0,
+    sessionsPerChild: 0,
+    avgChaptersPerSession: 0,
+    avgStoriesCompletedPerDay: 0,
+    totalSessions: 0,
+    totalChildren: 0,
+  };
+
+  try {
+    const response = await apiRequest<
+      ApiResponse<{
+        avgSessionDurationMinutes: number;
+        avgSessionDurationSeconds: number;
+        sessionsPerChild: number;
+        avgChaptersPerSession: number;
+        avgStoriesCompletedPerDay: number;
+        totalSessions: number;
+        totalChildren: number;
+      }>
+    >(`/stats/engagement-metrics`);
+
+    if (isApiError(response)) {
+      console.warn(
+        "[Progress Service API] Failed to fetch engagement metrics:",
+        response.error.message,
+      );
+      return defaultMetrics;
+    }
+
+    if (!response.success) {
+      console.warn(
+        "[Progress Service API] Failed to fetch engagement metrics: API returned success=false",
+      );
+      return defaultMetrics;
+    }
+
+    console.log("[Progress Service API] Engagement metrics fetched successfully", {
+      avgSessionDuration: response.data?.avgSessionDurationMinutes,
+      sessionsPerChild: response.data?.sessionsPerChild,
+    });
+
+    return response.data || defaultMetrics;
+  } catch (error) {
+    console.error("[Progress Service API] Error fetching engagement metrics:", error);
+    return defaultMetrics;
+  }
+}
+
+/**
+ * Get reading time analytics for the global statistics dashboard
+ * Includes: total reading minutes, breakdown by age group, breakdown by gender
+ *
+ * @returns ReadingTimeAnalytics with aggregated reading time data
+ *
+ * @example
+ * const analytics = await getReadingTimeAnalytics();
+ * console.log(`Total reading minutes: ${analytics.totalReadingMinutes}`);
+ */
+export async function getReadingTimeAnalytics(): Promise<{
+  totalReadingMinutes: number;
+  avgReadingMinutesPerChild: number;
+  byAgeGroup: Array<{ ageGroupId: string; ageGroupName: string; readingMinutes: number; percentageOfTotal: number }>;
+  byGender: Array<{ gender: string; readingMinutes: number; percentageOfTotal: number }>;
+  byChild: Array<{ childId: string; childName: string; readingMinutes: number }>;
+}> {
+  console.log("[Progress Service API] Fetching reading time analytics");
+
+  const defaultAnalytics = {
+    totalReadingMinutes: 0,
+    avgReadingMinutesPerChild: 0,
+    byAgeGroup: [],
+    byGender: [],
+    byChild: [],
+  };
+
+  try {
+    const response = await apiRequest<
+      ApiResponse<{
+        totalReadingMinutes: number;
+        avgReadingMinutesPerChild: number;
+        byAgeGroup: Array<{ ageGroupId: string; ageGroupName: string; readingMinutes: number; percentageOfTotal: number }>;
+        byGender: Array<{ gender: string; readingMinutes: number; percentageOfTotal: number }>;
+        byChild: Array<{ childId: string; childName: string; readingMinutes: number }>;
+      }>
+    >(`/stats/reading-time`);
+
+    if (isApiError(response)) {
+      console.warn(
+        "[Progress Service API] Failed to fetch reading time analytics:",
+        response.error.message,
+      );
+      return defaultAnalytics;
+    }
+
+    if (!response.success) {
+      console.warn(
+        "[Progress Service API] Failed to fetch reading time analytics: API returned success=false",
+      );
+      return defaultAnalytics;
+    }
+
+    console.log("[Progress Service API] Reading time analytics fetched successfully", {
+      totalReadingMinutes: response.data?.totalReadingMinutes,
+      ageGroupCount: response.data?.byAgeGroup?.length || 0,
+      genderCount: response.data?.byGender?.length || 0,
+    });
+
+    return response.data || defaultAnalytics;
+  } catch (error) {
+    console.error("[Progress Service API] Error fetching reading time analytics:", error);
+    return defaultAnalytics;
+  }
+}
+
+/**
+ * Get peak usage hours for the global statistics dashboard
+ * Shows which hours of the day children are most active (0-23)
+ *
+ * @returns Array of peak usage hours with session counts
+ *
+ * @example
+ * const peakHours = await getPeakUsageHours();
+ * console.log(`Peak hour 17 (5 PM): ${peakHours[17].sessionCount} sessions`);
+ */
+export async function getPeakUsageHours(): Promise<
+  Array<{ hour: number; hourLabel: string; sessionCount: number; percentageOfTotal: number }>
+> {
+  console.log("[Progress Service API] Fetching peak usage hours");
+
+  // Default: 24 hours with 0 sessions
+  const defaultHours = Array.from({ length: 24 }, (_, i) => ({
+    hour: i,
+    hourLabel: `${String(i).padStart(2, "0")}:00`,
+    sessionCount: 0,
+    percentageOfTotal: 0,
+  }));
+
+  try {
+    const response = await apiRequest<
+      ApiResponse<
+        Array<{ hour: number; hourLabel: string; sessionCount: number; percentageOfTotal: number }>
+      >
+    >(`/stats/peak-usage-hours`);
+
+    if (isApiError(response)) {
+      console.warn(
+        "[Progress Service API] Failed to fetch peak usage hours:",
+        response.error.message,
+      );
+      return defaultHours;
+    }
+
+    if (!response.success) {
+      console.warn(
+        "[Progress Service API] Failed to fetch peak usage hours: API returned success=false",
+      );
+      return defaultHours;
+    }
+
+    console.log("[Progress Service API] Peak usage hours fetched successfully", {
+      hoursWithData: response.data?.filter((h) => h.sessionCount > 0).length || 0,
+      peakHour: response.data?.reduce((max, h) => (h.sessionCount > max.sessionCount ? h : max))?.hour,
+    });
+
+    return response.data || defaultHours;
+  } catch (error) {
+    console.error("[Progress Service API] Error fetching peak usage hours:", error);
+    return defaultHours;
+  }
+}
+
+/**
+ * Get learning completion metrics - story completion rates
+ * @returns Promise with story completion statistics
+ */
+export async function getLearningCompletionMetrics(): Promise<{
+  totalStoryStarted: number;
+  totalStoryCompleted: number;
+  completionRate: number;
+  byDifficulty: Array<{
+    difficulty: string;
+    completed: number;
+    total: number;
+    completionRate: number;
+  }>;
+}> {
+  console.log("[Progress Service API] Fetching learning completion metrics");
+
+  const defaultMetrics = {
+    totalStoryStarted: 0,
+    totalStoryCompleted: 0,
+    completionRate: 0,
+    byDifficulty: [],
+  };
+
+  try {
+    const response = await apiRequest<
+      ApiResponse<{
+        totalStoryStarted: number;
+        totalStoryCompleted: number;
+        completionRate: number;
+        byDifficulty: Array<{
+          difficulty: string;
+          completed: number;
+          total: number;
+          completionRate: number;
+        }>;
+      }>
+    >(`/stats/learning/completion`);
+
+    if (isApiError(response)) {
+      console.warn("[Progress Service API] Failed to fetch learning completion metrics:", response.error.message);
+      return defaultMetrics;
+    }
+
+    if (!response.success) {
+      console.warn("[Progress Service API] Failed to fetch learning completion metrics: API returned success=false");
+      return defaultMetrics;
+    }
+
+    console.log("[Progress Service API] Learning completion metrics fetched successfully", {
+      completionRate: response.data?.completionRate,
+      totalCompleted: response.data?.totalStoryCompleted,
+    });
+
+    return response.data || defaultMetrics;
+  } catch (error) {
+    console.error("[Progress Service API] Error fetching learning completion metrics:", error);
+    return defaultMetrics;
+  }
+}
+
+/**
+ * Get challenge success metrics - success rates by challenge type
+ * @returns Promise with challenge success statistics
+ */
+export async function getChallengeSuccessMetrics(): Promise<{
+  overallSuccessRate: number;
+  totalChallenges: number;
+  successfulAttempts: number;
+  byType: Array<{
+    type: string;
+    successCount: number;
+    totalCount: number;
+    successRate: number;
+  }>;
+  topFailedChallenges: Array<{
+    challengeId: string;
+    failureRate: number;
+    failureCount: number;
+    totalAttempts: number;
+  }>;
+}> {
+  console.log("[Progress Service API] Fetching challenge success metrics");
+
+  const defaultMetrics = {
+    overallSuccessRate: 0,
+    totalChallenges: 0,
+    successfulAttempts: 0,
+    byType: [],
+    topFailedChallenges: [],
+  };
+
+  try {
+    const response = await apiRequest<
+      ApiResponse<{
+        overallSuccessRate: number;
+        totalChallenges: number;
+        successfulAttempts: number;
+        byType: Array<{
+          type: string;
+          successCount: number;
+          totalCount: number;
+          successRate: number;
+        }>;
+        topFailedChallenges: Array<{
+          challengeId: string;
+          failureRate: number;
+          failureCount: number;
+          totalAttempts: number;
+        }>;
+      }>
+    >(`/stats/learning/challenge-success`);
+
+    if (isApiError(response)) {
+      console.warn("[Progress Service API] Failed to fetch challenge success metrics:", response.error.message);
+      return defaultMetrics;
+    }
+
+    if (!response.success) {
+      console.warn("[Progress Service API] Failed to fetch challenge success metrics: API returned success=false");
+      return defaultMetrics;
+    }
+
+    console.log("[Progress Service API] Challenge success metrics fetched successfully", {
+      successRate: response.data?.overallSuccessRate,
+      challengeTypes: response.data?.byType?.length,
+    });
+
+    return response.data || defaultMetrics;
+  } catch (error) {
+    console.error("[Progress Service API] Error fetching challenge success metrics:", error);
+    return defaultMetrics;
+  }
+}
+
+/**
+ * Get hint usage metrics - hint effectiveness and children needing support
+ * @returns Promise with hint usage statistics
+ */
+export async function getHintUsageMetrics(): Promise<{
+  overallHintUsageRate: number;
+  successWithoutHints: number;
+  successWithHints: number;
+  hintEffectiveness: number;
+  byChallenge: Array<{
+    type: string;
+    hintUsageRate: number;
+    avgHintsUsed: number;
+    totalAttempts: number;
+  }>;
+  childrenNeedingSupport: Array<{
+    childId: string;
+    childName: string;
+    hintUsageRate: number;
+    successRate: number;
+  }>;
+}> {
+  console.log("[Progress Service API] Fetching hint usage metrics");
+
+  const defaultMetrics = {
+    overallHintUsageRate: 0,
+    successWithoutHints: 0,
+    successWithHints: 0,
+    hintEffectiveness: 0,
+    byChallenge: [],
+    childrenNeedingSupport: [],
+  };
+
+  try {
+    const response = await apiRequest<
+      ApiResponse<{
+        overallHintUsageRate: number;
+        successWithoutHints: number;
+        successWithHints: number;
+        hintEffectiveness: number;
+        byChallenge: Array<{
+          type: string;
+          hintUsageRate: number;
+          avgHintsUsed: number;
+          totalAttempts: number;
+        }>;
+        childrenNeedingSupport: Array<{
+          childId: string;
+          childName: string;
+          hintUsageRate: number;
+          successRate: number;
+        }>;
+      }>
+    >(`/stats/learning/hint-usage`);
+
+    if (isApiError(response)) {
+      console.warn("[Progress Service API] Failed to fetch hint usage metrics:", response.error.message);
+      return defaultMetrics;
+    }
+
+    if (!response.success) {
+      console.warn("[Progress Service API] Failed to fetch hint usage metrics: API returned success=false");
+      return defaultMetrics;
+    }
+
+    console.log("[Progress Service API] Hint usage metrics fetched successfully", {
+      hintUsageRate: response.data?.overallHintUsageRate,
+      childrenNeedingSupport: response.data?.childrenNeedingSupport?.length,
+    });
+
+    return response.data || defaultMetrics;
+  } catch (error) {
+    console.error("[Progress Service API] Error fetching hint usage metrics:", error);
+    return defaultMetrics;
+  }
+}
+
+/**
+ * Get reading speed trends - average completion time by story and age group
+ * @returns Promise with reading speed trend statistics
+ */
+export async function getReadingSpeedTrends(): Promise<{
+  byStory: Array<{
+    storyId: string;
+    storyTitle?: string;
+    difficulty?: string;
+    avgCompletionSeconds: number;
+    count: number;
+  }>;
+  byAgeGroup: Array<{
+    ageGroupId: string;
+    ageGroupName: string;
+    avgCompletionSeconds: number;
+    count: number;
+  }>;
+  overallAverageSeconds: number;
+}> {
+  console.log("[Progress Service API] Fetching reading speed trends");
+
+  const defaultTrends = {
+    byStory: [],
+    byAgeGroup: [],
+    overallAverageSeconds: 0,
+  };
+
+  try {
+    const response = await apiRequest<
+      ApiResponse<{
+        byStory: Array<{
+          storyId: string;
+          storyTitle?: string;
+          difficulty?: string;
+          avgCompletionSeconds: number;
+          count: number;
+        }>;
+        byAgeGroup: Array<{
+          ageGroupId: string;
+          ageGroupName: string;
+          avgCompletionSeconds: number;
+          count: number;
+        }>;
+        overallAverageSeconds: number;
+      }>
+    >(`/stats/learning/reading-speed`);
+
+    if (isApiError(response)) {
+      console.warn("[Progress Service API] Failed to fetch reading speed trends:", response.error.message);
+      return defaultTrends;
+    }
+
+    if (!response.success) {
+      console.warn("[Progress Service API] Failed to fetch reading speed trends: API returned success=false");
+      return defaultTrends;
+    }
+
+    console.log("[Progress Service API] Reading speed trends fetched successfully", {
+      storiesCount: response.data?.byStory?.length,
+      ageGroupsCount: response.data?.byAgeGroup?.length,
+      overallAverage: response.data?.overallAverageSeconds,
+    });
+
+    return response.data || defaultTrends;
+  } catch (error) {
+    console.error("[Progress Service API] Error fetching reading speed trends:", error);
+    return defaultTrends;
+  }
+}
+
+/**
+ * Get most failed challenges - challenges with lowest success rates
+ * @returns Promise with most failed challenges statistics
+ */
+export async function getMostFailedChallenges(): Promise<{
+  mostFailed: Array<{
+    challengeId: string;
+    failureRate: number;
+    failureCount: number;
+    totalAttempts: number;
+    avgAttemptsPerChild: number;
+  }>;
+  totalUniqueChallenges: number;
+}> {
+  console.log("[Progress Service API] Fetching most failed challenges");
+
+  const defaultChallenges = {
+    mostFailed: [],
+    totalUniqueChallenges: 0,
+  };
+
+  try {
+    const response = await apiRequest<
+      ApiResponse<{
+        mostFailed: Array<{
+          challengeId: string;
+          failureRate: number;
+          failureCount: number;
+          totalAttempts: number;
+          avgAttemptsPerChild: number;
+        }>;
+        totalUniqueChallenges: number;
+      }>
+    >(`/stats/learning/failed-challenges`);
+
+    if (isApiError(response)) {
+      console.warn("[Progress Service API] Failed to fetch most failed challenges:", response.error.message);
+      return defaultChallenges;
+    }
+
+    if (!response.success) {
+      console.warn("[Progress Service API] Failed to fetch most failed challenges: API returned success=false");
+      return defaultChallenges;
+    }
+
+    console.log("[Progress Service API] Most failed challenges fetched successfully", {
+      mostFailedCount: response.data?.mostFailed?.length,
+      totalUniqueChallenges: response.data?.totalUniqueChallenges,
+    });
+
+    return response.data || defaultChallenges;
+  } catch (error) {
+    console.error("[Progress Service API] Error fetching most failed challenges:", error);
+    return defaultChallenges;
+  }
+}
+
+export async function getContentPerformanceMetrics(): Promise<{
+  mostPopularStories: Array<{
+    storyId: string;
+    storyTitle?: string;
+    totalStarted: number;
+    totalCompleted: number;
+    completionRate: number;
+    avgTimeSpentMinutes: number;
+    difficulty: number | null;
+  }>;
+  themePerformance: Array<{
+    storyIds: string[];
+    totalStarted: number;
+    totalCompleted: number;
+    avgCompletionRate: number;
+    avgTimeSpentMinutes: number;
+  }>;
+  difficultyHeatmap: Array<{
+    readingLevel: string;
+    difficulty1: { completionRate: number; sampleSize: number; avgTimeMinutes: number };
+    difficulty2: { completionRate: number; sampleSize: number; avgTimeMinutes: number };
+    difficulty3: { completionRate: number; sampleSize: number; avgTimeMinutes: number };
+    difficulty4: { completionRate: number; sampleSize: number; avgTimeMinutes: number };
+    difficulty5: { completionRate: number; sampleSize: number; avgTimeMinutes: number };
+  }>;
+}> {
+  console.log("[Progress Service API] Fetching content performance metrics");
+
+  const defaultMetrics = {
+    mostPopularStories: [],
+    themePerformance: [],
+    difficultyHeatmap: [],
+  };
+
+  try {
+    const response = await apiRequest<
+      ApiResponse<{
+        mostPopularStories: Array<{
+          storyId: string;
+          storyTitle?: string;
+          totalStarted: number;
+          totalCompleted: number;
+          completionRate: number;
+          avgTimeSpentMinutes: number;
+          difficulty: number | null;
+        }>;
+        themePerformance: Array<{
+          storyIds: string[];
+          totalStarted: number;
+          totalCompleted: number;
+          avgCompletionRate: number;
+          avgTimeSpentMinutes: number;
+        }>;
+        difficultyHeatmap: Array<{
+          readingLevel: string;
+          difficulty1: { completionRate: number; sampleSize: number; avgTimeMinutes: number };
+          difficulty2: { completionRate: number; sampleSize: number; avgTimeMinutes: number };
+          difficulty3: { completionRate: number; sampleSize: number; avgTimeMinutes: number };
+          difficulty4: { completionRate: number; sampleSize: number; avgTimeMinutes: number };
+          difficulty5: { completionRate: number; sampleSize: number; avgTimeMinutes: number };
+        }>;
+      }>
+    >(`/stats/content/performance`);
+
+    if (isApiError(response)) {
+      console.warn("[Progress Service API] Failed to fetch content performance metrics:", response.error.message);
+      return defaultMetrics;
+    }
+
+    if (!response.success) {
+      console.warn("[Progress Service API] Failed to fetch content performance metrics: API returned success=false");
+      return defaultMetrics;
+    }
+
+    console.log("[Progress Service API] Content performance metrics fetched successfully", {
+      mostPopularStoriesCount: response.data?.mostPopularStories?.length,
+      themePerformanceCount: response.data?.themePerformance?.length,
+      heatmapLevels: response.data?.difficultyHeatmap?.length,
+    });
+
+    return response.data || defaultMetrics;
+  } catch (error) {
+    console.error("[Progress Service API] Error fetching content performance metrics:", error);
+    return defaultMetrics;
+  }
+}

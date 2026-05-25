@@ -3,7 +3,6 @@ import axios from "axios";
 import { logger } from "../utils/logger";
 import { forwardToContentService } from "../helpers/content.helpers";
 import { API_BASE_URL_V1, ApiResponse, TTSAudio, WeeklyAnalyticsReport } from "@shared/src/types";
-import { generateStorytelling } from "../helpers/ai.helpers";
 
 const router = Router();
 
@@ -82,9 +81,5 @@ router.post(`/week-report/:childId`, async (req: Request, res: Response<ApiRespo
 	}
 });
 
-// POST /api/v1/generate-storytelling - call ai helper function
-router.post(`/generate-storytelling`, async (req: Request, res: Response) => {
-	generateStorytelling(req, res);
-});
 
 export default router;

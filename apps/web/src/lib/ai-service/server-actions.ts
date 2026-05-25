@@ -8,7 +8,7 @@ import { WeeklyAnalyticsReport } from "@readdly/shared-types";
  * Wraps `ai-service` server-api calls for use in Server Components / Actions
  */
 
-import { validateAnswer, LLMValidationResult, ValidateAnswerRequest, generateStorytelling, GenerateStorytellingRequest , GenerateHintsRequest, HintResponse, getWeeklyAnalyticsReport, generateHints } from "./server-api";
+import { validateAnswer, LLMValidationResult, ValidateAnswerRequest , GenerateHintsRequest, HintResponse, getWeeklyAnalyticsReport, generateHints } from "./server-api";
 
 export interface ValidateAnswerActionResult {
   success: boolean;
@@ -81,77 +81,6 @@ export async function validateAnswerAction(
 
     console.error("[AI Service] Error validating answer:", {
       challengeAttemptId: request.challengeId,
-      error: errorMessage,
-    });
-
-    return {
-      success: false,
-      error: errorMessage,
-    };
-  }
-}
-
-/**
- * Server action to generate personalized storytelling profile for a child
- * Wraps the generateStorytelling API call with error handling
- *
- * @param request - Storytelling generation request data
- * @returns Result object with success status and data/error
- *
- * @example
- * const result = await generateStorytellingAction({
- *   childProfileId: "child-123",
- *   name: "Alice",
- *   childLanguage: "en",
- *   favoriteThemes: ["Fantasy", "Adventure"],
- *   learningObjectives: ["Reading comprehension", "Vocabulary"]
- * });
- * if (result.success) {
- *   console.log("Profile created:", result.data?.storytellingProfile.id);
- *   console.log("Message:", result.data?.message);
- * }
- */
-export async function generateStorytellingAction(
-  request: GenerateStorytellingRequest,
-) {
-  try {
-    console.log(
-      "[AI Service] Generating storytelling profile via server action:",
-      {
-        childProfileId: request.childProfileId,
-        name: request.name,
-        childLanguage: request.childLanguage,
-      },
-    );
-
-    const result = await generateStorytelling(request);
-
-    if (!result) {
-      console.warn("[AI Service] Storytelling generation returned null");
-      return {
-        success: false,
-        error: "Failed to generate storytelling profile",
-      };
-    }
-
-    console.log(
-      "[AI Service] Storytelling profile generated via server action:",
-      {
-        childProfileId: request.childProfileId,
-        storyProfileId: result.storytellingProfile.id,
-      },
-    );
-
-    return {
-      success: true,
-      data: result,
-    };
-  } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-
-    console.error("[AI Service] Error generating storytelling:", {
-      childProfileId: request.childProfileId,
       error: errorMessage,
     });
 

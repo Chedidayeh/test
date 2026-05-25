@@ -33,17 +33,6 @@ export interface LLMValidationResult {
 }
 
 /**
- * Request payload for generating personalized storytelling for a child
- */
-export interface GenerateStorytellingRequest {
-  childProfileId: string; // ID of the child profile
-  name: string; // Child's name
-  childLanguage: string; // Child's preferred language code (en, fr, ar)
-  favoriteThemes: string[]; // Array of favorite theme names
-  learningObjectives: string[]; // Array of learning objectives
-}
-
-/**
  * Request payload for generating hints for a challenge
  */
 export interface GenerateHintsRequest {
@@ -137,78 +126,6 @@ export async function validateAnswer(
   }
 }
 
-/**
- * Generate personalized storytelling profile for a child
- * Calls the gateway to save storytelling preferences and initiate story generation
- *
- * @param request - Storytelling generation request data
- * @returns Storytelling generation result or null if generation fails
- *
- * @example
- * const result = await generateStorytelling({
- *   childProfileId: "child-123",
- *   name: "Alice",
- *   childLanguage: "en",
- *   favoriteThemes: ["Fantasy", "Adventure"],
- *   learningObjectives: ["Reading comprehension", "Vocabulary"]
- * });
- * if (result) {
- *   console.log("Profile created:", result.storytellingProfile.id);
- *   console.log("Message:", result.message);
- * }
- */
-export async function generateStorytelling(
-  request: GenerateStorytellingRequest,
-) {
-  try {
-    console.log("[AI Service API] Generating storytelling profile:", {
-      childProfileId: request.childProfileId,
-      name: request.name,
-      childLanguage: request.childLanguage,
-      favoriteThemesCount: request.favoriteThemes.length,
-      objectivesCount: request.learningObjectives.length,
-    });
-
-    const response = await apiRequest(
-      `/generate-storytelling`,
-      {
-        method: "POST",
-        body: JSON.stringify(request),
-      },
-    );
-
-    if (isApiError(response)) {
-      console.warn(
-        "[AI Service API] Failed to generate storytelling:",
-        response.error.message,
-      );
-      return null;
-    }
-
-    if (!response.success) {
-      console.warn(
-        "[AI Service API] Failed to generate storytelling: API returned success=false",
-      );
-      return null;
-    }
-
-    console.log(
-      "[AI Service API] Storytelling profile generated successfully:",
-      {
-        childProfileId: request.childProfileId,
-        storyProfileId: response.data?.storytellingProfile.id,
-      },
-    );
-
-    return response.data || null;
-  } catch (error) {
-    console.error(
-      "[AI Service API] Error generating storytelling:",
-      error instanceof Error ? error.message : String(error),
-    );
-    return null;
-  }
-}
 
 /**
  * Generate hints for a challenge using LLM

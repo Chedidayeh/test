@@ -1445,66 +1445,41 @@ export class ChildrenController {
   }
 
   /**
-   * Save storytelling profile for a child
-   * Body: { childProfileId, childName, childLanguage, favoriteThemes, learningObjectives, customThemes, otherObjective }
+   * Get engagement metrics for the global statistics dashboard
+   * Includes: average session duration, sessions per child, chapters per session, stories per day
    */
-  static async saveStorytellingProfile(
+  static async getEngagementMetrics(
     req: Request,
-    res: Response<ApiResponse<any>>,
+    res: Response<
+      ApiResponse<{
+        avgSessionDurationMinutes: number;
+        avgSessionDurationSeconds: number;
+        sessionsPerChild: number;
+        avgChaptersPerSession: number;
+        avgStoriesCompletedPerDay: number;
+        totalSessions: number;
+        totalChildren: number;
+      }>
+    >,
   ): Promise<void> {
     try {
-      const {
-        childProfileId,
-        childName,
-        childLanguage,
-        favoriteThemes,
-        learningObjectives,
-      } = req.body;
-
-      // Validation
-      if (
-        !childProfileId ||
-        !childName ||
-        !childLanguage ||
-        !Array.isArray(favoriteThemes)
-      ) {
-        res.status(400).json({
-          success: false,
-          error: {
-            code: "BAD_REQUEST",
-            message:
-              "Missing required fields: childProfileId, childName, childLanguage, favoriteThemes",
-          },
-          timestamp: new Date(),
-        });
-        return;
-      }
-
-      const storytellingProfile = await ChildrenService.saveStorytellingProfile(
-        {
-          childProfileId,
-          childName,
-          childLanguage,
-          favoriteThemes,
-          learningObjectives: learningObjectives || [],
-        },
-      );
+      const metrics = await ChildrenService.getEngagementMetrics();
 
       res.status(200).json({
         success: true,
-        data: storytellingProfile,
+        data: metrics,
         timestamp: new Date(),
       });
     } catch (error) {
-      console.error("Error saving storytelling profile:", error);
+      console.error("Error fetching engagement metrics:", error);
       res.status(500).json({
         success: false,
         error: {
-          code: "SAVE_ERROR",
+          code: "METRICS_ERROR",
           message:
             error instanceof Error
               ? error.message
-              : "Failed to save storytelling profile",
+              : "Failed to fetch engagement metrics",
         },
         timestamp: new Date(),
       });
@@ -1512,50 +1487,380 @@ export class ChildrenController {
   }
 
   /**
-   * Update storytelling story for a child
-   * Called after a story is generated and saved to Content Service
-   * Receives the Story object and updates Progress Service tracking
+   * Get reading time analytics for the global statistics dashboard
+   * Includes: total reading minutes, breakdown by age group, breakdown by gender
    */
-  static async updateStorytellingStory(
+  static async getReadingTimeAnalytics(
     req: Request,
-    res: Response<ApiResponse<any>>,
+    res: Response<
+      ApiResponse<{
+        totalReadingMinutes: number;
+        avgReadingMinutesPerChild: number;
+        byAgeGroup: Array<{
+          ageGroupId: string;
+          ageGroupName: string;
+          readingMinutes: number;
+          percentageOfTotal: number;
+        }>;
+        byGender: Array<{
+          gender: string;
+          readingMinutes: number;
+          percentageOfTotal: number;
+        }>;
+        byChild: Array<{
+          childId: string;
+          childName: string;
+          readingMinutes: number;
+        }>;
+      }>
+    >,
   ): Promise<void> {
     try {
-      const { childId } = req.params;
-      const { story } = req.body;
-
-      if (!childId || !story) {
-        res.status(400).json({
-          success: false,
-          error: {
-            code: "BAD_REQUEST",
-            message: "Missing required fields: childId or story",
-          },
-          timestamp: new Date(),
-        });
-        return;
-      }
-
-      const result = await ChildrenService.updateStorytellingStory(
-        childId,
-        story as Story,
-      );
+      const analytics = await ChildrenService.getReadingTimeAnalytics();
 
       res.status(200).json({
         success: true,
-        data: result,
+        data: analytics,
         timestamp: new Date(),
       });
     } catch (error) {
-      console.error("Error updating storytelling story:", error);
+      console.error("Error fetching reading time analytics:", error);
       res.status(500).json({
         success: false,
         error: {
-          code: "UPDATE_ERROR",
+          code: "ANALYTICS_ERROR",
           message:
             error instanceof Error
               ? error.message
-              : "Failed to update storytelling story",
+              : "Failed to fetch reading time analytics",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  /**
+   * Get peak usage hours for the global statistics dashboard
+   * Shows which hours of the day children are most active (0-23)
+   */
+  static async getPeakUsageHours(
+    req: Request,
+    res: Response<
+      ApiResponse<
+        Array<{
+          hour: number;
+          hourLabel: string;
+          sessionCount: number;
+          percentageOfTotal: number;
+        }>
+      >
+    >,
+  ): Promise<void> {
+    try {
+      const peakHours = await ChildrenService.getPeakUsageHours();
+
+      res.status(200).json({
+        success: true,
+        data: peakHours,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error fetching peak usage hours:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "PEAK_HOURS_ERROR",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to fetch peak usage hours",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  /**
+   * Get learning completion metrics for the global statistics dashboard
+   * Returns story completion rates
+   */
+  static async getLearningCompletionMetrics(
+    req: Request,
+    res: Response<
+      ApiResponse<{
+        totalStoryStarted: number;
+        totalStoryCompleted: number;
+        completionRate: number;
+        byDifficulty: Array<{
+          difficulty: string;
+          completed: number;
+          total: number;
+          completionRate: number;
+        }>;
+      }>
+    >,
+  ): Promise<void> {
+    try {
+      const data = await ChildrenService.getLearningCompletionMetrics();
+      res.status(200).json({
+        success: true,
+        data,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error fetching learning completion metrics:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "LEARNING_COMPLETION_ERROR",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to fetch learning completion metrics",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  /**
+   * Get challenge success metrics for the global statistics dashboard
+   * Returns success rates by challenge type and most failed challenges
+   */
+  static async getChallengeSuccessMetrics(
+    req: Request,
+    res: Response<
+      ApiResponse<{
+        overallSuccessRate: number;
+        totalChallenges: number;
+        successfulAttempts: number;
+        byType: Array<{
+          type: string;
+          successCount: number;
+          totalCount: number;
+          successRate: number;
+        }>;
+        topFailedChallenges: Array<{
+          challengeId: string;
+          failureRate: number;
+          failureCount: number;
+          totalAttempts: number;
+        }>;
+      }>
+    >,
+  ): Promise<void> {
+    try {
+      const data = await ChildrenService.getChallengeSuccessMetrics();
+      res.status(200).json({
+        success: true,
+        data,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error fetching challenge success metrics:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "CHALLENGE_SUCCESS_ERROR",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to fetch challenge success metrics",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  /**
+   * Get hint usage metrics for the global statistics dashboard
+   * Returns hint effectiveness and children needing support
+   */
+  static async getHintUsageMetrics(
+    req: Request,
+    res: Response<
+      ApiResponse<{
+        overallHintUsageRate: number;
+        successWithoutHints: number;
+        successWithHints: number;
+        hintEffectiveness: number;
+        byChallenge: Array<{
+          challengeId: string;
+          hintUsageRate: number;
+          avgHintsUsed: number;
+          totalAttempts: number;
+        }>;
+        childrenNeedingSupport: Array<{
+          childId: string;
+          childName: string;
+          hintUsageRate: number;
+          successRate: number;
+        }>;
+      }>
+    >,
+  ): Promise<void> {
+    try {
+      const data = await ChildrenService.getHintUsageMetrics();
+      res.status(200).json({
+        success: true,
+        data,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error fetching hint usage metrics:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "HINT_USAGE_ERROR",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to fetch hint usage metrics",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  /**
+   * Get reading speed trends for the global statistics dashboard
+   * Returns average completion time by story and age group
+   */
+  static async getReadingSpeedTrends(
+    req: Request,
+    res: Response<
+      ApiResponse<{
+        byStory: Array<{
+          storyId: string;
+          avgCompletionSeconds: number;
+          count: number;
+        }>;
+        byAgeGroup: Array<{
+          ageGroupId: string;
+          ageGroupName: string;
+          avgCompletionSeconds: number;
+          count: number;
+        }>;
+        overallAverageSeconds: number;
+      }>
+    >,
+  ): Promise<void> {
+    try {
+      const data = await ChildrenService.getReadingSpeedTrends();
+      res.status(200).json({
+        success: true,
+        data,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error fetching reading speed trends:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "READING_SPEED_ERROR",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to fetch reading speed trends",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  /**
+   * Get most failed challenges for the global statistics dashboard
+   * Returns challenges with lowest success rates
+   */
+  static async getMostFailedChallenges(
+    req: Request,
+    res: Response<
+      ApiResponse<{
+        mostFailed: Array<{
+          challengeId: string;
+          failureRate: number;
+          failureCount: number;
+          totalAttempts: number;
+          avgAttemptsPerChild: number;
+        }>;
+        totalUniqueChallenges: number;
+      }>
+    >,
+  ): Promise<void> {
+    try {
+      const data = await ChildrenService.getMostFailedChallenges();
+      res.status(200).json({
+        success: true,
+        data,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error fetching most failed challenges:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "FAILED_CHALLENGES_ERROR",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to fetch most failed challenges",
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  /**
+   * Get content performance metrics
+   * Returns most popular stories, theme performance, and difficulty heatmap
+   */
+  static async getContentPerformanceMetrics(
+    req: Request,
+    res: Response<
+      ApiResponse<{
+        mostPopularStories: Array<{
+          storyId: string;
+          totalStarted: number;
+          totalCompleted: number;
+          completionRate: number;
+          avgTimeSpentMinutes: number;
+          difficulty: number | null;
+        }>;
+        themePerformance: Array<{
+          storyIds: string[];
+          totalStarted: number;
+          totalCompleted: number;
+          avgCompletionRate: number;
+          avgTimeSpentMinutes: number;
+        }>;
+        difficultyHeatmap: Array<{
+          readingLevel: string;
+          difficulty1: { completionRate: number; sampleSize: number; avgTimeMinutes: number };
+          difficulty2: { completionRate: number; sampleSize: number; avgTimeMinutes: number };
+          difficulty3: { completionRate: number; sampleSize: number; avgTimeMinutes: number };
+          difficulty4: { completionRate: number; sampleSize: number; avgTimeMinutes: number };
+          difficulty5: { completionRate: number; sampleSize: number; avgTimeMinutes: number };
+        }>;
+      }>
+    >,
+  ): Promise<void> {
+    try {
+      const data = await ChildrenService.getContentPerformanceMetrics();
+      res.status(200).json({
+        success: true,
+        data,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error fetching content performance metrics:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "CONTENT_PERFORMANCE_ERROR",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to fetch content performance metrics",
         },
         timestamp: new Date(),
       });

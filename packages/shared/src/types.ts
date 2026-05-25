@@ -273,8 +273,6 @@ export interface Story {
   description: string | null;
   difficulty: number | null; // 1-5 difficulty scale
   order: number;
-  isStorytellingStory: boolean; // Flag to identify AI-generated storytelling stories
-  generatedStoryId: string | null; // Reference to the original generated story ID from AI Service
   createdAt: Date;
   updatedAt: Date;
   world?: World | null;
@@ -429,7 +427,6 @@ export interface ChildProfile {
   allocatedRoadmaps: string[]; // List of Roadmap IDs allocated to this child
   currentLevel: number;
   totalStars: number;
-  storytelling?: StorytellingProfile | null; // Optional storytelling profile for AI-generated stories
   activateWeeklyReports: boolean; // Whether the child has enabled weekly progress reports
   activateNotifications: boolean; // Whether the child has enabled notifications
   sessionsPerWeek: number; // Number of sessions the child should ideally have per week (for activity tracking)
@@ -449,54 +446,15 @@ export interface ChildDailyActivity {
   updatedAt: Date;
 }
 
-export interface StorytellingProfile {
-  id: string;
-  childProfileId: string;
 
-  childName: string;
-  childLanguage: string;
-  favoriteThemes: string[]; // hand picked by the parent during onboarding
-  learningObjectives: string[]; // optional learning objectives for the AI to focus on
-
-  onboardingCompleted: boolean;
-  isActive: boolean;
-
-  stories?: StorytellingStory[];
-
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface StorytellingStory {
-  id: string;
-  storytellingProfileId: string;
-  storytellingProfile?: StorytellingProfile;
-
-  // Reference to content service StorytellingStory.id
-  storyId: string;
-  generatedStoryId: string | null; //  reference to the original generated story ID from AI Service
-
-  // AI-generated story content
-  title: string;
-
-  status: ProgressStatus;
-  progress?: Progress | null; // Reference to the child's progress on this story
-
-  createdAt: Date;
-  updatedAt: Date;
-}
 
 // Progress represents a child's progress through a specific roadmap , world, story, tracking status, attempts, and rewards earned
 export interface Progress {
   id: string;
   childProfileId: string;
-  storytellingStoryId: string | null; // Optional reference to StorytellingStory for AI-generated stories
-  storytellingStory?: StorytellingStory | null; // Reference to the associated storytelling story
-
   roadmapId: string | null; // References Content.Roadmap.id - current roadmap being progressed through
   worldId: string | null; // References Content.World.id - current world being progressed through
   storyId: string | null; // References Content.Story.id - current story being progressed through
-  generatedStoryId: string | null; //  reference to the original generated story ID from AI Service
   status: ProgressStatus;
   totalTimeSpent: number; // Total time spent on this story across all sessions (in seconds)
   completedAt: Date | null;
@@ -643,71 +601,7 @@ export interface TTSAudio {
   generatedAt: Date;
   createdAt: Date;
 }
-//STORY PLANNING WITH EXTENSION LOGIC
-export interface StoryPlanWorld {
-  id: string;
 
-  order: number; // 0, 1, 2... (strict ordering)
-
-  theme: string;
-  title: string;
-  description: string;
-  atmosphere: string;
-
-  learningFocus: string[];
-  baseDifficulty: number; // Base difficulty for this world
-
-  estimatedStoryCount: number;
-  generatedStoryCount: number;
-
-  isUnlocked: Boolean;
-  isCompleted: Boolean;
-
-  stories: StoryPlanItem[];
-
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface StoryPlanItem {
-  id: string;
-  worldId: string;
-  world: StoryPlanWorld;
-
-  // ISSUE 7 FIX: Enforce sequence
-  sequenceOrder: number; // 0, 1, 2... per world
-
-  title: string;
-  summary: string; // 150-250 chars
-  storyArc: string; // "introduction" | "development" | "climax" | "resolution"
-
-  objectives: string[];
-  skillsToReinforce: string[];
-  skillsToIntroduce: string[];
-
-  status: string; // "pending" | "generating" | "generated" | "synced"
-
-  dependsOn?: string;
-  generatedStory?: GeneratedStory;
-
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface GeneratedStory {
-  id: string;
-  planItemId: string;
-  planItem: StoryPlanItem;
-
-  childProfileId: string;
-
-  title: string;
-  content: JSON; // { chapters: [...] }
-  status: string; // "pending" | "generating" | "generated" | "synced"
-
-  createdAt: Date;
-  updatedAt: Date;
-}
 // WEEKLY ANALYTICS REPORTS FOR PARENTS
 export interface WeeklyAnalyticsReport {
   id: string;

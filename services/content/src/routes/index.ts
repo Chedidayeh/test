@@ -6,6 +6,7 @@ import ageGroupRoutes from "./age-group.routes";
 import themeRoutes from "./theme.routes";
 import levelRoutes from "./level.routes";
 import badgeRoutes from "./badge.routes";
+import challengeRoutes from "./challenge.routes";
 import { ageGroupController } from "../controllers/age-group.controller";
 import { updateChapterAudio } from "../controllers/chapter.controller";
 
@@ -22,6 +23,7 @@ router.use("/age-groups", ageGroupRoutes);
 router.use("/themes", themeRoutes);
 router.use("/levels", levelRoutes);
 router.use("/badges", badgeRoutes);
+router.use("/challenges", challengeRoutes);
 
 // Additional routes
 // update chapter audio URL (base or with language code for translations)

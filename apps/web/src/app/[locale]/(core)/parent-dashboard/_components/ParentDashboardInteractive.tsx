@@ -8,7 +8,6 @@ import OverviewTab from "./OverviewTab";
 import AchievementsTab from "./AchievementsTab";
 import {
   Badge,
-  ParentUser,
   AgeGroup,
   RoleType,
   ChildProfile,
@@ -19,16 +18,12 @@ import RiddleAnalyticsTab from "./RiddleAnalyticsTab";
 import WeeklyReportsTab from "./WeeklyReportsTab";
 import { toast } from "sonner";
 import { Session } from "next-auth";
-import ChildStorytellingTab from "./ChildStorytellingTab";
 import {
-  getParentWithProfilesAction,
   getChildByIdAction,
   getChildProfilesByParentAction,
 } from "@/src/lib/progress-service/server-actions";
-import { Button } from "@/src/components/ui/button";
-import { Loader2, Settings } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { usePusherBeams } from "@/src/hooks/use-pusher";
-import { getChildProfilesByParent } from "@/src/lib/progress-service/server-api";
 
 export default function ParentDashboardInteractive({
   childProfiles: intialChildProfiles,
@@ -68,9 +63,6 @@ export default function ParentDashboardInteractive({
     fetchedChild?.activateWeeklyReports ?? false,
   );
 
-  const [activateStorytelling, setActivateStorytelling] = useState(
-    fetchedChild?.storytelling?.isActive ?? false,
-  );
 
   /**
    * Automatically fetch child profile when selected child ID changes
@@ -118,7 +110,7 @@ export default function ParentDashboardInteractive({
     };
 
     fetchChildProfile();
-  }, [selectedChildId, activateWeeklyReports, setActivateWeeklyReports , activateStorytelling, setActivateStorytelling]);
+  }, [selectedChildId, activateWeeklyReports, setActivateWeeklyReports]);
 
   /**
    * Handle child selection - now just updates the selected child ID
@@ -218,11 +210,6 @@ export default function ParentDashboardInteractive({
                   />
                   <RiddleAnalyticsTab selectedChild={fetchedChild!} />
                   <TimeAnalyticsTab selectedChild={fetchedChild!} />
-                  <ChildStorytellingTab
-                    selectedChild={fetchedChild!}
-                    activateStorytelling={activateStorytelling}
-                    setActivateStorytelling={setActivateStorytelling}
-                  />
                 </>
               )}
             </DashboardTabs>

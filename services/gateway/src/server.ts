@@ -4,7 +4,6 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import express from "express";
-import cors from "cors";
 import { jwtMiddleware } from "./middleware/jwt.middleware";
 import { logger } from "./utils/logger";
 import { aiRoutes, authRoutes, contentRoutes, progressRoutes } from "./routes";

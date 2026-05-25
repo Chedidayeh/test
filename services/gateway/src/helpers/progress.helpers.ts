@@ -1642,64 +1642,6 @@ export async function forwardCompleteStory(
     logger.info("Story completed successfully", {
       gameSessionId,
     });
-    console.log("================================");
-    // check if storytelling story ,then call ai service to mark the story as completed
-    if (updatedSession.progress?.storytellingStory) {
-      logger.info("Notifying AI service of story completion", {
-        gameSessionId,
-        generatedStoryId:
-          updatedSession.progress.storytellingStory.generatedStoryId,
-        childProfileId: updatedSession.progress.childProfileId,
-      });
-      try {
-        const aiResponse = await axios.post(
-          `${AI_SERVICE_URL}${API_BASE_URL_V1}/complete-story`,
-          {
-            storyId: updatedSession.progress.storytellingStory.generatedStoryId,
-            childProfileId: updatedSession.progress.childProfileId,
-          },
-          {
-            headers: {
-              "Content-Type": "application/json",
-              ...(req.headers.authorization && {
-                Authorization: req.headers.authorization,
-              }),
-            },
-            validateStatus: () => true,
-          },
-        );
-        logger.debug("AI service complete-story response received", {
-          status: aiResponse.status,
-          statusText: aiResponse.statusText,
-          hasError: !!aiResponse.data?.error,
-          errorCode: aiResponse.data?.error?.code,
-          errorMessage: aiResponse.data?.error?.message,
-        });
-        if (aiResponse.status === 200) {
-          logger.info("AI service story completion successful", {
-            gameSessionId,
-            generatedStoryId:
-              updatedSession.progress.storytellingStory.generatedStoryId,
-            childProfileId: updatedSession.progress.childProfileId,
-          });
-        } else {
-          logger.warn("AI service story completion failed", {
-            gameSessionId,
-            status: aiResponse.status,
-            error: aiResponse.data?.error?.message || "Unknown error",
-            generatedStoryId:
-              updatedSession.progress.storytellingStory.generatedStoryId,
-          });
-        }
-      } catch (aiError) {
-        logger.warn("Failed to notify AI service of story completion", {
-          error: String(aiError),
-          generatedStoryId:
-            updatedSession.progress.storytellingStory.generatedStoryId,
-        });
-      }
-    }
-    console.log("================================");
 
     res.status(200).json({
       success: true,
@@ -2881,6 +2823,957 @@ export async function forwardGetDashboardStats(
       error: {
         code: "INTERNAL_ERROR",
         message: "Failed to fetch dashboard statistics",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+/**
+ * Get engagement metrics for the global statistics dashboard
+ * Forwards request to Progress Service to aggregate session and engagement data
+ * Includes: average session duration, sessions per child, chapters per session, stories per day
+ */
+export async function forwardGetEngagementMetrics(
+  req: Request,
+  res: Response<
+    ApiResponse<{
+      avgSessionDurationMinutes: number;
+      avgSessionDurationSeconds: number;
+      sessionsPerChild: number;
+      avgChaptersPerSession: number;
+      avgStoriesCompletedPerDay: number;
+      totalSessions: number;
+      totalChildren: number;
+    }>
+  >,
+): Promise<void> {
+  try {
+    logger.info("Fetching engagement metrics");
+
+    // Forward request to Progress Service
+    const metricsResponse = await axios.get<
+      ApiResponse<{
+        avgSessionDurationMinutes: number;
+        avgSessionDurationSeconds: number;
+        sessionsPerChild: number;
+        avgChaptersPerSession: number;
+        avgStoriesCompletedPerDay: number;
+        totalSessions: number;
+        totalChildren: number;
+      }>
+    >(`${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/stats/engagement-metrics`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...(req.headers.authorization && {
+          Authorization: req.headers.authorization,
+        }),
+      },
+      validateStatus: () => true,
+    });
+
+    logger.debug("Progress service engagement metrics response received", {
+      status: metricsResponse.status,
+      hasData: !!metricsResponse.data?.data,
+    });
+
+    // Handle progress service error
+    if (metricsResponse.status !== 200) {
+      logger.warn("Progress service engagement metrics error", {
+        status: metricsResponse.status,
+        error: metricsResponse.data?.error?.message,
+      });
+      res.status(metricsResponse.status).json(metricsResponse.data);
+      return;
+    }
+
+    logger.info("Engagement metrics fetched successfully", {
+      avgSessionDuration: metricsResponse.data?.data?.avgSessionDurationMinutes,
+      sessionsPerChild: metricsResponse.data?.data?.sessionsPerChild,
+    });
+
+    res.status(200).json(metricsResponse.data);
+  } catch (error) {
+    logger.error("Get engagement metrics forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "SERVICE_UNAVAILABLE",
+        message: "Failed to fetch engagement metrics",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+/**
+ * Get reading time analytics for the global statistics dashboard
+ * Forwards request to Progress Service to aggregate reading time data
+ * Includes: total reading minutes, breakdown by age group, breakdown by gender
+ */
+export async function forwardGetReadingTimeAnalytics(
+  req: Request,
+  res: Response<
+    ApiResponse<{
+      totalReadingMinutes: number;
+      avgReadingMinutesPerChild: number;
+      byAgeGroup: Array<{
+        ageGroupId: string;
+        ageGroupName: string;
+        readingMinutes: number;
+        percentageOfTotal: number;
+      }>;
+      byGender: Array<{
+        gender: string;
+        readingMinutes: number;
+        percentageOfTotal: number;
+      }>;
+      byChild: Array<{
+        childId: string;
+        childName: string;
+        readingMinutes: number;
+      }>;
+    }>
+  >,
+): Promise<void> {
+  try {
+    logger.info("Fetching reading time analytics");
+
+    // Forward request to Progress Service
+    const analyticsResponse = await axios.get<
+      ApiResponse<{
+        totalReadingMinutes: number;
+        avgReadingMinutesPerChild: number;
+        byAgeGroup: Array<{
+          ageGroupId: string;
+          ageGroupName: string;
+          readingMinutes: number;
+          percentageOfTotal: number;
+        }>;
+        byGender: Array<{
+          gender: string;
+          readingMinutes: number;
+          percentageOfTotal: number;
+        }>;
+        byChild: Array<{
+          childId: string;
+          childName: string;
+          readingMinutes: number;
+        }>;
+      }>
+    >(`${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/stats/reading-time`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...(req.headers.authorization && {
+          Authorization: req.headers.authorization,
+        }),
+      },
+      validateStatus: () => true,
+    });
+
+    logger.debug("Progress service reading time analytics response received", {
+      status: analyticsResponse.status,
+      hasData: !!analyticsResponse.data?.data,
+    });
+
+    // Handle progress service error
+    if (analyticsResponse.status !== 200) {
+      logger.warn("Progress service reading time analytics error", {
+        status: analyticsResponse.status,
+        error: analyticsResponse.data?.error?.message,
+      });
+      res.status(analyticsResponse.status).json(analyticsResponse.data);
+      return;
+    }
+
+    logger.info("Reading time analytics fetched successfully", {
+      totalReadingMinutes: analyticsResponse.data?.data?.totalReadingMinutes,
+      ageGroupCount: analyticsResponse.data?.data?.byAgeGroup?.length || 0,
+      genderCount: analyticsResponse.data?.data?.byGender?.length || 0,
+    });
+
+    res.status(200).json(analyticsResponse.data);
+  } catch (error) {
+    logger.error("Get reading time analytics forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "SERVICE_UNAVAILABLE",
+        message: "Failed to fetch reading time analytics",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+/**
+ * Get peak usage hours for the global statistics dashboard
+ * Forwards request to Progress Service to get hour-by-hour breakdown of session activity
+ * Shows which hours of the day children are most active (0-23)
+ */
+export async function forwardGetPeakUsageHours(
+  req: Request,
+  res: Response<
+    ApiResponse<
+      Array<{
+        hour: number;
+        hourLabel: string;
+        sessionCount: number;
+        percentageOfTotal: number;
+      }>
+    >
+  >,
+): Promise<void> {
+  try {
+    logger.info("Fetching peak usage hours");
+
+    // Forward request to Progress Service
+    const hoursResponse = await axios.get<
+      ApiResponse<
+        Array<{
+          hour: number;
+          hourLabel: string;
+          sessionCount: number;
+          percentageOfTotal: number;
+        }>
+      >
+    >(`${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/stats/peak-usage-hours`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...(req.headers.authorization && {
+          Authorization: req.headers.authorization,
+        }),
+      },
+      validateStatus: () => true,
+    });
+
+    logger.debug("Progress service peak usage hours response received", {
+      status: hoursResponse.status,
+      hasData: !!hoursResponse.data?.data,
+    });
+
+    // Handle progress service error
+    if (hoursResponse.status !== 200) {
+      logger.warn("Progress service peak usage hours error", {
+        status: hoursResponse.status,
+        error: hoursResponse.data?.error?.message,
+      });
+      res.status(hoursResponse.status).json(hoursResponse.data);
+      return;
+    }
+
+    logger.info("Peak usage hours fetched successfully", {
+      hoursWithData: hoursResponse.data?.data?.filter((h) => h.sessionCount > 0)
+        .length,
+      peakHour: hoursResponse.data?.data?.reduce((max, h) =>
+        h.sessionCount > max.sessionCount ? h : max,
+      )?.hour,
+    });
+
+    res.status(200).json(hoursResponse.data);
+  } catch (error) {
+    logger.error("Get peak usage hours forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "SERVICE_UNAVAILABLE",
+        message: "Failed to fetch peak usage hours",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+/**
+ * Forward learning completion metrics request to Progress Service
+ */
+export async function forwardGetLearningCompletionMetrics(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    logger.info("Fetching learning completion metrics");
+
+    const metricsResponse = await axios.get(
+      `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/stats/learning/completion`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
+          }),
+        },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug("Progress service learning completion metrics response received", {
+      status: metricsResponse.status,
+      hasData: !!metricsResponse.data?.data,
+    });
+
+    if (metricsResponse.status !== 200) {
+      logger.warn("Progress service learning completion metrics error", {
+        status: metricsResponse.status,
+        error: metricsResponse.data?.error?.message,
+      });
+      res.status(metricsResponse.status).json(metricsResponse.data);
+      return;
+    }
+
+    logger.info("Learning completion metrics fetched successfully", {
+      completionRate: metricsResponse.data?.data?.completionRate,
+    });
+
+    res.status(200).json(metricsResponse.data);
+  } catch (error) {
+    logger.error("Get learning completion metrics forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "SERVICE_UNAVAILABLE",
+        message: "Failed to fetch learning completion metrics",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+/**
+ * Helper function to fetch challenge metadata from Content Service
+ * Enriches challenge IDs with type information for analytics
+ * Used to group metrics by actual challenge type instead of IDs
+ */
+async function fetchChallengeMetadata(
+  challengeIds: string[],
+): Promise<Map<string, { type: string; question: string }>> {
+  try {
+    if (!challengeIds || challengeIds.length === 0) {
+      return new Map();
+    }
+
+    const uniqueIds = Array.from(new Set(challengeIds));
+
+    logger.debug("Fetching challenge metadata from Content Service", {
+      challengeCount: uniqueIds.length,
+    });
+
+    const challengeResponse = await axios.post<
+      ApiResponse<
+        Array<{ id: string; type: string; question: string; chapterId: string }>
+      >
+    >(
+      `${CONTENT_SERVICE_URL}${API_BASE_URL_V1}/challenges/bulk`,
+      { ids: uniqueIds },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug("Content service challenge response received", {
+      status: challengeResponse.status,
+      hasData: !!challengeResponse.data?.data,
+    });
+
+    if (challengeResponse.status !== 200 || !challengeResponse.data?.data) {
+      logger.warn("Failed to fetch challenges from content service", {
+        status: challengeResponse.status,
+      });
+      return new Map();
+    }
+
+    const challengeMap = new Map<string, { type: string; question: string }>();
+    (challengeResponse.data.data || []).forEach((challenge) => {
+      challengeMap.set(challenge.id, {
+        type: challenge.type,
+        question: challenge.question,
+      });
+    });
+
+    logger.debug("Challenge metadata mapped", {
+      mapped: challengeMap.size,
+      requested: uniqueIds.length,
+    });
+
+    return challengeMap;
+  } catch (error) {
+    logger.error("Error fetching challenge metadata", {
+      error: String(error),
+      challengeCount: challengeIds?.length,
+    });
+    // Return empty map on error - will fallback to challenge IDs
+    return new Map();
+  }
+}
+
+/**
+ * Forward challenge success metrics request to Progress Service
+ * Enriches response with actual challenge types from Content Service
+ */
+export async function forwardGetChallengeSuccessMetrics(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    logger.info("Fetching challenge success metrics");
+
+    const metricsResponse = await axios.get(
+      `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/stats/learning/challenge-success`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
+          }),
+        },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug("Progress service challenge success metrics response received", {
+      status: metricsResponse.status,
+      hasData: !!metricsResponse.data?.data,
+    });
+
+    if (metricsResponse.status !== 200) {
+      logger.warn("Progress service challenge success metrics error", {
+        status: metricsResponse.status,
+        error: metricsResponse.data?.error?.message,
+      });
+      res.status(metricsResponse.status).json(metricsResponse.data);
+      return;
+    }
+
+    // Extract challenge IDs from response to fetch metadata
+    const challengeIds = metricsResponse.data?.data?.byType?.map(
+      (item: any) => item.type,
+    ) || [];
+    
+    logger.info("Challenge success metrics fetched successfully", {
+      overallSuccessRate: metricsResponse.data?.data?.overallSuccessRate,
+      challengeTypesCount: metricsResponse.data?.data?.byType?.length,
+      extractedChallengeIds: challengeIds.length,
+    });
+
+    // Fetch challenge metadata to get actual types
+    const challengeMetadata = await fetchChallengeMetadata(challengeIds);
+
+    // Enrich response with actual challenge types and aggregate by type
+    if (challengeMetadata.size > 0) {
+      const byTypeMap = new Map<
+        string,
+        { type: string; successCount: number; totalCount: number; successRate: number }
+      >();
+
+      // Aggregate metrics by actual challenge type
+      (metricsResponse.data.data?.byType || []).forEach(
+        (item: any) => {
+          const metadata = challengeMetadata.get(item.type);
+          if (metadata) {
+            const typeKey = metadata.type;
+            const existing = byTypeMap.get(typeKey) || {
+              type: typeKey,
+              successCount: 0,
+              totalCount: 0,
+              successRate: 0,
+            };
+
+            // Accumulate counts
+            existing.successCount += item.successCount || 0;
+            existing.totalCount += item.totalCount || 0;
+            // Recalculate success rate after accumulation
+            existing.successRate =
+              existing.totalCount > 0
+                ? Math.round(
+                    ((existing.successCount / existing.totalCount) * 100 +
+                      Number.EPSILON) *
+                      100,
+                  ) / 100
+                : 0;
+
+            byTypeMap.set(typeKey, existing);
+          }
+        },
+      );
+
+      // Convert back to array and sort by totalCount descending
+      const enrichedByType = Array.from(byTypeMap.values()).sort(
+        (a, b) => b.totalCount - a.totalCount,
+      );
+
+      // Update response data with enriched metrics
+      metricsResponse.data.data.byType = enrichedByType;
+
+      logger.info("Challenge metrics enriched with content service data", {
+        enrichedTypesCount: enrichedByType.length,
+        totalChallengesAggregated: enrichedByType.reduce((sum, item) => sum + item.totalCount, 0),
+      });
+    }
+
+    res.status(200).json(metricsResponse.data);
+  } catch (error) {
+    logger.error("Get challenge success metrics forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "SERVICE_UNAVAILABLE",
+        message: "Failed to fetch challenge success metrics",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+/**
+ * Forward hint usage metrics request to Progress Service
+ * Enriches response with actual challenge types from Content Service
+ * Groups hint usage trends by challenge type instead of individual IDs
+ */
+export async function forwardGetHintUsageMetrics(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    logger.info("Fetching hint usage metrics");
+
+    const metricsResponse = await axios.get(
+      `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/stats/learning/hint-usage`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
+          }),
+        },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug("Progress service hint usage metrics response received", {
+      status: metricsResponse.status,
+      hasData: !!metricsResponse.data?.data,
+    });
+
+    if (metricsResponse.status !== 200) {
+      logger.warn("Progress service hint usage metrics error", {
+        status: metricsResponse.status,
+        error: metricsResponse.data?.error?.message,
+      });
+      res.status(metricsResponse.status).json(metricsResponse.data);
+      return;
+    }
+
+    // Extract challenge IDs from byChallenge array to fetch metadata
+    const challengeIds = metricsResponse.data?.data?.byChallenge?.map(
+      (item: any) => item.challengeId,
+    ) || [];
+
+    logger.info("Hint usage metrics fetched successfully", {
+      hintUsageRate: metricsResponse.data?.data?.overallHintUsageRate,
+      childrenNeedingSupport: metricsResponse.data?.data?.childrenNeedingSupport
+        ?.length,
+      extractedChallengeIds: challengeIds.length,
+    });
+
+    // Fetch challenge metadata to get actual types
+    const challengeMetadata = await fetchChallengeMetadata(challengeIds);
+
+    // Enrich response with actual challenge types and aggregate by type
+    if (challengeMetadata.size > 0) {
+      const byTypeMap = new Map<
+        string,
+        { type: string; hintUsageRate: number; avgHintsUsed: number; totalAttempts: number }
+      >();
+
+      // Aggregate metrics by actual challenge type
+      (metricsResponse.data.data?.byChallenge || []).forEach(
+        (item: any) => {
+          const metadata = challengeMetadata.get(item.challengeId);
+          if (metadata) {
+            const typeKey = metadata.type;
+            const existing = byTypeMap.get(typeKey) || {
+              type: typeKey,
+              hintUsageRate: 0,
+              avgHintsUsed: 0,
+              totalAttempts: 0,
+            };
+
+            // Accumulate totals for aggregation
+            existing.totalAttempts += item.totalAttempts || 0;
+            existing.avgHintsUsed +=
+              ((item.avgHintsUsed || 0) * (item.totalAttempts || 0));
+
+            byTypeMap.set(typeKey, existing);
+          }
+        },
+      );
+
+      // Calculate final averages and hint usage rates
+      const enrichedByType = Array.from(byTypeMap.values()).map((item) => ({
+        type: item.type,
+        hintUsageRate: Math.round((item.hintUsageRate + Number.EPSILON) * 100) / 100,
+        avgHintsUsed: item.totalAttempts > 0 
+          ? Math.round((item.avgHintsUsed / item.totalAttempts + Number.EPSILON) * 100) / 100
+          : 0,
+        totalAttempts: item.totalAttempts,
+      })).sort((a, b) => b.totalAttempts - a.totalAttempts); // Sort by total attempts descending
+
+      // Update response data with enriched metrics
+      metricsResponse.data.data.byChallenge = enrichedByType;
+
+      logger.info("Hint usage metrics enriched with challenge types", {
+        enrichedTypesCount: enrichedByType.length,
+        totalAttemptsAggregated: enrichedByType.reduce((sum, item) => sum + item.totalAttempts, 0),
+      });
+    }
+
+    res.status(200).json(metricsResponse.data);
+  } catch (error) {
+    logger.error("Get hint usage metrics forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "SERVICE_UNAVAILABLE",
+        message: "Failed to fetch hint usage metrics",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+/**
+ * Helper function to fetch story metadata from Content Service
+ * Used to enrich reading speed analytics with story names
+ */
+async function fetchStoryMetadata(
+  storyIds: string[],
+): Promise<Map<string, { title: string; difficulty: string }>> {
+  try {
+    if (!storyIds || storyIds.length === 0) {
+      return new Map();
+    }
+
+    const uniqueIds = Array.from(new Set(storyIds));
+
+    logger.debug("Fetching story metadata from Content Service", {
+      storyCount: uniqueIds.length,
+    });
+
+    const storyResponse = await axios.post<
+      ApiResponse<
+        Array<{ id: string; title: string; difficulty: string; worldId: string }>
+      >
+    >(
+      `${CONTENT_SERVICE_URL}${API_BASE_URL_V1}/stories/bulk`,
+      { ids: uniqueIds },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug("Content service story response received", {
+      status: storyResponse.status,
+      hasData: !!storyResponse.data?.data,
+    });
+
+    if (storyResponse.status !== 200 || !storyResponse.data?.data) {
+      logger.warn("Failed to fetch stories from content service", {
+        status: storyResponse.status,
+      });
+      return new Map();
+    }
+
+    const storyMap = new Map<string, { title: string; difficulty: string }>();
+    (storyResponse.data.data || []).forEach((story) => {
+      storyMap.set(story.id, {
+        title: story.title,
+        difficulty: story.difficulty,
+      });
+    });
+
+    logger.debug("Story metadata mapped", {
+      mapped: storyMap.size,
+      requested: uniqueIds.length,
+    });
+
+    return storyMap;
+  } catch (error) {
+    logger.error("Error fetching story metadata", {
+      error: String(error),
+      storyCount: storyIds?.length,
+    });
+    // Return empty map on error - will fallback to story IDs
+    return new Map();
+  }
+}
+
+/**
+ * Forward reading speed trends request to Progress Service
+ * Enriches response with actual story names from Content Service
+ */
+export async function forwardGetReadingSpeedTrends(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    logger.info("Fetching reading speed trends");
+
+    const trendsResponse = await axios.get(
+      `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/stats/learning/reading-speed`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
+          }),
+        },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug("Progress service reading speed trends response received", {
+      status: trendsResponse.status,
+      hasData: !!trendsResponse.data?.data,
+    });
+
+    if (trendsResponse.status !== 200) {
+      logger.warn("Progress service reading speed trends error", {
+        status: trendsResponse.status,
+        error: trendsResponse.data?.error?.message,
+      });
+      res.status(trendsResponse.status).json(trendsResponse.data);
+      return;
+    }
+
+    // Extract story IDs from byStory array to fetch metadata
+    const storyIds = trendsResponse.data?.data?.byStory?.map(
+      (item: any) => item.storyId,
+    ) || [];
+
+    logger.info("Reading speed trends fetched successfully", {
+      storiesCount: trendsResponse.data?.data?.byStory?.length,
+      ageGroupsCount: trendsResponse.data?.data?.byAgeGroup?.length,
+      overallAverageSeconds: trendsResponse.data?.data?.overallAverageSeconds,
+      extractedStoryIds: storyIds.length,
+    });
+
+    // Fetch story metadata to get names
+    const storyMetadata = await fetchStoryMetadata(storyIds);
+
+    // Enrich response with story names
+    if (storyMetadata.size > 0) {
+      const enrichedByStory = (trendsResponse.data.data?.byStory || []).map(
+        (item: any) => {
+          const metadata = storyMetadata.get(item.storyId);
+          return {
+            storyId: item.storyId,
+            storyTitle: metadata?.title || item.storyId, // Fallback to ID if name not found
+            difficulty: metadata?.difficulty,
+            avgCompletionSeconds: item.avgCompletionSeconds,
+            count: item.count,
+          };
+        },
+      );
+
+      // Update response data with enriched metrics
+      trendsResponse.data.data.byStory = enrichedByStory;
+
+      logger.info("Reading speed trends enriched with story names", {
+        enrichedStoriesCount: enrichedByStory.length,
+        totalStoriesFound: storyMetadata.size,
+      });
+    }
+
+    res.status(200).json(trendsResponse.data);
+  } catch (error) {
+    logger.error("Get reading speed trends forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "SERVICE_UNAVAILABLE",
+        message: "Failed to fetch reading speed trends",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+/**
+ * Forward most failed challenges request to Progress Service
+ */
+export async function forwardGetMostFailedChallenges(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    logger.info("Fetching most failed challenges");
+
+    const challengesResponse = await axios.get(
+      `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/stats/learning/failed-challenges`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
+          }),
+        },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug("Progress service most failed challenges response received", {
+      status: challengesResponse.status,
+      hasData: !!challengesResponse.data?.data,
+    });
+
+    if (challengesResponse.status !== 200) {
+      logger.warn("Progress service most failed challenges error", {
+        status: challengesResponse.status,
+        error: challengesResponse.data?.error?.message,
+      });
+      res.status(challengesResponse.status).json(challengesResponse.data);
+      return;
+    }
+
+    logger.info("Most failed challenges fetched successfully", {
+      mostFailedCount: challengesResponse.data?.data?.mostFailed?.length,
+      totalUniqueChallenges:
+        challengesResponse.data?.data?.totalUniqueChallenges,
+    });
+
+    res.status(200).json(challengesResponse.data);
+  } catch (error) {
+    logger.error("Get most failed challenges forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "SERVICE_UNAVAILABLE",
+        message: "Failed to fetch most failed challenges",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+/**
+ * Forward content performance metrics request to Progress Service
+ * Enriches response with story titles and metadata from Content Service
+ */
+export async function forwardGetContentPerformanceMetrics(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    logger.info("Fetching content performance metrics");
+
+    const metricsResponse = await axios.get(
+      `${PROGRESS_SERVICE_URL}${API_BASE_URL_V1}/stats/content/performance`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
+          }),
+        },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug("Progress service content performance metrics response received", {
+      status: metricsResponse.status,
+      hasData: !!metricsResponse.data?.data,
+    });
+
+    if (metricsResponse.status !== 200) {
+      logger.warn("Progress service content performance metrics error", {
+        status: metricsResponse.status,
+        error: metricsResponse.data?.error?.message,
+      });
+      res.status(metricsResponse.status).json(metricsResponse.data);
+      return;
+    }
+
+    // Extract story IDs from mostPopularStories to fetch metadata
+    const storyIds = metricsResponse.data?.data?.mostPopularStories?.map(
+      (item: any) => item.storyId,
+    ) || [];
+
+    logger.info("Content performance metrics fetched successfully", {
+      mostPopularStoriesCount: metricsResponse.data?.data?.mostPopularStories?.length,
+      themePerformanceCount: metricsResponse.data?.data?.themePerformance?.length,
+      heatmapLevels: metricsResponse.data?.data?.difficultyHeatmap?.length,
+      extractedStoryIds: storyIds.length,
+    });
+
+    // Fetch story metadata to get titles and difficulties
+    const storyMetadata = await fetchStoryMetadata(storyIds);
+
+    // Enrich response with story names and difficulties
+    if (storyMetadata.size > 0) {
+      const enrichedMostPopularStories = (metricsResponse.data.data?.mostPopularStories || []).map(
+        (item: any) => {
+          const metadata = storyMetadata.get(item.storyId);
+          return {
+            storyId: item.storyId,
+            storyTitle: metadata?.title || item.storyId, // Fallback to ID if name not found
+            totalStarted: item.totalStarted,
+            totalCompleted: item.totalCompleted,
+            completionRate: item.completionRate,
+            avgTimeSpentMinutes: item.avgTimeSpentMinutes,
+            difficulty: item.difficulty, // Replace with actual difficulty if available
+          };
+        },
+      );
+
+      metricsResponse.data.data.mostPopularStories = enrichedMostPopularStories;
+
+      logger.info("Content performance metrics enriched with story metadata", {
+        enrichedCount: enrichedMostPopularStories.length,
+        storiesFound: storyMetadata.size,
+      });
+    }
+
+    res.status(200).json(metricsResponse.data);
+  } catch (error) {
+    logger.error("Get content performance metrics forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "SERVICE_UNAVAILABLE",
+        message: "Failed to fetch content performance metrics",
       },
       timestamp: new Date(),
     });

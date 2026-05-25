@@ -21,6 +21,15 @@ import {
   forwardToggleStorytelling,
   forwardGetChildProfilesByParent,
   forwardToGetChildProfiles,
+  forwardGetEngagementMetrics,
+  forwardGetReadingTimeAnalytics,
+  forwardGetPeakUsageHours,
+  forwardGetLearningCompletionMetrics,
+  forwardGetChallengeSuccessMetrics,
+  forwardGetHintUsageMetrics,
+  forwardGetReadingSpeedTrends,
+  forwardGetMostFailedChallenges,
+  forwardGetContentPerformanceMetrics,
 } from "../helpers/progress.helpers";
 import { API_BASE_URL_V1 } from "@shared/src/types";
 
@@ -29,6 +38,51 @@ const router = Router();
 // Get admin dashboard statistics
 router.get("/stats/admin-dashboard", (req: Request, res: Response) => {
   forwardGetDashboardStats(req, res);
+});
+
+// Get engagement metrics for global statistics dashboard
+router.get("/stats/engagement-metrics", (req: Request, res: Response) => {
+  forwardGetEngagementMetrics(req, res);
+});
+
+// Get reading time analytics for global statistics dashboard
+router.get("/stats/reading-time", (req: Request, res: Response) => {
+  forwardGetReadingTimeAnalytics(req, res);
+});
+
+// Get peak usage hours for global statistics dashboard
+router.get("/stats/peak-usage-hours", (req: Request, res: Response) => {
+  forwardGetPeakUsageHours(req, res);
+});
+
+// Get learning completion metrics for learning metrics dashboard
+router.get("/stats/learning/completion", (req: Request, res: Response) => {
+  forwardGetLearningCompletionMetrics(req, res);
+});
+
+// Get challenge success metrics for learning metrics dashboard
+router.get("/stats/learning/challenge-success", (req: Request, res: Response) => {
+  forwardGetChallengeSuccessMetrics(req, res);
+});
+
+// Get hint usage metrics for learning metrics dashboard
+router.get("/stats/learning/hint-usage", (req: Request, res: Response) => {
+  forwardGetHintUsageMetrics(req, res);
+});
+
+// Get reading speed trends for learning metrics dashboard
+router.get("/stats/learning/reading-speed", (req: Request, res: Response) => {
+  forwardGetReadingSpeedTrends(req, res);
+});
+
+// Get most failed challenges for learning metrics dashboard
+router.get("/stats/learning/failed-challenges", (req: Request, res: Response) => {
+  forwardGetMostFailedChallenges(req, res);
+});
+
+// Get content performance metrics for content performance dashboard
+router.get("/stats/content/performance", (req: Request, res: Response) => {
+  forwardGetContentPerformanceMetrics(req, res);
 });
 
 // Get specific child by ID (must be before the generic /children middleware)

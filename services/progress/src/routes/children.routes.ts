@@ -13,10 +13,10 @@ router.get("/children/week", (req, res) =>
   ChildrenController.getWeekChildren(req, res),
 );
 
-// Get all children with storytelling profiles
-router.get("/children/storytelling-all", (req, res) =>
-  ChildrenController.getAllChildrenWithStorytelling(req, res),
-);
+// // Get all children with storytelling profiles for storytelling generation
+// router.get("/children/storytelling-all", (req, res) =>
+//   ChildrenController.getAllChildrenWithStorytelling(req, res),
+// );
 
 // Get all children with pagination
 router.get("/children", (req, res) =>
@@ -36,6 +36,51 @@ router.get("/push-notifications/children", (req, res) =>
 // Get children statistics (activeChildren, totalStoriesCompleted, totalChallengesSolved)
 router.get("/children/stats", (req, res) =>
   ChildrenController.getChildrenStats(req, res),
+);
+
+// Get engagement metrics for global statistics dashboard
+router.get("/stats/engagement-metrics", (req, res) =>
+  ChildrenController.getEngagementMetrics(req, res),
+);
+
+// Get reading time analytics for global statistics dashboard
+router.get("/stats/reading-time", (req, res) =>
+  ChildrenController.getReadingTimeAnalytics(req, res),
+);
+
+// Get peak usage hours for global statistics dashboard
+router.get("/stats/peak-usage-hours", (req, res) =>
+  ChildrenController.getPeakUsageHours(req, res),
+);
+
+// Get learning completion metrics for learning metrics dashboard
+router.get("/stats/learning/completion", (req, res) =>
+  ChildrenController.getLearningCompletionMetrics(req, res),
+);
+
+// Get challenge success metrics for learning metrics dashboard
+router.get("/stats/learning/challenge-success", (req, res) =>
+  ChildrenController.getChallengeSuccessMetrics(req, res),
+);
+
+// Get hint usage metrics for learning metrics dashboard
+router.get("/stats/learning/hint-usage", (req, res) =>
+  ChildrenController.getHintUsageMetrics(req, res),
+);
+
+// Get reading speed trends for learning metrics dashboard
+router.get("/stats/learning/reading-speed", (req, res) =>
+  ChildrenController.getReadingSpeedTrends(req, res),
+);
+
+// Get most failed challenges for learning metrics dashboard
+router.get("/stats/learning/failed-challenges", (req, res) =>
+  ChildrenController.getMostFailedChallenges(req, res),
+);
+
+// Get content performance metrics for content performance dashboard
+router.get("/stats/content/performance", (req, res) =>
+  ChildrenController.getContentPerformanceMetrics(req, res),
 );
 
 // Get specific child by ID
@@ -128,17 +173,6 @@ router.patch("/children/:childId/storytelling", (req, res) =>
 // Delete child profile permanently
 router.delete("/children/:childId", (req, res) =>
   ChildrenController.deleteChild(req, res),
-);
-
-// Storytelling endpoints
-// Save storytelling profile for a child
-router.post("/storytelling/profile", (req, res) =>
-  ChildrenController.saveStorytellingProfile(req, res),
-);
-
-// Update storytelling story for a child (after story generation)
-router.put("/children/:childId/storytelling/update", (req, res) =>
-  ChildrenController.updateStorytellingStory(req, res),
 );
 
 export default router;

@@ -489,17 +489,7 @@ function extractThisWeekMetrics(
   }
 
   // =========================================================================
-  // STEP 4: Calculate additional context from childProfile
-  // =========================================================================
-  // Use childProfile skill scores if available for analysis context
-  if (childProfile.storytelling?.learningObjectives) {
-    childProfile.storytelling.learningObjectives.forEach((obj: string) => {
-      skillsExercised.add(obj);
-    });
-  }
-
-  // =========================================================================
-  // STEP 5: Run behavior analysis pipeline on collected attempts
+  // STEP 4: Run behavior analysis pipeline on collected attempts
   // =========================================================================
   const behaviorInsights = buildBehaviorInsights(attemptsWithType);
 

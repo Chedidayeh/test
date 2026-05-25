@@ -30,7 +30,7 @@ export default function DashboardTabs({
         className={`transition-all duration-200 ${"pointer-events-auto opacity-100"}`}
       >
         {/* Desktop: Grid layout */}
-        <TabsList className="hidden md:grid w-full grid-cols-6 mb-4 md:mb-6">
+        <TabsList className="hidden md:grid w-full grid-cols-5 mb-4 md:mb-6">
           <TabsTrigger value="overview" className="font-medium text-sm">
             {t("tabs.overview")}
           </TabsTrigger>
@@ -46,12 +46,6 @@ export default function DashboardTabs({
           </TabsTrigger>
           <TabsTrigger value="weekly-reports" className="font-medium text-sm">
             {t("tabs.weeklyReports")}
-          </TabsTrigger>
-          <TabsTrigger
-            value="child-storytelling"
-            className="font-medium text-sm"
-          >
-            {t("tabs.childStorytelling")}
           </TabsTrigger>
         </TabsList>
 
@@ -75,9 +69,6 @@ export default function DashboardTabs({
               </SelectItem>
               <SelectItem value="weekly-reports">
                 {t("tabs.weeklyReports")}
-              </SelectItem>
-              <SelectItem value="child-storytelling">
-                {t("tabs.childStorytelling")}
               </SelectItem>
             </SelectContent>
           </Select>

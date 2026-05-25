@@ -1,7 +1,7 @@
-import { generateTTSAudio, generateStoryTranslations, generateWeeklyAIAnalytics, generateWeeklyAIStories, notifyParentsDailyProgress } from "./agents/function";
+import { generateTTSAudio, generateStoryTranslations, generateWeeklyAIAnalytics, notifyParentsDailyProgress } from "./agents/function";
 
 /**
  * Inngest functions for Gateway service
  * Each function handles a specific background job/event
  */
-export const functions = [generateTTSAudio, generateStoryTranslations , generateWeeklyAIAnalytics , generateWeeklyAIStories, notifyParentsDailyProgress];
+export const functions = [generateTTSAudio, generateStoryTranslations , generateWeeklyAIAnalytics , notifyParentsDailyProgress];

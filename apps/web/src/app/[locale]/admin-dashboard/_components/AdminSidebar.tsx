@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useParams } from "next/navigation";
-import { Settings, Users, BookOpen, Home, Map, TrendingUp } from "lucide-react";
+import { Settings, Users, BookOpen, Home, Map, TrendingUp, ChartColumnIncreasing } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { cn } from "@/src/lib/utils";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
@@ -27,6 +27,11 @@ const navigationSections: NavSection[] = [
         name: "Dashboard",
         href: "/admin-dashboard",
         icon: <Home className="w-5 h-5" />,
+      },
+      {
+        name: "Stats",
+        href: "/admin-dashboard/stats",
+        icon: <ChartColumnIncreasing className="w-5 h-5" />,
       },
     ],
   },

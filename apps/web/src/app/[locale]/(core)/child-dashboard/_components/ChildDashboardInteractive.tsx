@@ -17,7 +17,6 @@ import {
   getTotalReadingTime,
 } from "../../parent-dashboard/_lib/stats";
 import Roadmaps from "./Roadmaps";
-import StorytellingStories from "./StorytellingStories";
 import { useState } from "react";
 import RoadmapPage from "../_roadmap_progress/RoadmapPage";
 
@@ -50,17 +49,13 @@ const ChildDashboardInteractive = ({
   const [selectedRoadmap, setSelectedRoadmap] = useState<Roadmap>(roadmaps[0]);
   const [seeRoadmap, setSeeRoadmap] = useState(false);
 
-  // Filter to only include roadmap progress (exclude storytelling progress)
-  const roadmapProgresses = currentProgresses.filter(
-    (progress) => !progress.storytellingStoryId,
-  );
 
   // Check if child has any in-progress roadmap stories
-  const hasInProgressStories = roadmapProgresses.some(
+  const hasInProgressStories = currentProgresses.some(
     (progress) => progress.status === ProgressStatus.IN_PROGRESS,
   );
 
-  console.log(roadmapProgresses, "Roadmap Progresses");
+  console.log(currentProgresses, "Current Progresses");
 
   const hours = Math.floor(readingTimeMinutes / 60);
   const minutes = readingTimeMinutes % 60;
@@ -94,14 +89,11 @@ const ChildDashboardInteractive = ({
             {/* Action Cards */}
             {hasInProgressStories && userRole === RoleType.PARENT && (
               <ActionCards
-                currentProgresses={roadmapProgresses}
+                currentProgresses={currentProgresses}
                 roadmaps={roadmaps}
                 childProfile={child}
               />
             )}
-
-            {/* Storytelling Weekly Stories */}
-            <StorytellingStories childProfile={child} />
 
             {/* Roadmaps */}
             <Roadmaps
@@ -146,14 +138,11 @@ const ChildDashboardInteractive = ({
               {/* Action Cards */}
               {hasInProgressStories && userRole === RoleType.PARENT && (
                 <ActionCards
-                  currentProgresses={roadmapProgresses}
+                  currentProgresses={currentProgresses}
                   roadmaps={roadmaps}
                   childProfile={child}
                 />
               )}
-
-              {/* Storytelling Weekly Stories */}
-              <StorytellingStories childProfile={child} />
 
               {/* Roadmaps */}
               <Roadmaps

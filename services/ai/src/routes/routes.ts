@@ -2,7 +2,6 @@ import { Router } from "express";
 import { handleSynthesize } from "../agents/voice-agent/controllers/tts.controller";
 import { handleValidateAnswer } from "../agents/answer-validation-agent/controllers/validation.controller";
 import { analyticsController } from "../agents/progress-analytics/controllers/analytics.controller";
-import { storytellingController } from "../agents/storytelling-agent/controllers/storytelling.controller";
 import { hintGeneratorController } from "../agents/hint-generator/controllers/hint.controller";
 
 const router = Router();
@@ -39,48 +38,8 @@ router.post("/tts", handleSynthesize);
  */
 router.post("/validate-answer", handleValidateAnswer);
 
-/**
- * Analytics Routes
- *
- * POST /api/v1/analytics/generate - Generate AI analytics and embeddings for a child's reading progress
- *   Request body: {
- *     childProfile: ChildProfile,
- *     storiesData: Story[]
- *   }
- *   Response: 200 OK {
- *     success: boolean,
- *     data: {
- *       insights: AIProgressInsight,
- *       embeddings: ChildEmbeddingProfile,
- *       readingLevel: string,
- *       engagementLevel: string,
- *       strengths: string[],
- *       weaknesses: string[],
- *       recommendations: string[]
- *     }
- *   }
- *   Error: 400/500 with error details
- *
- * GET /api/v1/analytics/:childId - Get all analytics reports for a specific child
- *   Query parameters:
- *     - page: number (default 1)
- *     - pageSize: number (default 10, max 50)
- *   Response: 200 OK {
- *     success: boolean,
- *     data: {
- *       childId: string,
- *       records: AIProgressInsight[]
- *     },
- *     pagination: {
- *       total: number,
- *       page: number,
- *       pageSize: number,
- *       hasMore: boolean
- *     }
- *   }
- *   Error: 400/500 with error details
- *
- */
+
+
 router.post("/analytics/generate", (req, res) =>
   analyticsController.generateAnalytics(req, res),
 );
@@ -89,29 +48,6 @@ router.post("/week-report/:childId", (req, res) =>
   analyticsController.getChildWeeklyAnalytics(req, res),
 );
 
-/**
- * Storytelling Routes
- *
- * POST /api/v1/generate-child-storytelling - Generate personalized AI story for a child
- *   Request body: { childProfile: ChildProfile }
- *
- * POST /api/v1/complete-story - Mark a story as read/completed by the child
- *   Request body: { planItemId: string, childProfileId: string }
- *   Must be called after child finishes reading a story to unlock the next one.
- *
- * POST /api/v1/record-performance - Record challenge performance and update skill scores
- *   Request body: { childProfileId: string, storyId: string, performance: ChallengePerformance[] }
- *
- * GET /api/v1/plan-status/:childProfileId - Get current plan progress and statistics
- *
- */
-router.post("/generate-child-storytelling", (req, res) =>
-  storytellingController.generateChildStorytelling(req, res),
-);
-
-router.post("/complete-story", (req, res) =>
-  storytellingController.markStoryCompleted(req, res),
-);
 
 router.post("/generate-hints", (req, res) =>
   hintGeneratorController.generateHints(req, res),
