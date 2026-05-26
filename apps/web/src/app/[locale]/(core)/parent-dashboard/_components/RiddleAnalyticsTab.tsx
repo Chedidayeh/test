@@ -6,14 +6,18 @@ import { ChildProfile } from "@readdly/shared-types";
 import Link from "next/link";
 import { Button } from "@/src/components/ui/button";
 import { useTranslations } from "next-intl";
+import { useLocale } from "@/src/contexts/LocaleContext";
 
 interface AnalyticsTabProps {
-  selectedChild: ChildProfile; 
+  selectedChild: ChildProfile;
 }
 
-export default function RiddleAnalyticsTab({ selectedChild }: AnalyticsTabProps) {
+export default function RiddleAnalyticsTab({
+  selectedChild,
+}: AnalyticsTabProps) {
   const t = useTranslations("ParentDashboard");
-  
+  const { isRTL } = useLocale();
+
   if (!selectedChild) {
     return (
       <TabsContent value="riddle-analytics" className="space-y-4 md:space-y-6">
@@ -23,10 +27,14 @@ export default function RiddleAnalyticsTab({ selectedChild }: AnalyticsTabProps)
       </TabsContent>
     );
   }
-  
+
   const childName = selectedChild?.child?.name ?? t("unknown");
   return (
-    <TabsContent value="riddle-analytics" className="space-y-4 md:space-y-6">
+    <TabsContent
+      dir={isRTL ? "rtl" : "ltr"}
+      value="riddle-analytics"
+      className="space-y-4 md:space-y-6"
+    >
       <div className="bg-linear-to-r from-primary/5 via-secondary/5 to-accent/5 rounded-xl p-4 md:p-6 border border-black/10">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4">
           <div>
@@ -38,7 +46,11 @@ export default function RiddleAnalyticsTab({ selectedChild }: AnalyticsTabProps)
             </p>
           </div>
           {selectedChild?.childId && (
-            <Link href={`/child-dashboard/${selectedChild.childId}`} className="w-full md:w-auto">
+            <Link
+              target="_blank"
+              href={`/child-dashboard/${selectedChild.childId}`}
+              className="w-full md:w-auto"
+            >
               <Button className="whitespace-nowrap w-full md:w-auto text-xs md:text-sm">
                 {t("riddleStatistics.dashboardButton", { childName })}
               </Button>

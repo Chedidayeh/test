@@ -24,6 +24,7 @@ import {
 } from "@/src/lib/progress-service/server-actions";
 import { Loader2 } from "lucide-react";
 import { usePusherBeams } from "@/src/hooks/use-pusher";
+import { useLocale } from "@/src/contexts/LocaleContext";
 
 export default function ParentDashboardInteractive({
   childProfiles: intialChildProfiles,
@@ -42,6 +43,7 @@ export default function ParentDashboardInteractive({
 }) {
   usePusherBeams(session);
   const parentName = parentData?.name || "Parent";
+  const {isRTL} = useLocale();
 
   const [childProfiles, setChildProfiles] =
     useState<ChildProfile[]>(intialChildProfiles);

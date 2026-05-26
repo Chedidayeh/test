@@ -284,6 +284,66 @@ export class UserService {
   }
 
   /**
+   * Find or create a user via OAuth (Google, etc.)
+   * Looks up by Account record first, then by email, creates if not found.
+   * Always upserts the Account record.
+   */
+  async findOrCreateOAuthUser(
+    email: string,
+    name: string,
+    image: string | null,
+    provider: string,
+    providerAccountId: string,
+  ): Promise<User | null> {
+    try {
+      // 1. Try to find existing account record
+      const existingAccount = await this.prisma.account.findUnique({
+        where: { provider_providerAccountId: { provider, providerAccountId } },
+        include: { user: true },
+      });
+
+      if (existingAccount) {
+        return existingAccount.user;
+      }
+
+      // 2. Try to find user by email
+      let user = await this.prisma.user.findUnique({ where: { email } });
+
+      // 3. Create user if not found
+      if (!user) {
+        user = await this.prisma.user.create({
+          data: {
+            email,
+            name,
+            image,
+            password: null,
+            emailVerified: new Date(),
+            role: RoleType.PARENT,
+          },
+        });
+        logger.info("OAuth user created", { userId: user.id, email, provider });
+      }
+
+      // 4. Upsert account record
+      await this.prisma.account.upsert({
+        where: { provider_providerAccountId: { provider, providerAccountId } },
+        create: {
+          userId: user.id,
+          type: "oauth",
+          provider,
+          providerAccountId,
+        },
+        update: {},
+      });
+
+      return user;
+    } catch (error) {
+      logger.error("Error in findOrCreateOAuthUser", { email, provider, error: String(error) });
+      return null;
+    }
+  }
+
+  /**
    * Get all children with pagination and role-based filtering
    * ADMIN: sees all children
    * PARENT: sees only their own children

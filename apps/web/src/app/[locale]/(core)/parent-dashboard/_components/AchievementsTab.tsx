@@ -6,6 +6,7 @@ import { Badge, ChildProfile } from "@readdly/shared-types";
 import Link from "next/link";
 import { Button } from "@/src/components/ui/button";
 import { useTranslations } from "next-intl";
+import { useLocale } from "@/src/contexts/LocaleContext";
 
 interface AchievementsTabProps {
   selectedChild: ChildProfile | undefined;
@@ -20,6 +21,7 @@ export default function AchievementsTab({
   const childCurrentLevel = selectedChild?.currentLevel;
   // Use all available badges if provided, otherwise show an empty list
   const displayBadges = allAvailableBadges ?? [];
+  const { isRTL } = useLocale();
 
   // Determine which badges are unlocked for the child.
   // A badge is considered unlocked when either:
@@ -47,7 +49,11 @@ export default function AchievementsTab({
   const childName = selectedChild?.child?.name ?? t("unknown");
 
   return (
-    <TabsContent value="achievements" className="space-y-4 md:space-y-6">
+    <TabsContent
+      dir={isRTL ? "rtl" : "ltr"}
+      value="achievements"
+      className="space-y-4 md:space-y-6"
+    >
       <div className="bg-linear-to-r from-primary/5 via-secondary/5 to-accent/5 rounded-xl p-4 md:p-6 border border-black/10">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4">
           <div>
@@ -64,7 +70,11 @@ export default function AchievementsTab({
             </p>
           </div>
           {selectedChild?.childId && (
-            <Link href={`/child-dashboard/${selectedChild.childId}`} className="w-full md:w-auto">
+            <Link
+              target="_blank"
+              href={`/child-dashboard/${selectedChild.childId}`}
+              className="w-full md:w-auto"
+            >
               <Button className="whitespace-nowrap w-full md:w-auto text-xs md:text-sm">
                 {t("achievements.dashboardButton", { childName })}
               </Button>
@@ -91,7 +101,9 @@ export default function AchievementsTab({
       ) : (
         <div className="rounded-xl bg-card border border-black/30 p-12 shadow-warm-lg text-center">
           <p className="text-2xl mb-2">{t("achievements.emptyTitle")}</p>
-          <p className="text-muted-foreground">{t("achievements.emptyMessage")}</p>
+          <p className="text-muted-foreground">
+            {t("achievements.emptyMessage")}
+          </p>
         </div>
       )}
     </TabsContent>

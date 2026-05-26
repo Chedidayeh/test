@@ -596,6 +596,97 @@ export class AuthController {
     }
   }
   /**
+   * Google OAuth sign-in / sign-up
+   * Called from NextAuth jwt callback after Google redirects back.
+   * Finds or creates the user, generates an auth-service JWT, and returns
+   * the same { token, user } shape as POST /login.
+   */
+  async googleOAuth(req: Request, res: Response<ApiResponse<{ token: string; user: User }>>): Promise<void> {
+    try {
+      const { email, name, image, provider, providerAccountId } = req.body;
+
+      if (!email || !provider || !providerAccountId) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required fields: email, provider, providerAccountId",
+          },
+          timestamp: new Date(),
+        } as ApiResponse<{ token: string; user: User }>);
+        return;
+      }
+
+      const user = await userService.findOrCreateOAuthUser(
+        email,
+        name ?? email.split("@")[0],
+        image ?? null,
+        provider,
+        providerAccountId,
+      );
+
+      if (!user) {
+        res.status(500).json({
+          success: false,
+          error: {
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to find or create OAuth user",
+          },
+          timestamp: new Date(),
+        } as ApiResponse<{ token: string; user: User }>);
+        return;
+      }
+
+      const token = jwtService.generateToken({
+        id: user.id,
+        email: user.email,
+        role: user.role as "PARENT" | "ADMIN",
+      });
+
+      const jwtExpirationSeconds = parseInt(process.env.JWT_EXPIRATION!, 10);
+      const sessionExpires = new Date(Date.now() + jwtExpirationSeconds * 1000);
+      await prisma.session
+        .create({
+          data: {
+            sessionToken: token,
+            userId: user.id,
+            expires: sessionExpires,
+          },
+        })
+        .catch((err) => {
+          logger.error("Failed to create OAuth session", { error: String(err) });
+        });
+
+      logger.info("OAuth user signed in", { userId: user.id, provider });
+
+      res.status(200).json({
+        success: true,
+        data: {
+          token,
+          user: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            newUser: user.newUser,
+          },
+        },
+        timestamp: new Date(),
+      } as ApiResponse<{ token: string; user: User }>);
+    } catch (error) {
+      logger.error("Google OAuth error", { error: String(error) });
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Internal server error",
+        },
+        timestamp: new Date(),
+      } as ApiResponse<{ token: string; user: User }>);
+    }
+  }
+
+  /**
    * Get child by ID
    */
   async getChildById(req: Request, res: Response<ApiResponse<Child>>): Promise<void> {

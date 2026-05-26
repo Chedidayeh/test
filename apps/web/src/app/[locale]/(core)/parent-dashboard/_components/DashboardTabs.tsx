@@ -10,6 +10,7 @@ import {
 } from "@/src/components/ui/select";
 import { useTranslations } from "next-intl";
 import { Loader2 } from "lucide-react";
+import { useLocale } from "@/src/contexts/LocaleContext";
 
 interface DashboardTabsProps {
   activeTab: string;
@@ -23,6 +24,8 @@ export default function DashboardTabs({
   children,
 }: DashboardTabsProps) {
   const t = useTranslations("ParentDashboard");
+    const {isRTL} = useLocale();
+  
   return (
     <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
       {/* Tabs Container with loading state styling */}
@@ -30,7 +33,7 @@ export default function DashboardTabs({
         className={`transition-all duration-200 ${"pointer-events-auto opacity-100"}`}
       >
         {/* Desktop: Grid layout */}
-        <TabsList className="hidden md:grid w-full grid-cols-5 mb-4 md:mb-6">
+        <TabsList dir={isRTL ? "rtl" : "ltr"} className="hidden md:grid w-full grid-cols-5 mb-4 md:mb-6">
           <TabsTrigger value="overview" className="font-medium text-sm">
             {t("tabs.overview")}
           </TabsTrigger>

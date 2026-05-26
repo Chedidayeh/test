@@ -6,7 +6,13 @@ import { motion } from "motion/react";
 import { Button } from "@/src/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { ChildProfile, Roadmap, RoleType, Local, LanguageCode } from "@readdly/shared-types";
+import {
+  ChildProfile,
+  Roadmap,
+  RoleType,
+  Local,
+  LanguageCode,
+} from "@readdly/shared-types";
 import WorldTabs from "./_components/WorldTabs";
 import StoriesRoadmap from "./_components/StoriesRoadmap";
 import { useLocale } from "@/src/contexts/LocaleContext";
@@ -26,13 +32,15 @@ export default function RoadmapPage({
   setSeeRoadmap,
 }: RoadmapPageProps) {
   const t = useTranslations("ChildDashboard");
-  const { locale , isRTL } = useLocale();
-  
+  const { locale, isRTL } = useLocale();
+
   const langCode = getLanguageCode(locale);
 
   // Localize theme name/description and roadmap title using translations arrays
   const localizedTheme = (() => {
-    const translation = roadmap.theme!.translations?.find((tr: { languageCode: LanguageCode }) => tr.languageCode === langCode);
+    const translation = roadmap.theme!.translations?.find(
+      (tr: { languageCode: LanguageCode }) => tr.languageCode === langCode,
+    );
     return {
       name: translation?.name || roadmap.theme!.name,
       description: translation?.description || roadmap.theme!.description,
@@ -40,7 +48,9 @@ export default function RoadmapPage({
   })();
 
   const localizedRoadmapTitle = (() => {
-    const translation = roadmap.translations?.find((tr: { languageCode: LanguageCode }) => tr.languageCode === langCode);
+    const translation = roadmap.translations?.find(
+      (tr: { languageCode: LanguageCode }) => tr.languageCode === langCode,
+    );
     return translation?.title ?? roadmap.title ?? "";
   })();
 
@@ -60,11 +70,11 @@ export default function RoadmapPage({
   return (
     <>
       <main className="space-y-3 mx-auto px-4 py-4 md:px-6 md:py-2">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <div className="relative flex items-center justify-between w-full">
           <Button
             variant={"outline"}
             onClick={() => setSeeRoadmap(false)}
-            className="px-2 py-1 md:px-3 md:py-2"
+            className="px-2 py-1 md:px-3 md:py-2 z-10"
           >
             {isRTL ? (
               <ChevronLeft size={18} className="rotate-180" />
@@ -73,19 +83,24 @@ export default function RoadmapPage({
             )}
           </Button>
 
-          <div>
+          <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center justify-center text-center">
             <h1 className="text-xl md:text-2xl lg:text-3xl font-bold">
-              {t("roadmapPage.title", { name: localizedTheme.name })} - {localizedRoadmapTitle}
+              {t("roadmapPage.title", { name: localizedTheme.name })} -{" "}
+              {localizedRoadmapTitle}
             </h1>
-              <p className="text-sm md:text-base text-muted-foreground max-w-prose">
-                {localizedTheme.description}
-              </p>
+
+            <p className="text-sm md:text-base text-muted-foreground max-w-prose">
+              {localizedTheme.description}
+            </p>
           </div>
+
+          {/* Spacer to balance layout */}
+          <div className="w-[42px] md:w-[52px]" />
         </div>
 
         {/* World Selection Tabs */}
 
-        <section className="">
+        <section className="mt-20">
           <WorldTabs
             worlds={roadmap.worlds!}
             selectedWorldId={selectedWorldId}

@@ -21,6 +21,7 @@ import { useTranslations } from "next-intl";
 import { Settings } from "lucide-react";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useLocale } from "@/src/contexts/LocaleContext";
 interface OverviewTabProps {
   parentName?: string;
   selectedChild: ChildProfile | undefined;
@@ -38,6 +39,7 @@ export default function OverviewTab({
 }: OverviewTabProps) {
   const t = useTranslations("ParentDashboard");
   const [showChildSettings, setShowChildSettings] = useState(false);
+    const {isRTL} = useLocale();
 
   const [notificationToggle, setNotificationToggle] = useState(
     selectedChild?.activateNotifications,
@@ -57,7 +59,7 @@ export default function OverviewTab({
 
   return (
     <>
-      <TabsContent value="overview" className="space-y-4 md:space-y-6">
+      <TabsContent dir={isRTL ? "rtl" : "ltr"} value="overview" className="space-y-4 md:space-y-6">
         <div className="bg-linear-to-r from-primary/5 via-secondary/5 to-accent/5 rounded-xl p-4 md:p-6 border border-black/10">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4">
             <div>
@@ -72,6 +74,7 @@ export default function OverviewTab({
             </div>
             {selectedChild?.childId && (
               <Link
+                target="_blank"
                 href={`/child-dashboard/${selectedChild.childId}`}
                 className="w-full md:w-auto"
               >

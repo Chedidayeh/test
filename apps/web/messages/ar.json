@@ -82,7 +82,7 @@
 		"overview": {
 			"welcome": "مرحبًا بعودتك، {name}! 👋",
 			"description": " فيما يلي نظرة سريعة على رحلة القراءة وإنجازات لطفلك {childName}.",
-			"childDashboardButton": "فضاء التعلم لطفلك {childName} →"
+			"childDashboardButton": "فضاء التعلم لطفلك {childName}"
 		},
 		"stats": {
 			"totalStars": "إجمالي النجوم",
@@ -106,7 +106,7 @@
 		"achievements": {
 			"title": "الشارات والإنجازات",
 			"unlockedSummary": "تم فتح {unlocked} من أصل {total} شارات لـ {childName}",
-			"dashboardButton": "فضاء التعلم لطفلك {childName} →",
+			"dashboardButton": "فضاء التعلم لطفلك {childName} ",
 			"emptyTitle": "🏆",
 			"emptyMessage": "لا توجد شارات متاحة. تحقق لاحقًا للحصول على مزيد من الإنجازات!",
 			"locked": {
@@ -120,7 +120,7 @@
 			"chapter": "الفصل",
 			"title": "إحصائيات الألغاز",
 			"description": "رؤى متعمقة حول رحلة القراءة وحل المشكلات لـ {childName}.",
-			"dashboardButton": "فضاء التعلم لطفلك {childName} →",
+			"dashboardButton": "فضاء التعلم لطفلك {childName} ",
 			"stats": {
 				"totalChallenges": "إجمالي التحديات",
 				"solved": "تحديات ناجحة",
@@ -178,7 +178,7 @@
 		"timeAnalytics": {
 			"title": "تحليلات الوقت",
 			"description": "رؤى متعمقة حول قراءة {childName} من حيث الوقت والاتساق",
-			"dashboardButton": "فضاء التعلم لطفلك {childName} →",
+			"dashboardButton": "فضاء التعلم لطفلك {childName} ",
 			"presets": {
 				"last3Days": "آخر 3 أيام",
 				"last7Days": "آخر 7 أيام",
@@ -214,8 +214,8 @@
 			"deactivated": "غير مفعّل",
 			"title": "قصص مخصصة للطفل",
 			"description": "أنشئ قصصًا مخصصة يظهر فيها {childName} كبطل! مغامرات مُصممة وفقًا لاهتماماته ومسار تقدمه في القراءة.",
-			"dashboardButton": "لوحة تحكم {childName} →",
-			"activateOption": "تفعيل ميزة سرد القصص لـ {childName} →",
+			"dashboardButton": "لوحة تحكم {childName}",
+			"activateOption": "تفعيل ميزة سرد القصص لـ {childName}",
 			"storytellingDashboard": "لوحة تحكم سرد القصص لـ {childName}",
 			"status": {
 				"completed": "تم الانتهاء",
@@ -518,6 +518,9 @@
 		"logIn": "تسجيل الدخول",
 		"noAccount": "ليس لديك حساب؟",
 		"signUp": "سجّل",
+		"loginWithGoogle": "تسجيل الدخول بـ Google",
+		"signUpWithGoogle": "التسجيل بـ Google",
+		"orContinueWith": "أو تابع بـ",
 		"tosAgreement": "عند إنشاء حساب، فإنك توافق على شروط الخدمة وسياسة الخصوصية الخاصة بنا.",
 		"errors": {
 			"fullNameRequired": "الاسم الكامل مطلوب",
@@ -730,7 +733,10 @@
 		"playAudio": {
 			"play": "استمع إلى القصة",
 			"pause": "إيقاف",
-			"loading": "جاري تحميل الصوت..."
+			"loading": "جاري تحميل الصوت...",
+			"repeat": "إعادة",
+			"highlightWord": "كلمة",
+			"highlightSentence": "جملة"
 		},
 		"riddleInterface": {
 			"submitAnswer": "قم بالإجابة",

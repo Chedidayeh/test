@@ -33,7 +33,7 @@ const Roadmaps = ({
         <h2 className="font-heading text-xl md:text-2xl lg:text-3xl text-foreground">
           {t("roadmaps.title")}
         </h2>
-        <Link
+        {/* <Link
           href="/roadmaps-library"
           className="flex items-center gap-2 text-primary hover:text-primary/80 transition-smooth mt-2 sm:mt-0"
         >
@@ -45,7 +45,7 @@ const Roadmaps = ({
           ) : (
             <ChevronRightIcon size={18} />
           )}
-        </Link>
+        </Link> */}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">

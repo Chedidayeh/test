@@ -1,6 +1,7 @@
 import { API_BASE_URL_V1, RoleType } from "@readdly/shared-types";
 import type { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
 
 declare module "next-auth" {
   interface User {
@@ -20,6 +21,10 @@ const GATEWAY_URL =
 
 export default {
   providers: [
+    Google({
+      clientId: process.env.AUTH_GOOGLE_ID,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET,
+    }),
     Credentials({
       id: "credentials",
       name: "Credentials",

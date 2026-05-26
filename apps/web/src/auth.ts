@@ -1,6 +1,6 @@
 import NextAuth from "next-auth";
 import authConfig from "./auth.config";
-import { RoleType } from "@readdly/shared-types";
+import { API_BASE_URL_V1, RoleType } from "@readdly/shared-types";
 
 declare module "next-auth" {
   interface User {
@@ -28,16 +28,50 @@ declare module "next-auth" {
   }
 }
 
+const GATEWAY_URL = process.env.NEXT_PUBLIC_GATEWAY_URL;
+
 export const { auth, handlers, signIn, signOut, unstable_update } = NextAuth({
   session: {
     strategy: "jwt",
     maxAge: parseInt(process.env.JWT_EXPIRATION!, 10),
   },
   callbacks: {
-    jwt({ token, user, trigger, session }) {
+    async jwt({ token, user, account, trigger, session }) {
       if (trigger === "update") {
         token.newUser = session.user.newUser;
       }
+
+      // Google OAuth: call auth service to upsert user and get auth-service JWT
+      if (account?.provider === "google" && user) {
+        try {
+          const res = await fetch(`${GATEWAY_URL}${API_BASE_URL_V1}/auth/google`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: user.email,
+              name: user.name,
+              image: user.image,
+              provider: account.provider,
+              providerAccountId: account.providerAccountId,
+            }),
+          });
+          const json = await res.json();
+          if (json.success && json.data) {
+            token.id = json.data.user.id;
+            token.email = json.data.user.email;
+            token.name = json.data.user.name;
+            token.role = json.data.user.role;
+            token.newUser = json.data.user.newUser;
+            token.accessToken = json.data.token;
+          } else {
+            console.error("[Auth] Google OAuth: auth service returned error", json);
+          }
+        } catch (err) {
+          console.error("[Auth] Google OAuth: failed to call auth service", err);
+        }
+        return token;
+      }
+
       // Called when user signs in or token is refreshed
       if (user) {
         // User is available during sign-in

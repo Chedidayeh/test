@@ -17,7 +17,7 @@ import {
   getTotalReadingTime,
 } from "../../parent-dashboard/_lib/stats";
 import Roadmaps from "./Roadmaps";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import RoadmapPage from "../_roadmap_progress/RoadmapPage";
 
 interface ChildDashboardInteractiveProps {
@@ -48,6 +48,15 @@ const ChildDashboardInteractive = ({
   const readingTimeMinutes = getTotalReadingTime(child);
   const [selectedRoadmap, setSelectedRoadmap] = useState<Roadmap>(roadmaps[0]);
   const [seeRoadmap, setSeeRoadmap] = useState(false);
+
+  useEffect(() => {
+    window.history.pushState(null, "", window.location.href);
+    const handlePopState = () => {
+      window.history.pushState(null, "", window.location.href);
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
 
   // Check if child has any in-progress roadmap stories

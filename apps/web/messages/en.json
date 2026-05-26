@@ -518,6 +518,9 @@
 		"logIn": "Log in",
 		"noAccount": "Don't have an account?",
 		"signUp": "Sign up",
+		"loginWithGoogle": "Login with Google",
+		"signUpWithGoogle": "Sign up with Google",
+		"orContinueWith": "Or continue with",
 		"tosAgreement": "By creating an account, you agree to our Terms of Service and Privacy Policy.",
 		"errors": {
 			"fullNameRequired": "Full name is required",
@@ -730,7 +733,10 @@
 		"playAudio": {
 			"play": "Play Story Audio",
 			"pause": "Pause Audio",
-			"loading": "Loading audio..."
+			"loading": "Loading audio...",
+			"repeat": "Repeat",
+			"highlightWord": "Word",
+			"highlightSentence": "Sentence"
 		},
 		"riddleInterface": {
 			"submitAnswer": "Submit Answer",

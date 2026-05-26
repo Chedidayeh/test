@@ -53,6 +53,7 @@ const selectiveJwtMiddleware = (
     "/create-child-profile",
     "/login-child",
     "/verify-token",
+    "/google",
   ];
   const isPublicAuth = publicAuthEndpoints.some(
     (ep) => req.path === `${API_BASE_URL_V1}/auth${ep}` || req.path === ep,

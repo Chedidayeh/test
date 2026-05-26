@@ -41,11 +41,13 @@ const Header = ({ userRole }: { userRole: RoleType | undefined }) => {
     },
   ];
 
+  const session = useSession();
+
+  if (pathname.includes("child-dashboard")) return null;
+
   const isActive = (href: string) => {
     return pathname === href || pathname.includes(href);
   };
-
-  const session = useSession();
 
   return (
     <>

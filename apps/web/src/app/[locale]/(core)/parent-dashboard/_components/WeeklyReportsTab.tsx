@@ -22,6 +22,7 @@ import {
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Badge } from "@/src/components/ui/badge";
+import { useLocale } from "@/src/contexts/LocaleContext";
 
 interface WeeklyReportsTabProps {
   selectedChild: ChildProfile;
@@ -42,6 +43,7 @@ export default function WeeklyReportsTab({
   const [currentWeek, setCurrentWeek] = useState(1);
   const [totalWeeks, setTotalWeeks] = useState(0);
   const [isToggling, setIsToggling] = useState(false);
+    const {isRTL} = useLocale();
 
   const childName = selectedChild?.child?.name ?? t("unknown");
 
@@ -117,7 +119,7 @@ export default function WeeklyReportsTab({
   };
 
   return (
-    <TabsContent value="weekly-reports" className="space-y-4 md:space-y-6">
+    <TabsContent dir={isRTL ? "rtl" : "ltr"} value="weekly-reports" className="space-y-4 md:space-y-6">
       {/* Header Section */}
       <div className="bg-linear-to-r from-primary/5 via-secondary/5 to-accent/5 rounded-xl p-4 md:p-6 border border-black/10">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4">

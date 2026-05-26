@@ -516,6 +516,9 @@
 		"logIn": "Se connecter",
 		"noAccount": "Vous n'avez pas de compte ?",
 		"signUp": "S'inscrire",
+		"loginWithGoogle": "Se connecter avec Google",
+		"signUpWithGoogle": "S'inscrire avec Google",
+		"orContinueWith": "Ou continuer avec",
 		"tosAgreement": "En créant un compte, vous acceptez nos Conditions d'utilisation et notre Politique de confidentialité.",
 		"errors": {
 			"fullNameRequired": "Le nom complet est requis",
@@ -728,7 +731,10 @@
 		"playAudio": {
 			"play": "Écouter l'histoire",
 			"pause": "Pause",
-			"loading": "Chargement de l'audio..."
+			"loading": "Chargement de l'audio...",
+			"repeat": "Recommencer",
+			"highlightWord": "Mot",
+			"highlightSentence": "Phrase"
 		},
 		"riddleInterface": {
 			"submitAnswer": "Soumettre la réponse",

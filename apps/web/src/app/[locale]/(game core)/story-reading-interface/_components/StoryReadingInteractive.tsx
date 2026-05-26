@@ -53,6 +53,19 @@ function getPageNumberFromChapterId(
   return chapter.order;
 }
 
+function estimateSyllables(word: string): number {
+  const clean = word.toLowerCase().replace(/[^a-z]/g, '');
+  if (clean.length === 0) return 1;
+  const matches = clean.match(/[aeiou]+/g);
+  return Math.max(1, matches ? matches.length : 1);
+}
+
+const SENTENCE_PAUSE_BONUS = 1.5;
+
+function getWordWeight(word: string): number {
+  return estimateSyllables(word) + (/[.!?؟]$/.test(word.trim()) ? SENTENCE_PAUSE_BONUS : 0);
+}
+
 const StoryReadingInteractive = ({
   story,
   currentProgress,
@@ -97,6 +110,7 @@ const StoryReadingInteractive = ({
   // const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [highlightMode, setHighlightMode] = useState<'word' | 'sentence'>('word');
   const audioRef = useRef<HTMLAudioElement>(null);
 
   // Local cache of challenge attempts by challengeId to prevent losing submissions on page navigation
@@ -157,9 +171,27 @@ const StoryReadingInteractive = ({
         audioRef.current.pause();
         setIsPlayingAudio(false);
       } else {
+        // Stop TTS if running so both don't update highlightedWord simultaneously
+        if (isPlaying) {
+          setIsPlaying(false);
+          setHighlightedWord(undefined);
+        }
         audioRef.current.play();
         setIsPlayingAudio(true);
       }
+    }
+  };
+
+  const handleRepeatAudio = () => {
+    if (audioRef.current && currentPageData?.audioUrl) {
+      // Stop TTS if running
+      if (isPlaying) {
+        setIsPlaying(false);
+        setHighlightedWord(undefined);
+      }
+      audioRef.current.currentTime = 0;
+      audioRef.current.play();
+      setIsPlayingAudio(true);
     }
   };
 
@@ -299,6 +331,9 @@ const StoryReadingInteractive = ({
         isPlayingAudio={isPlayingAudio}
         isLoadingAudio={isLoadingAudio}
         handlePlayAudio={handlePlayAudio}
+        handleRepeatAudio={handleRepeatAudio}
+        highlightMode={highlightMode}
+        onHighlightModeChange={setHighlightMode}
       />
       {!showRiddle ? (
         <>
@@ -319,6 +354,7 @@ const StoryReadingInteractive = ({
                   textSize={textSize}
                   highContrast={highContrast}
                   highlightedWord={highlightedWord}
+                  highlightMode={highlightMode}
                 />
 
                 <div className="fixed right-2 sm:right-4 md:right-6 lg:right-8 top-20 sm:top-24 md:top-28 lg:top-32 flex flex-col items-center gap-2 sm:gap-3 z-40">
@@ -332,9 +368,31 @@ const StoryReadingInteractive = ({
                 <audio
                   ref={audioRef}
                   src={currentPageData?.audioUrl || ""}
-                  onEnded={() => setIsPlayingAudio(false)}
+                  onEnded={() => {
+                    setIsPlayingAudio(false);
+                    setHighlightedWord(undefined);
+                  }}
                   onPlay={() => setIsPlayingAudio(true)}
                   onPause={() => setIsPlayingAudio(false)}
+                  onTimeUpdate={() => {
+                    const el = audioRef.current;
+                    if (!el || !el.duration || isNaN(el.duration)) return;
+                    const words = currentPageData?.text.split(" ") ?? [];
+                    if (words.length === 0) return;
+                    const weights = words.map(getWordWeight);
+                    const totalWeight = weights.reduce((s, w) => s + w, 0);
+                    if (totalWeight === 0) return;
+                    const progress = el.currentTime / el.duration;
+                    let accumulated = 0;
+                    for (let i = 0; i < words.length; i++) {
+                      accumulated += weights[i];
+                      if (progress <= accumulated / totalWeight) {
+                        setHighlightedWord(i);
+                        return;
+                      }
+                    }
+                    setHighlightedWord(words.length - 1);
+                  }}
                 />
 
                 {/* Riddle Indicator */}
