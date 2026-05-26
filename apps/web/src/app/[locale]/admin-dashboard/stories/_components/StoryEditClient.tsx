@@ -84,6 +84,7 @@ export function StoryEditClient({ ageGroups, roadmaps, worlds, story }: StoryEdi
               type: chapter.challenge.type,
               question: chapter.challenge.question,
               baseStars: chapter.challenge.baseStars,
+              imageUrl: chapter.challenge.imageUrl || undefined,
               order: chapter.challenge.order,
               hints: chapter.challenge.hints || [],
               translations:

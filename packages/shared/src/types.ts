@@ -452,6 +452,7 @@ export interface ChildDailyActivity {
 export interface Progress {
   id: string;
   childProfileId: string;
+  childProfile?: ChildProfile | null;
   roadmapId: string | null; // References Content.Roadmap.id - current roadmap being progressed through
   worldId: string | null; // References Content.World.id - current world being progressed through
   storyId: string | null; // References Content.Story.id - current story being progressed through

@@ -1866,4 +1866,68 @@ export class ChildrenController {
       });
     }
   }
+
+  /**
+   * Unlock a hint for a child — deducts stars from ChildProfile.totalStars.
+   * Returns 402 if the child cannot afford the hint.
+   */
+  static async unlockHint(
+    req: Request,
+    res: Response<
+      ApiResponse<{ newTotalStars: number | null; starsCost: number }>
+    >,
+  ): Promise<void> {
+    try {
+      const { childId } = req.params;
+      const { hintIndex } = req.body;
+
+      if (!childId || hintIndex === undefined || hintIndex === null) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required fields: childId and hintIndex",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      const result = await ChildrenService.unlockHint({
+        childId,
+        hintIndex: Number(hintIndex),
+      });
+
+      res.status(200).json({
+        success: true,
+        data: result,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to unlock hint";
+
+      if (message === "INSUFFICIENT_STARS") {
+        res.status(402).json({
+          success: false,
+          error: {
+            code: "INSUFFICIENT_STARS",
+            message: "Not enough stars to unlock this hint",
+          },
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      console.error("Error unlocking hint:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "UNLOCK_HINT_ERROR",
+          message,
+        },
+        timestamp: new Date(),
+      });
+    }
+  }
 }

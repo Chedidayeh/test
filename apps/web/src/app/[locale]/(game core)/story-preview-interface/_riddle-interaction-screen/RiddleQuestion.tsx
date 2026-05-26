@@ -1,10 +1,10 @@
 import { Pause, Play, Puzzle, Clock } from "lucide-react";
 import { ChallengeType } from "@readdly/shared-types";
 import { useTranslations } from "next-intl";
-
+import Image from "next/image";
 interface RiddleQuestionProps {
   question: string;
-  storyImage: string;
+  storyImage: string | null;
   storyImageAlt: string;
   riddleNumber: number;
   totalRiddles: number;
@@ -88,6 +88,19 @@ const RiddleQuestion = ({
         <label className="block font-heading text-sm text-secondary mb-3">
           {getTypeLabel(challengeType)}
         </label>
+        {storyImage && (
+          <div className="flex items-center justify-center">
+            <div className="w-md rounded-xl overflow-hidden">
+              <Image
+                src={storyImage}
+                alt={storyImageAlt}
+                width={800}
+                height={450}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+        )}
         <p className="font-body text-xl md:text-2xl text-foreground leading-relaxed text-center">
           {question}
         </p>

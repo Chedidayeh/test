@@ -38,7 +38,7 @@ interface Riddle {
   choices?: Choice[];
   sequenceAnswers?: Choice[];
   hints: Hint[];
-  storyImage?: string;
+  storyImage: string | null;
   storyImageAlt: string;
   starsReward: number;
   questionAudioUrl?: string;
@@ -46,8 +46,8 @@ interface Riddle {
 
 interface RiddleInteractiveProps {
   challenge?: Challenge | null;
-  storyImage?: string;
-  storyImageAlt?: string;
+  storyImage: string | null;
+  storyImageAlt: string;
   onChallengeSubmitted?: (
     attempt: ChallengeAttempt,
     starsEarned?: number,
@@ -136,7 +136,7 @@ const RiddleInteractive = ({
       choices: choices,
       sequenceAnswers: sequenceAnswers,
       hints: hintsArray.map((hint) => ({ text: hint })),
-      storyImage: storyImage,
+      storyImage: challenge.imageUrl,
       storyImageAlt: storyImageAlt,
       starsReward: challenge.baseStars,
       questionAudioUrl: challengeTranslation?.audioUrl || challenge.audioUrl || undefined,
@@ -591,8 +591,7 @@ const RiddleInteractive = ({
           <RiddleQuestion
             question={currentRiddle.question}
             storyImage={
-              currentRiddle.storyImage ||
-              "https://images.unsplash.com/photo-1730314737966-92b9760790eb"
+              currentRiddle.storyImage
             }
             storyImageAlt={currentRiddle.storyImageAlt}
             riddleNumber={1}

@@ -9,9 +9,55 @@ import { CircleQuestionMark, Settings, X } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import StoryFlowNavigation from "./StoryFlowNavigation";
 import { Local, Story, StoryTranslation } from "@readdly/shared-types";
-import { transformStoryToPages } from "./storyDataTransform";
+import { transformStoryToPages, splitSentences } from "./storyDataTransform";
 import { useTranslations } from "next-intl";
 import { useLocale } from "@/src/contexts/LocaleContext";
+
+const SENTENCE_PAUSE_CHARS = 9;
+const WORD_PAUSE_CHARS = 2;
+const WORD_SENTENCE_END_CHARS = 18;
+
+function computeWordBoundaries(
+  text: string,
+  duration: number,
+): { start: number; end: number }[] {
+  const words = text.split(" ");
+  const weights = words.map((w) => {
+    const clean = w.trim();
+    const base = Math.max(1, clean.length);
+    const sentenceEnd = /[.!?؟]$/.test(clean) ? WORD_SENTENCE_END_CHARS : 0;
+    return base + WORD_PAUSE_CHARS + sentenceEnd;
+  });
+  const total = weights.reduce((sum, w) => sum + w, 0);
+  if (total === 0 || duration === 0) return [];
+  const boundaries: { start: number; end: number }[] = [];
+  let accumulated = 0;
+  for (const w of weights) {
+    const start = (accumulated / total) * duration;
+    accumulated += w;
+    const end = (accumulated / total) * duration;
+    boundaries.push({ start, end });
+  }
+  return boundaries;
+}
+
+function computeSentenceBoundaries(
+  sentences: string[],
+  duration: number,
+): { start: number; end: number }[] {
+  const weights = sentences.map((s) => s.length + SENTENCE_PAUSE_CHARS);
+  const total = weights.reduce((sum, w) => sum + w, 0);
+  if (total === 0 || duration === 0) return [];
+  const boundaries: { start: number; end: number }[] = [];
+  let accumulated = 0;
+  for (const w of weights) {
+    const start = (accumulated / total) * duration;
+    accumulated += w;
+    const end = (accumulated / total) * duration;
+    boundaries.push({ start, end });
+  }
+  return boundaries;
+}
 
 interface StoryReplayingInteractiveProps {
   story: Story;
@@ -33,9 +79,13 @@ const StoryReplayingInteractive = ({
     "medium",
   );
   const [highContrast, setHighContrast] = useState(false);
-  const [highlightedWord, setHighlightedWord] = useState<number | undefined>(
-    undefined,
-  );
+  const [highlightedWord, setHighlightedWord] = useState<number | undefined>(undefined);
+  const [highlightedSentence, setHighlightedSentence] = useState<number | undefined>(undefined);
+  const [sentenceBoundaries, setSentenceBoundaries] = useState<{ start: number; end: number }[]>([]);
+  const lastSentenceIdxRef = useRef<number>(-1);
+  const [wordBoundaries, setWordBoundaries] = useState<{ start: number; end: number }[]>([]);
+  const lastWordIdxRef = useRef<number>(-1);
+  const [highlightMode, setHighlightMode] = useState<'word' | 'sentence'>('sentence');
   const [showSettings, setShowSettings] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
 
@@ -89,9 +139,29 @@ const StoryReplayingInteractive = ({
         audioRef.current.pause();
         setIsPlayingAudio(false);
       } else {
+        if (isPlaying) {
+          setIsPlaying(false);
+          setHighlightedWord(undefined);
+          setHighlightedSentence(undefined);
+        }
+        lastWordIdxRef.current = -1;
+        lastSentenceIdxRef.current = -1;
         audioRef.current.play();
         setIsPlayingAudio(true);
       }
+    }
+  };
+
+  const handleRepeatAudio = () => {
+    if (audioRef.current && currentPageData?.audioUrl) {
+      if (isPlaying) setIsPlaying(false);
+      setHighlightedWord(undefined);
+      setHighlightedSentence(undefined);
+      lastWordIdxRef.current = -1;
+      lastSentenceIdxRef.current = -1;
+      audioRef.current.currentTime = 0;
+      audioRef.current.play();
+      setIsPlayingAudio(true);
     }
   };
 
@@ -134,7 +204,12 @@ const StoryReplayingInteractive = ({
     setCurrentPage(page);
     setIsPlaying(false);
     setHighlightedWord(undefined);
-    setWordIndex(0); // Reset word index when changing pages
+    setHighlightedSentence(undefined);
+    setSentenceBoundaries([]);
+    setWordBoundaries([]);
+    lastSentenceIdxRef.current = -1;
+    lastWordIdxRef.current = -1;
+    setWordIndex(0);
   };
 
   // Get current page data
@@ -153,6 +228,9 @@ const StoryReplayingInteractive = ({
         isPlayingAudio={isPlayingAudio}
         isLoadingAudio={isLoadingAudio}
         handlePlayAudio={handlePlayAudio}
+        handleRepeatAudio={handleRepeatAudio}
+        highlightMode={highlightMode}
+        onHighlightModeChange={setHighlightMode}
       />
       <AnimatePresence mode="wait">
         <motion.div
@@ -170,6 +248,8 @@ const StoryReplayingInteractive = ({
               textSize={textSize}
               highContrast={highContrast}
               highlightedWord={highlightedWord}
+              highlightedSentence={highlightedSentence}
+              highlightMode={highlightMode}
             />
 
             <div className="fixed right-2 sm:right-4 md:right-6 lg:right-8 top-20 sm:top-24 md:top-28 lg:top-32 flex flex-col items-center gap-2 sm:gap-3 z-40">
@@ -183,9 +263,47 @@ const StoryReplayingInteractive = ({
             <audio
               ref={audioRef}
               src={currentPageData?.audioUrl || ""}
-              onEnded={() => setIsPlayingAudio(false)}
+              onLoadedMetadata={() => {
+                const el = audioRef.current;
+                if (!el || !el.duration || isNaN(el.duration)) return;
+                const text = currentPageData?.text ?? "";
+                const sentences = splitSentences(text);
+                setSentenceBoundaries(computeSentenceBoundaries(sentences, el.duration));
+                setWordBoundaries(computeWordBoundaries(text, el.duration));
+                lastSentenceIdxRef.current = -1;
+                lastWordIdxRef.current = -1;
+              }}
+              onEnded={() => {
+                setIsPlayingAudio(false);
+                setHighlightedSentence(undefined);
+                setHighlightedWord(undefined);
+                lastSentenceIdxRef.current = -1;
+                lastWordIdxRef.current = -1;
+              }}
               onPlay={() => setIsPlayingAudio(true)}
               onPause={() => setIsPlayingAudio(false)}
+              onTimeUpdate={() => {
+                const el = audioRef.current;
+                if (!el || isNaN(el.currentTime)) return;
+                const t = el.currentTime;
+                if (highlightMode === "word") {
+                  if (wordBoundaries.length === 0) return;
+                  let idx = wordBoundaries.findIndex((b) => t < b.end);
+                  if (idx === -1) idx = wordBoundaries.length - 1;
+                  if (idx !== lastWordIdxRef.current) {
+                    lastWordIdxRef.current = idx;
+                    setHighlightedWord(idx);
+                  }
+                } else {
+                  if (sentenceBoundaries.length === 0) return;
+                  let idx = sentenceBoundaries.findIndex((b) => t < b.end);
+                  if (idx === -1) idx = sentenceBoundaries.length - 1;
+                  if (idx !== lastSentenceIdxRef.current) {
+                    lastSentenceIdxRef.current = idx;
+                    setHighlightedSentence(idx);
+                  }
+                }
+              }}
             />
           </div>
         </motion.div>

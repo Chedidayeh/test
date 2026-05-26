@@ -30,6 +30,7 @@ import {
   forwardGetReadingSpeedTrends,
   forwardGetMostFailedChallenges,
   forwardGetContentPerformanceMetrics,
+  forwardUnlockHint,
 } from "../helpers/progress.helpers";
 import { API_BASE_URL_V1 } from "@shared/src/types";
 
@@ -61,9 +62,12 @@ router.get("/stats/learning/completion", (req: Request, res: Response) => {
 });
 
 // Get challenge success metrics for learning metrics dashboard
-router.get("/stats/learning/challenge-success", (req: Request, res: Response) => {
-  forwardGetChallengeSuccessMetrics(req, res);
-});
+router.get(
+  "/stats/learning/challenge-success",
+  (req: Request, res: Response) => {
+    forwardGetChallengeSuccessMetrics(req, res);
+  },
+);
 
 // Get hint usage metrics for learning metrics dashboard
 router.get("/stats/learning/hint-usage", (req: Request, res: Response) => {
@@ -76,9 +80,12 @@ router.get("/stats/learning/reading-speed", (req: Request, res: Response) => {
 });
 
 // Get most failed challenges for learning metrics dashboard
-router.get("/stats/learning/failed-challenges", (req: Request, res: Response) => {
-  forwardGetMostFailedChallenges(req, res);
-});
+router.get(
+  "/stats/learning/failed-challenges",
+  (req: Request, res: Response) => {
+    forwardGetMostFailedChallenges(req, res);
+  },
+);
 
 // Get content performance metrics for content performance dashboard
 router.get("/stats/content/performance", (req: Request, res: Response) => {
@@ -101,18 +108,24 @@ router.post("/children/:childId/badges", (req: Request, res: Response) => {
 });
 
 // Allocate roadmap to child (must be before the generic /children middleware)
-router.post("/children/:childId/allocate-roadmap", (req: Request, res: Response) => {
-  forwardAllocateRoadmapToChild(req, res);
-});
+router.post(
+  "/children/:childId/allocate-roadmap",
+  (req: Request, res: Response) => {
+    forwardAllocateRoadmapToChild(req, res);
+  },
+);
 
 // Update child notification settings (must be before the generic /children middleware)
-router.patch("/children/:childId/notifications", (req: Request, res: Response) => {
-  forwardUpdateNotificationSettings(
-    req,
-    res,
-    `${API_BASE_URL_V1}/children/${req.params.childId}/notifications`,
-  );
-});
+router.patch(
+  "/children/:childId/notifications",
+  (req: Request, res: Response) => {
+    forwardUpdateNotificationSettings(
+      req,
+      res,
+      `${API_BASE_URL_V1}/children/${req.params.childId}/notifications`,
+    );
+  },
+);
 
 // Update child general settings (must be before the generic /children middleware)
 router.patch("/children/:childId/settings", (req: Request, res: Response) => {
@@ -124,14 +137,28 @@ router.patch("/children/:childId/settings", (req: Request, res: Response) => {
 });
 
 // Toggle weekly reports for child (must be before the generic /children middleware)
-router.patch("/children/:childId/weekly-reports", (req: Request, res: Response) => {
-  forwardToggleWeeklyReports(req, res, `${API_BASE_URL_V1}/children/${req.params.childId}/weekly-reports`);
-});
+router.patch(
+  "/children/:childId/weekly-reports",
+  (req: Request, res: Response) => {
+    forwardToggleWeeklyReports(
+      req,
+      res,
+      `${API_BASE_URL_V1}/children/${req.params.childId}/weekly-reports`,
+    );
+  },
+);
 
 // Toggle storytelling for child (must be before the generic /children middleware)
-router.patch("/children/:childId/storytelling", (req: Request, res: Response) => {
-  forwardToggleStorytelling(req, res, `${API_BASE_URL_V1}/children/${req.params.childId}/storytelling`);
-});
+router.patch(
+  "/children/:childId/storytelling",
+  (req: Request, res: Response) => {
+    forwardToggleStorytelling(
+      req,
+      res,
+      `${API_BASE_URL_V1}/children/${req.params.childId}/storytelling`,
+    );
+  },
+);
 
 // Delete child profile (must be before the generic /children middleware)
 router.delete("/children/:childId", (req: Request, res: Response) => {
@@ -142,6 +169,15 @@ router.delete("/children/:childId", (req: Request, res: Response) => {
   );
 });
 
+// Unlock paid hint for a child (must be before the generic /children middleware)
+router.post("/children/:childId/unlock-hint", (req: Request, res: Response) => {
+  forwardUnlockHint(
+    req,
+    res,
+    `${API_BASE_URL_V1}/children/${req.params.childId}/unlock-hint`,
+  );
+});
+
 // Generic children middleware (must be after specific routes)
 router.use("/children", (req: Request, res: Response) => {
   forwardToProgressService(req, res, `${API_BASE_URL_V1}/children${req.path}`);
@@ -149,7 +185,11 @@ router.use("/children", (req: Request, res: Response) => {
 
 // Generic children middleware (must be after specific routes)
 router.use("/children-profiles", (req: Request, res: Response) => {
-  forwardToGetChildProfiles(req, res, `${API_BASE_URL_V1}/children-profiles${req.path}`);
+  forwardToGetChildProfiles(
+    req,
+    res,
+    `${API_BASE_URL_V1}/children-profiles${req.path}`,
+  );
 });
 
 // Get child profiles for a parent (must be before the generic /parent-data route)
@@ -176,15 +216,17 @@ router.post("/progress/checkpoint", (req: Request, res: Response) => {
 });
 
 // Resume from a checkpoint
-router.post("/progress/create-new-checkpoint/:gameSessionId", (req: Request, res: Response) => {
-  forwardCreateNewCheckpoint(req, res);
-});
+router.post(
+  "/progress/create-new-checkpoint/:gameSessionId",
+  (req: Request, res: Response) => {
+    forwardCreateNewCheckpoint(req, res);
+  },
+);
 
 // Pause a game session
 router.post("/progress/pause/:gameSessionId", (req: Request, res: Response) => {
   forwardPauseGameSession(req, res);
 });
-
 
 // Submit challenge answer and record attempt with star rewards
 router.post("/progress/challenge/submit", (req: Request, res: Response) => {

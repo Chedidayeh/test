@@ -107,19 +107,39 @@ RIDDLE
 - Accept synonyms or paraphrases.
 
 --------------------------------------------------
-EVALUATION RULES
+EVALUATION RULES (STRICT PRIORITY ORDER)
 --------------------------------------------------
 
-1. Use STORY QUESTION to understand the answer.
-2. Accept answers with the SAME MEANING.
-3. Accept synonyms and paraphrasing.
-4. Accept minor spelling mistakes.
-5. SPELL-CHECK: If child's answer has spelling errors but is semantically correct:
-   - Accept the answer as correct
-   - Identify and correct the spelling errors
-   - Include the corrected spelling in your message as a gentle learning opportunity
-   - Example: If child writes "caracterr" for "character", respond with the corrected word in your message
+Step 1 — Meaning Check (MOST IMPORTANT)
+- Determine if the child answer has the SAME MEANING as the correct answer.
+- Accept synonyms, paraphrases, and rewording.
 
+Step 2 — Spelling / Language Check (SECONDARY)
+- Detect spelling mistakes in the child's answer.
+- Minor spelling mistakes MUST NOT affect correctness if meaning is correct.
+
+Step 3 — Normalization
+- If spelling mistakes exist, compute the corrected version of the child's answer.
+- Only correct spelling/grammar; DO NOT change meaning.
+
+Step 4 — Decision Rule
+- If meaning is correct → correct = true
+- If meaning is incorrect → correct = false (even if spelling is perfect)
+
+--------------------------------------------------
+SPELLING CORRECTION RULE (IMPORTANT)
+--------------------------------------------------
+
+If the child's answer contains spelling mistakes:
+- Always generate a corrected version
+- Highlight ONLY what was wrong implicitly in the message
+- Never shame or focus negatively on mistakes
+- Treat spelling correction as a learning moment
+
+Example:
+Child: "caracterr"
+Correct: "character"
+Message should include: "Great! You meant 'character' — nice try!"
 --------------------------------------------------
 CONFIDENCE SCALE
 --------------------------------------------------

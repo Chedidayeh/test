@@ -2,7 +2,9 @@
 
 import { Button } from "@/src/components/ui/button";
 import { CheckCircle, Lightbulb, SparklesIcon, X } from "lucide-react";
+import { Spinner } from "@/src/components/ui/spinner";
 import { useTranslations } from "next-intl";
+import { HINT_COSTS } from "@/src/lib/progress-service/server-api";
 
 interface Hint {
   text: string;
@@ -12,25 +14,34 @@ interface HintPanelProps {
   hints: Hint[];
   currentHintLevel: number;
   availableHints: number;
-  onRequestHint: () => void;
+  localTotalStars?: number; // Current star balance
+  onRequestHint: (hintIndex: number) => void | Promise<void>; // Now takes hintIndex parameter
   isVisible: boolean;
   onClose: () => void;
+  isUnlockingHint?: boolean; // Loading state while unlocking a hint
+  insufficientStarsMessage?: string | null; // Error message if not enough stars
 }
 
 const HintPanel = ({
   hints,
   currentHintLevel,
   availableHints,
+  localTotalStars = 0,
   onRequestHint,
   isVisible,
   onClose,
+  isUnlockingHint = false,
+  insufficientStarsMessage = null,
 }: HintPanelProps) => {
   const t = useTranslations("StoryReadingInterface.riddleInterface");
-  
+
   if (!isVisible) return null;
 
   const currentHint = hints[currentHintLevel - 1];
   const hasMoreHints = currentHintLevel < hints.length;
+  const nextHintIndex = currentHintLevel; // 0-based index for next hint
+  const nextHintCost = HINT_COSTS[nextHintIndex] ?? HINT_COSTS[HINT_COSTS.length - 1];
+  const canAffordNextHint = localTotalStars >= nextHintCost;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-3 sm:p-4 z-50 animate-fade-in">
@@ -46,7 +57,7 @@ const HintPanel = ({
                 {t("hintPanel.title")}
               </h2>
               <p className="font-caption text-xs sm:text-sm text-muted-foreground">
-                {t("hintPanel.hintsRemaining", { count: availableHints })}
+                Your stars: {localTotalStars} ⭐
               </p>
             </div>
           </div>
@@ -112,6 +123,17 @@ const HintPanel = ({
           </div>
         )}
 
+        {/* Insufficient Stars Message */}
+        {insufficientStarsMessage && (
+          <div className="px-3 sm:px-6 pb-3 sm:pb-4">
+            <div className="p-3 sm:p-4 rounded-lg border-l-4 border-warning bg-warning/10">
+              <p className="font-body text-xs sm:text-sm text-foreground">
+                {insufficientStarsMessage}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="p-3 sm:p-4 flex items-center justify-between gap-2 sm:gap-3 border-border">
           <div className="flex items-center justify-center">
@@ -120,8 +142,22 @@ const HintPanel = ({
             </Button>
           </div>
           {hasMoreHints && availableHints > 0 ? (
-            <Button variant={"secondary"} onClick={onRequestHint} className="text-xs sm:text-sm">
-              {t("hintPanel.getAnotherHint", { remaining: availableHints })}
+            <Button
+              variant={"secondary"}
+              onClick={() => onRequestHint(nextHintIndex)}
+              disabled={isUnlockingHint || (nextHintCost > 0 && !canAffordNextHint)}
+              className="text-xs sm:text-sm"
+              title={
+                nextHintCost > 0 && !canAffordNextHint
+                  ? `Not enough stars (you have ${localTotalStars} ⭐)`
+                  : undefined
+              }
+              aria-busy={isUnlockingHint}
+            >
+              {isUnlockingHint && <Spinner className="mr-2" />}
+              {nextHintCost > 0
+                ? `Get hint ${currentHintLevel + 1} · ${nextHintCost} ⭐`
+                : `Get hint ${currentHintLevel + 1}`}
             </Button>
           ) : (
             <div className="text-center p-2 sm:p-4 bg-muted rounded-xl">

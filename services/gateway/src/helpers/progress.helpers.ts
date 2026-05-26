@@ -2649,6 +2649,148 @@ export async function forwardToggleStorytelling(
 }
 
 /**
+ * Forward unlock hint request to Progress Service
+ * Deducts stars from child's profile to unlock a paid hint
+ *
+ * @param req - Express request with childId in params and hintIndex in body
+ * @param res - Express response
+ * @param basePath - Base path for the Progress Service endpoint
+ */
+export async function forwardUnlockHint(
+  req: Request,
+  res: Response<ApiResponse<{ newTotalStars: number | null; starsCost: number }>>,
+  basePath: string,
+): Promise<void> {
+  try {
+    const { childId } = req.params;
+    const { hintIndex } = req.body;
+
+    // Validation
+    if (!childId) {
+      logger.warn("Missing childId parameter");
+      res.status(400).json({
+        success: false,
+        error: {
+          code: "BAD_REQUEST",
+          message: "Missing required parameter: childId",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    if (hintIndex === undefined || hintIndex === null) {
+      logger.warn("Missing hintIndex in request body");
+      res.status(400).json({
+        success: false,
+        error: {
+          code: "BAD_REQUEST",
+          message: "Missing required field: hintIndex",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Unlocking hint for child", {
+      childId,
+      hintIndex,
+    });
+
+    // Forward to Progress Service
+    const unlockResponse = await axios.post<
+      ApiResponse<{ newTotalStars: number | null; starsCost: number }>
+    >(
+      `${PROGRESS_SERVICE_URL}${basePath}`,
+      {
+        hintIndex,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
+          }),
+        },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug("Progress service unlock hint response received", {
+      status: unlockResponse.status,
+      hasData: !!unlockResponse.data?.data,
+    });
+
+    // Handle progress service error
+    if (unlockResponse.status !== 200) {
+      const errorMessage =
+        unlockResponse.data?.error?.message || "Failed to unlock hint";
+      const errorCode = unlockResponse.data?.error?.code || "SERVICE_ERROR";
+
+      logger.error("Progress service error unlocking hint", {
+        status: unlockResponse.status,
+        error: errorMessage,
+        code: errorCode,
+      });
+
+      res.status(unlockResponse.status || 503).json({
+        success: false,
+        error: {
+          code: errorCode,
+          message: errorMessage,
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    const hintData = unlockResponse.data?.data;
+
+    if (!hintData) {
+      logger.error("No hint data returned after unlock", {
+        childId,
+      });
+
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "INVALID_RESPONSE",
+          message: "Invalid response from Progress Service",
+        },
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    logger.info("Hint unlocked successfully", {
+      childId,
+      hintIndex,
+      newTotalStars: hintData.newTotalStars,
+      starsCost: hintData.starsCost,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: hintData,
+      timestamp: new Date(),
+    });
+  } catch (error) {
+    logger.error("Unlock hint forward error", {
+      error: String(error),
+      stack: error instanceof Error ? error.stack : "N/A",
+    });
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Failed to unlock hint",
+      },
+      timestamp: new Date(),
+    });
+  }
+}
+
+/**
  * Get comprehensive admin dashboard statistics
  * Orchestrates Content, Auth, and Progress services to aggregate metrics:
  * - Content counts: age groups, roadmaps, worlds, stories, chapters, challenges

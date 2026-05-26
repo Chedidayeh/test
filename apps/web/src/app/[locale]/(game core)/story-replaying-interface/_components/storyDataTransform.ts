@@ -1,5 +1,14 @@
 import { Story, Chapter } from "@readdly/shared-types";
 
+export function splitSentences(text: string): string[] {
+  const parts = text.match(/[^.!?؟\n]+[.!?؟]*\n*/g);
+  if (!parts || parts.length === 0) return [text];
+  const filtered = parts.filter((s) =>
+    /[a-zA-Z0-9\u0600-\u06FF\u00C0-\u024F]/.test(s),
+  );
+  return filtered.length > 0 ? filtered : [text];
+}
+
 /**
  * StoryPage interface represents a single readable page in the UI
  * Maps from backend Chapter structure

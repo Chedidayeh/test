@@ -21,6 +21,7 @@ import {
 import {
   transformStoryToPages,
   getChapterByPageNumber,
+  splitSentences,
 } from "./storyDataTransform";
 import { useTranslations } from "next-intl";
 import { useLocale } from "@/src/contexts/LocaleContext";
@@ -53,17 +54,54 @@ function getPageNumberFromChapterId(
   return chapter.order;
 }
 
-function estimateSyllables(word: string): number {
-  const clean = word.toLowerCase().replace(/[^a-z]/g, '');
-  if (clean.length === 0) return 1;
-  const matches = clean.match(/[aeiou]+/g);
-  return Math.max(1, matches ? matches.length : 1);
+// Characters added per sentence boundary to model the narrator's natural inter-sentence pause.
+// Tune this constant if highlights run ahead or behind: increase to slow down, decrease to speed up.
+const SENTENCE_PAUSE_CHARS = 9;
+// Small constant inter-word pause (increase if words highlight too fast).
+const WORD_PAUSE_CHARS = 2;
+// Extra pause budget for words that end a sentence (period, exclamation, question mark).
+const WORD_SENTENCE_END_CHARS = 18;
+
+function computeWordBoundaries(
+  text: string,
+  duration: number,
+): { start: number; end: number }[] {
+  const words = text.split(" ");
+  const weights = words.map((w) => {
+    const clean = w.trim();
+    const base = Math.max(1, clean.length);
+    const sentenceEnd = /[.!?؟]$/.test(clean) ? WORD_SENTENCE_END_CHARS : 0;
+    return base + WORD_PAUSE_CHARS + sentenceEnd;
+  });
+  const total = weights.reduce((sum, w) => sum + w, 0);
+  if (total === 0 || duration === 0) return [];
+  const boundaries: { start: number; end: number }[] = [];
+  let accumulated = 0;
+  for (const w of weights) {
+    const start = (accumulated / total) * duration;
+    accumulated += w;
+    const end = (accumulated / total) * duration;
+    boundaries.push({ start, end });
+  }
+  return boundaries;
 }
 
-const SENTENCE_PAUSE_BONUS = 1.5;
-
-function getWordWeight(word: string): number {
-  return estimateSyllables(word) + (/[.!?؟]$/.test(word.trim()) ? SENTENCE_PAUSE_BONUS : 0);
+function computeSentenceBoundaries(
+  sentences: string[],
+  duration: number,
+): { start: number; end: number }[] {
+  const weights = sentences.map((s) => s.length + SENTENCE_PAUSE_CHARS);
+  const total = weights.reduce((sum, w) => sum + w, 0);
+  if (total === 0 || duration === 0) return [];
+  const boundaries: { start: number; end: number }[] = [];
+  let accumulated = 0;
+  for (const w of weights) {
+    const start = (accumulated / total) * duration;
+    accumulated += w;
+    const end = (accumulated / total) * duration;
+    boundaries.push({ start, end });
+  }
+  return boundaries;
 }
 
 const StoryReadingInteractive = ({
@@ -90,6 +128,11 @@ const StoryReadingInteractive = ({
   const [highlightedWord, setHighlightedWord] = useState<number | undefined>(
     undefined,
   );
+  const [highlightedSentence, setHighlightedSentence] = useState<number | undefined>(undefined);
+  const [sentenceBoundaries, setSentenceBoundaries] = useState<{ start: number; end: number }[]>([]);
+  const lastSentenceIdxRef = useRef<number>(-1);
+  const [wordBoundaries, setWordBoundaries] = useState<{ start: number; end: number }[]>([]);
+  const lastWordIdxRef = useRef<number>(-1);
   const [showSettings, setShowSettings] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0); // Track total elapsed time of each chapter
@@ -110,7 +153,7 @@ const StoryReadingInteractive = ({
   // const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-  const [highlightMode, setHighlightMode] = useState<'word' | 'sentence'>('word');
+  const [highlightMode, setHighlightMode] = useState<'word' | 'sentence'>('sentence');
   const audioRef = useRef<HTMLAudioElement>(null);
 
   // Local cache of challenge attempts by challengeId to prevent losing submissions on page navigation
@@ -171,11 +214,14 @@ const StoryReadingInteractive = ({
         audioRef.current.pause();
         setIsPlayingAudio(false);
       } else {
-        // Stop TTS if running so both don't update highlightedWord simultaneously
+        // Stop interval TTS if running so both don't update highlightedWord simultaneously
         if (isPlaying) {
           setIsPlaying(false);
           setHighlightedWord(undefined);
+          setHighlightedSentence(undefined);
         }
+        lastWordIdxRef.current = -1;
+        lastSentenceIdxRef.current = -1;
         audioRef.current.play();
         setIsPlayingAudio(true);
       }
@@ -184,11 +230,14 @@ const StoryReadingInteractive = ({
 
   const handleRepeatAudio = () => {
     if (audioRef.current && currentPageData?.audioUrl) {
-      // Stop TTS if running
+      // Stop interval TTS if running
       if (isPlaying) {
         setIsPlaying(false);
-        setHighlightedWord(undefined);
       }
+      setHighlightedWord(undefined);
+      setHighlightedSentence(undefined);
+      lastWordIdxRef.current = -1;
+      lastSentenceIdxRef.current = -1;
       audioRef.current.currentTime = 0;
       audioRef.current.play();
       setIsPlayingAudio(true);
@@ -262,6 +311,11 @@ const StoryReadingInteractive = ({
     setCurrentPage(page);
     setIsPlaying(false);
     setHighlightedWord(undefined);
+    setHighlightedSentence(undefined);
+    setSentenceBoundaries([]);
+    setWordBoundaries([]);
+    lastSentenceIdxRef.current = -1;
+    lastWordIdxRef.current = -1;
     setWordIndex(0); // Reset word index when changing pages
     setElapsedTime(0); // Reset elapsed time when changing chapters
   };
@@ -354,6 +408,7 @@ const StoryReadingInteractive = ({
                   textSize={textSize}
                   highContrast={highContrast}
                   highlightedWord={highlightedWord}
+                  highlightedSentence={highlightedSentence}
                   highlightMode={highlightMode}
                 />
 
@@ -368,30 +423,46 @@ const StoryReadingInteractive = ({
                 <audio
                   ref={audioRef}
                   src={currentPageData?.audioUrl || ""}
+                  onLoadedMetadata={() => {
+                    const el = audioRef.current;
+                    if (!el || !el.duration || isNaN(el.duration)) return;
+                    const text = currentPageData?.text ?? "";
+                    const sentences = splitSentences(text);
+                    setSentenceBoundaries(computeSentenceBoundaries(sentences, el.duration));
+                    setWordBoundaries(computeWordBoundaries(text, el.duration));
+                    lastSentenceIdxRef.current = -1;
+                    lastWordIdxRef.current = -1;
+                  }}
                   onEnded={() => {
                     setIsPlayingAudio(false);
+                    setHighlightedSentence(undefined);
                     setHighlightedWord(undefined);
+                    lastSentenceIdxRef.current = -1;
+                    lastWordIdxRef.current = -1;
                   }}
                   onPlay={() => setIsPlayingAudio(true)}
                   onPause={() => setIsPlayingAudio(false)}
                   onTimeUpdate={() => {
                     const el = audioRef.current;
-                    if (!el || !el.duration || isNaN(el.duration)) return;
-                    const words = currentPageData?.text.split(" ") ?? [];
-                    if (words.length === 0) return;
-                    const weights = words.map(getWordWeight);
-                    const totalWeight = weights.reduce((s, w) => s + w, 0);
-                    if (totalWeight === 0) return;
-                    const progress = el.currentTime / el.duration;
-                    let accumulated = 0;
-                    for (let i = 0; i < words.length; i++) {
-                      accumulated += weights[i];
-                      if (progress <= accumulated / totalWeight) {
-                        setHighlightedWord(i);
-                        return;
+                    if (!el || isNaN(el.currentTime)) return;
+                    const t = el.currentTime;
+                    if (highlightMode === "word") {
+                      if (wordBoundaries.length === 0) return;
+                      let idx = wordBoundaries.findIndex((b) => t < b.end);
+                      if (idx === -1) idx = wordBoundaries.length - 1;
+                      if (idx !== lastWordIdxRef.current) {
+                        lastWordIdxRef.current = idx;
+                        setHighlightedWord(idx);
+                      }
+                    } else {
+                      if (sentenceBoundaries.length === 0) return;
+                      let idx = sentenceBoundaries.findIndex((b) => t < b.end);
+                      if (idx === -1) idx = sentenceBoundaries.length - 1;
+                      if (idx !== lastSentenceIdxRef.current) {
+                        lastSentenceIdxRef.current = idx;
+                        setHighlightedSentence(idx);
                       }
                     }
-                    setHighlightedWord(words.length - 1);
                   }}
                 />
 
@@ -474,6 +545,8 @@ const StoryReadingInteractive = ({
                 storyImage={currentPageData!.image!}
                 storyImageAlt={currentPageData?.alt}
                 gameSessionId={currentProgress?.gameSession?.id}
+                childId={childId}
+                initialTotalStars={currentProgress?.childProfile?.totalStars ?? 0}
                 onChallengeSubmitted={handleChallengeSubmitted}
                 onClose={() => setShowRiddle(false)}
               />

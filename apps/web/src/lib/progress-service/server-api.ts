@@ -1843,3 +1843,49 @@ export async function getContentPerformanceMetrics(): Promise<{
     return defaultMetrics;
   }
 }
+
+/**
+ * Mirror of the backend HINT_COSTS constant for UI display.
+ * Index 0 = first hint (free). Values beyond the array use the last entry.
+ */
+export const HINT_COSTS = [0, 10, 20];
+
+/**
+ * Unlock a hint for a child.
+ * Hint 0 is free; subsequent hints deduct stars from ChildProfile.totalStars.
+ *
+ * @param childId   - Auth-service child ID
+ * @param hintIndex - 0-based index of the hint being unlocked
+ * @returns { newTotalStars, starsCost }
+ */
+export async function unlockHint(
+  childId: string,
+  hintIndex: number,
+): Promise<{ newTotalStars: number | null; starsCost: number }> {
+  console.log("[Progress Service API] Unlocking hint:", { childId, hintIndex });
+
+  const response = await apiRequest<
+    ApiResponse<{ newTotalStars: number | null; starsCost: number }>
+  >(`/children/${childId}/unlock-hint`, {
+    method: "POST",
+    body: JSON.stringify({ hintIndex }),
+  });
+
+  if (isApiError(response)) {
+    console.warn("[Progress Service API] Failed to unlock hint:", response.error.message);
+    throw new Error(response.error.code ?? response.error.message);
+  }
+
+  if (!response.success || !response.data) {
+    throw new Error("UNLOCK_HINT_FAILED");
+  }
+
+  console.log("[Progress Service API] Hint unlocked successfully:", {
+    childId,
+    hintIndex,
+    starsCost: response.data.starsCost,
+    newTotalStars: response.data.newTotalStars,
+  });
+
+  return response.data;
+}

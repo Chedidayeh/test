@@ -170,6 +170,11 @@ router.patch("/children/:childId/storytelling", (req, res) =>
   ChildrenController.toggleStorytelling(req, res),
 );
 
+// Unlock a paid hint — deducts stars from child's total
+router.post("/children/:childId/unlock-hint", (req, res) =>
+  ChildrenController.unlockHint(req, res),
+);
+
 // Delete child profile permanently
 router.delete("/children/:childId", (req, res) =>
   ChildrenController.deleteChild(req, res),

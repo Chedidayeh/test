@@ -75,6 +75,7 @@ export async function createStoryWithChaptersTransaction(
               chapterId: chapter.id,
               type: chapterInput.challenge.type,
               question: chapterInput.challenge.question,
+              imageUrl: chapterInput.challenge.imageUrl || null,
               baseStars: chapterInput.challenge.baseStars || 20,
               order: chapterInput.challenge.order,
               hints: chapterInput.challenge.hints || [],
@@ -399,6 +400,7 @@ export async function editStoryWithChaptersTransaction(
               data: {
                 type: chapterInput.challenge.type,
                 question: chapterInput.challenge.question,
+                imageUrl: chapterInput.challenge.imageUrl || null,
                 baseStars: chapterInput.challenge.baseStars || 20,
                 order: chapterInput.challenge.order,
                 hints: chapterInput.challenge.hints || [],
@@ -416,6 +418,7 @@ export async function editStoryWithChaptersTransaction(
                 chapterId: chapter.id,
                 type: chapterInput.challenge.type,
                 question: chapterInput.challenge.question,
+                imageUrl: chapterInput.challenge.imageUrl || null,
                 baseStars: chapterInput.challenge.baseStars || 20,
                 order: chapterInput.challenge.order,
                 hints: chapterInput.challenge.hints || [],

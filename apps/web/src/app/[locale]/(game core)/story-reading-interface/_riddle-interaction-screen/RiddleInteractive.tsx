@@ -17,8 +17,9 @@ import {
   ChallengeAttempt,
   Local,
 } from "@readdly/shared-types";
-import { submitChallengeAnswerAction } from "@/src/lib/progress-service/server-actions";
+import { submitChallengeAnswerAction, unlockHintAction } from "@/src/lib/progress-service/server-actions";
 import type { SubmitChallengeAnswerRequest } from "@/src/lib/progress-service/server-api";
+import { HINT_COSTS } from "@/src/lib/progress-service/server-api";
 import { useTranslations } from "next-intl";
 import { useLocale } from "@/src/contexts/LocaleContext";
 import { validateAnswerAction } from "@/src/lib/ai-service/server-actions";
@@ -40,7 +41,7 @@ interface Riddle {
   choices?: Choice[];
   sequenceAnswers?: Choice[];
   hints: Hint[];
-  storyImage?: string;
+  storyImage: string | null;
   storyImageAlt: string;
   starsReward: number;
   questionAudioUrl?: string;
@@ -51,6 +52,8 @@ interface RiddleInteractiveProps {
   storyImage?: string;
   storyImageAlt?: string;
   gameSessionId?: string;
+  childId?: string; // For star-gated hints
+  initialTotalStars?: number; // Initial star balance for this session
   onChallengeSubmitted?: (
     attempt: ChallengeAttempt,
     starsEarned?: number,
@@ -73,6 +76,8 @@ const RiddleInteractive = ({
   storyImage,
   storyImageAlt = "Story image",
   gameSessionId,
+  childId,
+  initialTotalStars = 0,
   onChallengeSubmitted,
   onClose,
 }: RiddleInteractiveProps) => {
@@ -140,7 +145,7 @@ const RiddleInteractive = ({
       choices: choices,
       sequenceAnswers: sequenceAnswers,
       hints: hintsArray.map((hint) => ({ text: hint })),
-      storyImage: storyImage,
+      storyImage: challenge.imageUrl,
       storyImageAlt: storyImageAlt,
       starsReward: challenge.baseStars,
       questionAudioUrl: challengeTranslation?.audioUrl || challenge.audioUrl || undefined,
@@ -168,6 +173,9 @@ const RiddleInteractive = ({
   const [currentHintLevel, setCurrentHintLevel] = useState(0);
   const [isHintPanelVisible, setIsHintPanelVisible] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
+  const [localTotalStars, setLocalTotalStars] = useState(initialTotalStars);
+  const [isUnlockingHint, setIsUnlockingHint] = useState(false);
+  const [insufficientStarsMessage, setInsufficientStarsMessage] = useState<string | null>(null);
   const [feedbackState, setFeedbackState] = useState<{
     type: "solved" | "almost" | "incorrect" | null;
     message: string;
@@ -577,31 +585,105 @@ const RiddleInteractive = ({
     }
   };
 
-  const handleRequestHint = () => {
-    if (currentHintLevel < totalHints) {
-      const newHintLevel = currentHintLevel + 1;
-      setCurrentHintLevel(newHintLevel);
-      setHintsUsed((prev) => prev + 1);
-      setIsHintPanelVisible(true);
+  const handleRequestHint = async (hintIndex: number) => {
+    // Hint 0 is free, subsequent hints require stars
+    if (hintIndex === 0) {
+      // First hint is always free
+      if (currentHintLevel < totalHints) {
+        const newHintLevel = currentHintLevel + 1;
+        setCurrentHintLevel(newHintLevel);
+        setHintsUsed((prev) => prev + 1);
+        setIsHintPanelVisible(true);
+        setInsufficientStarsMessage(null);
 
-      // Capture hint action
-      setActions((prev) => [
-        ...prev,
-        {
-          attemptNumberAtAction: attempts,
-        },
-      ]);
+        // Capture hint action
+        setActions((prev) => [
+          ...prev,
+          {
+            attemptNumberAtAction: attempts,
+          },
+        ]);
 
-      console.log("[Riddle] Hint requested", {
-        hintIndex: newHintLevel - 1,
-        attemptNumber: attempts,
-      });
+        console.log("[Riddle] First hint requested (free)", {
+          hintIndex: 0,
+          attemptNumber: attempts,
+        });
+      }
+    } else {
+      // Subsequent hints require stars - need to unlock them
+      if (!childId) {
+        console.error("[Riddle] childId required for paid hints");
+        return;
+      }
+
+      if (currentHintLevel < totalHints) {
+        const cost = HINT_COSTS[hintIndex] ?? HINT_COSTS[HINT_COSTS.length - 1];
+
+        // Check if enough stars
+        if (localTotalStars < cost) {
+          const needMore = cost - localTotalStars;
+          setInsufficientStarsMessage(`You need ${needMore} more ⭐ for this hint`);
+          console.log("[Riddle] Insufficient stars for hint", {
+            hintIndex,
+            cost,
+            currentStars: localTotalStars,
+          });
+          return;
+        }
+
+        // Attempt to unlock the hint
+        setIsUnlockingHint(true);
+        try {
+          const result = await unlockHintAction(childId, hintIndex);
+
+          if (result.success) {
+            // Update local state with new star balance
+            setLocalTotalStars(result.data.newTotalStars ?? localTotalStars);
+            setInsufficientStarsMessage(null);
+
+            // Reveal the hint
+            const newHintLevel = currentHintLevel + 1;
+            setCurrentHintLevel(newHintLevel);
+            setHintsUsed((prev) => prev + 1);
+            setIsHintPanelVisible(true);
+
+            // Capture hint action
+            setActions((prev) => [
+              ...prev,
+              {
+                attemptNumberAtAction: attempts,
+              },
+            ]);
+
+            console.log("[Riddle] Hint unlocked successfully", {
+              hintIndex,
+              cost: result.data.starsCost,
+              newTotalStars: result.data.newTotalStars,
+            });
+          } else {
+            // Handle error - likely insufficient stars
+            if (result.code === "INSUFFICIENT_STARS") {
+              const cost = HINT_COSTS[hintIndex] ?? HINT_COSTS[HINT_COSTS.length - 1];
+              const needMore = cost - localTotalStars;
+              setInsufficientStarsMessage(`You need ${needMore} more ⭐ for this hint`);
+            } else {
+              setInsufficientStarsMessage("Failed to unlock hint");
+            }
+            console.error("[Riddle] Failed to unlock hint:", result.error);
+          }
+        } catch (error) {
+          console.error("[Riddle] Error unlocking hint:", error);
+          setInsufficientStarsMessage("Error unlocking hint");
+        } finally {
+          setIsUnlockingHint(false);
+        }
+      }
     }
   };
 
   const handleShowHintPanel = () => {
     if (currentHintLevel === 0) {
-      handleRequestHint();
+      handleRequestHint(0); // First hint is free
     } else {
       setIsHintPanelVisible(true);
     }
@@ -676,10 +758,7 @@ const RiddleInteractive = ({
         <div className="mt-4 sm:mt-6">
           <RiddleQuestion
             question={currentRiddle.question}
-            storyImage={
-              currentRiddle.storyImage ||
-              "https://images.unsplash.com/photo-1730314737966-92b9760790eb"
-            }
+            storyImage={currentRiddle.storyImage}
             storyImageAlt={currentRiddle.storyImageAlt}
             riddleNumber={1}
             totalRiddles={3}
@@ -748,9 +827,12 @@ const RiddleInteractive = ({
           hints={currentRiddle.hints}
           currentHintLevel={currentHintLevel}
           availableHints={availableHints}
+          localTotalStars={localTotalStars}
           onRequestHint={handleRequestHint}
           isVisible={isHintPanelVisible}
           onClose={() => setIsHintPanelVisible(false)}
+          isUnlockingHint={isUnlockingHint}
+          insufficientStarsMessage={insufficientStarsMessage}
         />
 
         {/* Feedback Display */}
@@ -769,15 +851,23 @@ const RiddleInteractive = ({
       {/* Floating Hint Button */}
       {totalHints > 0 && (
         <div className="fixed right-2 sm:right-4 md:right-6 lg:right-8 top-22 sm:top-24 md:top-28 lg:top-32 z-50 pointer-events-none">
-          <button
-            onClick={handleShowHintPanel}
-            className="pointer-events-auto flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 bg-secondary text-white rounded-full shadow-warm hover:scale-105 transition-smooth disabled:opacity-50 text-xs sm:text-sm shrink-0"
-          >
-            <Lightbulb size={18} className="sm:size-5" />
-            <span className="hidden sm:inline font-heading font-bold">
-              {t("needAHint")} ({availableHints})
-            </span>
-          </button>
+          <div className="flex flex-col items-end gap-2">
+            {/* Insufficient Stars Warning */}
+            {insufficientStarsMessage && !isHintPanelVisible && (
+              <div className="pointer-events-auto px-3 sm:px-4 py-2 sm:py-3 bg-warning/90 text-warning-foreground rounded-lg shadow-warm text-xs sm:text-sm font-body max-w-xs">
+                {insufficientStarsMessage}
+              </div>
+            )}
+            <button
+              onClick={handleShowHintPanel}
+              className="pointer-events-auto flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 bg-secondary text-white rounded-full shadow-warm hover:scale-105 transition-smooth disabled:opacity-50 text-xs sm:text-sm shrink-0"
+            >
+              <Lightbulb size={18} className="sm:size-5" />
+              <span className="hidden sm:inline font-heading font-bold">
+                {t("needAHint")} ({availableHints})
+              </span>
+            </button>
+          </div>
         </div>
       )}
     </div>

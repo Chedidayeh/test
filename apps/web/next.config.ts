@@ -4,4 +4,14 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 export default withNextIntl({
   output: "standalone",
+
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "utfs.io",
+        pathname: "/**",
+      },
+    ],
+  },
 });

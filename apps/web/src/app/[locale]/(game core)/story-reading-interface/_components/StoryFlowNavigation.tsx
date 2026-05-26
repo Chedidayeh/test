@@ -55,8 +55,8 @@ interface StoryFlowNavigationProps {
   isLoadingAudio?: boolean;
   handlePlayAudio?: () => void;
   handleRepeatAudio?: () => void;
-  highlightMode?: 'word' | 'sentence';
-  onHighlightModeChange?: (mode: 'word' | 'sentence') => void;
+  highlightMode?: "word" | "sentence";
+  onHighlightModeChange?: (mode: "word" | "sentence") => void;
 }
 
 const StoryFlowNavigation = ({
@@ -78,7 +78,7 @@ const StoryFlowNavigation = ({
   isLoadingAudio,
   handlePlayAudio,
   handleRepeatAudio,
-  highlightMode = 'word',
+  highlightMode = "word",
   onHighlightModeChange,
   childId,
 }: StoryFlowNavigationProps) => {
@@ -345,12 +345,12 @@ const StoryFlowNavigation = ({
               </div>
             </motion.div>
           ) : (
-            <div className="flex flex-col items-center"> 
+            <div className="flex flex-col items-center">
               <h1 className="font-heading text-sm sm:text-base md:text-lg lg:text-xl text-foreground truncate max-w-[140px] sm:max-w-xs md:max-w-md px-2">
                 {storyTitle}
               </h1>
-              
-                            {/* <span className="font-data text-xl sm:text-2xl md:text-3xl font-bold text-primary">
+
+              {/* <span className="font-data text-xl sm:text-2xl md:text-3xl font-bold text-primary">
                 {currentPage}
               </span> */}
               <span className="font-caption text-xs sm:text-sm text-muted-foreground">
@@ -422,15 +422,31 @@ const StoryFlowNavigation = ({
               {audioUrl && showRiddle == false && (
                 <>
                   <Button
-                    variant={highlightMode === 'sentence' ? 'accent' : 'outline'}
+                    variant={
+                      highlightMode === "sentence" ? "accent" : "outline"
+                    }
                     size={"sm"}
                     className="z-50 pointer-events-auto"
-                    onClick={() => onHighlightModeChange?.(highlightMode === 'word' ? 'sentence' : 'word')}
-                    aria-label={highlightMode === 'word' ? t("playAudio.highlightWord") : t("playAudio.highlightSentence")}
+                    onClick={() =>
+                      onHighlightModeChange?.(
+                        highlightMode === "word" ? "sentence" : "word",
+                      )
+                    }
+                    aria-label={
+                      highlightMode === "word"
+                        ? t("playAudio.highlightWord")
+                        : t("playAudio.highlightSentence")
+                    }
                   >
-                    {highlightMode === 'word' ? <WholeWord size={18} /> : <AlignLeft size={18} />}
+                    {highlightMode === "word" ? (
+                      <WholeWord size={18} />
+                    ) : (
+                      <AlignLeft size={18} />
+                    )}
                     <span className="hidden sm:inline">
-                      {highlightMode === 'word' ? t("playAudio.highlightWord") : t("playAudio.highlightSentence")}
+                      {highlightMode === "word"
+                        ? t("playAudio.highlightWord")
+                        : t("playAudio.highlightSentence")}
                     </span>
                   </Button>
                   <Button

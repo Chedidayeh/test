@@ -1,7 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Loader, Pause, Play } from "lucide-react";
+import {
+  AlignLeft,
+  ChevronLeft,
+  ChevronRight,
+  Loader,
+  Pause,
+  Play,
+  RotateCcw,
+  WholeWord,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { Story } from "@readdly/shared-types";
 import { StoryPage } from "./storyDataTransform";
@@ -24,6 +33,9 @@ interface StoryFlowNavigationProps {
   isPlayingAudio?: boolean;
   isLoadingAudio?: boolean;
   handlePlayAudio?: () => void;
+  handleRepeatAudio?: () => void;
+  highlightMode?: "word" | "sentence";
+  onHighlightModeChange?: (mode: "word" | "sentence") => void;
 }
 
 const StoryFlowNavigation = ({
@@ -36,6 +48,9 @@ const StoryFlowNavigation = ({
   isPlayingAudio,
   isLoadingAudio,
   handlePlayAudio,
+  handleRepeatAudio,
+  highlightMode = "sentence",
+  onHighlightModeChange,
 }: StoryFlowNavigationProps) => {
   const t = useTranslations("StoryReadingInterface");
   const { isRTL } = useLocale();
@@ -103,45 +118,24 @@ const StoryFlowNavigation = ({
           </Button>
 
           {/* Story Title */}
-          <h1 className="font-heading text-lg md:text-xl text-foreground truncate max-w-50 md:max-w-96">
-            {storyTitle}
-          </h1>
+             <div className="flex flex-col items-center">
+              <h1 className="font-heading text-sm sm:text-base md:text-lg lg:text-xl text-foreground truncate max-w-[140px] sm:max-w-xs md:max-w-md px-2">
+                {storyTitle}
+              </h1>
+
+              {/* <span className="font-data text-xl sm:text-2xl md:text-3xl font-bold text-primary">
+                {currentPage}
+              </span> */}
+              <span className="font-caption text-xs sm:text-sm text-muted-foreground">
+                {t("storyFlowNavigation.pageProgress", {
+                  current: currentPage,
+                  total: totalPages,
+                })}
+              </span>
+            </div>
           <div
             className={`absolute ${isRTL ? "left-2 sm:left-3 md:left-4 lg:left-8" : "right-2 sm:right-3 md:right-4 lg:right-8"} flex items-center gap-3 sm:gap-2 md:gap-4`}
-          >
-            {audioUrl && (
-              <Button
-                variant={"accent"}
-                size={"sm"}
-                onClick={handlePlayAudio}
-                disabled={!audioUrl || isLoadingAudio}
-                aria-label={isPlayingAudio ? "Pause audio" : "Play audio"}
-              >
-                {isLoadingAudio ? (
-                  <>
-                    <Loader size={18} className="animate-spin" />
-                    <span className="hidden sm:inline">
-                      {t("playAudio.loading")}
-                    </span>
-                  </>
-                ) : isPlayingAudio ? (
-                  <>
-                    <Pause size={18} />
-                    <span className="hidden sm:inline">
-                      {t("playAudio.pause")}
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <Play size={18} />
-                    <span className="hidden sm:inline">
-                      {t("playAudio.play")}
-                    </span>
-                  </>
-                )}
-              </Button>
-            )}
-          </div>
+          ></div>
         </div>
 
         {/* Progress Bar */}
@@ -175,16 +169,80 @@ const StoryFlowNavigation = ({
           </Button>
 
           {/* Page Counter */}
-          <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1 pointer-events-none">
-            <span className="font-data text-2xl md:text-3xl font-bold text-primary">
-              {currentPage}
-            </span>
-            <span className="font-caption text-sm text-muted-foreground">
-              {t("storyFlowNavigation.pageProgress", {
-                current: currentPage,
-                total: totalPages,
-              })}
-            </span>
+          <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
+            {audioUrl && (
+              <>
+                <Button
+                  variant={highlightMode === "sentence" ? "accent" : "outline"}
+                  size={"sm"}
+                  className="z-50 pointer-events-auto"
+                  onClick={() =>
+                    onHighlightModeChange?.(
+                      highlightMode === "word" ? "sentence" : "word",
+                    )
+                  }
+                  aria-label={
+                    highlightMode === "word"
+                      ? t("playAudio.highlightWord")
+                      : t("playAudio.highlightSentence")
+                  }
+                >
+                  {highlightMode === "word" ? (
+                    <WholeWord size={18} />
+                  ) : (
+                    <AlignLeft size={18} />
+                  )}
+                  <span className="hidden sm:inline">
+                    {highlightMode === "word"
+                      ? t("playAudio.highlightWord")
+                      : t("playAudio.highlightSentence")}
+                  </span>
+                </Button>
+                <Button
+                  variant={"accent"}
+                  size={"sm"}
+                  onClick={handlePlayAudio}
+                  disabled={!audioUrl || isLoadingAudio}
+                  aria-label={isPlayingAudio ? "Pause audio" : "Play audio"}
+                >
+                  {isLoadingAudio ? (
+                    <>
+                      <Loader size={18} className="animate-spin" />
+                      <span className="hidden sm:inline">
+                        {t("playAudio.loading")}
+                      </span>
+                    </>
+                  ) : isPlayingAudio ? (
+                    <>
+                      <Pause size={18} />
+                      <span className="hidden sm:inline">
+                        {t("playAudio.pause")}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <Play size={18} />
+                      <span className="hidden sm:inline">
+                        {t("playAudio.play")}
+                      </span>
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant={"outline"}
+                  size={"sm"}
+                  className="z-50 pointer-events-auto"
+                  onClick={handleRepeatAudio}
+                  disabled={!audioUrl || isLoadingAudio}
+                  aria-label="Repeat audio from start"
+                >
+                  <RotateCcw size={18} />
+                  <span className="hidden sm:inline">
+                    {t("playAudio.repeat")}
+                  </span>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Next Button */}

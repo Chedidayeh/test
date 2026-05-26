@@ -1,5 +1,6 @@
 import { VertexAITTSProvider } from "../tts-provider";
 import { utapi } from "../../../lib/uploadthing";
+import { convertWavToMp3 } from "../../../lib/audio-utils";
 import prisma from "../../../lib/prisma";
 import path from "path";
 import { logger } from "../../../lib/logger";
@@ -58,33 +59,33 @@ export async function synthesizeText(
         orderBy: { generatedAt: "desc" },
       });
 
-      if (existing && existing.audioUrl) {
-        logger.info(
-          "[TTS Service] Found existing TTS audio, skipping generation",
-          {
-            id: existing.id,
-            audioUrl: existing.audioUrl,
-            chapterId: options.chapterId,
-            storyId: options.storyId,
-            challengeId: options.challengeId,
-            languageCode: options.languageCode,
-            generatedAt: existing.generatedAt,
-          },
-        );
+      // if (existing && existing.audioUrl) {
+      //   logger.info(
+      //     "[TTS Service] Found existing TTS audio, skipping generation",
+      //     {
+      //       id: existing.id,
+      //       audioUrl: existing.audioUrl,
+      //       chapterId: options.chapterId,
+      //       storyId: options.storyId,
+      //       challengeId: options.challengeId,
+      //       languageCode: options.languageCode,
+      //       generatedAt: existing.generatedAt,
+      //     },
+      //   );
 
-        return { audioUrl: existing.audioUrl };
-      } else if (existing && !existing.audioUrl) {
-        logger.debug(
-          "[TTS Service] Audio record exists but audioUrl is missing; regenerating",
-          {
-            id: existing.id,
-            chapterId: options.chapterId,
-            storyId: options.storyId,
-            challengeId: options.challengeId,
-            languageCode: options.languageCode,
-          },
-        );
-      }
+      //   return { audioUrl: existing.audioUrl };
+      // } else if (existing && !existing.audioUrl) {
+      //   logger.debug(
+      //     "[TTS Service] Audio record exists but audioUrl is missing; regenerating",
+      //     {
+      //       id: existing.id,
+      //       chapterId: options.chapterId,
+      //       storyId: options.storyId,
+      //       challengeId: options.challengeId,
+      //       languageCode: options.languageCode,
+      //     },
+      //   );
+      // }
     } catch (dbCheckErr) {
       logger.warn(
         "[TTS Service] Failed to check existing TTS audio; proceeding with generation",
@@ -125,18 +126,29 @@ export async function synthesizeText(
     : TTSLanguageCodes.ENGLISH_US;
 
   // Generate audio buffer (WAV)
-  const audioBuffer = await provider.synthesize(text, {
+  const wavBuffer = await provider.synthesize(text, {
     languageCode: ttsLanguageCode as TTSLanguageCodes,
+  });
+
+  // Compress WAV → MP3 (64kbps mono) to reduce file size ~6× before upload
+  logger.debug("[TTS Service] Compressing WAV to MP3", {
+    wavSizeBytes: wavBuffer.length,
+  });
+  const audioBuffer = await convertWavToMp3(wavBuffer);
+  logger.info("[TTS Service] Compression complete", {
+    wavSizeBytes: wavBuffer.length,
+    mp3SizeBytes: audioBuffer.length,
+    reductionPct: Math.round((1 - audioBuffer.length / wavBuffer.length) * 100),
   });
 
   // Step 1: Upload to uploadthing cloud storage
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const filename = `tts-${timestamp}.wav`;
+  const filename = `tts-${timestamp}.mp3`;
 
   // Convert buffer to a Blob-like object for uploadthing
   // ignore this TypeScript error since uploadthing expects a File or Blob, and Node doesn't have File/Blob natively
   // @ts-ignore
-  const file = new File([audioBuffer], filename, { type: "audio/wav" });
+  const file = new File([audioBuffer], filename, { type: "audio/mpeg" });
 
   let audioUrl = "";
   try {
@@ -161,7 +173,7 @@ export async function synthesizeText(
         challengeId: options.challengeId || null,
         languageCode: options.languageCode || null,
         audioUrl,
-        mimeType: "audio/wav",
+        mimeType: "audio/mpeg",
         sizeBytes: audioBuffer.length,
       },
     });

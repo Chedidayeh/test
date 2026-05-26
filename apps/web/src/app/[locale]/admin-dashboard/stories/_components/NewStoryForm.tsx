@@ -8,6 +8,7 @@ import {
   ChallengeType,
   AgeGroup,
   Roadmap,
+  Chapter,
 } from "@readdly/shared-types";
 import {
   storyFormSchema,
@@ -40,6 +41,7 @@ import { Card } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Textarea } from "@/src/components/ui/textarea";
+import { ImageUploadField } from "@/src/components/ui/image-upload-field";
 import {
   Select,
   SelectContent,
@@ -114,7 +116,7 @@ const getInitialFormData = (data?: any): StoryFormData => {
       ageGroup: data.ageGroup || "",
       translationSource: data.translationSource || TranslationSourceType.MANUAL,
       generateAudio: data.generateAudio || false,
-      chapters: (data.chapters || []).map((chapter: any) => ({
+      chapters: (data.chapters || []).map((chapter: Chapter) => ({
         content: chapter.content || "",
         imageUrl: chapter.imageUrl || "",
         audioUrl: chapter.audioUrl || "",
@@ -125,6 +127,7 @@ const getInitialFormData = (data?: any): StoryFormData => {
               type: chapter.challenge.type,
               question: chapter.challenge.question || "",
               description: chapter.challenge.description || "",
+              imageUrl: chapter.challenge.imageUrl || "",
               baseStars: chapter.challenge.baseStars || 20,
               order: chapter.challenge.order || 0,
               hints: chapter.challenge.hints || [],
@@ -536,6 +539,7 @@ export function NewStoryForm({
       type: ChallengeType.MULTIPLE_CHOICE,
       question: "",
       description: "",
+      imageUrl: "",
       baseStars: 20,
       order: 1,
       hints: [],
@@ -768,7 +772,8 @@ export function NewStoryForm({
                     <ul className="text-red-800 space-y-1 text-sm">
                       {Object.entries(errors).map(([path, message]) => (
                         <li key={path}>
-                          <strong>{path}:</strong> {String(message)}
+                          {/* <strong>{path}:</strong>  */}
+                          {String(message)}
                         </li>
                       ))}
                     </ul>
@@ -1364,45 +1369,21 @@ function ChaptersManagementStep({
                   )}
                 </div>
 
-                {/* Image URL */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Image URL (Optional)
-                  </label>
-                  <Input
-                    type="url"
-                    value={chapter.imageUrl}
-                    onChange={(e) =>
-                      onChapterFieldChange(idx, "imageUrl", e.target.value)
-                    }
-                    placeholder="https://example.com/image.jpg"
-                  />
-                  {errors[`chapters[${idx}].imageUrl`] && (
-                    <p className="text-sm text-red-500 mt-1">
-                      {errors[`chapters[${idx}].imageUrl`]}
-                    </p>
-                  )}
-                </div>
+                {/* Image Upload */}
+                <ImageUploadField
+                  value={chapter.imageUrl}
+                  onChange={(url) =>
+                    onChapterFieldChange(idx, "imageUrl", url)
+                  }
+                  label="Chapter Image (Optional)"
+                  placeholder="Upload or drag an image"
+                />
+                {errors[`chapters[${idx}].imageUrl`] && (
+                  <p className="text-sm text-red-500 mt-1">
+                    {errors[`chapters[${idx}].imageUrl`]}
+                  </p>
+                )}
 
-                {/* Audio URL */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Audio URL (Optional)
-                  </label>
-                  <Input
-                    type="url"
-                    value={chapter.audioUrl}
-                    onChange={(e) =>
-                      onChapterFieldChange(idx, "audioUrl", e.target.value)
-                    }
-                    placeholder="https://example.com/audio.mp3"
-                  />
-                  {errors[`chapters[${idx}].audioUrl`] && (
-                    <p className="text-sm text-red-500 mt-1">
-                      {errors[`chapters[${idx}].audioUrl`]}
-                    </p>
-                  )}
-                </div>
 
                 {/* Manual Translations */}
                 {translationSource === TranslationSourceType.MANUAL && (
@@ -1778,40 +1759,18 @@ function ChallengesManagementStep({
             )}
           </div>
 
-          {/* Challenge Image URL (Optional) */}
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Image URL (Optional)
-            </label>
-            <Input
-              type="url"
-              value={challenge.imageUrl || ""}
-              onChange={(e) =>
-                onChallengeFieldChange("imageUrl", e.target.value)
-              }
-              placeholder="https://example.com/image.jpg"
-            />
-            {errors["challenge.imageUrl"] && (
-              <p className="text-sm text-red-500 mt-1">
-                {errors["challenge.imageUrl"]}
-              </p>
-            )}
-            {challenge.imageUrl && (
-              <div className="mt-3 p-3 border rounded-lg bg-slate-50">
-                <p className="text-xs font-medium text-slate-600 mb-2">
-                  Image Preview
-                </p>
-                <img
-                  src={challenge.imageUrl}
-                  alt="Challenge visual"
-                  className="max-h-32 object-contain rounded"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
-                />
-              </div>
-            )}
-          </div>
+          {/* Challenge Image Upload */}
+          <ImageUploadField
+            value={challenge.imageUrl || ""}
+            onChange={(url) => onChallengeFieldChange("imageUrl", url)}
+            label="Challenge Image (Optional)"
+            placeholder="Upload or drag an image"
+          />
+          {errors["challenge.imageUrl"] && (
+            <p className="text-sm text-red-500 mt-1">
+              {errors["challenge.imageUrl"]}
+            </p>
+          )}
 
           {/* Manual Translations for Question */}
           {translationSource === TranslationSourceType.MANUAL && (

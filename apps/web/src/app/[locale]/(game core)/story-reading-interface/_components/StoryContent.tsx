@@ -1,16 +1,17 @@
 
 import { motion, AnimatePresence } from "framer-motion";
-import { StoryPage } from "./storyDataTransform";
-
+import { StoryPage, splitSentences } from "./storyDataTransform";
+import Image from "next/image";
 interface StoryContentProps {
   currentPage: StoryPage;
   textSize: 'small' | 'medium' | 'large';
   highContrast: boolean;
   highlightedWord?: number;
+  highlightedSentence?: number;
   highlightMode?: 'word' | 'sentence';
 }
 
-const StoryContent = ({ currentPage, textSize, highContrast, highlightedWord, highlightMode = 'sentence' }: StoryContentProps) => {
+const StoryContent = ({ currentPage, textSize, highContrast, highlightedWord, highlightedSentence, highlightMode = 'sentence' }: StoryContentProps) => {
   const textSizeClasses = {
     small: 'text-base sm:text-lg md:text-xl',
     medium: 'text-lg sm:text-xl md:text-2xl',
@@ -19,19 +20,26 @@ const StoryContent = ({ currentPage, textSize, highContrast, highlightedWord, hi
 
   const words = currentPage.text.split(' ');
 
-  // Split text into sentences for sentence-mode highlighting
-  const sentences = currentPage.text.match(/[^.!?؟]+[.!?؟]*/g) ?? [currentPage.text];
+  // Split text into sentences for sentence-mode highlighting.
+  // Uses the shared splitSentences() to keep indices consistent with StoryReadingInteractive.
+  const sentences = splitSentences(currentPage.text);
 
-  // Map each word index → sentence index
+  // Map each word index → sentence index (used as fallback for interval-based TTS play mode)
   const wordToSentence: number[] = [];
   let sentIdx = 0;
   for (const sentence of sentences) {
-    const count = sentence.trim().split(/\s+/).filter(Boolean).length;
+    const count = sentence.split(' ').length;
     for (let i = 0; i < count; i++) wordToSentence.push(sentIdx);
     sentIdx++;
   }
 
-  const activeSentenceIndex = highlightedWord !== undefined ? (wordToSentence[highlightedWord] ?? -1) : -1;
+  // Prefer audio-based sentence index (accurate); fall back to word-index chain (interval TTS).
+  const activeSentenceIndex =
+    highlightedSentence !== undefined
+      ? highlightedSentence
+      : highlightedWord !== undefined
+        ? (wordToSentence[highlightedWord] ?? -1)
+        : -1;
 
   return (
     <AnimatePresence mode="wait">
@@ -43,14 +51,20 @@ const StoryContent = ({ currentPage, textSize, highContrast, highlightedWord, hi
         transition={{ duration: 0.3 }}
         className={`flex flex-col gap-4 sm:gap-6 md:gap-8 ${highContrast ? 'bg-black text-white' : 'text-foreground'}`}
       >
-      {/* Story Image */}
-      {/* <div className="w-full aspect-video rounded-xl overflow-hidden shadow-warm-lg">
-        <img
-          src={currentPage.image}
-          alt={currentPage.alt}
-          className="w-full h-full object-cover"
-        />
-      </div> */}
+        {/* Story Image */}
+        {currentPage.image && (
+          <div className="flex items-center justify-center">
+            <div className="w-3xl rounded-xl overflow-hidden shadow-warm-lg">
+              <Image 
+                src={currentPage.image}
+                alt={currentPage.alt}
+                width={800}
+                height={450}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+        )}
 
       {/* Story Text */}
       <div className={`font-body ${textSizeClasses[textSize]} leading-relaxed`}>
@@ -60,7 +74,7 @@ const StoryContent = ({ currentPage, textSize, highContrast, highlightedWord, hi
             <span
               key={idx}
               className={idx === activeSentenceIndex
-                ? 'bg-accent text-accent-foreground rounded-lg px-1.5 py-0.5 font-medium'
+                ? 'bg-accent text-accent-foreground rounded-lg px-0.5 py-0.5 font-medium'
                 : ''
               }
             >

@@ -25,6 +25,7 @@ import {
   updateChildNotifications,
   toggleWeeklyReports,
   toggleStorytelling,
+  unlockHint,
 } from "./server-api";
 
 type FetchChildrenResult =
@@ -863,6 +864,51 @@ export async function toggleStorytellingAction(
     return {
       success: false,
       error: errorMessage,
+    };
+  }
+}
+
+/**
+ * Server action to unlock a hint by deducting stars from the child's total.
+ * Returns INSUFFICIENT_STARS error code when the child cannot afford the hint.
+ */
+export async function unlockHintAction(
+  childId: string,
+  hintIndex: number,
+): Promise<
+  | { success: true; data: { newTotalStars: number | null; starsCost: number } }
+  | { success: false; error: string; code?: string }
+> {
+  try {
+    console.log("[Progress Service] Unlocking hint:", { childId, hintIndex });
+
+    const result = await unlockHint(childId, hintIndex);
+
+    console.log("[Progress Service] Hint unlocked successfully", {
+      childId,
+      hintIndex,
+      starsCost: result.starsCost,
+      newTotalStars: result.newTotalStars,
+    });
+
+    return { success: true, data: result };
+  } catch (error) {
+    const code =
+      error instanceof Error ? error.message : "UNLOCK_HINT_FAILED";
+
+    console.error("[Progress Service] Error unlocking hint:", {
+      childId,
+      hintIndex,
+      error: code,
+    });
+
+    return {
+      success: false,
+      error:
+        code === "INSUFFICIENT_STARS"
+          ? "Not enough stars to unlock this hint"
+          : "Failed to unlock hint",
+      code,
     };
   }
 }

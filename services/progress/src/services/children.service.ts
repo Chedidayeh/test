@@ -615,6 +615,7 @@ export class ChildrenService {
         },
       },
       include: {
+        childProfile: true,
         gameSession: {
           include: {
             challengeAttempts: {
@@ -953,6 +954,58 @@ export class ChildrenService {
       starEvent: starEvent ,
       totalStars,
     };
+  }
+
+  /**
+   * Tunable hint cost ladder (index = hint number, 0-based).
+   * Hint 0 (first hint) is always free.
+   * Values beyond the array length use the last entry.
+   */
+  static readonly HINT_COSTS = [0, 10, 20];
+
+  /**
+   * Unlock a hint for a child by deducting stars from ChildProfile.totalStars.
+   * The first hint (hintIndex 0) is always free — no DB write occurs.
+   * Throws "INSUFFICIENT_STARS" if the child cannot afford the hint.
+   *
+   * @param childId   - The auth-service child ID (ChildProfile.childId)
+   * @param hintIndex - 0-based index of the hint being requested
+   * @returns { newTotalStars, starsCost }
+   */
+  static async unlockHint({
+    childId,
+    hintIndex,
+  }: {
+    childId: string;
+    hintIndex: number;
+  }): Promise<{ newTotalStars: number | null; starsCost: number }> {
+    const costs = ChildrenService.HINT_COSTS;
+    const starsCost = costs[hintIndex] ?? costs[costs.length - 1];
+
+    if (starsCost === 0) {
+      return { newTotalStars: null, starsCost: 0 };
+    }
+
+    return await prisma.$transaction(async (tx) => {
+      const profile = await tx.childProfile.findFirst({
+        where: { childId },
+      });
+
+      if (!profile) {
+        throw new Error(`Child profile not found for childId: ${childId}`);
+      }
+
+      if (profile.totalStars < starsCost) {
+        throw new Error("INSUFFICIENT_STARS");
+      }
+
+      const updated = await tx.childProfile.update({
+        where: { id: profile.id },
+        data: { totalStars: { decrement: starsCost } },
+      });
+
+      return { newTotalStars: updated.totalStars, starsCost };
+    });
   }
 
   /**
