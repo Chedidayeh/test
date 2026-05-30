@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useMemo } from "react";
-import { Edit2, Eye, Loader2, Trash2 } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { Edit2, Eye, Loader2, Trash2, FileEdit, Save } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -27,6 +27,9 @@ import {
   DialogPortal,
 } from "@/src/components/ui/dialog";
 import { useTranslations } from "next-intl";
+import type { StoryDraft } from "./StoryCreateClient";
+
+const DRAFTS_KEY = "story_drafts";
 
 interface StoriesContentProps {
   stories: Story[];
@@ -47,6 +50,24 @@ export function StoriesContent({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [draftStories, setDraftStories] = useState<StoryDraft[]>([]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFTS_KEY);
+      const drafts: StoryDraft[] = raw ? JSON.parse(raw) : [];
+      setDraftStories(drafts);
+    } catch {
+      setDraftStories([]);
+    }
+  }, []);
+
+  const handleDeleteDraft = (draftId: string) => {
+    const updated = draftStories.filter((d) => d.draftId !== draftId);
+    setDraftStories(updated);
+    localStorage.setItem(DRAFTS_KEY, JSON.stringify(updated));
+    toast.success("Draft deleted.");
+  };
 
   // Extract unique worlds from stories
   const availableWorlds = useMemo(() => {
@@ -182,6 +203,57 @@ export function StoriesContent({
 
   return (
     <div className="space-y-4">
+      {/* Draft Stories */}
+      {draftStories.length > 0 && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Save className="w-4 h-4 text-amber-600" />
+            <h3 className="font-semibold text-amber-800 text-sm">Local Drafts ({draftStories.length})</h3>
+          </div>
+          <div className="space-y-2">
+            {draftStories.map((draft) => (
+              <div
+                key={draft.draftId}
+                className="flex items-center justify-between gap-4 bg-white rounded-md border border-amber-100 px-4 py-3"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-sm truncate">
+                        {draft.formData.title || "(Untitled Draft)"}
+                      </p>
+                      <Badge variant="outline" className="text-amber-700 border-amber-300 text-xs shrink-0">
+                        Draft
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Saved {new Date(draft.savedAt).toLocaleString()} &middot; {draft.formData.chapters?.length ?? 0} chapter(s) &middot; Difficulty {draft.formData.difficulty}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <Link href={`/admin-dashboard/stories/new?draftId=${draft.draftId}`}>
+                    <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+                      <FileEdit className="w-3.5 h-3.5" />
+                      Edit
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1.5 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                    onClick={() => handleDeleteDraft(draft.draftId)}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Filters */}
       <FilterBar
         searchPlaceholder="Search by title..."

@@ -17,7 +17,8 @@ import {
   challengeFormSchema,
   type StoryFormData,
 } from "../_schema/storySchemas";
-import { useState } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { generateHintsAction } from "@/src/lib/ai-service/server-actions";
 import {
@@ -31,12 +32,23 @@ import {
   Plus,
   Trash2,
   Sparkles,
+  Save,
 } from "lucide-react";
 import {
   Dialog,
   DialogOverlay,
   DialogPortal,
 } from "@/src/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
 import { Card } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -60,6 +72,9 @@ interface NewStoryFormProps {
   isLoading?: boolean;
   mode?: "create" | "edit";
   initialData?: any;
+  draftId?: string;
+  onSaveAsDraft?: (draftId: string, data: StoryFormData) => void;
+  leaveHref?: string;
 }
 
 type ValidationErrors = Record<string, any>;
@@ -176,7 +191,17 @@ export function NewStoryForm({
   isLoading = false,
   mode = "create",
   initialData,
+  draftId,
+  onSaveAsDraft,
+  leaveHref = "/admin-dashboard/stories",
 }: NewStoryFormProps) {
+  const router = useRouter();
+  const initialFormDataRef = useRef<StoryFormData>(
+    getInitialFormData(initialData),
+  );
+  const isLeavingRef = useRef(false);
+  const guardPushedRef = useRef(false);
+
   const [formData, setFormData] = useState<StoryFormData>(
     getInitialFormData(initialData),
   );
@@ -187,6 +212,64 @@ export function NewStoryForm({
   const [expandedChapters, setExpandedChapters] = useState<Set<number>>(
     new Set([0]),
   );
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+
+  const isDirty = useMemo(
+    () =>
+      JSON.stringify(formData) !== JSON.stringify(initialFormDataRef.current),
+    [formData],
+  );
+
+  useEffect(() => {
+    if (!isDirty) {
+      guardPushedRef.current = false;
+      isLeavingRef.current = false;
+    }
+  }, [isDirty]);
+
+  useEffect(() => {
+    if (!isDirty || isLoading) return;
+
+    if (!guardPushedRef.current) {
+      window.history.pushState(
+        { storyFormGuard: true },
+        "",
+        window.location.href,
+      );
+      guardPushedRef.current = true;
+    }
+
+    const handlePopState = () => {
+      if (isLeavingRef.current) return;
+
+      window.history.pushState(
+        { storyFormGuard: true },
+        "",
+        window.location.href,
+      );
+      setShowLeaveDialog(true);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [isDirty, isLoading]);
+
+  const navigateAway = () => {
+    isLeavingRef.current = true;
+    setShowLeaveDialog(false);
+    router.push(leaveHref);
+  };
+
+  const handleSaveAsDraftFromDialog = () => {
+    if (onSaveAsDraft) {
+      onSaveAsDraft(draftId ?? "", formData);
+    }
+    navigateAway();
+  };
+
+  const handleLeaveWithoutSaving = () => {
+    navigateAway();
+  };
 
   const currentStep = STEPS[currentStepIndex];
   const selectedWorld = worlds.find((w) => w.id === formData.worldId);
@@ -707,9 +790,64 @@ export function NewStoryForm({
         </DialogPortal>
       </Dialog>
 
+      <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+        <AlertDialogContent className="max-w-xl!">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unsaved changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your current progress will be lost if you leave this page.
+              {onSaveAsDraft
+                ? " Save your work as a draft to continue later."
+                : " Are you sure you want to leave?"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Stay on page</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={(e) => {
+                e.preventDefault();
+                handleLeaveWithoutSaving();
+              }}
+            >
+              Leave without saving
+            </AlertDialogAction>
+            {onSaveAsDraft && (
+              <AlertDialogAction
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleSaveAsDraftFromDialog();
+                }}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Save as Draft
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="w-full max-w-4xl mx-auto p-4">
         {/* Progress Bar */}
         <div className="mb-8">
+          {/* Save as Draft */}
+          <div className="flex justify-end mb-3">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-2 text-slate-600"
+              onClick={() => {
+                if (onSaveAsDraft) {
+                  onSaveAsDraft(draftId ?? "", formData);
+                }
+              }}
+            >
+              <Save className="w-4 h-4" />
+              Save as Draft
+            </Button>
+          </div>
+
           {/* Step Indicators */}
           <div className="flex justify-between mb-4 gap-2 pb-2">
             {STEPS.map((step, idx) => (

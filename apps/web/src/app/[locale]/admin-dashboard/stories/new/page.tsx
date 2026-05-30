@@ -4,6 +4,7 @@ import { Button } from "@/src/components/ui/button";
 import Link from "next/link";
 import { StoryCreateClient } from "../_components/StoryCreateClient";
 import { World } from "@readdly/shared-types";
+import { Suspense } from "react";
 
 export default async function NewStoryPage() {
   // Fetch data server-side
@@ -39,11 +40,13 @@ export default async function NewStoryPage() {
       </div>
 
       {/* Form */}
-      <StoryCreateClient
-        ageGroups={filteredAgeGroups}
-        roadmaps={filteredRoadmaps}
-        worlds={filteredWorlds}
-      />
+      <Suspense fallback={null}>
+        <StoryCreateClient
+          ageGroups={filteredAgeGroups}
+          roadmaps={filteredRoadmaps}
+          worlds={filteredWorlds}
+        />
+      </Suspense>
     </div>
   );
 }

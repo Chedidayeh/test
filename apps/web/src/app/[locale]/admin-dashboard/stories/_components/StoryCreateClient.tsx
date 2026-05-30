@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import type {
   AgeGroup,
@@ -17,6 +17,27 @@ import {
 } from "@/src/lib/translation-utils";
 import { NewStoryForm } from "./NewStoryForm";
 
+const DRAFTS_KEY = "story_drafts";
+
+export interface StoryDraft {
+  draftId: string;
+  savedAt: string;
+  formData: StoryFormData;
+}
+
+function getDrafts(): StoryDraft[] {
+  try {
+    const raw = localStorage.getItem(DRAFTS_KEY);
+    return raw ? (JSON.parse(raw) as StoryDraft[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function setDrafts(drafts: StoryDraft[]) {
+  localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
+}
+
 interface StoryCreateClientProps {
     ageGroups : AgeGroup[];
     roadmaps : Roadmap[];
@@ -25,7 +46,15 @@ interface StoryCreateClientProps {
 
 export function StoryCreateClient({ ageGroups, roadmaps, worlds }: StoryCreateClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlDraftId = searchParams.get("draftId") ?? "";
   const [isLoading, setIsLoading] = useState(false);
+
+  const draftInitialData = useMemo(() => {
+    if (!urlDraftId) return undefined;
+    const draft = getDrafts().find((d) => d.draftId === urlDraftId);
+    return draft?.formData;
+  }, [urlDraftId]);
 
   const handleSubmit = async (formData: StoryFormData) => {
     setIsLoading(true);
@@ -176,6 +205,11 @@ export function StoryCreateClient({ ageGroups, roadmaps, worlds }: StoryCreateCl
         duration: 4000,
       });
 
+      // If we published from a draft, remove it from localStorage
+      if (urlDraftId) {
+        setDrafts(getDrafts().filter((d) => d.draftId !== urlDraftId));
+      }
+
       router.push("/admin-dashboard/stories");
     } catch (error) {
       setIsLoading(false);
@@ -195,6 +229,22 @@ export function StoryCreateClient({ ageGroups, roadmaps, worlds }: StoryCreateCl
     }
   };
 
+  const handleSaveAsDraft = (id: string, data: StoryFormData) => {
+    const drafts = getDrafts();
+    const newId = id || Date.now().toString();
+    const existing = drafts.findIndex((d) => d.draftId === newId);
+    const entry: StoryDraft = { draftId: newId, savedAt: new Date().toISOString(), formData: data };
+    if (existing >= 0) {
+      drafts[existing] = entry;
+    } else {
+      drafts.push(entry);
+    }
+    setDrafts(drafts);
+    toast.success("Draft saved.", {
+      description: `"${data.title || "Untitled"}" saved locally.`,
+    });
+  };
+
   return (
     <NewStoryForm
       ageGroups={ageGroups}
@@ -203,6 +253,9 @@ export function StoryCreateClient({ ageGroups, roadmaps, worlds }: StoryCreateCl
       onSubmit={handleSubmit}
       isLoading={isLoading}
       mode="create"
+      initialData={draftInitialData}
+      draftId={urlDraftId || undefined}
+      onSaveAsDraft={handleSaveAsDraft}
     />
   );
 }
