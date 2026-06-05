@@ -216,6 +216,45 @@ export class StoryService {
   }
 
   /**
+   * Search stories by title (partial match, case-insensitive)
+   * Returns only story IDs and titles for performance
+   */
+  async searchStoriesByTitle(searchTerm: string): Promise<{ id: string; title: string }[]> {
+    try {
+      if (!searchTerm || searchTerm.trim().length === 0) {
+        return [];
+      }
+
+      const stories = await this.prisma.story.findMany({
+        where: {
+          title: {
+            contains: searchTerm,
+            mode: 'insensitive',
+          },
+        },
+        select: {
+          id: true,
+          title: true,
+        },
+        take: 100, // Limit to prevent excessive results
+      });
+
+      logger.info("Stories search by title", {
+        searchTerm,
+        foundCount: stories.length,
+      });
+
+      return stories;
+    } catch (error) {
+      logger.error("Error searching stories by title", {
+        searchTerm,
+        error: String(error),
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Count total stories
    */
   async countStories(): Promise<number> {

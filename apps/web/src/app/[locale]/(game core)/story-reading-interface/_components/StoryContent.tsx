@@ -54,7 +54,7 @@ const StoryContent = ({ currentPage, textSize, highContrast, highlightedWord, hi
         {/* Story Image */}
         {currentPage.image && (
           <div className="flex items-center justify-center">
-            <div className="w-3xl rounded-xl overflow-hidden shadow-warm-lg">
+            <div className="w-lg rounded-xl overflow-hidden shadow-warm-lg">
               <Image 
                 src={currentPage.image}
                 alt={currentPage.alt}

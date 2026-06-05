@@ -62,13 +62,22 @@ export async function apiRequest<T = any>(
   const url = `${getGatewayUrl()}${API_BASE_URL_V1}${endpoint}`;
 
   // Get JWT token from NextAuth session
-  const session = await auth();
-  const token = (session?.user as any)?.token;
+  let token: string | undefined;
+  
+  try {
+    const session = await auth();
+    token = (session?.user as any)?.token;
+  } catch (error) {
+    // If auth() fails (e.g., called outside request scope), continue without token
+    console.warn(
+      "[Auth Service API] Could not access auth session:",
+      error instanceof Error ? error.message : "Unknown error"
+    );
+  }
 
   if (!token) {
     console.warn(
-      "[Auth Service API] No JWT token found - user may not be authenticated",
-      { hasSession: !!session, hasUser: !!session?.user },
+      "[Auth Service API] No JWT token found - user may not be authenticated"
     );
   }
 

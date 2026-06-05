@@ -3,11 +3,12 @@
 import { useState, useEffect, useRef } from "react";
 import RiddleQuestion from "./RiddleQuestion";
 import TextInputAnswer from "./TextInputAnswer";
+import VoiceInputAnswer from "./VoiceInputAnswer";
 import MultipleChoiceAnswer from "./MultipleChoiceAnswer";
 import SequencingAnswer from "./SequencingAnswer";
 import HintPanel from "./HintPanel";
 import FeedbackDisplay from "./FeedbackDisplay";
-import { Lightbulb } from "lucide-react";
+import { Lightbulb, Mic } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import FloatingItems from "./FloatingItems";
 import {
@@ -176,6 +177,7 @@ const RiddleInteractive = ({
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(true);
+  const [useVoiceInput, setUseVoiceInput] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const correctSoundRef = useRef<HTMLAudioElement>(null);
   const incorrectSoundRef = useRef<HTMLAudioElement>(null);
@@ -620,12 +622,43 @@ const RiddleInteractive = ({
         {/* Answer Input */}
         <div className="mt-4 sm:mt-6 bg-card rounded-xl shadow-warm-lg p-4 sm:p-6">
           {currentRiddle.type === ChallengeType.RIDDLE ? (
-            <TextInputAnswer
-              onSubmit={handleTextSubmit}
-              isDisabled={feedbackState.isVisible}
-              isLoading={isValidating}
-              placeholder={t("textInputAnswer.placeholder")}
-            />
+            <div className="space-y-4 sm:space-y-6">
+              {/* Voice/Text Toggle for RIDDLE type */}
+              <div className="flex gap-2 sm:gap-3 border-b border-secondary/20 pb-4 sm:pb-6">
+                <Button
+                  onClick={() => setUseVoiceInput(false)}
+                  variant={useVoiceInput ? "outline" : "secondary"}
+                  className="flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-2 text-xs sm:text-sm"
+                >
+                  {t("inputMode.text") || "Type"}
+                </Button>
+                <Button
+                  onClick={() => setUseVoiceInput(true)}
+                  variant={useVoiceInput ? "secondary" : "outline"}
+                  className="flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-2 text-xs sm:text-sm flex items-center justify-center gap-2"
+                >
+                  <Mic size={16} />
+                  {t("inputMode.voice") || "Speak"}
+                </Button>
+              </div>
+
+              {/* Conditional rendering based on input mode */}
+              {useVoiceInput ? (
+                <VoiceInputAnswer
+                  onSubmit={handleTextSubmit}
+                  isDisabled={feedbackState.isVisible}
+                  isLoading={isValidating}
+                  languageCode={locale?.split("-")[0].toLowerCase() || "en"}
+                />
+              ) : (
+                <TextInputAnswer
+                  onSubmit={handleTextSubmit}
+                  isDisabled={feedbackState.isVisible}
+                  isLoading={isValidating}
+                  placeholder={t("textInputAnswer.placeholder")}
+                />
+              )}
+            </div>
           ) : currentRiddle.type === ChallengeType.SEQUENCING ? (
             <SequencingAnswer
               items={displayedSequenceAnswers}

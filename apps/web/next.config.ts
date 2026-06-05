@@ -12,6 +12,11 @@ export default withNextIntl({
         hostname: "utfs.io",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "picsum.photos",
+        pathname: "/**",
+      },
     ],
   },
 });

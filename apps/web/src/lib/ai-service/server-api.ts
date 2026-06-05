@@ -33,6 +33,22 @@ export interface LLMValidationResult {
 }
 
 /**
+ * Request payload for transcribing audio using Speech-to-Text
+ */
+export interface TranscribeAudioRequest {
+  audioBuffer: string; // Audio data as base64 string
+  languageCode?: string; // BCP-47 language code (e.g., "en-US", "ar-SA")
+}
+
+/**
+ * Response from audio transcription
+ */
+export interface TranscribeAudioResult {
+  transcript: string; // Transcribed text from audio
+  confidence?: number; // Confidence score (0.0 - 1.0)
+}
+
+/**
  * Request payload for generating hints for a challenge
  */
 export interface GenerateHintsRequest {
@@ -75,6 +91,73 @@ export interface HintResponse {
  *   console.log("Message:", result.message);
  * }
  */
+/**
+ * Transcribe audio using Speech-to-Text
+ * Calls the AI service through the gateway
+ *
+ * @param request - Audio transcription request data
+ * @returns Transcription result or null if transcription fails
+ *
+ * @example
+ * const result = await transcribeAudio({
+ *   audioBuffer: "base64EncodedAudio...",
+ *   languageCode: "en-US"
+ * });
+ * if (result) {
+ *   console.log("Transcript:", result.transcript);
+ *   console.log("Confidence:", result.confidence);
+ * }
+ */
+export async function transcribeAudio(
+  request: TranscribeAudioRequest,
+): Promise<TranscribeAudioResult | null> {
+  try {
+    console.log("[AI Service API] Transcribing audio:", {
+      languageCode: request.languageCode || "en-US",
+      audioLength: request.audioBuffer.length,
+    });
+
+    const response = await apiRequest<ApiResponse<TranscribeAudioResult>>(
+      `/transcribe-audio`,
+      {
+        method: "POST",
+        body: JSON.stringify(request),
+      },
+    );
+
+    if (isApiError(response)) {
+      console.warn(
+        "[AI Service API] Failed to transcribe audio:",
+        response.error.message,
+      );
+      return null;
+    }
+
+    if (!response.success) {
+      console.warn(
+        "[AI Service API] Failed to transcribe audio: API returned success=false",
+      );
+      return null;
+    }
+
+    console.log(
+      "[AI Service API] Audio transcribed successfully:",
+      {
+        transcriptLength: response.data?.transcript.length || 0,
+        languageCode: request.languageCode,
+      },
+    );
+
+    return response.data || null;
+  } catch (error) {
+    console.error(
+      "[AI Service API] Error transcribing audio:",
+      error instanceof Error ? error.message : String(error),
+    );
+    return null;
+  }
+}
+
 export async function validateAnswer(
   request: ValidateAnswerRequest,
 ): Promise<LLMValidationResult | null> {

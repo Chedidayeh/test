@@ -3,6 +3,11 @@ import { storyController } from "../controllers/story.controller";
 
 const router = Router();
 
+// GET search stories by title
+router.get("/search", (req, res) => 
+  storyController.searchStoriesByTitle(req, res),
+);
+
 // GET all stories with pagination and filters, or by IDs if ?ids=id1,id2,id3
 router.get("/", (req, res) => {
   if (req.query.ids) {

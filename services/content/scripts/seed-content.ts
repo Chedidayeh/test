@@ -16,7 +16,7 @@
  * Or: npm run seed
  */
 
-import { PrismaClient, ChallengeType, LanguageCode, ReadingLevel } from "@prisma/client";
+import { PrismaClient, ChallengeType, ReadingLevel } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -26,114 +26,114 @@ const prisma = new PrismaClient();
 
 const storyContent: { [key: string]: { [chapterIndex: number]: string } } = {
   "The Lost Map": {
-    0: "You wake up to the sound of birds singing outside a cozy cabin nestled deep in an enchanted forest. Warm sunlight streams through the round windows, painting everything in shades of gold and green. The smell of fresh bread fills the air. Your grandmother sits quietly by a crackling fireplace, her weathered hands holding an ancient leather journal bound with golden string. She looks up at you with twinkling eyes and a mysterious smile. 'I have something very special for you today,' she whispers. 'Something no one in our family has ever found...'",
+    0: "You wake up to birds singing outside your cozy forest cabin. Warm sunlight paints the room gold and green. Your grandmother smiles and gives you an old leather journal tied with golden string. 'This is the Heart-Map Journal,' she whispers. 'Follow it with kindness, and it will guide you to friends, courage, and truth.' Your tiny firefly friend, Lumi, circles above your shoulder like a glowing star.",
     1: "You step out of the cabin and gasp! The forest is alive with magic. Tall trees with emerald leaves reach toward the sky, and the air is cool and sweet, smelling of pine needles and morning dew. A winding path of smooth white stones stretches before you, disappearing into a thick grove where shafts of sunlight break through in golden rays. You hear the distant sound of running water—like nature's music—calling you forward. Your heart beats with excitement as you take your first step on the adventure of a lifetime.",
     2: "After walking for what feels like hours, following the sound of rushing water, you discover something that takes your breath away! A magnificent waterfall tumbles down from moss-covered cliffs, spraying water into the air. The water catches the sunlight and transforms into thousands of dancing rainbows—one for each color you can imagine. Behind the waterfall, you can see the faint outline of a cave entrance. It's magical, mysterious, and waiting just for you.",
     3: "You gather every bit of courage in your heart and approach the stone steps carved into the cliff face. Each step echoes beneath your feet—tap, tap, tap—like the heartbeat of the mountain itself. The steps spiral upward, and the air grows cooler. Halfway up, your breath catches. Standing blocking your path is a magnificent silver wolf! Its fur shimmers like moonlight, and its eyes are wise and intelligent, studying you carefully. You freeze. The wolf doesn't look angry—it looks... curious.",
     4: "Your hands tremble, but you stand still. The wolf circles around you slowly, never taking its piercing silver eyes off yours. Then, something magical happens—the wolf does something you never expected. It lowers its great head and bows! The gesture is respectful, almost welcoming. The wolf moves to the side, clearing your path up the mountain. As you pass, it places its soft nose gently against your hand. You realize the wolf was never a threat—it was a guardian, protecting this sacred place until someone worthy arrived.",
     5: "You climb the remaining stones and step into an ancient stone chamber carved deep within the mountain. Your eyes grow wide with amazement! The walls seem to glow softly from within. Carved into the stone shelves around you are hundreds—maybe thousands—of crystals that sparkle with their own inner light. Blue crystals like sapphires, purple amethysts, and green emeralds catch the light and dance across the walls. The air tingles with magic, and you realize you've entered a place more wonderful than any treasure.",
     6: "With shaking hands, you carefully open the golden journal your grandmother gave you. As the pages unfold, something miraculous happens! The crystals around you begin to glow even brighter, filling the chamber with brilliant light. It's as if they're celebrating your discovery! The journal contains a written record of your family's greatest adventures, spanning generations. Each page tells a story of kindness, courage, and love. You understand now that this journey was never about finding treasure—it was about finding your family's heart.",
-    7: "You carefully wrap the journal and begin your descent. At the bottom of the mountain, your silver wolf friend is waiting. Together, you walk back through the forest as sunset paints the sky in shades of orange, pink, and purple. The wolf walks beside you like a faithful companion, and you know this adventure has changed you forever. You've learned that the greatest treasures aren't gold or jewels—they're the stories of love and courage passed down through families, and the friends we make along the way.",
+    7: "You return home with the journal shining softly in your hands. The silver wolf walks beside you, and Lumi dances in the sunset sky. At dinner, your grandmother points to a new glowing mark on the map: a rushing river and a tiny anchor symbol. 'Your next lesson is waiting there,' she says. You smile, because your long adventure has only just begun.",
   },
   "River Crossing": {
-    0: "The morning sun finds you standing at the edge of a wide, rushing river. The water flows fast and powerful, churning white with foam. Your guide, Captain Moss, a weathered explorer with kind eyes, shakes his head slowly. 'This river is very dangerous today,' he says seriously. 'The spring rains have made the current stronger than ever. Most people would turn back.' He looks at you carefully. 'But I have a feeling you might be braver than most.'",
+    0: "Following the glowing map mark, you and Lumi reach a wide, rushing river. There you meet Captain Moss, a kind explorer with a sea-green coat and a warm laugh. 'This river tests brave hearts,' he says. 'Cross it with calm steps and clear thinking.' You hold the Heart-Map Journal close and nod, ready for the next chapter of your journey.",
     1: "You walk along the rocky riverbank for nearly an hour, studying the terrain carefully. The sound of rushing water fills your ears. Then suddenly, you spot it! A series of large, smooth, flat rocks juts out from the water like stepping stones, creating a natural path across the river. They're spaced far enough apart to jump from one to the next. 'Look!' you shout to Captain Moss. He examines them and laughs. 'I've crossed this river a hundred times, and I've never seen these rocks positioned quite this perfectly. It's almost as if the river itself is helping you.'",
     2: "You return at dawn the next day, ready for your crossing. The morning mist rises from the water like ghostly fingers. The rocks are visible now in the growing light, but they look slippery and smooth. Water splashes over them constantly, sending up spray. The air is cold and damp. Captain Moss checks your rope and gives you an encouraging nod. 'Remember,' he says, 'stay calm, move carefully, and trust in your own balance. The river tests not just your body, but also your mind and spirit.'",
     3: "You grip the sturdy rope Captain Moss has strung across the stones, and with a deep breath, you step onto the first rock. Your heart pounds in your chest like a drum. The stone is wet and round beneath your feet, and the river roars beside you. One step at a time, you whisper to yourself. Jump. Balance. Breathe. Jump again. Water splashes up, soaking your legs, but you don't falter. You're doing it! Each stone brings you one step closer to the other side, one step closer to proving you can do this.",
     4: "Halfway across, the current suddenly strengthens. A massive surge of water hits your legs, nearly sweeping you off your stone! You wobble, your arms spinning for balance. The rope is the only thing keeping you from being swept downstream. Your muscles burn with effort. This is the true test, you realize. Not the physical crossing, but staying calm when things become difficult. You close your eyes for just a moment, breathe deeply, and find your center. Your body settles. Your feet grip the stone more firmly. You continue, one careful step at a time.",
     5: "One more jump! Your foot lands on the final stone, and suddenly, you're leaping onto the soft grass of the far bank! Captain Moss is waiting for you, arms outstretched. He claps you on the back with such force you nearly fall over, laughing with joy. 'You did it!' he shouts. 'I saw courage in every step. The river tested you, and you proved that you have the heart of a true explorer!'",
     6: "As you rest on the riverbank, still catching your breath, something magical happens. The mist parts, and a hidden village appears through the trees as if conjured by magic. Colorful houses with rounded roofs painted in reds, yellows, and blues greet you. Smoke curls from chimneys, carrying the smell of cooking and warm hearths. People emerge from doorways, waving in welcome. It's a place that has been hidden from the world, protected by the river you just crossed.",
-    7: "The village elder takes you to their ancient library, a building carved from stone and wood. Inside, candles flicker, and the air smells of old leather and parchment. You're shown maps older than anyone can remember—maps that chart forgotten lands, hidden passages, and secret journeys. The elder places a worn, beautiful map in your hands. 'You've earned the right to possess this,' she says. 'It shows the path to inner wisdom. Guard it well, and one day, you'll understand why crossing that river was so important.'",
+    7: "In the hidden village library, the elder gives you a carved stone pendant and smiles. 'Take this to the cave of painted stories,' she says. The pendant glows when you place it near your journal. On the next page, a mountain cave appears in silver ink. Captain Moss waves goodbye, and you set off with Lumi toward the forest again.",
   },
   "The Hidden Cave": {
-    0: "Deep within a vast forest filled with towering trees and mysterious shadows lies a secret that few have ever discovered. Your mentor, a wise woman with eyes that seem to hold a thousand stories, points toward a moss-covered rock formation hidden behind vines. The rocks are ancient and smooth, shaped by water and time. 'Behind there,' she whispers, her voice barely above a breath, 'lies a cave filled with ancient wonders. Something precious that has been hidden for thousands of years. Only the truly curious and kind can find it,' she says with a knowing smile.",
+    0: "Guided by the glowing pendant, you find a vine-covered cave deep in the forest. A wise mentor greets you at the entrance. 'Inside are stories painted by people from long ago,' she says gently. 'If you listen with your heart, they will teach you how to care for the world and each other.' Lumi hovers near the stone walls, lighting your first careful steps.",
     1: "You squeeze through the narrow entrance into a vast underground chamber, and your torch illuminates a scene that steals your breath. The walls are covered in magnificent paintings—hundreds of them! Ancient artists created these images by mixing crushed stones and natural colors with water. The paintings seem to move in the flickering torchlight. Handprints, animals, hunters, and scenes of daily life leap out at you from the stone. You realize you're standing in an art gallery created thousands of years ago.",
     2: "As your torch illuminates each painting, you begin to understand what you're seeing. The paintings tell stories of ancient peoples who lived in connection with nature. Hunters track great beasts across stone plains. Dancers celebrate under moon and stars. Children play in forests. Families gather around fires. Animals of all kinds—bison, deer, horses, and birds—are painted with such detail and love that they seem almost alive. These aren't just random drawings; they're a record of a civilization's heart and soul frozen in time.",
     3: "You kneel before a particularly magnificent painting of a great bison. The artist has captured every detail—the powerful muscles, the proud stance, even the intelligence in the animal's eye. The work is so skilled, so beautiful, that tears fill your eyes. How long did this take? you wonder. Were there artists here thousands of years ago, just like the painters you know today? Did someone stand here and say, 'I want to create something beautiful that will last forever'? The answer seems to shimmer in the ancient stone.",
     4: "Deeper into the cave, you discover an entire gallery dedicated to handprints. Hands of all sizes—children's small hands, adults' strong hands—have been pressed against the stone and outlined in natural pigments. Each handprint is unique, each one a personal mark. You place your own hand against some of the ancient prints, palm-to-palm, across thousands of years of time. It's as though you're shaking hands with the past, connecting with people who lived when your great-great-grandparents' ancestors were just being born.",
     5: "As you venture deeper, the cave opens dramatically into a vast underground lake. The water is crystal-clear, so pure that it reflects every detail of the torchlight. It's like liquid moonlight, creating a mirror image of the chamber above. The silence is profound, broken only by the soft drip of water echoing through the cavern. It's the most peaceful, most beautiful place you've ever seen. You realize that traveling through darkness, you've found light in the most unexpected place.",
     6: "Your mentor joins you and places a gentle hand on your shoulder. 'These caves are sacred places,' she says with deep respect. 'The ancient peoples who created these paintings understood something we sometimes forget—that art is the language of the soul. They created these paintings not for fame or money, but to leave a piece of themselves for future generations. You are honored to witness this. This knowledge carries responsibility. These caves must be protected and revered.'",
-    7: "As you make your way back through the darkness toward the cave entrance, with torchlight dancing on the ancient walls, you feel transformed. You now understand why people traveled so far and worked so hard to create these masterpieces in the darkness these paintings were never meant to be seen by many. They were created from the heart, for the heart—a conversation between the artist and the eternal. You carry this understanding with you as you step back into the sunlight, forever changed by your encounter with the ancient ones.",
+    7: "When you leave the cave, your journal opens by itself. A new drawing appears: the tallest mountain, wrapped in clouds. Your mentor places a wool scarf around your shoulders. 'Your next lesson is perseverance,' she says. You thank her, tuck the pendant safely away, and begin climbing toward the distant peak with Lumi glowing the way.",
   },
   "The Mountain Climb": {
-    0: "You stand at the base of the tallest mountain in all the land. Its peak rises so high it pierces the clouds like a needle, disappearing into white mist far above you. The mountain is both beautiful and terrifying. Snow covers its upper slopes, and you can see avalanche paths where nothing grows. This mountain challenges anyone who dares to attempt its summit. Most people look at it and see an impossible obstacle. But you see an opportunity for the greatest adventure of your life.",
+    0: "You arrive at the tallest mountain in the land, with clouds hugging its peak. Your boots crunch on stone, and your scarf dances in the wind. The journal page shines with one message: 'Step by step.' Lumi settles on your backpack like a tiny lantern. You take a deep breath, smile, and begin the climb.",
     1: "The first path winds gently upward through a lush forest. Ancient trees with thick trunks and emerald canopies stretch upward so tall they seem to touch the sky. Shafts of golden sunlight break through the leaves. The air is fresh and alive with the sounds of birds and running water. It's so beautiful that you feel like you're walking through a magical realm. The trees themselves seem to be climbing upward with you, their roots digging deeper, their branches reaching higher, as if they too are challenging themselves to reach the summit.",
     2: "Higher and higher you climb, and the forest grows thinner. The air grows colder and thinner too. You have to breathe deeper to fill your lungs. Your legs begin to feel heavy. The trees become smaller and smaller until there are no trees at all, only rocks, hardy shrubs, and sparse grass. You wrap your cloak tighter around yourself as the wind picks up and bites at your cheeks. The world below grows smaller, but your determination grows larger. You are entering the realm where the mountain truly tests your resolve.",
     3: "You finally reach a wide plateau and pause to rest. When you turn around and look back down the mountain, your heart swells with accomplishment. The forest far below looks like a green blanket. Rivers appear as silver threads. Villages look like tiny toys. You had no idea you'd climbed this high! Your legs ache, and your lungs burn, but the view fills you with a sense of triumph. You've already accomplished more than you thought possible. And you haven't even reached the summit yet.",
     4: "The final stretch of mountain looms before you. It's the steepest part of the entire climb. The path is narrow and rockier, with loose stones that shift beneath your boots. Your legs burn with exhaustion and effort. Every step seems to require all your strength. But then you look up, and the summit is so close you feel like you could reach out and touch it! Your spirit soars even though your body is tired. You can do this. Just a little bit more. The summit is within reach. You will not give up now.",
     5: "Without warning, the sky darkens. Black clouds boil up from nowhere like something alive. Thunder rumbles with a sound like the earth breaking apart. Lightning flashes brilliantly around you, followed by thunder so loud it echoes off the mountainside. Rain erupts from the sky like an ocean pouring down. The wind becomes fierce and tries to push you backward, trying to throw you off the narrow path. Do you turn back now? Your warm, safe camp is only a few hours of scrambling down. Or do you push forward through this terrifying storm?",
     6: "You grit your teeth and push forward, head lowered against the wind and rain. You refuse to turn back. One step at a time. That's all you can do. The path is slippery, and visibility is nearly zero, but you can feel the slope changing. You're climbing even more steeply now. The wind howls like a living thing, trying to tell you to stop, to quit, to go back. But something inside you—something deep and strong and determined—keeps moving forward. The summit is within reach. You can almost feel it.",
-    7: "Suddenly, the rain stops. The clouds part. And then you see it—you've reached the summit! You plant your flag at the peak, and it flutters bravely in the wind. You've done it! You've conquered the mountain! The view from the top steals your breath away. You can see forever—mountains stretching to every horizon, valleys far below, clouds drifting like ships in a cotton-white sea. From down there, the mountain looked impossible. But now that you're here, you know that the impossible becomes possible through determination, courage, and the refusal to give up.",
+    7: "At the summit, the storm clears and the world sparkles below you. You cheer, and Lumi spins in bright circles. In the journal, a golden grain of sand falls between the pages and points to a desert path. You laugh in surprise. 'From snow to sand,' you whisper. Your journey continues at sunrise.",
   },
   "The Mirage": {
-    0: "The desert sun beats down mercilessly, turning the sand into a shimmering ocean of heat. You've been walking for days and days in this endless landscape, following what you believe is an ancient map leading to treasure. Your lips are dry, your skin is burned, and your water supply is running lower each day. But you press on, because the map feels right, and your heart tells you that something precious waits ahead. Sometimes, you think, faith and determination are all that keep us moving forward.",
+    0: "After leaving the mountain, you follow the journal into a bright desert of shimmering dunes. The heat is strong, but your courage is stronger. You and Lumi share small sips of water and keep walking. 'The map never points to gold,' you remind yourself. 'It points to wisdom and friends.'",
     1: "Then, something impossible happens. On the horizon, you see a beautiful city! Green gardens fill with date palms and fruit trees. Streams of water flow through streets. People and animals move about. Buildings shimmer with color and life. It looks so real, so inviting. You squint at it, thinking it's a trick of the light, but no—it's definitely there. Your heart soars. After days of walking through nothing but sand and heat, you've found civilization! You begin walking faster, almost running toward it, desperate to reach shelter, food, and water.",
     2: "You approach the city slowly, but something doesn't feel right. The closer you get, the less solid it seems. The edges are blurry, like a painting done in watercolors beginning to run. The people and animals you saw seem to be getting farther away, even though you're walking toward them. The temperature around you remains blazing hot, and you notice your shadow doesn't fall quite right. It's subtly wrong. Your mind begins to understand what your heart doesn't want to accept.",
     3: "You reach out your hand to touch a building wall, and your hand passes right through it! There's nothing there but air. It's a mirage—a trick of light and heat and desperate hope. But how can a mirage be so detailed? How can it include people and animals and entire buildings? You feel confused and disappointed. The illusion shimmers and fades. What was the point of that vision? Why did the universe show you something that isn't real?",
     4: "Then you hear a voice behind you. 'Many set out to seek what they see, but wisdom lies in what they understand, not what they observe.' You spin around to see an old desert dweller, weathered by sun and time, standing in the shade of a rock formation. Her eyes hold the wisdom of someone who has lived many years in this harsh land. She beckons you to sit in the shade and gives you water—real water. You drink gratefully, barely believing the relief it brings.",
     5: "The old woman points toward the eastern horizon, beyond where the mirage was. 'The true city lies not in the sand, but in the hearts of those who search with purpose,' she says. 'The mirage you saw was a test. It showed truth in false form. Now I can show you the real thing because you have learned the difference.' She leads you along a hidden path you never would have found yourself, moving carefully through the dunes with the knowledge of someone who truly understands this land.",
     6: "Following her guidance, you discover real oasis settlements hidden in the desert. These aren't cities of illusion—they're real communities where people have lived for generations, tending date palms and managing the precious water that sustains them. They welcome you warmly, sharing dates and stories. You learn their irrigation techniques and their understanding of the desert's rhythms. These people are real, and their wisdom is real. The work they do is real.",
-    7: "As you sit with the desert dwellers, sharing food and conversation, you finally understand. The greatest treasure wasn't a single city or a hoard of gold. The greatest treasure was the journey itself—the lessons learned, the people met, and the understanding gained that true wealth comes not from what glimmers in the distance, but from what's built with care and intention in the present moment. You realize you've found something more valuable than any mirage—you've found the truth.",
+    7: "That evening, the desert dwellers share bread, dates, and songs with you. You learn that true treasure is truth, kindness, and community. Before sleep, an elder draws a blue circle in your journal. 'Follow this sign,' she says. 'It will lead you to the oasis of living water.' Lumi glows softly as the campfire fades.",
   },
   "The Oasis": {
-    0: "Legends throughout the desert speak of an oasis that never dries up, even during the harshest droughts. Some say it's a myth. Others say it's cursed. Still others claim it holds magic. You've heard these stories all your life, and now, finally, you've decided to search for it. Your guides think you're crazy. Your family thinks you're foolish. But you pack your supplies anyway. If the oasis exists, you'll find it. And if it doesn't, at least you'll have tried.",
+    0: "At dawn, you follow the blue circle sign and discover a hidden valley with sparkling water. The oasis is real. Families welcome you with smiles and cool fruit. Lumi reflects in the water like a tiny star. You open the journal and write a new lesson: 'Hope grows when we keep trying.'",
     1: "After weeks of searching through endless dunes, your persistence finally pays off. You crest a high sand dune and stop, barely daring to breathe. Below you stretches a hidden valley surrounded by towering cliffs of red stone that seem to glow in the sunlight. At the center of the valley, water sparkles like liquid diamonds, and green vegetation surrounds it in a perfect circle. The oasis! It exists! It's real! It's more beautiful than any legend described. You stumble down into the valley, almost unable to believe your eyes.",
     2: "As you enter the oasis, you're surrounded by wonders. Tall palm trees create a canopy of shade that feels like a blessing after days in the burning sun. The air is cool and filled with the sound of flowing water—streams and fountains fed by springs that seem never to stop flowing. Flowers bloom in impossible colors—violets, yellows, reds, and oranges. This place is a paradise, an Eden in the middle of the desert. The water is so clear you can see the bottom. You cup it in your hands and drink, and it's the sweetest, purest water you've ever tasted.",
     3: "As you explore deeper, you discover that the oasis is populated. People live here! A settlement of perhaps fifty families has built homes and gardens and established a life around these precious springs. They greet you with surprising warmth and curiosity. You ask them how they came to live here, and they tell you stories spanning generations. Ancestors discovered this place centuries ago and chose to stay, protecting it and building a society based on sharing and conservation.",
     4: "The settlement's leader, an elderly woman with kind eyes, takes you on a tour of the oasis's mysteries. She teaches you about the underground rivers that feed the oasis—great rivers flowing beneath the sand that have never dried up in recorded history. 'Nature has hidden plumbing,' she jokes, showing you how the water rises through natural springs and is channeled into gardens. You learn that the water is so abundant here that they're able to grow crops and fruit trees while still having enough to drink, bathe, and play in. It's a perfect balance carefully maintained over centuries.",
     5: "The community teaches you ancient techniques for water conservation that have allowed this oasis to thrive for over a thousand years. You learn how to channel water without waste, how to create terraces for gardens that use every drop, and how to preserve the springs so they continue flowing. Every person, from the smallest child to the eldest elder, understands their responsibility in maintaining this delicate gift. Water isn't just used; it's respected, honored, and protected. This lesson transforms your understanding of nature's precious resources.",
     6: "Before you leave the oasis, the community ceremonially presents you with seeds of rare desert plants—plants that bloom with beautiful flowers and bear fruit. 'So you can bring the desert to life wherever you go,' they say. 'Share these seeds. Help others understand that even the harshest places can be transformed through caring intention and knowledge.' You accept the seeds with tears in your eyes, knowing you've been given something far more valuable than gold.",
-    7: "As you make your way back out of the valley toward the desert beyond, you feel transformed. The oasis wasn't just a place of water and vegetation. It was a lesson in persistence, a demonstration of community, and proof that even in the harshest environments, life can flourish through balanced effort and mutual care. You depart with new knowledge, renewed hope, and seeds to plant. The oasis wasn't just a destination—it was an awakening. And you know that everywhere you go, you'll carry its wisdom with you.",
+    7: "When you leave the oasis, the community gives you seed pouches and a weather ribbon. 'This ribbon warns of great winds,' they say. That night, the ribbon begins to flutter wildly. Sand rises in the distance. You hug your bag and whisper, 'A storm is coming.' Lumi glows brighter, and you prepare together.",
   },
   "The Sandstorm": {
-    0: "The sky darkens ominously, and the temperature suddenly drops. You've only been in the desert for a few hours when you notice it—a wall of sand and wind approaching from the horizon like a living creature. It's a sandstorm, and it's massive. Visibility drops from miles to feet in seconds. The wind howls like a thousand wolves, and sand stings your skin like needles. Everyone around you begins to panic. This is one of nature's most terrifying forces, and you're caught in its path.",
+    0: "The morning sky turns brown-gold, and a giant wall of sand rolls toward you. The weather ribbon was right. You remember the oasis advice: stay calm, protect your eyes, and find shelter. You and Lumi move quickly behind a rock ledge. The storm roars, but you breathe slowly and think clearly.",
     1: "You scramble desperately to prepare before the storm reaches you. You secure your tent, gather your supplies, tie everything down that might blow away. Sand already fills the air, reducing visibility to almost nothing. You can barely see your own hands in front of your face. The wind is so strong it nearly knocks you over. You find shelter and huddle down, pulling cloth over your mouth and nose, waiting for the storm to pass. It's terrifying. Everything is chaos.",
     2: "The wind howls with a force that sounds almost alive, almost angry. It batters your shelter from all sides. Sand pours in through every crack and crevice, grinding between your teeth, filling your eyes, coating every inch of skin. It feels like the whole world is being torn apart. You wonder if this storm might last forever, if you'll be buried here in the sand, becoming part of the desert itself. The force is so overwhelming that rational thought becomes difficult. You must take shelter and hold on, or risk being lost forever in this chaos.",
     3: "You find a large rock formation to hide behind and wedge yourself into a small cave opening. Sand batters you relentlessly, but the rock shields you from the worst of it. Your heart pounds like a drum. The sound is deafening. The wind tries to blow you out of your shelter. Your hands grip to the rocks with all their strength. You won't let go. You won't give up. You'll hold on to this shelter and survive. Around you, the storm rage on, powerful and uncaring, a force of nature that dwarfs human strength.",
     4: "Hours pass. Or is it days? Time becomes meaningless in the darkness of the storm. Your throat is dry from sand. Your muscles burn from tension. The storm continues without pause or mercy. You wonder if it will ever end, if this is just how the world is now—endless storm, endless sand, endless noise. But then you remember something you once read: all storms pass eventually. They always do. Even the most powerful storms eventually run out of energy. Knowing this helps. You close your eyes and wait, trying to stay calm, trying to breathe slowly.",
     5: "Your supplies are running lower. You've drunk most of your water, and you need to be careful about what's left. The sand dust makes everything harder. You must stay calm and think clearly, because panic wastes energy and consumes water. You count your supplies mentally. You have enough to last, as long as the storm doesn't continue for more than a few more days. But you push away the fear that it might. Fear is the enemy now. Calm thinking is your ally. You breathe slowly and wait.",
     6: "Then, gradually—so gradually you almost don't notice—the wind begins to weaken. The sound, which has been a constant roar, begins to diminish. The sand, which poured down like rain, begins to ease. You can see slightly farther now—maybe ten feet instead of three. Your heart begins to hope. The storm is finally passing! Almost imperceptibly, it continues to diminish until finally, after what feels like an eternity, the wind dies to a breeze. The air clears. The sand settles. The storm is gone. You're alive!",
-    7: "As the sun breaks through the clearing dust and takes on a golden hue again, you emerge from your shelter and look at the transformed landscape. Sand dunes that didn't exist yesterday have appeared. Landmarks you recognized are buried. But you're alive. You survived something that would have destroyed many people. You realize that surviving this storm has made you stronger, more confident, more resilient. You understand now that you're capable of enduring hardship. That knowledge—that you can survive even the most terrifying challenges—is something no storm can take away from you.",
+    7: "After the storm, the desert is quiet and golden again. You survived by staying patient and brave. In the sand, you find a small blue-striped button half-buried near a path leading to a village. The journal page turns and shows a drawing of a doll. 'A new mystery,' you say with a grin. Lumi twinkles in agreement.",
   },
   "The Disappearance": {
-    0: "Your best friend Maya is absolutely heartbroken. Her most favorite possession in the entire world, a beloved doll named Rosie with a porcelain face and golden hair, has vanished without a trace. Maya cries and cries, and you hate seeing her so sad. 'Don't worry,' you promise her, putting your arm around her shoulders. 'I will find Rosie. I promise you. I won't stop searching until I bring her home.'",
+    0: "In the village, you meet Maya, who is crying because her doll Rosie is missing. You show her the blue-striped button from the desert path, and her eyes widen. 'That button is not from Rosie's dress!' she says. You promise to help. With Lumi lighting the way, your adventure becomes a caring detective story.",
     1: "You begin an investigation, searching Maya's room carefully and methodically. Under the bed, hidden in the dust, you find a clue—a small button that definitely doesn't match Rosie's dress. The button is blue with white stripes, and Rosie wears a pink dress. How did it get there? Who does it belong to? You pocket the button carefully. It's the first real clue in the mystery.",
     2: "The button leads you to investigate the neighbor's yard. Maybe someone accidentally borrowed Rosie somehow? As you search their garden, looking carefully at the ground and around their back porch, you try to imagine how Rosie might have ended up here. Did a child take her innocently, not realizing how much Maya loved her? Is she hidden somewhere nearby? You search behind bushes, near the fence, and around a small shed.",
     3: "You interview family members carefully, being respectful but persistent. Your parents, Maya's older brother, her aunt—everyone has stories to tell, but no one admits to moving the doll. Some people barely remember what Rosie looks like. Others haven't been to Maya's room in weeks. Everyone denies involvement. But the button is still a mystery. Someone wears something with a button like that. You just haven't found them yet.",
     4: "Days pass. Then, while playing in the garden, you spot a strange footprint in the soft mud near the garden shed. It's a small footprint—a child's footprint. You follow the trail carefully, seeing where it enters the bushes and disappears. Your heart beats faster. This might be the discovery you need. You follow the trail to a location behind the neighbor's house where you find what looks like a secret hideaway—a place where a child might play and keep treasures.",
     5: "Behind the garden shed, hidden from view by dense bushes and tall grasses, you discover a child's secret hideaway. It's filled with toys—some worn, some newer. Dolls, toy animals, blocks, and treasures. And there, in the center of the collection, sits Rosie in her pink dress! You reach for her carefully, examining her to make sure she's not damaged. She looks fine, cared for even. But why is she here? Then you notice something—a small blanket spread out, and what looks like tea set made of tin. Someone has been having tea parties with Rosie.",
     6: "It doesn't take you long to discover the truth. The neighbor's young child, a girl about four years old, had taken Rosie for playdates. She didn't steal her out of meanness. She took her because she was lonely—she had very few toys and even fewer friends. She loved Rosie as much as Maya did, maybe in her own way. She was caring for Rosie, playing with her, treating her gently. It was a misunderstanding born from loneliness, not malice.",
-    7: "You reunite Maya with Rosie, and her joy at being reunited fills your heart. But then you do something even more important. You introduce Maya to the neighbor's child. At first, both children are shy. But then Maya shows the neighbor girl how to properly make Rosie a tea party. Soon, both girls are laughing and playing together. Rosie has gained a new friend, and more importantly, a lonely child has gained friendship. You realize that sometimes, the best solutions to mysteries aren't about who took what—they're about bringing people together and turning a conflict into a friendship.",
+    7: "Rosie returns to Maya, and soon two children who felt lonely become new friends. You smile, because the best endings can heal hearts. Before you leave, the village librarian points to your journal and says, 'If you enjoy mysteries, the city gallery needs help.' A paper clue falls from the journal: a sketch of a stolen painting.",
   },
   "Following Clues": {
-    0: "A valuable painting has disappeared from the art gallery overnight! It was a masterpiece worth a fortune, locked inside a special case. Security was tight, but somehow, the thief got past all of it and vanished with the painting without a trace. The gallery director is desperate. 'Help us solve this mystery,' she pleads. 'We need someone with a sharp mind and keen observation skills.' You nod eagerly. A real mystery to solve! This is your chance to be a detective.",
+    0: "You arrive at the city gallery and show the paper clue to the director. She gasps. 'Our painting was stolen last night!' she says. You take out your journal, your button clue pouch, and your best detective focus. Lumi hovers over the footprints like a tiny spotlight. Another mystery begins.",
     1: "You interview everyone, starting with the security guard. He's nervous and keeps fidgeting. 'I saw strange footprints near the storage room,' he mentions hesitantly. You examine the footprints closely, noting their size, the pattern of the sole, the depth of the impression. The footprints are recent. Whoever made them walked in wet shoes, leaving water droplets that have dried. The pattern suggests someone moving quickly and carefully—like someone who was trying not to be heard.",
     2: "In the gallery office, you search carefully and find a torn piece of cloth caught on a broken window. The window's lock has been forced. This must be how the thief entered! You examine the cloth closely. It's made of a specific type of fabric—a dark color with a distinctive pattern. You bag it carefully as evidence. The torn cloth means the thief was moving quickly or had something heavy to carry. Someone entered through this window.",
     3: "You take the cloth to different people in the gallery and carefully show it to them. You watch their reactions carefully—sometimes people's faces reveal more than their words. When you show the cloth to the janitor, his eyes widen with recognition. The cloth matches his uniform! Your heart jumps. Did the janitor steal the painting? But then he explains that his uniform is made from a common material that many work clothes are made from. It could be anyone's.",
     4: "Your detective work continues. You find the janitor's work schedule and examine it carefully. According to the records, the janitor wasn't even working on the night the painting was stolen! He had the night off and was at home. But someone made the footprints near the storage room. And someone forced the window. So if the janitor wasn't here, who was wearing similar clothing? Your mind races with new possibilities.",
     5: "You convince the gallery director to show you the security camera footage. You watch it carefully, looking at every frame. And then you see it—a figure in dark clothing, moving quickly, wearing gloves. The person moves with the confidence of someone who knows the gallery layout. The thief doesn't hesitate or look lost. They move directly to the painting, remove it quickly, and leave through the forced window. But the camera doesn't capture the thief's face. You need another clue.",
     6: "By piecing together all the clues—the footprint size, the window damage, the torn cloth, the camera footage, the knowledge of gallery layout—you slowly identify the real thief. It's the gallery's assistant director, someone who's been trusted for years. Everyone is shocked. She had keys. She knew the security codes. She knew exactly where the valuable painting was kept. She was essentially a trusted insider. The realization is difficult: sometimes, the people we trust the most can disappoint us.",
-    7: "The case is finally solved, and justice is served. But more importantly, you've learned something crucial: careful observation and logical thinking can reveal the truth behind any mystery. You've learned that eyewitness testimony can be misleading, that solid evidence matters more than suspicion, and that a good detective must follow the clues wherever they lead, even if the answer isn't what you expect. You've proven that being smart, systematic, and patient can solve even the most confusing puzzles.",
+    7: "The gallery mystery is solved, and everyone cheers for your patience and careful thinking. The director thanks you with an invitation to a grand old mansion where another case is unfolding. In your journal, a red fish symbol appears beside a house drawing. You wink at Lumi. 'Looks like the clues are calling again.'",
   },
   "The Red Herring": {
-    0: "A mystery surrounds a magnificent old mansion filled with treasures and art. A priceless jeweled crown has been stolen, and the whole town is talking about it. 'The wealthy family's son must have taken it,' everyone whispers. 'He's spoiled and irresponsible. He probably wanted money or wanted to spite his parents.' The evidence seems overwhelming, but something in your mind says wait—nothing is ever as obvious as it first appears.",
+    0: "At the old mansion, people whisper about a stolen jeweled crown. Many blame the family's son right away. You remember what the gallery taught you: never judge too quickly. You open the journal and write, 'Look for truth, not noise.' Lumi lands on your shoulder as you begin asking calm, kind questions.",
     1: "You interview the son first, and he seems incredibly guilty. He's nervous, fidgeting with his hands. He can't look you in the eye. When you ask direct questions about the crown, he becomes evasive, offering vague answers. He sweats even though the room isn't warm. He looks like someone with something to hide. This must be it, you think. The case seems simple. But intuition whispers a warning: be careful. Don't assume. Investigate more.",
     2: "Something nags at you—a small voice in your mind that says something isn't quite right. Yes, the son appears guilty. But good detectives look beyond the obvious. You decide to keep investigating before jumping to conclusions. You question him again about his behavior, and finally, with reluctant words, he admits something else entirely.",
     3: "The son confesses that he was being blackmailed by someone else to act suspiciously! The real reason for his nervousness wasn't guilt about the crown—it was fear about his blackmailer's threats. He wasn't protecting himself; he was protecting a secret. He was being manipulated into appearing guilty, the perfect red herring to distract everyone from the true criminal. His relief at finally telling someone is obvious.",
     4: "You dig deeper into the blackmail situation, and it leads you to discover something surprising. The real criminal is the family's trusted accountant, a woman who has worked for the family for decades. She needed money desperately due to gambling debts. No one suspected her because she was trusted and respected. She had keys to every safe and room in the mansion. She knew the crown's location and security. She took advantage of the son's secrets and blackmailed him into appearing guilty, knowing everyone would suspect him.",
     5: "Now the entire mystery becomes clear. The obvious suspect was a red herring—a false clue deliberately designed and used to distract from the real culprit. The son's guilty behavior was intentional misdirection. While everyone focused on blaming the son, the real thief was free to hide the crown and continue living her life as a trusted employee. Without careful investigation and the willingness to question obvious conclusions, the real criminal would never have been discovered.",
     6: "As you explain the solution to the family, they realize an important lesson. You tell them: 'The most suspicious person isn't always the guilty one. You must look beyond first impressions. Don't let emotions or expectations cloud your judgment. A good investigator follows evidence and logic, not gossip or assumptions.' The family listens carefully to your words, understanding that they nearly destroyed a young man's reputation based on false suspicion.",
-    7: "You complete your investigation and solve the real crime, helping the family understand that trust can be misplaced in anyone, even those closest to us. The accountant, driven by desperation, made terrible choices. The son, blackmailed and frightened, made understandable but mistaken choices. And the family learned that assuming guilt based on appearance and behavior can be dangerously wrong. You've proven that the truth often hides beneath layers of deception, and finding it requires patience, intelligence, and careful thought.",
+    7: "When the truth comes out, the family learns not to judge by first impressions. The son thanks you for believing in fairness. Before you leave, he hands you an old attic key from a nearby inherited house. The journal glows warmly and turns to a page marked 'Find yourself.' Your final chapter is waiting.",
   },
   "The Old House": {
-    0: "You inherit a mysterious old house from a relative you never met. The key arrives at your home with a letter containing just two words: 'Find yourself.' Inside your inherited house, everything is dusty and quiet. Sunlight streams through aging windows, revealing particles of dust floating like tiny worlds. The air smells of old wood, aged paper, and memory itself. You stand in the entrance hall, surrounded by furniture covered in white sheets like ghosts. This house is filled with secrets waiting to be uncovered, waiting for someone brave enough to explore.",
+    0: "You unlock the old house with the attic key and step into soft sunlight and quiet rooms. On the table, the same two words wait for you: 'Find yourself.' You breathe in the smell of old wood and stories. Lumi circles the staircase, and your Heart-Map Journal opens to its final lesson page.",
     1: "Dusty paintings line the halls, each frame holding a face or scene from the past. Some paintings show people you vaguely recognize from old family photos. Others show strangers, but faces with your chin or your eyes looking back at you across generations. Each one seems to whisper stories of the family's past. Where should you begin? The paintings become your guide. You run your fingers along frames, reading names and dates written on brass plaques. These are your ancestors—people whose blood runs in your veins, whose lives shaped the life you now live.",
     2: "In the kitchen, while reaching for a glass, you notice something odd. One brick in the fireplace looks newer than the others. You push on it, and with a soft click, the brick shifts. Behind it lies a hidden space containing an old diary bound in worn leather. The handwriting is elegant and old-fashioned, the ink faded with age. Your hands tremble as you carefully open the first page. A name is written there—a name you recognize from family stories. This diary has been waiting in darkness for decades.",
     3: "As you read the diary entries, a story emerges that changes your understanding of your family. An ancestor was a secret artist—someone with desperately burning passion for creating art. But they came from a strict family that considered art frivolous, wasteful, unworth the time of 'respectable' people. So they hid their true passion, hiding their art supplies, sketching secretly, painting in stolen moments. The diary entries are filled with longing and frustration, with the pain of hiding who you truly are.",
     4: "Following clues in the diary, you climb the narrow stairs to the attic. You reach for the ceiling board, and it pushes up easily, revealing a hidden room no one in the family even knew existed. Your breath catches. This room is like stepping back in time. Dozens of paintings lean against walls. Hundreds of sketches cover surfaces. Every inch of the small room is filled with art—beautiful, skillful, emotional art. Some paintings are unfinished. Some are dated from decades ago. All of them show an artist pouring their heart into their work in secret.",
     5: "Through the ancestor's art, you begin to understand their life—not from facts or dates, but from their emotional truth captured in pigment and pencil. The paintings tell stories of hardship, love, and dreams deferred. You see paintings of the restrictive family members, not with anger, but with understanding and sad acceptance. You see paintings of the beauty in ordinary moments—a sunrise, a flower, a child playing. The artist was acutely sensitive to life's beauty, and all that sensitivity was channeled into art that no one was ever meant to see.",
     6: "In a carved wooden box, you find letters written but never sent. Letters addressed to family members, expressing regrets, hopes, and dreams. Letters apologizing for not being stronger, not being brave enough to pursue art openly. Letters expressing love for people who never understood them. This house holds the heart of a whole family history—not the history told in public, but the true, private history of love and longing and hidden dreams. Each letter is a piece of a soul laid bare on paper.",
-    7: "By unwinding this mystery, you've connected with your past in a profound way. You understand that every house holds secrets, and every family carries untold stories. Your ancestor's courage in creating art in secret, your family's struggle to understand and accept different dreams, the balance between family duty and personal passion—these are universal human struggles. As you stand in the hidden art studio surrounded by generations of secret creativity, you realize that your family's history isn't just something in the past. It flows through you. The artist in your ancestor calls to something in you. And now, finally, their secret art is no longer hidden. It's found. It's honored. It's home.",
+    7: "In the hidden art studio, you understand the full journey: courage from the forest, calm from the river, wonder from the cave, perseverance from the mountain, truth from the desert, care from friendship, and wisdom from every mystery. You promise to share these stories with other children so they feel brave, curious, and kind too. The Heart-Map Journal closes with a soft glow. Lumi rests in your hands. The long adventure ends, and a new storyteller begins.",
   },
 };
 
@@ -1002,25 +1002,11 @@ async function createChapter(
       content: contentEN,
       order,
       imageUrl,
-      translations: {
-        create: [
-          {
-            languageCode: LanguageCode.EN,
-            content: contentEN,
           },
-          {
-            languageCode: LanguageCode.AR,
-            content: contentAR,
-          },
-          {
-            languageCode: LanguageCode.FR,
-            content: contentFR,
-          },
-        ],
-      },
-    },
   });
 }
+
+type CreatedChapter = Awaited<ReturnType<typeof createChapter>>;
 
 async function createChallenge(
   chapterId: string,
@@ -1036,6 +1022,7 @@ async function createChallenge(
     textAR: string;
     textFR: string;
     isCorrect: boolean;
+    correctSequence?: number;
   }>,
   order: number,
   baseStars: number = 20,
@@ -1048,47 +1035,13 @@ async function createChallenge(
       baseStars,
       order,
       hints: hintsEN,
-      translations: {
-        create: [
-          {
-            languageCode: LanguageCode.EN,
-            question: questionEN,
-            hints: hintsEN,
-          },
-          {
-            languageCode: LanguageCode.AR,
-            question: questionAR,
-            hints: hintsAR,
-          },
-          {
-            languageCode: LanguageCode.FR,
-            question: questionFR,
-            hints: hintsFR,
-          },
-        ],
-      },
-      answers: {
+            answers: {
         create: answers.map((ans, idx) => ({
           text: ans.textEN,
           isCorrect: ans.isCorrect,
           order: idx + 1,
-          translations: {
-            create: [
-              {
-                languageCode: LanguageCode.EN,
-                text: ans.textEN,
-              },
-              {
-                languageCode: LanguageCode.AR,
-                text: ans.textAR,
-              },
-              {
-                languageCode: LanguageCode.FR,
-                text: ans.textFR,
-              },
-            ],
-          },
-        })),
+          correctSequence: ans.correctSequence,
+                  })),
       },
     },
   });
@@ -1152,26 +1105,7 @@ async function main() {
             name: badgeData.EN,
             description: badgeData.description?.EN,
             levelId: level.id,
-            translations: {
-              create: [
-                {
-                  languageCode: LanguageCode.EN,
-                  name: badgeData.EN,
-                  description: badgeData.description?.EN,
-                },
-                {
-                  languageCode: LanguageCode.AR,
-                  name: badgeData.AR,
-                  description: badgeData.description?.AR,
-                },
-                {
-                  languageCode: LanguageCode.FR,
-                  name: badgeData.FR,
-                  description: badgeData.description?.FR,
-                },
-              ],
-            },
-          },
+                      },
         });
       }
     }
@@ -1185,23 +1119,7 @@ async function main() {
         name: "6-7 years",
         minAge: 6,
         maxAge: 7,
-        translations: {
-          create: [
-            {
-              languageCode: LanguageCode.EN,
-              name: translations.ageGroups["6-7years"].EN,
-            },
-            {
-              languageCode: LanguageCode.AR,
-              name: translations.ageGroups["6-7years"].AR,
-            },
-            {
-              languageCode: LanguageCode.FR,
-              name: translations.ageGroups["6-7years"].FR,
-            },
-          ],
-        },
-      },
+              },
     });
 
     // ============================================
@@ -1213,26 +1131,7 @@ async function main() {
         name: translations.themes.Adventure.EN,
         description: translations.themes.Adventure.description!.EN,
         imageUrl: "https://picsum.photos/800/600?random=997",
-        translations: {
-          create: [
-            {
-              languageCode: LanguageCode.EN,
-              name: translations.themes.Adventure.EN,
-              description: translations.themes.Adventure.description!.EN,
-            },
-            {
-              languageCode: LanguageCode.AR,
-              name: translations.themes.Adventure.AR,
-              description: translations.themes.Adventure.description!.AR,
-            },
-            {
-              languageCode: LanguageCode.FR,
-              name: translations.themes.Adventure.FR,
-              description: translations.themes.Adventure.description!.FR,
-            },
-          ],
-        },
-      },
+              },
     });
 
     const mysteryTheme = await prisma.theme.create({
@@ -1240,26 +1139,7 @@ async function main() {
         name: translations.themes.Mystery.EN,
         description: translations.themes.Mystery.description!.EN,
         imageUrl: "https://picsum.photos/800/600?random=998",
-        translations: {
-          create: [
-            {
-              languageCode: LanguageCode.EN,
-              name: translations.themes.Mystery.EN,
-              description: translations.themes.Mystery.description!.EN,
-            },
-            {
-              languageCode: LanguageCode.AR,
-              name: translations.themes.Mystery.AR,
-              description: translations.themes.Mystery.description!.AR,
-            },
-            {
-              languageCode: LanguageCode.FR,
-              name: translations.themes.Mystery.FR,
-              description: translations.themes.Mystery.description!.FR,
-            },
-          ],
-        },
-      },
+              },
     });
 
     // ============================================
@@ -1272,23 +1152,7 @@ async function main() {
         ageGroupId: ageGroup.id,
         themeId: adventureTheme.id,
         readingLevel: ReadingLevel.BEGINNER,
-        translations: {
-          create: [
-            {
-              languageCode: LanguageCode.EN,
-              title: translations.roadmaps.Adventure.EN,
-            },
-            {
-              languageCode: LanguageCode.AR,
-              title: translations.roadmaps.Adventure.AR,
-            },
-            {
-              languageCode: LanguageCode.FR,
-              title: translations.roadmaps.Adventure.FR,
-            },
-          ],
-        },
-      },
+              },
     });
 
     const mysteryRoadmap = await prisma.roadmap.create({
@@ -1297,23 +1161,7 @@ async function main() {
         ageGroupId: ageGroup.id,
         themeId: mysteryTheme.id,
         readingLevel: ReadingLevel.EASY,
-        translations: {
-          create: [
-            {
-              languageCode: LanguageCode.EN,
-              title: translations.roadmaps.Mystery.EN,
-            },
-            {
-              languageCode: LanguageCode.AR,
-              title: translations.roadmaps.Mystery.AR,
-            },
-            {
-              languageCode: LanguageCode.FR,
-              title: translations.roadmaps.Mystery.FR,
-            },
-          ],
-        },
-      },
+              },
     });
 
     // ============================================
@@ -1328,26 +1176,7 @@ async function main() {
         roadmapId: adventureRoadmap.id,
         order: 1,
         imageUrl: "https://picsum.photos/800/600?random=101",
-        translations: {
-          create: [
-            {
-              languageCode: LanguageCode.EN,
-              name: translations.worlds["Forest Quest"].EN,
-              description: translations.worlds["Forest Quest"].description!.EN,
-            },
-            {
-              languageCode: LanguageCode.AR,
-              name: translations.worlds["Forest Quest"].AR,
-              description: translations.worlds["Forest Quest"].description!.AR,
-            },
-            {
-              languageCode: LanguageCode.FR,
-              name: translations.worlds["Forest Quest"].FR,
-              description: translations.worlds["Forest Quest"].description!.FR,
-            },
-          ],
-        },
-      },
+              },
     });
 
     const desertWorld = await prisma.world.create({
@@ -1357,26 +1186,7 @@ async function main() {
         roadmapId: adventureRoadmap.id,
         order: 2,
         imageUrl: "https://picsum.photos/800/600?random=102",
-        translations: {
-          create: [
-            {
-              languageCode: LanguageCode.EN,
-              name: translations.worlds["Desert Journey"].EN,
-              description: translations.worlds["Desert Journey"].description!.EN,
-            },
-            {
-              languageCode: LanguageCode.AR,
-              name: translations.worlds["Desert Journey"].AR,
-              description: translations.worlds["Desert Journey"].description!.AR,
-            },
-            {
-              languageCode: LanguageCode.FR,
-              name: translations.worlds["Desert Journey"].FR,
-              description: translations.worlds["Desert Journey"].description!.FR,
-            },
-          ],
-        },
-      },
+              },
     });
 
     const toyWorld = await prisma.world.create({
@@ -1386,26 +1196,7 @@ async function main() {
         roadmapId: mysteryRoadmap.id,
         order: 1,
         imageUrl: "https://picsum.photos/800/600?random=103",
-        translations: {
-          create: [
-            {
-              languageCode: LanguageCode.EN,
-              name: translations.worlds["The Missing Toy"].EN,
-              description: translations.worlds["The Missing Toy"].description!.EN,
-            },
-            {
-              languageCode: LanguageCode.AR,
-              name: translations.worlds["The Missing Toy"].AR,
-              description: translations.worlds["The Missing Toy"].description!.AR,
-            },
-            {
-              languageCode: LanguageCode.FR,
-              name: translations.worlds["The Missing Toy"].FR,
-              description: translations.worlds["The Missing Toy"].description!.FR,
-            },
-          ],
-        },
-      },
+              },
     });
 
     const houseWorld = await prisma.world.create({
@@ -1415,26 +1206,7 @@ async function main() {
         roadmapId: mysteryRoadmap.id,
         order: 2,
         imageUrl: "https://picsum.photos/800/600?random=104",
-        translations: {
-          create: [
-            {
-              languageCode: LanguageCode.EN,
-              name: translations.worlds["Secret of the Old House"].EN,
-              description: translations.worlds["Secret of the Old House"].description!.EN,
-            },
-            {
-              languageCode: LanguageCode.AR,
-              name: translations.worlds["Secret of the Old House"].AR,
-              description: translations.worlds["Secret of the Old House"].description!.AR,
-            },
-            {
-              languageCode: LanguageCode.FR,
-              name: translations.worlds["Secret of the Old House"].FR,
-              description: translations.worlds["Secret of the Old House"].description!.FR,
-            },
-          ],
-        },
-      },
+              },
     });
 
     // ============================================
@@ -1449,26 +1221,7 @@ async function main() {
         worldId: forestWorld.id,
         difficulty: 1,
         order: 1,
-        translations: {
-          create: [
-            {
-              languageCode: LanguageCode.EN,
-              title: translations.stories["The Lost Map"].EN,
-              description: translations.stories["The Lost Map"].description!.EN,
-            },
-            {
-              languageCode: LanguageCode.AR,
-              title: translations.stories["The Lost Map"].AR,
-              description: translations.stories["The Lost Map"].description!.AR,
-            },
-            {
-              languageCode: LanguageCode.FR,
-              title: translations.stories["The Lost Map"].FR,
-              description: translations.stories["The Lost Map"].description!.FR,
-            },
-          ],
-        },
-      },
+              },
     });
 
     const riverStory = await prisma.story.create({
@@ -1478,26 +1231,7 @@ async function main() {
         worldId: forestWorld.id,
         difficulty: 2,
         order: 2,
-        translations: {
-          create: [
-            {
-              languageCode: LanguageCode.EN,
-              title: translations.stories["River Crossing"].EN,
-              description: translations.stories["River Crossing"].description!.EN,
-            },
-            {
-              languageCode: LanguageCode.AR,
-              title: translations.stories["River Crossing"].AR,
-              description: translations.stories["River Crossing"].description!.AR,
-            },
-            {
-              languageCode: LanguageCode.FR,
-              title: translations.stories["River Crossing"].FR,
-              description: translations.stories["River Crossing"].description!.FR,
-            },
-          ],
-        },
-      },
+              },
     });
 
     const caveStory = await prisma.story.create({
@@ -1507,26 +1241,7 @@ async function main() {
         worldId: forestWorld.id,
         difficulty: 2,
         order: 3,
-        translations: {
-          create: [
-            {
-              languageCode: LanguageCode.EN,
-              title: translations.stories["The Hidden Cave"].EN,
-              description: translations.stories["The Hidden Cave"].description!.EN,
-            },
-            {
-              languageCode: LanguageCode.AR,
-              title: translations.stories["The Hidden Cave"].AR,
-              description: translations.stories["The Hidden Cave"].description!.AR,
-            },
-            {
-              languageCode: LanguageCode.FR,
-              title: translations.stories["The Hidden Cave"].FR,
-              description: translations.stories["The Hidden Cave"].description!.FR,
-            },
-          ],
-        },
-      },
+              },
     });
 
     const mountainStory = await prisma.story.create({
@@ -1536,26 +1251,7 @@ async function main() {
         worldId: forestWorld.id,
         difficulty: 3,
         order: 4,
-        translations: {
-          create: [
-            {
-              languageCode: LanguageCode.EN,
-              title: translations.stories["The Mountain Climb"].EN,
-              description: translations.stories["The Mountain Climb"].description!.EN,
-            },
-            {
-              languageCode: LanguageCode.AR,
-              title: translations.stories["The Mountain Climb"].AR,
-              description: translations.stories["The Mountain Climb"].description!.AR,
-            },
-            {
-              languageCode: LanguageCode.FR,
-              title: translations.stories["The Mountain Climb"].FR,
-              description: translations.stories["The Mountain Climb"].description!.FR,
-            },
-          ],
-        },
-      },
+              },
     });
 
     // Desert Journey Stories (Adventure World 2)
@@ -1566,26 +1262,7 @@ async function main() {
         worldId: desertWorld.id,
         difficulty: 2,
         order: 1,
-        translations: {
-          create: [
-            {
-              languageCode: LanguageCode.EN,
-              title: translations.stories["The Mirage"].EN,
-              description: translations.stories["The Mirage"].description!.EN,
-            },
-            {
-              languageCode: LanguageCode.AR,
-              title: translations.stories["The Mirage"].AR,
-              description: translations.stories["The Mirage"].description!.AR,
-            },
-            {
-              languageCode: LanguageCode.FR,
-              title: translations.stories["The Mirage"].FR,
-              description: translations.stories["The Mirage"].description!.FR,
-            },
-          ],
-        },
-      },
+              },
     });
 
     const oasisStory = await prisma.story.create({
@@ -1595,26 +1272,7 @@ async function main() {
         worldId: desertWorld.id,
         difficulty: 2,
         order: 2,
-        translations: {
-          create: [
-            {
-              languageCode: LanguageCode.EN,
-              title: translations.stories["The Oasis"].EN,
-              description: translations.stories["The Oasis"].description!.EN,
-            },
-            {
-              languageCode: LanguageCode.AR,
-              title: translations.stories["The Oasis"].AR,
-              description: translations.stories["The Oasis"].description!.AR,
-            },
-            {
-              languageCode: LanguageCode.FR,
-              title: translations.stories["The Oasis"].FR,
-              description: translations.stories["The Oasis"].description!.FR,
-            },
-          ],
-        },
-      },
+              },
     });
 
     const sandstormStory = await prisma.story.create({
@@ -1624,26 +1282,7 @@ async function main() {
         worldId: desertWorld.id,
         difficulty: 3,
         order: 3,
-        translations: {
-          create: [
-            {
-              languageCode: LanguageCode.EN,
-              title: translations.stories["The Sandstorm"].EN,
-              description: translations.stories["The Sandstorm"].description!.EN,
-            },
-            {
-              languageCode: LanguageCode.AR,
-              title: translations.stories["The Sandstorm"].AR,
-              description: translations.stories["The Sandstorm"].description!.AR,
-            },
-            {
-              languageCode: LanguageCode.FR,
-              title: translations.stories["The Sandstorm"].FR,
-              description: translations.stories["The Sandstorm"].description!.FR,
-            },
-          ],
-        },
-      },
+              },
     });
 
     // The Missing Toy Stories (Mystery World 1)
@@ -1654,26 +1293,7 @@ async function main() {
         worldId: toyWorld.id,
         difficulty: 1,
         order: 1,
-        translations: {
-          create: [
-            {
-              languageCode: LanguageCode.EN,
-              title: translations.stories["The Disappearance"].EN,
-              description: translations.stories["The Disappearance"].description!.EN,
-            },
-            {
-              languageCode: LanguageCode.AR,
-              title: translations.stories["The Disappearance"].AR,
-              description: translations.stories["The Disappearance"].description!.AR,
-            },
-            {
-              languageCode: LanguageCode.FR,
-              title: translations.stories["The Disappearance"].FR,
-              description: translations.stories["The Disappearance"].description!.FR,
-            },
-          ],
-        },
-      },
+              },
     });
 
     const followingCluesStory = await prisma.story.create({
@@ -1683,26 +1303,7 @@ async function main() {
         worldId: toyWorld.id,
         difficulty: 2,
         order: 2,
-        translations: {
-          create: [
-            {
-              languageCode: LanguageCode.EN,
-              title: translations.stories["Following Clues"].EN,
-              description: translations.stories["Following Clues"].description!.EN,
-            },
-            {
-              languageCode: LanguageCode.AR,
-              title: translations.stories["Following Clues"].AR,
-              description: translations.stories["Following Clues"].description!.AR,
-            },
-            {
-              languageCode: LanguageCode.FR,
-              title: translations.stories["Following Clues"].FR,
-              description: translations.stories["Following Clues"].description!.FR,
-            },
-          ],
-        },
-      },
+              },
     });
 
     // Secret of the Old House Stories (Mystery World 2)
@@ -1713,26 +1314,7 @@ async function main() {
         worldId: houseWorld.id,
         difficulty: 2,
         order: 1,
-        translations: {
-          create: [
-            {
-              languageCode: LanguageCode.EN,
-              title: translations.stories["The Red Herring"].EN,
-              description: translations.stories["The Red Herring"].description!.EN,
-            },
-            {
-              languageCode: LanguageCode.AR,
-              title: translations.stories["The Red Herring"].AR,
-              description: translations.stories["The Red Herring"].description!.AR,
-            },
-            {
-              languageCode: LanguageCode.FR,
-              title: translations.stories["The Red Herring"].FR,
-              description: translations.stories["The Red Herring"].description!.FR,
-            },
-          ],
-        },
-      },
+              },
     });
 
     const oldHouseStory = await prisma.story.create({
@@ -1742,26 +1324,7 @@ async function main() {
         worldId: houseWorld.id,
         difficulty: 2,
         order: 2,
-        translations: {
-          create: [
-            {
-              languageCode: LanguageCode.EN,
-              title: translations.stories["The Old House"].EN,
-              description: translations.stories["The Old House"].description!.EN,
-            },
-            {
-              languageCode: LanguageCode.AR,
-              title: translations.stories["The Old House"].AR,
-              description: translations.stories["The Old House"].description!.AR,
-            },
-            {
-              languageCode: LanguageCode.FR,
-              title: translations.stories["The Old House"].FR,
-              description: translations.stories["The Old House"].description!.FR,
-            },
-          ],
-        },
-      },
+              },
     });
 
 
@@ -1782,7 +1345,7 @@ async function main() {
       "The Resolution",
     ];
 
-    const lostMapChapters = [];
+    const lostMapChapters: CreatedChapter[] = [];
     for (let chIdx = 0; chIdx < 8; chIdx++) {
       const titleData = translations.chapters[chapterTitles[chIdx] as keyof typeof translations.chapters];
       const contentEN = storyContent["The Lost Map"][chIdx as keyof typeof storyContent["The Lost Map"]];
@@ -1808,7 +1371,7 @@ async function main() {
     // ============================================
     console.log("📄 Creating chapters for River Crossing with full translations...");
 
-    const riverCrossingChapters = [];
+    const riverCrossingChapters: CreatedChapter[] = [];
     for (let chIdx = 0; chIdx < 8; chIdx++) {
       const titleData = translations.chapters[chapterTitles[chIdx] as keyof typeof translations.chapters];
       const contentEN = storyContent["River Crossing"][chIdx as keyof typeof storyContent["River Crossing"]];
@@ -1834,7 +1397,7 @@ async function main() {
     // ============================================
     console.log("📄 Creating chapters for The Hidden Cave with full translations...");
 
-    const caveChapters = [];
+    const caveChapters: CreatedChapter[] = [];
     for (let chIdx = 0; chIdx < 8; chIdx++) {
       const titleData = translations.chapters[chapterTitles[chIdx] as keyof typeof translations.chapters];
       const contentEN = storyContent["The Hidden Cave"][chIdx as keyof typeof storyContent["The Hidden Cave"]];
@@ -1860,7 +1423,7 @@ async function main() {
     // ============================================
     console.log("📄 Creating chapters for The Mountain Climb with full translations...");
 
-    const mountainChapters = [];
+    const mountainChapters: CreatedChapter[] = [];
     for (let chIdx = 0; chIdx < 8; chIdx++) {
       const titleData = translations.chapters[chapterTitles[chIdx] as keyof typeof translations.chapters];
       const contentEN = storyContent["The Mountain Climb"][chIdx as keyof typeof storyContent["The Mountain Climb"]];
@@ -1886,7 +1449,7 @@ async function main() {
     // ============================================
     console.log("📄 Creating chapters for The Mirage with full translations...");
 
-    const mirageChapters = [];
+    const mirageChapters: CreatedChapter[] = [];
     for (let chIdx = 0; chIdx < 8; chIdx++) {
       const titleData = translations.chapters[chapterTitles[chIdx] as keyof typeof translations.chapters];
       const contentEN = storyContent["The Mirage"][chIdx as keyof typeof storyContent["The Mirage"]];
@@ -1912,7 +1475,7 @@ async function main() {
     // ============================================
     console.log("📄 Creating chapters for The Oasis with full translations...");
 
-    const oasisChapters = [];
+    const oasisChapters: CreatedChapter[] = [];
     for (let chIdx = 0; chIdx < 8; chIdx++) {
       const titleData = translations.chapters[chapterTitles[chIdx] as keyof typeof translations.chapters];
       const contentEN = storyContent["The Oasis"][chIdx as keyof typeof storyContent["The Oasis"]];
@@ -1938,7 +1501,7 @@ async function main() {
     // ============================================
     console.log("📄 Creating chapters for The Sandstorm with full translations...");
 
-    const sandstormChapters = [];
+    const sandstormChapters: CreatedChapter[] = [];
     for (let chIdx = 0; chIdx < 8; chIdx++) {
       const titleData = translations.chapters[chapterTitles[chIdx] as keyof typeof translations.chapters];
       const contentEN = storyContent["The Sandstorm"][chIdx as keyof typeof storyContent["The Sandstorm"]];
@@ -1964,7 +1527,7 @@ async function main() {
     // ============================================
     console.log("📄 Creating chapters for The Disappearance with full translations...");
 
-    const disappearanceChapters = [];
+    const disappearanceChapters: CreatedChapter[] = [];
     for (let chIdx = 0; chIdx < 8; chIdx++) {
       const titleData = translations.chapters[chapterTitles[chIdx] as keyof typeof translations.chapters];
       const contentEN = storyContent["The Disappearance"][chIdx as keyof typeof storyContent["The Disappearance"]];
@@ -1990,7 +1553,7 @@ async function main() {
     // ============================================
     console.log("📄 Creating chapters for Following Clues with full translations...");
 
-    const followingCluesChapters = [];
+    const followingCluesChapters: CreatedChapter[] = [];
     for (let chIdx = 0; chIdx < 8; chIdx++) {
       const titleData = translations.chapters[chapterTitles[chIdx] as keyof typeof translations.chapters];
       const contentEN = storyContent["Following Clues"][chIdx as keyof typeof storyContent["Following Clues"]];
@@ -2016,7 +1579,7 @@ async function main() {
     // ============================================
     console.log("📄 Creating chapters for The Red Herring with full translations...");
 
-    const redHerringChapters = [];
+    const redHerringChapters: CreatedChapter[] = [];
     for (let chIdx = 0; chIdx < 8; chIdx++) {
       const titleData = translations.chapters[chapterTitles[chIdx] as keyof typeof translations.chapters];
       const contentEN = storyContent["The Red Herring"][chIdx as keyof typeof storyContent["The Red Herring"]];
@@ -2042,7 +1605,7 @@ async function main() {
     // ============================================
     console.log("📄 Creating chapters for The Old House with full translations...");
 
-    const oldHouseChapters = [];
+    const oldHouseChapters: CreatedChapter[] = [];
     for (let chIdx = 0; chIdx < 8; chIdx++) {
       const titleData = translations.chapters[chapterTitles[chIdx] as keyof typeof translations.chapters];
       const contentEN = storyContent["The Old House"][chIdx as keyof typeof storyContent["The Old House"]];
@@ -2071,7 +1634,7 @@ async function main() {
     // ========== THE LOST MAP CHALLENGES ==========
     await createChallenge(
       lostMapChapters[0].id,
-      ChallengeType.MULTIPLE_CHOICE,
+      ChallengeType.RIDDLE,
       "What did your grandmother give you?",
       "ماذا أعطتك جدتك؟",
       "Qu'est-ce que ta grand-mère t'a donné?",
@@ -2089,7 +1652,7 @@ async function main() {
 
     await createChallenge(
       lostMapChapters[2].id,
-      ChallengeType.MULTIPLE_CHOICE,
+      ChallengeType.TRUE_FALSE,
       "What do you discover behind the waterfall?",
       "ما الذي تكتشفه خلف الشلال؟",
       "Qu'est-ce que vous découvrez derrière la cascade?",
@@ -2107,7 +1670,7 @@ async function main() {
 
     await createChallenge(
       lostMapChapters[3].id,
-      ChallengeType.MULTIPLE_CHOICE,
+      ChallengeType.MORAL_DECISION,
       "How did the wolf test you?",
       "كيف اختبرك الذئب؟",
       "Comment le loup t'a-t-il testé?",
@@ -2115,9 +1678,9 @@ async function main() {
       ["كان عن شخصيتك", "ليس اختبارًا بدنيًا", "اللطف يهم"],
       ["C'était sur ton caractère", "Pas un test physique", "La gentillesse compte"],
       [
-        { textEN: "With physical strength", textAR: "بالقوة البدنية", textFR: "Par la force physique", isCorrect: false },
+        { textEN: "With physical strength", textAR: "بالقوة البدنية", textFR: "Par la force physique", isCorrect: true },
         { textEN: "With your heart and kindness", textAR: "بقلبك وطيبة قلبك", textFR: "Par ton cœur et ta gentillesse", isCorrect: true },
-        { textEN: "With riddles", textAR: "بالألغاز", textFR: "Avec des énigmes", isCorrect: false },
+        { textEN: "With riddles", textAR: "بالألغاز", textFR: "Avec des énigmes", isCorrect: true },
       ],
       1,
       25,
@@ -2126,7 +1689,7 @@ async function main() {
     // ========== RIVER CROSSING CHALLENGES ==========
     await createChallenge(
       riverCrossingChapters[1].id,
-      ChallengeType.MULTIPLE_CHOICE,
+      ChallengeType.RIDDLE,
       "What do you find on the riverbank?",
       "ماذا تجد على ضفة النهر؟",
       "Qu'est-ce que vous trouvez sur la rive de la rivière?",
@@ -2144,17 +1707,17 @@ async function main() {
 
     await createChallenge(
       riverCrossingChapters[3].id,
-      ChallengeType.MULTIPLE_CHOICE,
-      "What makes the rock crossing dangerous?",
-      "ما الذي يجعل عبور الصخور خطيرًا؟",
-      "Qu'est-ce qui rend la traversée des rochers dangereuse?",
-      ["The rocks are slippery", "The current is strong", "You need balance"],
-      ["الصخور زلقة", "التيار قوي", "تحتاج إلى التوازن"],
-      ["Les roches sont glissantes", "Le courant est fort", "Vous avez besoin d'équilibre"],
+      ChallengeType.SEQUENCING,
+      "Put these river-crossing actions in the correct order.",
+      "رتّب خطوات عبور النهر بالترتيب الصحيح.",
+      "Mets ces actions de traversée de rivière dans le bon ordre.",
+      ["Think about what happens first", "Then what happens in the middle?", "Choose the final safe action"],
+      ["فكّر في ما يحدث أولاً", "ثم ما الذي يحدث في المنتصف؟", "اختر الإجراء الآمن الأخير"],
+      ["Pense à ce qui se passe d'abord", "Puis que se passe-t-il au milieu ?", "Choisis l'action finale en sécurité"],
       [
-        { textEN: "The water is cold", textAR: "الماء بارد", textFR: "L'eau est froide", isCorrect: false },
-        { textEN: "Rocks and current", textAR: "الصخور والتيار", textFR: "Les roches et le courant", isCorrect: true },
-        { textEN: "There are large fish", textAR: "هناك أسماك كبيرة", textFR: "Il y a de gros poissons", isCorrect: false },
+        { textEN: "Hold the rope and step onto the first rock", textAR: "أمسك الحبل واصعد إلى أول صخرة", textFR: "Tiens la corde et monte sur le premier rocher", isCorrect: true, correctSequence: 1 },
+        { textEN: "Keep your balance while moving rock to rock", textAR: "حافظ على توازنك أثناء الانتقال بين الصخور", textFR: "Garde ton équilibre en avançant de rocher en rocher", isCorrect: true, correctSequence: 2 },
+        { textEN: "Make the final jump to the safe riverbank", textAR: "قم بالقفزة الأخيرة إلى ضفة النهر الآمنة", textFR: "Fais le saut final vers la rive sûre", isCorrect: true, correctSequence: 3 },
       ],
       1,
       20,
@@ -2162,7 +1725,7 @@ async function main() {
 
     await createChallenge(
       riverCrossingChapters[5].id,
-      ChallengeType.MULTIPLE_CHOICE,
+      ChallengeType.TRUE_FALSE,
       "What does Captain Moss say when you reach the other side?",
       "ماذا يقول الكابتن موس عندما تصل إلى الجانب الآخر؟",
       "Que dit le Capitaine Mousse quand vous atteignez l'autre côté?",
@@ -2181,7 +1744,7 @@ async function main() {
     // ========== THE HIDDEN CAVE CHALLENGES ==========
     await createChallenge(
       caveChapters[1].id,
-      ChallengeType.MULTIPLE_CHOICE,
+      ChallengeType.MORAL_DECISION,
       "What do the cave walls reveal?",
       "ماذا تكشف جدران الكهف؟",
       "Que révèlent les murs de la grotte?",
@@ -2189,9 +1752,9 @@ async function main() {
       ["قصص قديمة", "رسومات", "سجلات تاريخية"],
       ["Des histoires anciennes", "Des peintures", "Des dossiers historiques"],
       [
-        { textEN: "Treasure maps", textAR: "خرائط الكنز", textFR: "Cartes au trésor", isCorrect: false },
+        { textEN: "Treasure maps", textAR: "خرائط الكنز", textFR: "Cartes au trésor", isCorrect: true },
         { textEN: "Magnificent paintings", textAR: "رسومات رائعة", textFR: "Des peintures magnifiques", isCorrect: true },
-        { textEN: "Written messages", textAR: "رسائل مكتوبة", textFR: "Messages écrits", isCorrect: false },
+        { textEN: "Written messages", textAR: "رسائل مكتوبة", textFR: "Messages écrits", isCorrect: true },
       ],
       1,
       20,
@@ -2199,7 +1762,7 @@ async function main() {
 
     await createChallenge(
       caveChapters[4].id,
-      ChallengeType.MULTIPLE_CHOICE,
+      ChallengeType.TRUE_FALSE,
       "What does the handprint gallery represent?",
       "ماذا يمثل معرض بصمات اليد؟",
       "Que représente la galerie d'empreintes de mains?",
@@ -2218,7 +1781,7 @@ async function main() {
     // ========== THE MOUNTAIN CLIMB CHALLENGES ==========
     await createChallenge(
       mountainChapters[0].id,
-      ChallengeType.MULTIPLE_CHOICE,
+      ChallengeType.RIDDLE,
       "What challenges the climber?",
       "ما الذي يتحدى المتسلق؟",
       "Qu'est-ce qui défie le grimpeur?",
@@ -2236,7 +1799,7 @@ async function main() {
 
     await createChallenge(
       mountainChapters[5].id,
-      ChallengeType.MULTIPLE_CHOICE,
+      ChallengeType.MORAL_DECISION,
       "What appears when you're almost at summit?",
       "ما الذي يظهر عندما تكون قريبًا من القمة؟",
       "Qu'est-ce qui apparaît quand vous êtes près du sommet?",
@@ -2244,9 +1807,9 @@ async function main() {
       ["سوء حظ", "عاصفة", "برق"],
       ["Malchance", "Une tempête", "Un éclair"],
       [
-        { textEN: "Clear skies", textAR: "سماء صافية", textFR: "Ciel dégagé", isCorrect: false },
+        { textEN: "Clear skies", textAR: "سماء صافية", textFR: "Ciel dégagé", isCorrect: true },
         { textEN: "A sudden storm", textAR: "عاصفة مفاجئة", textFR: "Une tempête soudaine", isCorrect: true },
-        { textEN: "A rainbow", textAR: "قوس قزح", textFR: "Un arc-en-ciel", isCorrect: false },
+        { textEN: "A rainbow", textAR: "قوس قزح", textFR: "Un arc-en-ciel", isCorrect: true },
       ],
       1,
       25,
@@ -2255,7 +1818,7 @@ async function main() {
     // ========== THE MIRAGE CHALLENGES ==========
     await createChallenge(
       mirageChapters[1].id,
-      ChallengeType.MULTIPLE_CHOICE,
+      ChallengeType.TRUE_FALSE,
       "What do you see in the desert?",
       "ماذا ترى في الصحراء؟",
       "Qu'est-ce que vous voyez dans le désert?",
@@ -2273,7 +1836,7 @@ async function main() {
 
     await createChallenge(
       mirageChapters[3].id,
-      ChallengeType.MULTIPLE_CHOICE,
+      ChallengeType.CHOOSE_ENDING,
       "What happens when you touch the building?",
       "ماذا يحدث عندما تلمس المبنى؟",
       "Que se passe-t-il quand vous touchez le bâtiment?",
@@ -2282,8 +1845,8 @@ async function main() {
       ["C'est doux", "C'est invisible", "Ce n'est pas réel"],
       [
         { textEN: "Your hand passes through", textAR: "تمر يدك من خلالها", textFR: "Votre main passe à travers", isCorrect: true },
-        { textEN: "The building disappears", textAR: "المبنى يختفي", textFR: "Le bâtiment disparaît", isCorrect: false },
-        { textEN: "You fall down", textAR: "تسقط", textFR: "Tu tombes", isCorrect: false },
+        { textEN: "The building disappears", textAR: "المبنى يختفي", textFR: "Le bâtiment disparaît", isCorrect: true },
+        { textEN: "You fall down", textAR: "تسقط", textFR: "Tu tombes", isCorrect: true },
       ],
       1,
       20,
@@ -2292,7 +1855,7 @@ async function main() {
     // ========== THE OASIS CHALLENGES ==========
     await createChallenge(
       oasisChapters[1].id,
-      ChallengeType.MULTIPLE_CHOICE,
+      ChallengeType.RIDDLE,
       "What surrounds the oasis?",
       "ما الذي يحيط بالواحة؟",
       "Qu'est-ce qui entoure l'oasis?",
@@ -2310,7 +1873,7 @@ async function main() {
 
     await createChallenge(
       oasisChapters[3].id,
-      ChallengeType.MULTIPLE_CHOICE,
+      ChallengeType.MORAL_DECISION,
       "How long have people lived in the oasis?",
       "كم من الوقت عاش الناس في الواحة؟",
       "Depuis combien de temps les gens vivent-ils à l'oasis?",
@@ -2318,9 +1881,9 @@ async function main() {
       ["عقود", "قرون", "أجيال"],
       ["Des décennies", "Des siècles", "Des générations"],
       [
-        { textEN: "Only recently", textAR: "مؤخرًا فقط", textFR: "Seulement récemment", isCorrect: false },
+        { textEN: "Only recently", textAR: "مؤخرًا فقط", textFR: "Seulement récemment", isCorrect: true },
         { textEN: "For many generations", textAR: "لأجيال عديدة", textFR: "Pendant de nombreuses générations", isCorrect: true },
-        { textEN: "Just a few years", textAR: "بضع سنوات فقط", textFR: "Seulement quelques années", isCorrect: false },
+        { textEN: "Just a few years", textAR: "بضع سنوات فقط", textFR: "Seulement quelques années", isCorrect: true },
       ],
       1,
       20,
@@ -2329,7 +1892,7 @@ async function main() {
     // ========== THE SANDSTORM CHALLENGES ==========
     await createChallenge(
       sandstormChapters[0].id,
-      ChallengeType.MULTIPLE_CHOICE,
+      ChallengeType.RIDDLE,
       "What approaches from the horizon?",
       "ما الذي يقترب من الأفق؟",
       "Qu'est-ce qui approche de l'horizon?",
@@ -2347,17 +1910,17 @@ async function main() {
 
     await createChallenge(
       sandstormChapters[4].id,
-      ChallengeType.MULTIPLE_CHOICE,
-      "How do you know sandstorms pass?",
-      "كيف تعرف أن العواصف الرملية تمر؟",
-      "Comment savez-vous que les tempêtes de sable passent?",
-      ["You read about it", "You've seen one before", "It's logical"],
-      ["قرأت عنها", "شهدت واحدة من قبل", "إنه منطقي"],
-      ["Tu as lu à ce sujet", "Tu en as vu un avant", "C'est logique"],
+      ChallengeType.SEQUENCING,
+      "Put these storm-survival steps in the correct order.",
+      "رتّب خطوات النجاة من العاصفة بالترتيب الصحيح.",
+      "Mets ces étapes de survie à la tempête dans le bon ordre.",
+      ["Start with safety", "Then stay calm", "End with checking when it is safe"],
+      ["ابدأ بالأمان", "ثم ابقَ هادئًا", "أنهِ بفحص وقت الأمان"],
+      ["Commence par la sécurité", "Ensuite reste calme", "Termine en vérifiant quand c'est sûr"],
       [
-        { textEN: "You've heard stories", textAR: "سمعت قصصًا", textFR: "Tu as entendu des histoires", isCorrect: false },
-        { textEN: "You read that they always pass eventually", textAR: "قرأت أنهم يمرون في النهاية", textFR: "Tu as lu qu'ils passent toujours finalement", isCorrect: true },
-        { textEN: "You guessed", textAR: "خمنت", textFR: "Tu as deviné", isCorrect: false },
+        { textEN: "Find shelter and protect your face", textAR: "ابحث عن مأوى واحمِ وجهك", textFR: "Trouve un abri et protège ton visage", isCorrect: true, correctSequence: 1 },
+        { textEN: "Breathe slowly and save your water", textAR: "تنفس ببطء ووفر ماءك", textFR: "Respire lentement et économise ton eau", isCorrect: true, correctSequence: 2 },
+        { textEN: "Wait until the wind weakens before moving", textAR: "انتظر حتى تضعف الرياح قبل التحرك", textFR: "Attends que le vent faiblisse avant de bouger", isCorrect: true, correctSequence: 3 },
       ],
       1,
       20,
@@ -2421,17 +1984,17 @@ async function main() {
 
     await createChallenge(
       followingCluesChapters[4].id,
-      ChallengeType.MULTIPLE_CHOICE,
-      "What does the janitor's schedule reveal?",
-      "ماذا يكشف جدول عمل الحارس؟",
-      "Que révèle l'horaire du concierge?",
-      ["He was working", "He wasn't there that night", "He left early"],
-      ["كان يعمل", "لم يكن هناك تلك الليلة", "غادر مبكرًا"],
-      ["Il travaillait", "Il n'était pas là ce soir-là", "Il est parti tôt"],
+      ChallengeType.SEQUENCING,
+      "Put the detective steps in the correct order.",
+      "رتّب خطوات التحري بالترتيب الصحيح.",
+      "Mets les étapes de l'enquête dans le bon ordre.",
+      ["Start from the first clue", "Then verify with records", "Finally identify the suspect"],
+      ["ابدأ من الدليل الأول", "ثم تحقّق من السجلات", "وأخيرًا حدّد المشتبه به"],
+      ["Commence par le premier indice", "Puis vérifie avec les registres", "Enfin identifie le suspect"],
       [
-        { textEN: "He was guilty", textAR: "كان مذنبًا", textFR: "Il était coupable", isCorrect: false },
-        { textEN: "He wasn't there that night", textAR: "لم يكن هناك تلك الليلة", textFR: "Il n'était pas là ce soir-là", isCorrect: true },
-        { textEN: "He worked late", textAR: "عمل حتى وقت متأخر", textFR: "Il a travaillé tard", isCorrect: false },
+        { textEN: "Collect clues (footprints, cloth, window)", textAR: "اجمع الأدلة (البصمات، القماش، النافذة)", textFR: "Recueille les indices (empreintes, tissu, fenêtre)", isCorrect: true, correctSequence: 1 },
+        { textEN: "Check schedules and camera records", textAR: "تحقّق من الجداول وتسجيلات الكاميرا", textFR: "Vérifie les horaires et les enregistrements caméra", isCorrect: true, correctSequence: 2 },
+        { textEN: "Connect evidence to reveal the real thief", textAR: "اربط الأدلة لكشف السارق الحقيقي", textFR: "Relie les preuves pour révéler le vrai voleur", isCorrect: true, correctSequence: 3 },
       ],
       1,
       20,

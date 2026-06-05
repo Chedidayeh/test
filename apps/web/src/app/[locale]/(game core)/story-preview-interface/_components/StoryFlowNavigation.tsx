@@ -247,6 +247,7 @@ const StoryFlowNavigation = ({
                 <Button
                   variant={"accent"}
                   size={"sm"}
+                  className="z-50 pointer-events-auto"
                   onClick={handlePlayAudio}
                   disabled={!audioUrl || isLoadingAudio}
                   aria-label={isPlayingAudio ? "Pause audio" : "Play audio"}

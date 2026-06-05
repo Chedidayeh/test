@@ -771,6 +771,20 @@
 				"placeholder": "اكتب إجابتك هنا...",
 				"checkButton": "تحقق"
 			},
+			"voiceInputAnswer": {
+				"yourAnswer": "تحدث بإجابتك",
+				"startRecording": "ابدأ التسجيل",
+				"stopRecording": "إيقاف التسجيل",
+				"submit": "إرسال",
+				"recording": "جاري التسجيل...",
+				"transcript": "النص المكتوب",
+				"processing": "جاري معالجة الصوت...",
+				"permissionDenied": "تم رفض إذن الميكروفون. يرجى تفعيل إمكانية الوصول إلى الميكروفون في إعدادات المتصفح."
+			},
+			"inputMode": {
+				"text": "اكتب",
+				"voice": "تحدث"
+			},
 			"multipleChoiceAnswer": {
 				"chooseAnswer": "اختر إجابتك:"
 			},

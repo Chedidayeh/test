@@ -32,6 +32,29 @@ router.use(`/validate-answer`, async (req: Request, res: Response) => {
 	}
 });
 
+// POST /api/v1/transcribe-audio - Forward audio transcription request to AI service
+router.post(`/transcribe-audio`, async (req: Request, res: Response) => {
+	try {
+		if (!AI_SERVICE_URL) {
+			logger.error("AI_SERVICE_URL not configured");
+			return res.status(500).json({ success: false, error: { code: "CONFIG_ERROR", message: "AI service not configured" } });
+		}
+
+		const url = `${AI_SERVICE_URL}${API_BASE_URL_V1}/transcribe-audio`;
+		const response = await axios.post(url, req.body, );
+
+		return res.status(response.status).json(response.data);
+	} catch (error) {
+		logger.error("Error forwarding transcribe-audio", { error: error instanceof Error ? error.message : String(error) });
+
+		if (axios.isAxiosError(error) && error.response) {
+			return res.status(error.response.status).json(error.response.data);
+		}
+
+		return res.status(500).json({ success: false, error: { code: "SERVICE_ERROR", message: "Failed to contact AI service" } });
+	}
+});
+
 // POST /api/v1/generate-hints - Forward hint generation request to AI service
 router.post(`/generate-hints`, async (req: Request, res: Response) => {
 	try {

@@ -147,3 +147,62 @@ model WeeklyAnalyticsReport {
   // Index for sorting by creation date
   @@index([createdAt])
 }
+
+// ============================================================================
+// INNGEST BACKGROUND JOB TRACKING
+// ============================================================================
+
+// InngestJob: Tracks background jobs triggered via Inngest
+// Used for:
+// - Monitoring TTS audio generation and translation jobs
+// - Admin dashboard visibility into running/completed/failed jobs
+// - Debugging and audit trail of async operations
+// - Re-triggering failed jobs
+model InngestJob {
+  id String @id @default(cuid())
+
+  // Inngest identifiers
+  eventId    String  @unique // Inngest event ID returned from inngest.send()
+  functionId String? // Inngest function ID (e.g., "ai-tts-generate")
+  runId      String? // Inngest run ID (from polling the API)
+
+  // Job classification
+  jobType String // "tts_audio", "translation", "weekly_analytics", etc.
+  status  String @default("queued") // "queued", "running", "completed", "failed", "cancelled"
+
+  // Related entities (stored as plain IDs for cross-service references)
+  storyId     String?
+  chapterId   String?
+  challengeId String?
+  languageCode String?
+
+  // Job execution metadata
+  metadata Json? // Flexible JSON for job-specific data (text length, options, etc.)
+  
+  // Execution tracking
+  queuedAt   DateTime  @default(now())
+  startedAt  DateTime? // When the job actually started processing
+  completedAt DateTime? // When the job finished (success or failure)
+  
+  // Results and errors
+  output Json? // Job output data (e.g., audioUrl, results)
+  error  Json? // Error details if failed (message, stack, code)
+  
+  // Retry tracking
+  retryCount    Int     @default(0)
+  maxRetries    Int     @default(3)
+  nextRetryAt   DateTime?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Indexes for efficient querying
+  @@index([eventId])
+  @@index([jobType])
+  @@index([status])
+  @@index([storyId])
+  @@index([chapterId])
+  @@index([queuedAt])
+  @@index([createdAt])
+}

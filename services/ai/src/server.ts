@@ -2,6 +2,7 @@ import express, { Request, Response, Application } from "express";
 import dotenv from "dotenv";
 import router from "./routes/routes";
 import { API_BASE_URL_V1 } from "@shared/src/types";
+import { attachSTTWebSocket } from "./agents/voice-agent/handlers/stt-stream.handler";
 
 
 // Load env
@@ -58,6 +59,8 @@ app.get("/health", (_req: Request, res: Response) => {
 
 // Start
 const server = app.listen(PORT, () => {
+  attachSTTWebSocket(server, `${API_BASE_URL_V1}/stt/stream`);
+
   console.log(
     JSON.stringify({
       timestamp: new Date().toISOString(),

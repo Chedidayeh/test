@@ -627,8 +627,8 @@ export function NewStoryForm({
       order: 1,
       hints: [],
       answers: [
-        { text: "", isCorrect: true, order: 0, translations: [] },
-        { text: "", isCorrect: false, order: 1, translations: [] },
+        { text: "", isCorrect: true, order: 0, correctSequence: undefined, translations: [] },
+        { text: "", isCorrect: false, order: 1, correctSequence: undefined, translations: [] },
       ],
       translations: [],
     };
@@ -725,7 +725,7 @@ export function NewStoryForm({
 
     const newAnswer = {
       text: "",
-      isCorrect: false,
+      isCorrect: isSequencing ? true : false, // SEQUENCING answers are all "correct" by nature
       order: chapter.challenge.answers.length,
       correctSequence: isSequencing ? (maxSequence || 0) + 1 : undefined,
       translations: [],

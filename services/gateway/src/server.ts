@@ -6,7 +6,7 @@ dotenv.config();
 import express from "express";
 import { jwtMiddleware } from "./middleware/jwt.middleware";
 import { logger } from "./utils/logger";
-import { aiRoutes, authRoutes, contentRoutes, progressRoutes } from "./routes";
+import { aiRoutes, authRoutes, contentRoutes, progressRoutes, jobsRoutes } from "./routes";
 import { API_BASE_URL_V1 } from "@shared/src/types";
 import { inngest } from "./inngest/inngest";
 import { functions } from "./inngest";
@@ -92,6 +92,11 @@ app.use(`${API_BASE_URL_V1}`, contentRoutes);
  * AI Service Routes (Protected)
  */
 app.use(`${API_BASE_URL_V1}`, aiRoutes);
+
+/**
+ * Jobs Monitoring Routes (Protected)
+ */
+app.use(`${API_BASE_URL_V1}`, jobsRoutes);
 
 
 

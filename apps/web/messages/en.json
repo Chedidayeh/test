@@ -771,6 +771,20 @@
 				"placeholder": "Type your answer here...",
 				"checkButton": "Check"
 			},
+			"voiceInputAnswer": {
+				"yourAnswer": "Speak Your Answer",
+				"startRecording": "Start Recording",
+				"stopRecording": "Stop Recording",
+				"submit": "Submit",
+				"recording": "Recording...",
+				"transcript": "Transcript",
+				"processing": "Processing audio...",
+				"permissionDenied": "Microphone permission denied. Please enable microphone access in your browser settings."
+			},
+			"inputMode": {
+				"text": "Type",
+				"voice": "Speak"
+			},
 			"multipleChoiceAnswer": {
 				"chooseAnswer": "Choose your answer:"
 			},

@@ -12,6 +12,52 @@ import {
 } from "@shared/src/types";
 import { inngest } from "../inngest";
 import { logger } from "../../utils/logger";
+import axios from "axios";
+
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL;
+const API_BASE_URL_V1 = "/api/v1";
+
+/**
+ * Helper function to track a job in the database
+ * Calls the AI service to store job metadata
+ */
+async function trackJob(data: {
+  eventId: string;
+  functionId?: string;
+  jobType: string;
+  storyId?: string;
+  chapterId?: string;
+  challengeId?: string;
+  languageCode?: string;
+  metadata?: any;
+}): Promise<void> {
+  try {
+    if (!AI_SERVICE_URL) {
+      logger.warn("[Job Tracking] AI_SERVICE_URL not configured, skipping job tracking");
+      return;
+    }
+
+    await axios.post(
+      `${AI_SERVICE_URL}${API_BASE_URL_V1}/jobs`,
+      data,
+      {
+        headers: { "Content-Type": "application/json" },
+        validateStatus: () => true,
+      },
+    );
+
+    logger.debug("[Job Tracking] Job tracked successfully", {
+      eventId: data.eventId,
+      jobType: data.jobType,
+    });
+  } catch (error) {
+    // Non-fatal: job tracking failure shouldn't break the main flow
+    logger.error("[Job Tracking] Failed to track job", {
+      eventId: data.eventId,
+      error: String(error),
+    });
+  }
+}
 
 /**
  * Queue translation event to Inngest
@@ -49,6 +95,18 @@ export async function queueTranslationForStory(
       eventId,
       storyId,
       translationSource: input.translationSource,
+    });
+
+    // Track the job in the database
+    await trackJob({
+      eventId,
+      functionId: "gateway-trigger-story-translations",
+      jobType: "translation",
+      storyId,
+      metadata: {
+        translationSource: input.translationSource,
+        generateAudio: input.generateAudio,
+      },
     });
 
     return { eventId };
@@ -95,16 +153,33 @@ export async function queueTTSGeneration(
       data: eventData,
     });
 
+    const eventId = result.ids?.[0] || "unknown";
+
     logger.info("[TTS Queue] TTS generation queued", {
-      eventId: result.ids?.[0],
+      eventId,
       storyId: options?.storyId,
       chapterId: options?.chapterId,
       languageCode: options?.languageCode,
       challengeQuestion: options?.challengeQuestion,
     });
 
+    // Track the job in the database
+    await trackJob({
+      eventId,
+      functionId: "ai-tts-generate",
+      jobType: "tts_audio",
+      storyId: options.storyId,
+      chapterId: options.chapterId,
+      challengeId: options.challengeId,
+      languageCode: options.languageCode,
+      metadata: {
+        textLength: text.length,
+        hasChallengeQuestion: !!options.challengeQuestion,
+      },
+    });
+
     return {
-      eventId: result.ids?.[0] || "unknown",
+      eventId,
     };
   } catch (error) {
     logger.error("[TTS Queue] Failed to queue TTS generation", {

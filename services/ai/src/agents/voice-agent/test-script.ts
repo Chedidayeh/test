@@ -8,11 +8,11 @@ async function run() {
   const tts = new VertexAITTSProvider();
 
   const audio = await tts.synthesize(
-    "تغادر الوادي محملاً بمعرفة جديدة وأمل متجدد. الواحة لم تكن مجرد مكان من الماء والنباتات؛ كانت درسًا في الإصرار والمجتمع والتناغم مع الطبيعة. ترحل ومعك بذور لتزرعها وأفكار لتشاركها، وتعلم أن هذا الفهم سيصحبك إلى كل مكان تذهب إليه.",
+    "The little rabbit hopped through the forest. Along the way, he found a shiny golden key hidden beneath a tree. What do you think the key unlocks?",
     {
-      languageCode: TTSLanguageCodes.ARABIC,
+      languageCode: TTSLanguageCodes.ENGLISH_US,
       prompt:
-        "قم بسرد هذه القصة بالعربية بطريقة مشوقة وواضحة، كما لو كنت ترويها ككتاب صوتي.",
+        "Read this children's story slowly, clearly, and naturally. Pronounce every word carefully for young readers.",
     }
   );
 

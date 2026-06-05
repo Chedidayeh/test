@@ -769,6 +769,20 @@
 				"placeholder": "Tapez votre réponse ici...",
 				"checkButton": "Vérifier"
 			},
+			"voiceInputAnswer": {
+				"yourAnswer": "Parlez Votre Réponse",
+				"startRecording": "Commencer l'Enregistrement",
+				"stopRecording": "Arrêter l'Enregistrement",
+				"submit": "Soumettre",
+				"recording": "Enregistrement en cours...",
+				"transcript": "Transcription",
+				"processing": "Traitement de l'audio...",
+				"permissionDenied": "Permission du microphone refusée. Veuillez activer l'accès au microphone dans les paramètres de votre navigateur."
+			},
+			"inputMode": {
+				"text": "Taper",
+				"voice": "Parler"
+			},
 			"multipleChoiceAnswer": {
 				"chooseAnswer": "Choisissez votre réponse:"
 			},

@@ -18,6 +18,7 @@ import {
   Story,
 } from "@shared/src/types";
 import { logger } from "../../utils/logger";
+import { updateJobStatus } from "./job-status-updater";
 import { triggerTTSGenerationForAllChapters } from "./queue";
 export const PROGRESS_SERVICE_URL = process.env.PROGRESS_SERVICE_URL
 /**
@@ -319,6 +320,14 @@ export const generateStoryTranslations = inngest.createFunction(
       translationSource: eventData.input.translationSource,
     });
 
+    // Update status to running
+    await updateJobStatus({
+      eventId: event.id,
+      status: "running",
+      runId: event.id,
+      startedAt: new Date(),
+    });
+
     try {
       // Call content service to trigger translation execution
       const result = await step.run(
@@ -385,6 +394,18 @@ export const generateStoryTranslations = inngest.createFunction(
         );
       }
 
+      // Update status to completed
+      await updateJobStatus({
+        eventId: event.id,
+        status: "completed",
+        completedAt: new Date(),
+        output: {
+          success: true,
+          storyId: eventData.storyId,
+          translationSource: eventData.input.translationSource,
+        },
+      });
+
       return {
         success: true,
         storyId: eventData.storyId,
@@ -396,6 +417,17 @@ export const generateStoryTranslations = inngest.createFunction(
         storyId: eventData.storyId,
         translationSource: eventData.input.translationSource,
         error: String(error),
+      });
+
+      // Update status to failed
+      await updateJobStatus({
+        eventId: event.id,
+        status: "failed",
+        completedAt: new Date(),
+        error: {
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        },
       });
 
       throw error; // Inngest will handle retries
@@ -423,6 +455,14 @@ export const generateTTSAudio = inngest.createFunction(
       textLength: eventData.text.length,
 
       challengeQuestion: eventData.challengeQuestion,
+    });
+
+    // Update status to running
+    await updateJobStatus({
+      eventId: event.id,
+      status: "running",
+      runId: event.id,
+      startedAt: new Date(),
     });
 
     try {
@@ -525,6 +565,20 @@ export const generateTTSAudio = inngest.createFunction(
         });
       });
 
+      // Update status to completed
+      await updateJobStatus({
+        eventId: event.id,
+        status: "completed",
+        completedAt: new Date(),
+        output: {
+          audioUrl,
+          challengeAudioUrl,
+          storyId: eventData.storyId,
+          chapterId: eventData.chapterId,
+          languageCode: eventData.languageCode,
+        },
+      });
+
       return {
         success: true,
         audioUrl,
@@ -538,6 +592,17 @@ export const generateTTSAudio = inngest.createFunction(
         chapterId: eventData.chapterId,
         languageCode: eventData.languageCode,
         error: String(error),
+      });
+
+      // Update status to failed
+      await updateJobStatus({
+        eventId: event.id,
+        status: "failed",
+        completedAt: new Date(),
+        error: {
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        },
       });
 
       throw error; // Inngest will handle retries

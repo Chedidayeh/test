@@ -161,6 +161,35 @@ export class StoryController {
   }
 
   /**
+   * Search stories by title
+   * Returns only IDs and titles for lightweight search
+   */
+  async searchStoriesByTitle(
+    req: Request,
+    res: Response<ApiResponse<{ id: string; title: string }[]>>,
+  ): Promise<void> {
+    try {
+      const searchTerm = req.query.q as string;
+
+      logger.info("Search stories by title request", { searchTerm });
+
+      if (!searchTerm) {
+        sendError(res, "Search term (q) is required", 400);
+        return;
+      }
+
+      const stories = await storyService.searchStoriesByTitle(searchTerm);
+
+      sendSuccess(res, stories, 200);
+    } catch (error) {
+      logger.error("Error in searchStoriesByTitle controller", {
+        error: String(error),
+      });
+      sendError(res, String(error), 500, "Failed to search stories");
+    }
+  }
+
+  /**
    * Get multiple stories by their IDs from request body (POST /bulk)
    * Accepts: { ids: ["id1", "id2", "id3"] }
    */

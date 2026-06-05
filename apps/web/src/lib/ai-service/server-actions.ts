@@ -8,7 +8,7 @@ import { WeeklyAnalyticsReport } from "@readdly/shared-types";
  * Wraps `ai-service` server-api calls for use in Server Components / Actions
  */
 
-import { validateAnswer, LLMValidationResult, ValidateAnswerRequest , GenerateHintsRequest, HintResponse, getWeeklyAnalyticsReport, generateHints } from "./server-api";
+import { validateAnswer, LLMValidationResult, ValidateAnswerRequest , GenerateHintsRequest, HintResponse, getWeeklyAnalyticsReport, generateHints, transcribeAudio, TranscribeAudioRequest, TranscribeAudioResult } from "./server-api";
 
 export interface ValidateAnswerActionResult {
   success: boolean;
@@ -19,6 +19,12 @@ export interface ValidateAnswerActionResult {
 export interface GenerateHintsActionResult {
   success: boolean;
   data?: HintResponse;
+  error?: string;
+}
+
+export interface TranscribeAudioActionResult {
+  success: boolean;
+  data?: TranscribeAudioResult;
   error?: string;
 }
 
@@ -218,6 +224,66 @@ export async function getWeeklyAnalyticsReportAction(
     );
 
     return null;
+  }
+}
+
+/**
+ * Server action to transcribe audio using Speech-to-Text
+ * Wraps the transcribeAudio API call with error handling
+ *
+ * @param request - Audio transcription request data
+ * @returns Result object with success status and data/error
+ *
+ * @example
+ * const result = await transcribeAudioAction({
+ *   audioBuffer: "base64EncodedAudio...",
+ *   languageCode: "en-US"
+ * });
+ * if (result.success) {
+ *   console.log("Transcript:", result.data?.transcript);
+ * }
+ */
+export async function transcribeAudioAction(
+  request: TranscribeAudioRequest,
+): Promise<TranscribeAudioActionResult> {
+  try {
+    console.log("[AI Service] Transcribing audio via server action:", {
+      languageCode: request.languageCode || "en-US",
+      audioLength: request.audioBuffer.length,
+    });
+
+    const result = await transcribeAudio(request);
+
+    if (!result) {
+      console.warn("[AI Service] Audio transcription returned null");
+      return {
+        success: false,
+        error: "Failed to transcribe audio",
+      };
+    }
+
+    console.log("[AI Service] Audio transcribed via server action:", {
+      transcriptLength: result.transcript.length,
+      languageCode: request.languageCode,
+    });
+
+    return {
+      success: true,
+      data: result,
+    };
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred";
+
+    console.error("[AI Service] Error transcribing audio:", {
+      languageCode: request.languageCode,
+      error: errorMessage,
+    });
+
+    return {
+      success: false,
+      error: errorMessage,
+    };
   }
 }
 

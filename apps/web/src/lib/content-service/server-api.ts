@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use server";
+
 /**
  * Server-Side API Utility for RSCs (React Server Components)
  * Makes direct fetch calls from the server with JWT authentication
@@ -189,6 +192,70 @@ export async function getStoriesByIds(
   }
 
   return storyMap;
+}
+
+/**
+ * Lightweight helper to fetch only story titles by IDs
+ * Uses the existing batch endpoint but returns only id->title mapping
+ * Perfect for UI components that only need to display story names
+ * @param storyIds - Array of story IDs to fetch
+ * @returns Record of storyId -> title for efficient lookup
+ */
+export async function getStoryTitlesByIds(
+  storyIds: string[],
+): Promise<Record<string, string>> {
+  if (!storyIds || storyIds.length === 0) {
+    return {};
+  }
+
+  const storyMap = await getStoriesByIds(storyIds);
+  const titleMap: Record<string, string> = {};
+
+  storyMap.forEach((story, id) => {
+    titleMap[id] = story.title;
+  });
+
+  return titleMap;
+}
+
+/**
+ * Search stories by title and return their IDs
+ * Useful for cross-page search functionality
+ * @param searchTerm - The search term to match against story titles
+ * @returns Array of story IDs that match the search term
+ */
+export async function searchStoryIdsByTitle(
+  searchTerm: string,
+): Promise<string[]> {
+  if (!searchTerm || searchTerm.trim().length === 0) {
+    return [];
+  }
+
+  try {
+    const response = await apiRequest<
+      ApiResponse<{ id: string; title: string }[]>
+    >(`/stories/search?q=${encodeURIComponent(searchTerm)}`);
+
+    if (isApiError(response)) {
+      console.warn(
+        "[Content Service API] Failed to search stories:",
+        response.error.message,
+      );
+      return [];
+    }
+
+    if (!response.success || !response.data) {
+      console.warn(
+        "[Content Service API] Failed to search stories: API returned success=false or no data",
+      );
+      return [];
+    }
+
+    return response.data.map((story) => story.id);
+  } catch (error) {
+    console.error("[Content Service API] Error searching stories:", error);
+    return [];
+  }
 }
 
 /**
