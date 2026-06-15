@@ -8,7 +8,19 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
 
-import { ChevronRight, ChevronLeft, CircleCheck } from "lucide-react";
+import {
+  ChevronRight,
+  ChevronLeft,
+  CircleCheck,
+  BookOpen,
+  Puzzle,
+  Award,
+  LayoutDashboard,
+  Headphones,
+  Eye,
+  TrendingUp,
+  Heart,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -95,6 +107,7 @@ export default function ParentOnboarding({
   };
 
   const langCode = getLanguageCode(locale);
+  const TOTAL_STEPS = 5;
 
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -171,17 +184,17 @@ export default function ParentOnboarding({
 
   const onChildBasicSubmit = async (data: any) => {
     setFormData({ ...formData, childBasic: data });
-    setStep(2);
+    setStep(3);
   };
 
   const onChildPreferencesSubmit = async (data: any) => {
     setFormData({ ...formData, childPreferences: data });
-    setStep(3);
+    setStep(4);
   };
 
   const onReadingSettingsSubmit = async (data: any) => {
     setFormData({ ...formData, readingSettings: data });
-    setStep(4);
+    setStep(5);
   };
 
   const handleFinalSubmit = async () => {
@@ -254,7 +267,7 @@ export default function ParentOnboarding({
     if (step > 1) setStep(step - 1);
   };
 
-  const progressPercentage = ((step - 1) / 3) * 100;
+  const progressPercentage = ((step - 1) / (TOTAL_STEPS - 1)) * 100;
 
   // Get selected age group for display
   const selectedAgeGroup = ageGroups.find((ag) => ag.id === selectedAgeGroupId);
@@ -283,23 +296,25 @@ export default function ParentOnboarding({
           className="flex flex-col items-center mb-6 sm:mb-8 text-center"
         >
           <h1 className="text-2xl sm:text-3xl font-bold mb-2">
-            {step === 1 && t("titleStep1")}
-            {step === 2 && t("titleStep2")}
-            {step === 3 && t("titleStep3")}
-            {step === 4 && t("readyToStart")}
+            {step === 1 && t("welcomeTitle")}
+            {step === 2 && t("titleStep1")}
+            {step === 3 && t("titleStep2")}
+            {step === 4 && t("titleReadingSettings")}
+            {step === 5 && t("readyToStart")}
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            {step === 1 && t("descStep1")}
-            {step === 2 && t("descStep2")}
-            {step === 3 && t("descStep3ReadingSettings")}
-            {step === 4 && t("descStep4")}
+            {step === 1 && t("welcomeDesc")}
+            {step === 2 && t("descStep1")}
+            {step === 3 && t("descStep2")}
+            {step === 4 && t("descStep3ReadingSettings")}
+            {step === 5 && t("descStep4")}
           </p>
         </motion.div>
 
         {/* Animated Progress Bar */}
         <div className="mb-8">
           <div className="flex justify-between mb-3">
-            {[1, 2, 3, 4].map((s) => (
+            {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((s) => (
               <motion.div
                 key={s}
                 className={`h-8 w-8 sm:h-10 sm:w-10 rounded-full flex items-center justify-center font-semibold text-xs sm:text-sm transition-all ${
@@ -338,8 +353,106 @@ export default function ParentOnboarding({
         <div className="bg-card rounded-lg border p-4 sm:p-8 shadow-sm">
           <AnimatePresence mode="wait">
             {step === 1 && (
+              <motion.div
+                key="welcome"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-6"
+              >
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-foreground">
+                    {t("welcomeDyslexiaTitle")}
+                  </h3>
+                  <ul className="space-y-2">
+                    {[
+                      { icon: Headphones, text: t("welcomeFeatureMultimodal") },
+                      { icon: Eye, text: t("welcomeFeatureAccessible") },
+                      { icon: TrendingUp, text: t("welcomeFeatureProgress") },
+                    ].map(({ icon: Icon, text }) => (
+                      <li
+                        key={text}
+                        className="flex items-start gap-3 text-sm text-muted-foreground"
+                      >
+                        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                          <Icon className="h-4 w-4" />
+                        </span>
+                        <span className="pt-1">{text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-foreground">
+                    {t("welcomeCapabilitiesTitle")}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { icon: BookOpen, label: t("welcomeCapabilityStories") },
+                      { icon: Puzzle, label: t("welcomeCapabilityChallenges") },
+                      { icon: Award, label: t("welcomeCapabilityBadges") },
+                      {
+                        icon: LayoutDashboard,
+                        label: t("welcomeCapabilityDashboard"),
+                      },
+                    ].map(({ icon: Icon, label }) => (
+                      <div
+                        key={label}
+                        className="flex flex-col items-center gap-2 rounded-lg border bg-muted/30 p-4 text-center"
+                      >
+                        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                          <Icon className="h-5 w-5" />
+                        </span>
+                        <span className="text-xs sm:text-sm font-medium text-foreground">
+                          {label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
+                  <Heart className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                  <p className="text-sm text-muted-foreground">
+                    {t("welcomeReassurance")}
+                  </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 mt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full sm:flex-1"
+                    onClick={() => router.push("/")}
+                  >
+                    {isRTL ? (
+                      <ChevronRight className="w-4 h-4 ml-2" />
+                    ) : (
+                      <ChevronLeft className="w-4 h-4 mr-2" />
+                    )}
+                    {t("cancel")}
+                  </Button>
+                  <Button
+                    type="button"
+                    className="w-full sm:flex-1"
+                    onClick={() => setStep(2)}
+                  >
+                    {t("letsStart")}
+                    {isRTL ? (
+                      <ChevronLeft className="w-4 h-4 ml-2" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 mr-2" />
+                    )}
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+
+            {step === 2 && (
               <motion.form
-                key="step1"
+                key="step2"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -478,9 +591,9 @@ export default function ParentOnboarding({
               </motion.form>
             )}
 
-            {step === 2 && (
+            {step === 3 && (
               <motion.form
-                key="step2"
+                key="step3"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -585,9 +698,9 @@ export default function ParentOnboarding({
               </motion.form>
             )}
 
-            {step === 3 && (
+            {step === 4 && (
               <motion.form
-                key="step3"
+                key="step4"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -709,17 +822,17 @@ export default function ParentOnboarding({
               </motion.form>
             )}
 
-            {step === 4 && (
+            {step === 5 && (
               <motion.div
-                key="step4"
+                key="step5"
                 initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.96 }}
                 transition={{ duration: 0.3 }}
                 className="text-center space-y-4"
               >
-                <h2 className="text-2xl font-medium mb-2">{t("titleStep3")}</h2>
-                <p className="text-muted-foreground mb-4">{t("descStep3")}</p>
+                <h2 className="text-2xl font-medium mb-2">{t("summaryTitle")}</h2>
+                <p className="text-muted-foreground mb-4">{t("summaryDesc")}</p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left bg-muted/30 p-4 rounded-lg">
                   <div>
@@ -810,7 +923,7 @@ export default function ParentOnboarding({
 
         {/* Step counter */}
         <p className="text-center text-xs sm:text-sm text-muted-foreground mt-6">
-          {t("stepOf", { step, total: 4 })}
+          {t("stepOf", { step, total: TOTAL_STEPS })}
         </p>
       </div>
 

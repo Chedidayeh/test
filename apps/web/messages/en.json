@@ -100,7 +100,7 @@
 			"childStorytelling": "Child Storytelling"
 		},
 		"overview": {
-			"welcome": "Welcome back, {name}! 👋",
+			"welcome": "Welcome, {name}! 👋",
 			"description": "Here's a quick overview of {childName}'s reading journey and achievements.",
 			"childDashboardButton": "{childName}'s dashboard →"
 		},
@@ -359,7 +359,7 @@
 		},
 		"welcomeBanner": {
 			"greetingNew": "Welcome on board, {childName}!",
-			"greetingBack": "Welcome back, {childName}!",
+			"greetingBack": "Welcome, {childName}!",
 			"subtitleNew": "Your reading adventure begins now! 🌟",
 			"subtitleBack": "Ready for another amazing reading adventure?",
 			"stats": {
@@ -498,7 +498,7 @@
 	},
 	"LoginForm": {
 		"titleCreate": "Create an account",
-		"titleWelcome": "Welcome back",
+		"titleWelcome": "Welcome",
 		"descriptionSignUp": "Sign up to get started",
 		"descriptionLogin": "Login with your email and password",
 		"fullNameLabel": "Full name",
@@ -539,6 +539,22 @@
 		}
 	},
 	"Onboarding": {
+		"welcomeTitle": "Welcome to Readdly",
+		"welcomeDesc": "An interactive reading platform designed for children with dyslexia and their families.",
+		"welcomeDyslexiaTitle": "Built for dyslexic learners",
+		"welcomeFeatureMultimodal": "Multimodal learning with text, illustrations, and audio narration",
+		"welcomeFeatureAccessible": "Accessible interface with dyslexia-friendly typography and adjustable settings",
+		"welcomeFeatureProgress": "Progress tracking so you can celebrate every reading milestone",
+		"welcomeCapabilitiesTitle": "What your family can do on Readdly",
+		"welcomeCapabilityStories": "Story reading",
+		"welcomeCapabilityChallenges": "Interactive challenges",
+		"welcomeCapabilityBadges": "Stars, levels & badges",
+		"welcomeCapabilityDashboard": "Parent dashboard",
+		"welcomeReassurance": "Readdly supports diverse learning styles and helps children build confidence through positive, pressure-free reading practice.",
+		"letsStart": "Let's Start",
+		"titleReadingSettings": "Reading Goals & Reminders",
+		"summaryTitle": "Review your child's profile",
+		"summaryDesc": "Confirm the details below before creating the profile.",
 		"titleStep1": "Tell us about your child",
 		"titleStep2": "What does your child enjoy?",
 		"titleStep3": "All set!",
