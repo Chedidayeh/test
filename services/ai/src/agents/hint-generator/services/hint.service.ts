@@ -136,7 +136,7 @@ CRITICAL: Respond ONLY with a valid JSON array: ["hint1", "hint2", "hint3"]
 No markdown, no code blocks, no extra text - just the JSON array.`;
 
     const userPrompt = `STORY CONTEXT:
-"${storyContent.substring(0, 1000)}${storyContent.length > 1000 ? "..." : ""}"
+"${storyContent}"
 
 CHALLENGE TASK:
 Question: ${question}
