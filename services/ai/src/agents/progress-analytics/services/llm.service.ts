@@ -1,6 +1,62 @@
 import { logger } from "../../../lib/logger";
 import model from "../../../lib/model";
-import { AnalyticsInput, AnalyticsOutput, ChallengeDetail, ChallengeTypeBehaviorSummary, MetricsSnapshot, TrendAnalysis } from "./types";
+import { ChallengeType } from "@shared/src/types";
+import {
+  AnalyticsInput,
+  AnalyticsOutput,
+  ChallengeDetail,
+  MetricsSnapshot,
+  TrendAnalysis,
+} from "./types";
+
+/** Pedagogical context for each challenge type — helps the LLM interpret aggregated behavior. */
+const CHALLENGE_TYPE_DEFINITIONS: Record<
+  (typeof ChallengeType)[keyof typeof ChallengeType],
+  { label: string; purpose: string; skillsDeveloped: string; validationNote: string }
+> = {
+  [ChallengeType.MULTIPLE_CHOICE]: {
+    label: "Multiple Choice",
+    purpose:
+      "Assess factual recall and comprehension of story details (plot points, characters, vocabulary).",
+    skillsDeveloped: "Recognition and selection without free writing — lower spelling barrier.",
+    validationNote: "One predefined correct option.",
+  },
+  [ChallengeType.TRUE_FALSE]: {
+    label: "True / False",
+    purpose:
+      "Assess whether the child can judge if a statement matches what happened in the story.",
+    skillsDeveloped: "Comprehension and critical judgment with low cognitive load.",
+    validationNote: "Binary correct/incorrect.",
+  },
+  [ChallengeType.RIDDLE]: {
+    label: "Riddle (open-ended)",
+    purpose:
+      "Assess deeper inference, language comprehension, and problem-solving in the child's own words.",
+    skillsDeveloped: "Expression, reasoning; often answered by text or voice (STT).",
+    validationNote: "AI semantic validation — meaning matters more than exact wording.",
+  },
+  [ChallengeType.CHOOSE_ENDING]: {
+    label: "Choose Ending",
+    purpose:
+      "Assess narrative understanding — can the child pick a coherent ending based on the story arc?",
+    skillsDeveloped: "Story comprehension and cause-and-effect reasoning.",
+    validationNote: "All options are scored as correct — focuses on understanding, not failure.",
+  },
+  [ChallengeType.MORAL_DECISION]: {
+    label: "Moral Decision",
+    purpose:
+      "Assess moral reasoning, empathy, and reflection on values presented in the story.",
+    skillsDeveloped: "Ethical thinking and social-emotional learning.",
+    validationNote: "All options are valid — diverse interpretations are not penalized.",
+  },
+  [ChallengeType.SEQUENCING]: {
+    label: "Sequencing",
+    purpose:
+      "Assess memory, temporal reasoning, and understanding of narrative structure (beginning → end).",
+    skillsDeveloped: "Ordering events; targets a common difficulty area for dyslexic learners.",
+    validationNote: "Child must arrange predefined events in the correct chronological order.",
+  },
+};
 
 /**
  * Generate weekly analytics narrative using Gemini LLM
@@ -43,6 +99,13 @@ export async function llmGenerateAnalytics(
   // Build per-challenge detail log (if challenge details are available)
   const challengeLogNarrative = buildChallengeDetailsNarrative(challengeDetails);
 
+  // Explain what each challenge type measures + how many this child did this week
+  const challengeTypesReference = buildChallengeTypesReferenceNarrative(
+    childName,
+    thisWeekMetrics,
+    behaviorInsights,
+  );
+
   const systemPrompt = `You are an expert educational analyst specializing in creating parent-friendly weekly progress reports for children in an interactive reading game.
 
 Your role is to:
@@ -50,6 +113,7 @@ Your role is to:
 2. ACKNOWLEDGE struggles constructively and supportively
 3. EXPLAIN learning in accessible terms (not jargon)
 4. SUGGEST actionable next steps parents can encourage
+5. INTERPRET behavioral data using each challenge type's pedagogical purpose (recall vs inference vs moral reasoning vs sequencing, etc.)
 
 Your tone must always be:
 - Warm and encouraging
@@ -73,6 +137,9 @@ CHILD INFORMATION:
 
 THIS WEEK'S ACTIVITY:
 ${thisWeekNarrative}
+
+CHALLENGE TYPES REFERENCE (what each format measures + ${childName}'s aggregated activity this week):
+${challengeTypesReference}
 ${challengeLogNarrative ? `
 DETAILED CHALLENGE LOG (every challenge ${childName} encountered, with question, answers, and what happened):
 ${challengeLogNarrative}` : ""}
@@ -84,7 +151,9 @@ PROGRESS & TRENDS:
 ${trendNarrative}` : ""}
 
 YOUR TASK:
-Generate a weekly progress report with THREE sections:
+Generate a weekly progress report with THREE sections.
+
+When analyzing struggles or strengths, connect them to the **pedagogical purpose** of each challenge type from CHALLENGE TYPES REFERENCE (e.g. RIDDLE = inference/expression, SEQUENCING = temporal ordering, MORAL_DECISION = values reflection). Use aggregated per-type stats when present.
 
 1. EXECUTIVE SUMMARY (parent TL;DR)
    - Open with a statement about the week's standout achievement or learning
@@ -227,6 +296,64 @@ Generate the report now:`;
       ],
     };
   }
+}
+
+/**
+ * Build challenge-type reference for the LLM: pedagogical purpose of each format
+ * plus this child's weekly counts and per-type behavioral aggregates (if available).
+ */
+function buildChallengeTypesReferenceNarrative(
+  childName: string,
+  metrics: MetricsSnapshot,
+  behaviorInsights?: AnalyticsInput["behaviorInsights"],
+): string {
+  const lines: string[] = [];
+
+  lines.push(
+    "Use the definitions below to interpret HOW the child performed — e.g. low success on RIDDLE suggests inference/expression gaps; struggles on SEQUENCING suggest temporal ordering; strong MULTIPLE_CHOICE suggests good factual recall.",
+  );
+  lines.push("");
+
+  const allTypes = Object.values(ChallengeType);
+
+  for (const type of allTypes) {
+    const def = CHALLENGE_TYPE_DEFINITIONS[type];
+    const countThisWeek = metrics.challenges[type] ?? 0;
+    const behavior = behaviorInsights?.byType[type];
+
+    lines.push(`• ${def.label} (${type})`);
+    lines.push(`  Purpose: ${def.purpose}`);
+    lines.push(`  Skills developed: ${def.skillsDeveloped}`);
+    lines.push(`  Validation: ${def.validationNote}`);
+
+    if (countThisWeek > 0) {
+      lines.push(
+        `  This week: ${countThisWeek} challenge(s) attempted`,
+      );
+      if (behavior) {
+        lines.push(
+          `  Aggregated behavior: ${behavior.successRate.toFixed(1)}% success, ` +
+            `${behavior.firstTrySolveRate.toFixed(1)}% first-try solves, ` +
+            `${behavior.giveUpRate.toFixed(1)}% abandoned, ` +
+            `${behavior.selfCorrectionRate.toFixed(1)}% self-corrected, ` +
+            `avg ${behavior.averageActionsBeforeSolve.toFixed(1)} action(s) before solving`,
+        );
+      }
+    } else {
+      lines.push("  This week: not encountered");
+    }
+
+    lines.push("");
+  }
+
+  const encounteredTypes = allTypes.filter((t) => (metrics.challenges[t] ?? 0) > 0);
+  if (encounteredTypes.length > 0) {
+    lines.push(
+      `Summary: ${childName} encountered ${encounteredTypes.length} of 6 challenge formats this week: ${encounteredTypes.map((t) => CHALLENGE_TYPE_DEFINITIONS[t].label).join(", ")}.`,
+    );
+  }
+
+  return lines.join("\n").trim();
 }
 
 /**
